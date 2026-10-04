@@ -254,3 +254,20 @@
     scroll-behavior: auto !important;
   }
 }
+
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-sheet {
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .print-sheet * {
+    color: #000 !important;
+    border-color: #d4d4d8 !important;
+  }
+}

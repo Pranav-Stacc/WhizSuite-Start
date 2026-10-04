@@ -78,7 +78,7 @@ export function MobileDock({ role, badges }: { role: UserRole; badges: Badges })
   const pathname = usePathname();
   const dock = [HOME_ITEM, ...groupsForRole(role).flatMap((g) => g.items)].filter((item) => DOCK_HREFS.includes(item.href));
   return (
-    <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden">
+    <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden print:hidden">
       <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-2xl p-1.5 shadow-2xl">
         {dock.map((item) => {
           const Icon = item.icon;

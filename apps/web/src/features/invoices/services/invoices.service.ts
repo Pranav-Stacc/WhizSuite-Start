@@ -1,5 +1,6 @@
 import 'server-only';
 import type { InvoiceStatus } from '@agency-os/contracts';
+import { INVOICE_NUMBER_PAD, INVOICE_NUMBER_PREFIX } from '../lifecycle';
 import { invoiceTotals, invoicesRepository, type Invoice } from '../data/invoices.repository';
 
 export interface InvoiceView extends Invoice {
@@ -26,6 +27,18 @@ export async function listInvoices(): Promise<InvoiceView[]> {
 export async function getInvoice(id: string): Promise<InvoiceView | undefined> {
   const row = await invoicesRepository.get(id);
   return row ? toView(row) : undefined;
+}
+
+/** Next sequential number for the current year, e.g. INV-2026-0008. */
+export async function nextInvoiceNumber(now: Date = new Date()): Promise<string> {
+  const prefix = `${INVOICE_NUMBER_PREFIX}-${now.getFullYear()}-`;
+  const rows = await invoicesRepository.list();
+  const highest = rows.reduce((max, row) => {
+    if (!row.number.startsWith(prefix)) return max;
+    const sequence = Number.parseInt(row.number.slice(prefix.length), 10);
+    return Number.isNaN(sequence) ? max : Math.max(max, sequence);
+  }, 0);
+  return `${prefix}${String(highest + 1).padStart(INVOICE_NUMBER_PAD, '0')}`;
 }
 
 export interface Receivables {

@@ -3,6 +3,17 @@ const MS_PER_DAY = 86_400_000;
 export const DEFAULT_CURRENCY = 'INR';
 export const DEFAULT_LOCALE = 'en-IN';
 
+const MINOR_UNITS_PER_MAJOR = 100;
+
+/** Converts a major-unit amount typed in a form (rupees) to integer minor units. */
+export function toMinorUnits(major: number): number {
+  return Math.round(major * MINOR_UNITS_PER_MAJOR);
+}
+
+export function fromMinorUnits(minor: number): number {
+  return minor / MINOR_UNITS_PER_MAJOR;
+}
+
 /** Money is stored in minor units (paise/cents) and formatted here only. */
 export function formatMoney(minor: number, currency = DEFAULT_CURRENCY, compact = false): string {
   return new Intl.NumberFormat(DEFAULT_LOCALE, {
@@ -10,7 +21,7 @@ export function formatMoney(minor: number, currency = DEFAULT_CURRENCY, compact 
     currency,
     maximumFractionDigits: compact ? 1 : 0,
     notation: compact ? 'compact' : 'standard',
-  }).format(minor / 100);
+  }).format(fromMinorUnits(minor));
 }
 
 export function formatNumber(value: number, compact = false): string {
@@ -62,6 +73,13 @@ export function daysFromNow(days: number, hour = 10): string {
   d.setDate(d.getDate() + days);
   d.setHours(hour, 0, 0, 0);
   return d.toISOString();
+}
+
+const MS_PER_HOUR = 3_600_000;
+
+/** ISO timestamp for `hours` hours in the past — used for "happened recently" seed data. */
+export function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * MS_PER_HOUR).toISOString();
 }
 
 export function initials(name: string): string {

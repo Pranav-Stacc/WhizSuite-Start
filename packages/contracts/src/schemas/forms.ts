@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import {
   ApprovalActions,
+  AutomationActions,
+  AutomationTriggers,
   ClientStatuses,
   ContentTypes,
   MembershipTypes,
@@ -149,8 +151,15 @@ export type LogTimeInput = z.infer<typeof logTimeSchema>;
 
 export const createAutomationSchema = z.object({
   name: z.string().trim().min(2, 'validation.min2'),
+  trigger: z.enum(AutomationTriggers, { errorMap: () => ({ message: 'validation.required' }) }),
+  action: z.enum(AutomationActions, { errorMap: () => ({ message: 'validation.required' }) }),
 });
 export type CreateAutomationInput = z.infer<typeof createAutomationSchema>;
+
+export const connectIntegrationSchema = z.object({
+  handle: z.string().trim().min(2, 'validation.min2'),
+});
+export type ConnectIntegrationInput = z.infer<typeof connectIntegrationSchema>;
 
 export const clientStatusSchema = z.enum(ClientStatuses);
 
@@ -197,8 +206,24 @@ export const decisionSchema = z.object({
 });
 export type DecisionInput = z.infer<typeof decisionSchema>;
 
+export const WORKFLOW_STAGE_SEPARATOR = ',';
+export const MIN_WORKFLOW_STAGES = 2;
+
+/** Splits a comma separated stage list into trimmed, non-empty stage names. */
+export function parseWorkflowStages(value: string): string[] {
+  return value
+    .split(WORKFLOW_STAGE_SEPARATOR)
+    .map((stage) => stage.trim())
+    .filter(Boolean);
+}
+
 export const createWorkflowSchema = z.object({
   name: z.string().trim().min(2, 'validation.min2'),
   slaHours: z.coerce.number().int().min(1).max(720).default(48),
+  stages: z
+    .string()
+    .trim()
+    .refine((value) => parseWorkflowStages(value).length >= MIN_WORKFLOW_STAGES, 'validation.stages'),
+  requiresClientApproval: z.boolean().default(false),
 });
 export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;

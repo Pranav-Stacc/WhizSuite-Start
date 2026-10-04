@@ -1,7 +1,6 @@
 import 'server-only';
 import { Platforms, type Platform } from '@agency-os/contracts';
 import { createRepository, type Entity } from '@/shared/data/repository';
-import { daysFromNow } from '@/shared/lib/format';
 import { seeded } from '@/shared/lib/seeded';
 
 export interface Integration extends Entity {
@@ -12,6 +11,8 @@ export interface Integration extends Entity {
   followers: number;
   lastSyncAt?: string;
 }
+
+const SEED_SYNC_AGE_MS = 2 * 60 * 60 * 1000;
 
 const slug = (name: string): string => name.toLowerCase().replace(/[^a-z0-9]+/g, '');
 
@@ -36,7 +37,7 @@ export const integrationsRepository = createRepository<Integration>('integration
         handle: `@${slug(name)}`,
         connected,
         followers: connected ? Math.round(2000 + rand() * 48000) : 0,
-        lastSyncAt: connected ? daysFromNow(0, 6) : undefined,
+        lastSyncAt: connected ? new Date(Date.now() - SEED_SYNC_AGE_MS).toISOString() : undefined,
       };
     }),
   );

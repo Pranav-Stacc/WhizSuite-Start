@@ -1,4 +1,5 @@
 import 'server-only';
+import type { Platform } from '@agency-os/contracts';
 import { DEFAULT_CLIENT_COLOR, INITIAL_HEALTH_SCORE } from '../config';
 import { clientsRepository, type Client } from '../data/clients.repository';
 
@@ -35,6 +36,11 @@ export async function onboardClient(input: NewClientInput): Promise<Client> {
 
 export async function listClients(): Promise<Client[]> {
   return clientsRepository.list();
+}
+
+/** Keeps the client's channel list in step with its connected integrations. */
+export async function setClientPlatforms(clientId: string, platforms: Platform[]): Promise<void> {
+  await clientsRepository.update(clientId, { platforms });
 }
 
 export async function getClient(id: string): Promise<Client | undefined> {

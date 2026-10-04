@@ -7,12 +7,11 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { dateKeyToIso } from '@/shared/lib/format';
+import { dateKeyToIso, toMinorUnits } from '@/shared/lib/format';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { onboardClient } from '@/features/clients/services/clients.service';
 import { LeadStages, leadsRepository, type Lead, type LeadStage } from '../data/leads.repository';
 
-const MINOR_UNITS_PER_MAJOR = 100;
 const DEFAULT_SOURCE = 'Direct';
 
 async function authorize() {
@@ -29,7 +28,7 @@ function toLeadFields(input: CreateLeadInput): Omit<Lead, 'id' | 'stage' | 'crea
     industry: input.industry ?? '',
     website: input.website,
     source: input.source ?? DEFAULT_SOURCE,
-    valueMinor: Math.round((input.estimatedValue ?? 0) * MINOR_UNITS_PER_MAJOR),
+    valueMinor: toMinorUnits(input.estimatedValue ?? 0),
     nextStep: input.nextStep ?? '',
     nextStepAt: input.nextStepAt ? dateKeyToIso(input.nextStepAt) : undefined,
   };

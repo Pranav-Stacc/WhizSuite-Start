@@ -3,6 +3,7 @@
 import { useOptimistic, useTransition } from 'react';
 import { Switch } from 'radix-ui';
 import { toast } from 'sonner';
+import type { ActionResult } from '@/shared/data/action-result';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 
@@ -10,7 +11,7 @@ interface ToggleProps {
   checked: boolean;
   label: string;
   /** Server action invoked with the new value; UI updates optimistically. */
-  action?: (checked: boolean) => Promise<void>;
+  action?: (checked: boolean) => Promise<ActionResult | void>;
   disabled?: boolean;
   className?: string;
 }
@@ -27,7 +28,11 @@ export function Toggle({ checked, label, action, disabled, className }: TogglePr
         startTransition(async () => {
           setOptimistic(next);
           try {
-            await action?.(next);
+            const result = await action?.(next);
+            if (result) {
+              if (result.ok) toast.success(result.message ?? t('toast.saved'));
+              else toast.error(result.message);
+            }
           } catch {
             toast.error(t('toast.failed'));
           }

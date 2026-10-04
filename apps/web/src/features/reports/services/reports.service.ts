@@ -1,5 +1,5 @@
 import 'server-only';
-import type { Platform } from '@agency-os/contracts';
+import { Platforms, type Platform } from '@agency-os/contracts';
 import { series } from '@/shared/lib/seeded';
 import { listIntegrations, type Integration } from '@/features/integrations/services/integrations.service';
 import { listContent } from '@/features/content/services/content.service';
@@ -82,7 +82,54 @@ export function totals(metrics: MetricSeries, posts: number): MetricTotals {
   };
 }
 
-export async function loadReport(filter: ReportFilter): Promise<{ metrics: MetricSeries; totals: MetricTotals; topPosts: Array<Post & { reach: number; engagement: number }> }> {
+export interface PlatformReach {
+  platform: Platform;
+  reach: number;
+}
+
+export type TopPost = Post & { reach: number; engagement: number };
+
+export interface Report {
+  metrics: MetricSeries;
+  totals: MetricTotals;
+  topPosts: TopPost[];
+  byPlatform: PlatformReach[];
+}
+
+function reachByPlatform(integrations: Integration[], filter: ReportFilter): PlatformReach[] {
+  return Platforms.filter((platform) => !filter.platform || filter.platform === platform)
+    .map((platform) => ({ platform, reach: buildMetrics(integrations, { ...filter, platform }).reach.reduce((a, b) => a + b, 0) }))
+    .filter((row) => row.reach > 0)
+    .sort((a, b) => b.reach - a.reach);
+}
+
+export interface ClientReach {
+  clientId: string;
+  reach: number;
+  engagement: number;
+}
+
+/** Reach and engagement per client for the active filter, best first. */
+export async function clientLeaderboard(filter: ReportFilter, clientIds: string[]): Promise<ClientReach[]> {
+  const integrations = await listIntegrations();
+  return clientIds
+    .map((clientId) => {
+      const metrics = buildMetrics(integrations, { ...filter, clientId });
+      return { clientId, reach: metrics.reach.reduce((a, b) => a + b, 0), engagement: metrics.engagement.reduce((a, b) => a + b, 0) };
+    })
+    .filter((row) => row.reach > 0)
+    .sort((a, b) => b.reach - a.reach);
+}
+
+const CSV_HEADER = ['date', 'reach', 'engagement', 'followers'] as const;
+
+/** Daily metrics as RFC 4180 CSV, ready to open in a spreadsheet. */
+export function metricsToCsv(metrics: MetricSeries): string {
+  const rows = metrics.labels.map((label, i) => [label, metrics.reach[i] ?? 0, metrics.engagement[i] ?? 0, metrics.followers[i] ?? 0].join(','));
+  return [CSV_HEADER.join(','), ...rows].join('\r\n');
+}
+
+export async function loadReport(filter: ReportFilter): Promise<Report> {
   const [integrations, posts] = await Promise.all([listIntegrations(), listContent()]);
   const metrics = buildMetrics(integrations, filter);
   const published = posts.filter((p) => p.status === 'PUBLISHED' && (!filter.clientId || p.clientId === filter.clientId) && (!filter.platform || p.platforms.includes(filter.platform)));
@@ -92,7 +139,7 @@ export async function loadReport(filter: ReportFilter): Promise<{ metrics: Metri
       return { ...p, reach, engagement: Math.round(reach * (ENGAGEMENT_RATE + (p.platforms.length % 3) * 0.01)) };
     })
     .sort((a, b) => b.engagement - a.engagement);
-  return { metrics, totals: totals(metrics, published.length), topPosts };
+  return { metrics, totals: totals(metrics, published.length), topPosts, byPlatform: reachByPlatform(integrations, filter) };
 }
 
 /** Last `months` of revenue in minor units, ending with the real current-month figure. */

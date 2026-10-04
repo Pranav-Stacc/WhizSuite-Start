@@ -25,7 +25,7 @@ export async function AppShell({ session, children }: { session: Session; childr
       <a href="#main" className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 font-medium text-primary-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {t('shell.skip')}
       </a>
-      <header className="glass sticky top-0 z-40 border-b border-border-soft">
+      <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
         <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-4 sm:gap-3 sm:px-6">
           <MobileMenu role={session.role} badges={badges} />
           <Link href="/dashboard" className="mr-1 flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40" aria-label={t('app.name')}>
