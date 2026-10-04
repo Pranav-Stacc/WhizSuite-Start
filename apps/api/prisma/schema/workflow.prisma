@@ -1,0 +1,86 @@
+model WorkflowDefinition {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  entityType     String   @map("entity_type")
+  name           String
+  scopeType      String   @default("ORGANIZATION") @map("scope_type")
+  scopeId        String?  @map("scope_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  versions WorkflowVersion[]
+
+  @@index([organizationId, entityType])
+  @@map("workflow_definitions")
+  @@schema("workflow")
+}
+
+model WorkflowVersion {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  definitionId   String    @map("definition_id") @db.Uuid
+  version        Int
+  status         String    @default("DRAFT")
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  definition WorkflowDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  states     WorkflowState[]
+  transitions WorkflowTransition[]
+
+  @@unique([definitionId, version])
+  @@map("workflow_versions")
+  @@schema("workflow")
+}
+
+model WorkflowState {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  versionId      String  @map("version_id") @db.Uuid
+  key            String
+  name           String
+  color          String?
+  category       String  @default("ACTIVE")
+  order          Int
+  isInitial      Boolean @default(false) @map("is_initial")
+  isTerminal     Boolean @default(false) @map("is_terminal")
+  guards         Json?
+
+  version WorkflowVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, key])
+  @@map("workflow_states")
+  @@schema("workflow")
+}
+
+model WorkflowTransition {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  versionId      String @map("version_id") @db.Uuid
+  fromStateKey   String @map("from_state_key")
+  toStateKey     String @map("to_state_key")
+  label          String?
+  guards         Json?
+  actions        Json?
+
+  version WorkflowVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, fromStateKey, toStateKey])
+  @@map("workflow_transitions")
+  @@schema("workflow")
+}
+
+model EntityStateHistory {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  entityType     String   @map("entity_type")
+  entityId       String   @map("entity_id") @db.Uuid
+  fromState      String?  @map("from_state")
+  toState        String   @map("to_state")
+  actorId        String?  @map("actor_id") @db.Uuid
+  durationMs     Int?     @map("duration_ms")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId, entityType, entityId, createdAt])
+  @@map("entity_state_history")
+  @@schema("workflow")
+}

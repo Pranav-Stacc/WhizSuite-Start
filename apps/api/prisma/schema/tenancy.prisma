@@ -1,0 +1,183 @@
+model Organization {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  legalName    String?  @map("legal_name")
+  slug         String   @unique
+  status       String   @default("TRIAL")
+  timezone     String   @default("Asia/Kolkata")
+  locale       String   @default("en-IN")
+  currency     String   @default("INR")
+  weekStartsOn Int      @default(1) @map("week_starts_on")
+  dataRegion   String   @default("IN") @map("data_region")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version      Int      @default(1)
+
+  workspaces   Workspace[]
+  branding     OrganizationBranding?
+  customDomains CustomDomain[]
+  settings     OrganizationSetting[]
+  departments  Department[]
+  teams        Team[]
+  locations    Location[]
+
+  @@map("organizations")
+  @@schema("tenancy")
+}
+
+model OrganizationBranding {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @unique @map("organization_id") @db.Uuid
+  logoUrl        String?  @map("logo_url")
+  faviconUrl     String?  @map("favicon_url")
+  primaryColor   String?  @map("primary_color")
+  secondaryColor String?  @map("secondary_color")
+  accentColor    String?  @map("accent_color")
+  fontFamily     String?  @map("font_family")
+  emailFromName  String?  @map("email_from_name")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_branding")
+  @@schema("tenancy")
+}
+
+model CustomDomain {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  domain         String   @unique
+  type           String   @default("PORTAL")
+  status         String   @default("PENDING_VERIFICATION")
+  verifiedAt     DateTime? @map("verified_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("custom_domains")
+  @@schema("tenancy")
+}
+
+model OrganizationSetting {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  key            String
+  value          Json
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@map("organization_settings")
+  @@schema("tenancy")
+}
+
+model Workspace {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  slug           String
+  isDefault      Boolean  @default(false) @map("is_default")
+  timezone       String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int      @default(1)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("workspaces")
+  @@schema("tenancy")
+}
+
+model Department {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  parentId       String?  @map("parent_id") @db.Uuid
+  name           String
+  path           String
+  depth          Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent       Department?  @relation("DepartmentTree", fields: [parentId], references: [id])
+  children     Department[] @relation("DepartmentTree")
+  designations Designation[]
+
+  @@index([organizationId, path])
+  @@map("departments")
+  @@schema("tenancy")
+}
+
+model Designation {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  departmentId   String   @map("department_id") @db.Uuid
+  name           String
+  isHead         Boolean  @default(false) @map("is_head")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, name])
+  @@index([organizationId])
+  @@map("designations")
+  @@schema("tenancy")
+}
+
+model Team {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  workspaceId    String?  @map("workspace_id") @db.Uuid
+  name           String
+  description    String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@index([organizationId])
+  @@map("teams")
+  @@schema("tenancy")
+}
+
+model TeamMember {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  teamId         String   @map("team_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  role           String   @default("MEMBER")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, membershipId])
+  @@index([organizationId])
+  @@map("team_members")
+  @@schema("tenancy")
+}
+
+model Location {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  timezone       String
+  address        Json?
+  workingHours   Json?    @map("working_hours")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("locations")
+  @@schema("tenancy")
+}

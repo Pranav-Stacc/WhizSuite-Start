@@ -1,0 +1,256 @@
+@import 'tailwindcss';
+
+/*
+  Design tokens. Every colour below is user-customisable at runtime:
+  the <html> element receives an inline style from the saved theme cookie,
+  so there is no flash and no client-side re-render needed.
+*/
+:root {
+  --bg: #040a09;
+  --surface: #0b1513;
+  --border: #193827;
+  --primary: #00ff66;
+  --secondary: #18e889;
+  --fg: #f5f7f6;
+  --muted: #8d9b98;
+  --primary-contrast: #03150a;
+  --radius: 14px;
+  --density: 1;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: color-mix(in oklab, var(--surface) 92%, var(--fg));
+  --color-surface-3: color-mix(in oklab, var(--surface) 84%, var(--fg));
+  --color-border: var(--border);
+  --color-border-soft: color-mix(in oklab, var(--border) 55%, transparent);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-foreground: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary-contrast: var(--primary-contrast);
+  --color-success: #2ee59d;
+  --color-warning: #ffb020;
+  --color-danger: #ff5470;
+  --color-info: #4da3ff;
+  --color-violet: #a78bfa;
+  --color-pink: #ff7ac6;
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.7);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.9);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --animate-fade-up: fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fade-in 0.2s ease-out both;
+  --animate-pop: pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border-soft);
+  }
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(
+        900px 420px at 12% -8%,
+        color-mix(in oklab, var(--primary) 13%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        700px 380px at 92% -12%,
+        color-mix(in oklab, var(--secondary) 9%, transparent),
+        transparent 70%
+      );
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 35%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  button,
+  [role='button'],
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--border) 80%, var(--fg) 10%);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  input[type='color'] {
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+  input[type='color']::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  input[type='color']::-webkit-color-swatch {
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+  }
+}
+
+@layer components {
+  .glass {
+    background: color-mix(in oklab, var(--surface) 72%, transparent);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  }
+  .card-surface {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--surface) 96%, var(--fg)),
+      var(--surface)
+    );
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-xl);
+  }
+  .card-hover {
+    transition:
+      border-color 0.2s,
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+  .card-hover:hover {
+    border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+    box-shadow: 0 10px 40px -18px color-mix(in oklab, var(--primary) 45%, transparent);
+    transform: translateY(-1px);
+  }
+  .text-gradient {
+    background-image: linear-gradient(100deg, var(--primary), var(--secondary) 60%, var(--fg));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glow {
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
+      0 8px 38px -10px color-mix(in oklab, var(--primary) 55%, transparent);
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
+  }
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-2) 25%,
+      var(--color-surface-3) 50%,
+      var(--color-surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: var(--radius-md);
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

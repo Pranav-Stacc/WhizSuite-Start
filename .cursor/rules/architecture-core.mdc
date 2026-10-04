@@ -1,0 +1,58 @@
+---
+description: Core engineering mandate - modular monolith ready for microservice extraction, clean code, zero duplication, fully configurable
+alwaysApply: true
+---
+
+# Core Engineering Mandate
+
+Act as a Senior Staff/Principal Software Engineer. Build a production-ready, enterprise-grade full-stack system.
+
+## Stack
+- Backend: NestJS + TypeScript (strict mode)
+- Database: PostgreSQL + Prisma ORM (migrations)
+- Cache: Redis with proper cache invalidation
+- Queues: BullMQ (Redis)
+- Frontend: Next.js App Router + TypeScript
+
+## Repository Layout
+pnpm workspaces + Turborepo monorepo:
+- `apps/api` (NestJS), `apps/web` (Next.js)
+- `packages/contracts` — single source of truth for shared DTO types, Zod schemas, event schemas, error codes
+- `packages/config` — shared ESLint/TS/Prettier configs
+- `docs/adr/` — Architecture Decision Records for every significant decision
+
+## Architecture
+- Modular monolith today; every business domain must be extractable into an independent microservice tomorrow with minimal refactoring.
+- Each domain is strongly isolated: clear boundaries, independent module, well-defined interfaces, repositories, services, DTOs, events, data-access layer.
+- Modules never access another module's internal database/repository. Communicate only via exported service interfaces (ports) and domain/application events.
+- Boundaries are enforced by tooling (`eslint-plugin-boundaries` / `dependency-cruiser`); CI fails on any cross-module internal import.
+- Follow SOLID, DRY, Clean Architecture, Hexagonal Architecture (ports & adapters), dependency injection, separation of concerns, event-driven patterns where appropriate.
+- Do not add microservice complexity today, but never make a choice that prevents future extraction.
+
+## Multi-Tenancy (Agency isolation — non-negotiable)
+- Tenant = Organization (agency). Every tenant-owned table has non-null `organization_id` (indexed, leading column in composite indexes).
+- Enforced in depth: request-scoped `TenantContext` + Prisma extension auto-scoping, PostgreSQL RLS (`app.current_org_id` per transaction), Redis keys prefixed `org:{orgId}:`, storage keys prefixed `orgs/{orgId}/`, `organizationId` on every event/job.
+- Never run an unscoped query on a tenant table. CI includes cross-tenant isolation tests.
+- Product requirements live in `docs/prd/` — consult the relevant section before implementing a feature.
+
+## Before Implementing Anything
+1. Analyze existing architecture and identify the correct domain/module.
+2. Search for reusable functionality — reuse or extend, never duplicate.
+3. Define boundaries, dependencies, database ownership, interfaces, events, caching strategy, audit requirements, and security requirements.
+
+## Single Source of Truth (non-negotiable)
+- Never duplicate code, utilities, types, or logic.
+- When something changes, replace and fully remove the old implementation. No parallel implementations, legacy code, dead code, unused files, commented-out code, duplicate utilities, or unused dependencies.
+
+## Nothing Hardcoded
+Everything configurable (env/config modules, schema-validated at startup, fail fast): URLs, credentials, permissions, cache TTLs, limits, feature flags, queue settings, retry policies, timeouts, notification channels, audit retention, business rules.
+
+## Notifications
+A dedicated notifications domain reacts to domain events and dispatches through pluggable channels (push, email, SMS, in-app, webhook, etc.) via a channel-adapter interface. Templates, channel selection, user preferences, and retry/queue settings are configurable; senders never call channel providers directly.
+
+## Definition of Done (every change)
+1. Lint, type-check, and tests pass.
+2. Prisma migration added if schema changed; `packages/contracts` updated if contracts changed.
+3. Audit logging, cache invalidation, and events wired for new state changes.
+4. Obsolete code, files, and dependencies removed.
+5. ADR written for significant architectural decisions.

@@ -1,0 +1,23 @@
+---
+description: Events, background jobs, outbox pattern, and observability (tracing, logging, correlation IDs)
+alwaysApply: true
+---
+
+# Events, Jobs & Observability
+
+## Domain Events
+- Event schemas are versioned (`user.registered.v1`) and defined in `packages/contracts`.
+- Transactional outbox: events are written to an outbox table in the same DB transaction as the state change, then relayed to the event bus/queue. Never publish an event for an uncommitted write.
+- Consumers are idempotent (dedupe by event ID) so delivery can be at-least-once.
+- The in-process event bus sits behind an interface so it can be swapped for a broker (Kafka/RabbitMQ/SQS) on extraction.
+
+## Background Jobs (BullMQ)
+- Each domain owns its queues and processors in its `jobs/` folder.
+- Concurrency, retries, backoff, rate limits, and job TTLs come from config.
+- Failed jobs after max retries go to a dead-letter queue and are alerted on.
+
+## Observability
+- OpenTelemetry tracing across HTTP, Prisma, Redis, queues, and events.
+- A correlation ID is created at the edge (or accepted from the caller) and propagated through every request, log, event, job, and outbound call.
+- Structured JSON logging with `pino`; log levels from config; PII and secrets redacted.
+- Expose metrics (Prometheus format): request latency/error rates, queue depth, cache hit ratio, DB pool usage.

@@ -1,0 +1,132 @@
+model Proposal {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String?   @map("client_id") @db.Uuid
+  leadId         String?   @map("lead_id") @db.Uuid
+  title          String
+  status         String    @default("DRAFT")
+  currency       String    @default("INR")
+  totalMinor     Int       @default(0) @map("total_minor")
+  validUntil     DateTime? @map("valid_until") @db.Date
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  items ProposalItem[]
+
+  @@index([organizationId, status])
+  @@map("proposals")
+  @@schema("finance")
+}
+
+model ProposalItem {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  proposalId     String @map("proposal_id") @db.Uuid
+  description    String
+  quantity       Int    @default(1)
+  unitPriceMinor Int    @map("unit_price_minor")
+  taxRateBps     Int    @default(0) @map("tax_rate_bps")
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, proposalId])
+  @@map("proposal_items")
+  @@schema("finance")
+}
+
+model Contract {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  title          String
+  type           String
+  status         String    @default("DRAFT")
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  signedAt       DateTime? @map("signed_at") @db.Timestamptz
+  storageKey     String?   @map("storage_key")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([organizationId, clientId, status])
+  @@map("contracts")
+  @@schema("finance")
+}
+
+model Invoice {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  number         String
+  status         String    @default("DRAFT")
+  currency       String    @default("INR")
+  subtotalMinor  Int       @default(0) @map("subtotal_minor")
+  taxMinor       Int       @default(0) @map("tax_minor")
+  totalMinor     Int       @default(0) @map("total_minor")
+  dueDate        DateTime? @map("due_date") @db.Date
+  issuedAt       DateTime? @map("issued_at") @db.Timestamptz
+  paidAt         DateTime? @map("paid_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  items    InvoiceItem[]
+  payments Payment[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId, clientId, status])
+  @@map("invoices")
+  @@schema("finance")
+}
+
+model InvoiceItem {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  invoiceId      String @map("invoice_id") @db.Uuid
+  description    String
+  quantity       Int    @default(1)
+  unitPriceMinor Int    @map("unit_price_minor")
+  taxRateBps     Int    @default(0) @map("tax_rate_bps")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, invoiceId])
+  @@map("invoice_items")
+  @@schema("finance")
+}
+
+model Payment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  invoiceId      String   @map("invoice_id") @db.Uuid
+  amountMinor    Int      @map("amount_minor")
+  currency       String
+  provider       String?
+  providerRef    String?  @map("provider_ref")
+  status         String   @default("COMPLETED")
+  paidAt         DateTime @map("paid_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, invoiceId])
+  @@map("payments")
+  @@schema("finance")
+}
+
+model Expense {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  clientId       String?  @map("client_id") @db.Uuid
+  projectId      String?  @map("project_id") @db.Uuid
+  description    String
+  amountMinor    Int      @map("amount_minor")
+  currency       String   @default("INR")
+  billable       Boolean  @default(false)
+  incurredAt     DateTime @map("incurred_at") @db.Date
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId, clientId])
+  @@map("expenses")
+  @@schema("finance")
+}

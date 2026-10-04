@@ -1,0 +1,30 @@
+---
+description: Frontend Next.js App Router conventions - feature-based structure, Server Components first, centralized data access
+alwaysApply: true
+---
+
+# Frontend (Next.js App Router + TypeScript)
+
+## Structure
+- Extremely modular, deeply organized feature-based structure, separated by domain (mirrors backend domains).
+- Each feature keeps its own `components/ hooks/ forms/ validation/ types/ services/ (data-access) actions/ utils/`.
+- Shared UI lives in a design system (shadcn/ui + Tailwind) in a shared layer — never duplicated across features.
+- Types and Zod schemas come from `packages/contracts`; forms use React Hook Form + those Zod schemas.
+- UI components must not depend on backend implementation details; consume typed domain contracts only.
+
+## Rendering
+- Server Components by default; server-side render pages whenever possible.
+- Client Components (`"use client"`) only where browser interactivity requires it; keep them small and leaf-level.
+- Every route segment has `loading.tsx` and `error.tsx`; `not-found.tsx` where relevant.
+
+## Data Access & Caching
+- Centralize data access in server-side data-access functions, Server Actions, or a BFF/API layer.
+- Avoid unnecessary client-side API calls.
+- Use Next.js cache tags per domain entity; revalidate via `revalidateTag` when backend invalidation events fire.
+- Never expose internal service URLs, database connections, credentials, or infrastructure details to the browser. Only intentionally public values use `NEXT_PUBLIC_*`.
+- Env vars validated with Zod at startup; API base URLs and settings come from config — never hardcoded.
+- Each feature's data-access layer is the only place that knows about its backend module, so a backend extraction into a microservice changes only that layer.
+
+## UX Quality
+- Accessible (WCAG 2.1 AA): semantic HTML, keyboard navigation, ARIA where needed.
+- i18n-ready: no hardcoded user-facing strings; use a message catalog.

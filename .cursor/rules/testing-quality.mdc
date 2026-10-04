@@ -1,0 +1,26 @@
+---
+description: Testing standards, code quality tooling, and CI/CD
+alwaysApply: true
+---
+
+# Testing, Code Quality & CI/CD
+
+## Testing
+- Unit tests for domain logic and services (Jest/Vitest); mock only ports, not internals.
+- Integration tests against real Postgres and Redis via Testcontainers.
+- Contract tests for each module's public interface and event schemas.
+- E2E tests with Playwright for critical user flows.
+- Coverage thresholds configured and enforced in CI.
+
+## Code Quality
+- TypeScript strict; no `any`, no non-null assertions without justification, no `@ts-ignore`.
+- ESLint + Prettier from `packages/config`; boundary rules enforced.
+- Husky + lint-staged pre-commit; Conventional Commits.
+- Small, single-responsibility files and functions; meaningful names; no magic numbers/strings.
+
+## CI/CD & Infrastructure
+- CI pipeline: install → lint → type-check → boundary check → unit → integration → build → e2e; any failure blocks merge.
+- Dependency and secret scanning in CI.
+- Multi-stage Dockerfiles per app (non-root, minimal images); `docker-compose` for local dev (Postgres, Redis, apps).
+- Prisma migrations run as a dedicated deploy step, never at app boot.
+- 12-factor, stateless apps; configuration only via environment.

@@ -1,0 +1,14 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "globalSetup": "<rootDir>/global-setup.mjs",
+  "testTimeout": 120000,
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "<rootDir>/tsconfig.json" }]
+  },
+  "moduleNameMapper": {
+    "^@agency-os/contracts$": "<rootDir>/../../../packages/contracts/dist/index.js"
+  }
+}

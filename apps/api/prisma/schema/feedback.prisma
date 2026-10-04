@@ -1,0 +1,51 @@
+model FeedbackThread {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  subjectType    String   @map("subject_type")
+  subjectId      String   @map("subject_id") @db.Uuid
+  subjectVersion String   @map("subject_version")
+  status         String   @default("OPEN")
+  visibility     String   @default("CLIENT_VISIBLE")
+  createdById    String   @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  annotations FeedbackAnnotation[]
+  comments    FeedbackComment[]
+
+  @@index([organizationId, subjectType, subjectId])
+  @@map("feedback_threads")
+  @@schema("feedback")
+}
+
+model FeedbackAnnotation {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  threadId       String  @map("thread_id") @db.Uuid
+  type           String
+  geometry       Json
+  page           Int?
+  timeStartMs    Int?    @map("time_start_ms")
+  timeEndMs      Int?    @map("time_end_ms")
+
+  thread FeedbackThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, threadId])
+  @@map("feedback_annotations")
+  @@schema("feedback")
+}
+
+model FeedbackComment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  threadId       String   @map("thread_id") @db.Uuid
+  authorId       String   @map("author_id") @db.Uuid
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  thread FeedbackThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, threadId])
+  @@map("feedback_comments")
+  @@schema("feedback")
+}

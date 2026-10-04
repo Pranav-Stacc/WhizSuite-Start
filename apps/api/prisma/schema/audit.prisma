@@ -1,0 +1,24 @@
+model AuditLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  actorId        String?  @map("actor_id") @db.Uuid
+  actorType      String   @map("actor_type")
+  action         String
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id") @db.Uuid
+  before         Json?
+  after          Json?
+  outcome        String   @default("SUCCESS")
+  reason         String?
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  correlationId  String   @map("correlation_id") @db.Uuid
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId, createdAt])
+  @@index([organizationId, actorId, createdAt])
+  @@index([organizationId, entityType, entityId])
+  @@map("audit_logs")
+  @@schema("audit")
+}

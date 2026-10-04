@@ -1,0 +1,42 @@
+---
+description: Backend NestJS/Prisma/Redis conventions for domain modules, API standards, data, and caching
+alwaysApply: true
+---
+
+# Backend (NestJS + Prisma + Redis)
+
+## Module Structure
+Deeply structured feature/domain folders. Each domain module contains, as needed:
+`controllers/ services/ repositories/ dto/ entities/ interfaces/ (ports) validators/ guards/ decorators/ events/ jobs/ config/ database/ utils/ tests/`
+
+- Shared cross-cutting code lives in a common/shared library — never copied into modules.
+- A module exports only its public service interface (port) and event contracts; internals stay private.
+- Depend on interfaces via DI tokens, not concrete classes from other modules.
+
+## API Standards
+- URI versioning: `/api/v1/...`.
+- OpenAPI/Swagger generated from decorators; kept in sync with `packages/contracts`.
+- Uniform error format: RFC 7807 Problem Details with stable, documented error codes via a global exception filter.
+- Cursor-based pagination for lists; page size limits from config.
+- `Idempotency-Key` header supported on mutating POST endpoints (stored in Redis, TTL from config).
+
+## Database (PostgreSQL + Prisma)
+- Prisma migrations only; never edit applied migrations.
+- Proper normalization, UUID primary keys, indexes, foreign keys, unique/check constraints.
+- Each domain owns its tables; no cross-domain joins or writes — fetch via the owning module's interface.
+- Every table: `createdAt`, `updatedAt`; `createdBy`/`updatedBy` where actor-driven. Soft delete (`deletedAt`) only where the domain requires it.
+- All timestamps in UTC. Money as integer minor units or `Decimal` — never float.
+- Optimistic locking (`version` column) for concurrently edited aggregates.
+- Transactions for multi-step writes.
+- Highly optimized queries: select only needed fields, avoid N+1, paginate, batch. Prefer O(n) or better algorithms; avoid nested loops over collections (use maps/sets).
+
+## Caching (Redis)
+- Cache-aside with explicit invalidation on every write path that affects cached data.
+- Namespaced, versioned keys per domain (e.g. `{service}:{entity}:{id}:v{n}`) so caching works across independently deployed services.
+- Invalidation also publishes an event so the frontend can revalidate matching cache tags.
+- TTLs, key prefixes, and enable/disable flags come from config — never hardcoded.
+
+## Resilience
+- Configurable timeouts, retries with exponential backoff, and circuit breakers on every external call (HTTP, providers, other modules' future network boundaries).
+- Graceful shutdown: drain HTTP, queues, and DB/Redis connections.
+- Health checks (`@nestjs/terminus`): liveness and readiness including DB, Redis, queues.

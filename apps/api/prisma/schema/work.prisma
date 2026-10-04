@@ -1,0 +1,156 @@
+model Project {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  name           String
+  type           String?
+  status         String    @default("ACTIVE")
+  ownerId        String?   @map("owner_id") @db.Uuid
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  budgetMinor    Int?      @map("budget_minor")
+  currency       String    @default("INR")
+  billingType    String?   @map("billing_type")
+  customFields   Json      @default("{}") @map("custom_fields")
+  workflowVersionId String? @map("workflow_version_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int       @default(1)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  members    ProjectMember[]
+  milestones ProjectMilestone[]
+  tasks      Task[]
+
+  @@index([organizationId, clientId])
+  @@index([organizationId, workspaceId])
+  @@map("projects")
+  @@schema("work")
+}
+
+model ProjectMember {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  projectId      String   @map("project_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  role           String   @default("MEMBER")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, membershipId])
+  @@map("project_members")
+  @@schema("work")
+}
+
+model ProjectMilestone {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  name           String
+  dueDate        DateTime? @map("due_date") @db.Date
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, projectId])
+  @@map("project_milestones")
+  @@schema("work")
+}
+
+model Task {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  projectId      String    @map("project_id") @db.Uuid
+  parentId       String?   @map("parent_id") @db.Uuid
+  contentItemId  String?   @map("content_item_id") @db.Uuid
+  title          String
+  description    String?
+  type           String?
+  status         String    @default("TODO")
+  priority       String    @default("MEDIUM")
+  startDate      DateTime? @map("start_date") @db.Date
+  dueDate        DateTime? @map("due_date") @db.Date
+  estimateMinutes Int?     @map("estimate_minutes")
+  workflowVersionId String? @map("workflow_version_id") @db.Uuid
+  customFields   Json      @default("{}") @map("custom_fields")
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int       @default(1)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent       Task?            @relation("TaskTree", fields: [parentId], references: [id])
+  children     Task[]           @relation("TaskTree")
+  assignees    TaskAssignee[]
+  dependencies TaskDependency[] @relation("TaskDependsOn")
+  dependents   TaskDependency[] @relation("TaskDependedBy")
+  comments     TaskComment[]
+
+  @@index([organizationId, projectId, status])
+  @@map("tasks")
+  @@schema("work")
+}
+
+model TaskAssignee {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  taskId         String   @map("task_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, membershipId])
+  @@map("task_assignees")
+  @@schema("work")
+}
+
+model TaskDependency {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  taskId         String @map("task_id") @db.Uuid
+  dependsOnId    String @map("depends_on_id") @db.Uuid
+
+  task      Task @relation("TaskDependsOn", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOn Task @relation("TaskDependedBy", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnId])
+  @@map("task_dependencies")
+  @@schema("work")
+}
+
+model TaskComment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  taskId         String   @map("task_id") @db.Uuid
+  authorId       String   @map("author_id") @db.Uuid
+  body           String
+  visibility     String   @default("INTERNAL")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, taskId])
+  @@map("task_comments")
+  @@schema("work")
+}
+
+model SavedView {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  ownerId        String   @map("owner_id") @db.Uuid
+  entityType     String   @map("entity_type")
+  name           String
+  definition     Json
+  isShared       Boolean  @default(false) @map("is_shared")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId, entityType])
+  @@map("saved_views")
+  @@schema("work")
+}

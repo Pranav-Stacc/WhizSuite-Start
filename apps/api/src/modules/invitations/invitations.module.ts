@@ -1,0 +1,16 @@
+import { Module } from '@nestjs/common';
+import { SharedModule } from '../../shared/shared.module';
+import { InvitationsService } from './application/services/invitations.service';
+import { InvitationsRepository } from './infrastructure/repositories/invitations.repository';
+import {
+  InvitationsPublicController,
+  InvitationsResourceController,
+} from './interface/http/controllers/invitations-resource.controller';
+
+@Module({
+  imports: [SharedModule],
+  controllers: [InvitationsResourceController, InvitationsPublicController],
+  providers: [InvitationsService, InvitationsRepository],
+  exports: [InvitationsService, InvitationsRepository],
+})
+export class InvitationsModule {}

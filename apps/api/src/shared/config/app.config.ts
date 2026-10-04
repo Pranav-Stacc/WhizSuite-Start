@@ -1,0 +1,55 @@
+import { z } from 'zod';
+
+export const appConfigSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
+  PORT: z.coerce.number().int().positive().default(3001),
+  API_PREFIX: z.string().default('api'),
+  DATABASE_URL: z.string().url(),
+  REDIS_URL: z.string().url(),
+  JWT_ACCESS_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_TTL_SECONDS: z.coerce.number().int().positive().default(604800),
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  COOKIE_DOMAIN: z.string().default('localhost'),
+  CORS_ORIGINS: z.string().default('http://localhost:3000'),
+  STORAGE_ENDPOINT: z.string().url(),
+  STORAGE_ACCESS_KEY: z.string(),
+  STORAGE_SECRET_KEY: z.string(),
+  STORAGE_BUCKET: z.string(),
+  STORAGE_REGION: z.string().default('us-east-1'),
+  STORAGE_FORCE_PATH_STYLE: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  EMAIL_PROVIDER: z.string().default('mailpit'),
+  SMTP_HOST: z.string().default('localhost'),
+  SMTP_PORT: z.coerce.number().int().default(1025),
+  IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
+  AUTHZ_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(1000),
+  OUTBOX_BATCH_SIZE: z.coerce.number().int().positive().default(50),
+  OUTBOX_RELAY_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+});
+
+export type AppConfig = z.infer<typeof appConfigSchema>;
+
+export function validateAppConfig(
+  env: Record<string, string | undefined>,
+): AppConfig {
+  const parsed = appConfigSchema.safeParse(env);
+  if (!parsed.success) {
+    throw new Error(
+      `Invalid configuration: ${parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
+    );
+  }
+  return parsed.data;
+}

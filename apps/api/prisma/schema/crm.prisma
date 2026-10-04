@@ -1,0 +1,78 @@
+model Pipeline {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  isDefault      Boolean  @default(false) @map("is_default")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  stages PipelineStage[]
+  leads  Lead[]
+
+  @@index([organizationId])
+  @@map("pipelines")
+  @@schema("crm")
+}
+
+model PipelineStage {
+  id             String  @id @default(uuid()) @db.Uuid
+  organizationId String  @map("organization_id") @db.Uuid
+  pipelineId     String  @map("pipeline_id") @db.Uuid
+  name           String
+  order          Int
+  probability    Int     @default(0)
+  slaDays        Int?    @map("sla_days")
+
+  pipeline Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  leads    Lead[]
+
+  @@unique([pipelineId, order])
+  @@map("pipeline_stages")
+  @@schema("crm")
+}
+
+model Lead {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  pipelineId     String    @map("pipeline_id") @db.Uuid
+  stageId        String    @map("stage_id") @db.Uuid
+  companyName    String    @map("company_name")
+  brandName      String?   @map("brand_name")
+  website        String?
+  industry       String?
+  source         String?
+  ownerId        String?   @map("owner_id") @db.Uuid
+  estimatedValueMinor Int? @map("estimated_value_minor")
+  currency       String    @default("INR")
+  score          Int       @default(0)
+  lostReason     String?   @map("lost_reason")
+  customFields   Json      @default("{}") @map("custom_fields")
+  convertedClientId String? @map("converted_client_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  pipeline Pipeline      @relation(fields: [pipelineId], references: [id])
+  stage    PipelineStage @relation(fields: [stageId], references: [id])
+  activities LeadActivity[]
+
+  @@index([organizationId, stageId])
+  @@map("leads")
+  @@schema("crm")
+}
+
+model LeadActivity {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  leadId         String   @map("lead_id") @db.Uuid
+  type           String
+  subject        String?
+  body           String?
+  actorId        String?  @map("actor_id") @db.Uuid
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, leadId])
+  @@map("lead_activities")
+  @@schema("crm")
+}

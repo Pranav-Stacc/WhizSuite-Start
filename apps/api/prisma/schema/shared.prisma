@@ -1,0 +1,39 @@
+// Shared infrastructure tables
+model OutboxEvent {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  type           String
+  version        Int
+  payload        Json
+  correlationId  String    @map("correlation_id") @db.Uuid
+  causationId    String?   @map("causation_id") @db.Uuid
+  actorId        String    @map("actor_id") @db.Uuid
+  actorType      String    @map("actor_type")
+  status         String    @default("PENDING")
+  attempts       Int       @default(0)
+  publishedAt    DateTime? @map("published_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("outbox_events")
+  @@schema("shared")
+}
+
+model IdempotencyKey {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  key            String
+  method         String
+  path           String
+  responseHash   String?  @map("response_hash")
+  responseBody   Json?    @map("response_body")
+  statusCode     Int?     @map("status_code")
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([organizationId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+  @@schema("shared")
+}

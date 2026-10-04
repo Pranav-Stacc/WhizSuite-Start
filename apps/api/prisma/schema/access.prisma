@@ -1,0 +1,114 @@
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  description String?
+  category    String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+  @@schema("access")
+}
+
+model Role {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  description    String?
+  isSystem       Boolean  @default(false) @map("is_system")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  permissions RolePermission[]
+  assignments RoleAssignment[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("roles")
+  @@schema("access")
+}
+
+model RolePermission {
+  id           String  @id @default(uuid()) @db.Uuid
+  roleId       String  @map("role_id") @db.Uuid
+  permissionId String  @map("permission_id") @db.Uuid
+  effect       String  @default("ALLOW")
+  conditions   Json?
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+  @@schema("access")
+}
+
+model OrganizationMembership {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  type           String    @default("EMPLOYEE")
+  status         String    @default("ACTIVE")
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  roleAssignments RoleAssignment[]
+  designations    MemberDesignation[]
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_memberships")
+  @@schema("access")
+}
+
+model MemberDesignation {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  designationId  String   @map("designation_id") @db.Uuid
+  isPrimary      Boolean  @default(false) @map("is_primary")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  membership OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, designationId])
+  @@index([organizationId])
+  @@map("member_designations")
+  @@schema("access")
+}
+
+model RoleAssignment {
+  id           String   @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  membershipId String   @map("membership_id") @db.Uuid
+  roleId       String   @map("role_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  membership OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role       Role                   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  scopes     RoleAssignmentScope[]
+
+  @@index([organizationId])
+  @@index([membershipId])
+  @@map("role_assignments")
+  @@schema("access")
+}
+
+model RoleAssignmentScope {
+  id               String  @id @default(uuid()) @db.Uuid
+  organizationId   String  @map("organization_id") @db.Uuid
+  roleAssignmentId String @map("role_assignment_id") @db.Uuid
+  scopeType        String  @map("scope_type")
+  resourceId       String? @map("resource_id") @db.Uuid
+  isDynamic        Boolean @default(false) @map("is_dynamic")
+  dynamicRule      Json?   @map("dynamic_rule")
+
+  roleAssignment RoleAssignment @relation(fields: [roleAssignmentId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, scopeType, resourceId])
+  @@map("role_assignment_scopes")
+  @@schema("access")
+}

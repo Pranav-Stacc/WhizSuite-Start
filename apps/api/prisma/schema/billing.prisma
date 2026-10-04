@@ -1,0 +1,93 @@
+model Plan {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  versions PlanVersion[]
+
+  @@map("plans")
+  @@schema("billing")
+}
+
+model PlanVersion {
+  id        String   @id @default(uuid()) @db.Uuid
+  planId    String   @map("plan_id") @db.Uuid
+  version   Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  plan         Plan              @relation(fields: [planId], references: [id], onDelete: Cascade)
+  entitlements PlanEntitlement[]
+  prices       PlanPrice[]
+  subscriptions Subscription[]
+
+  @@unique([planId, version])
+  @@map("plan_versions")
+  @@schema("billing")
+}
+
+model PlanEntitlement {
+  id            String @id @default(uuid()) @db.Uuid
+  planVersionId String @map("plan_version_id") @db.Uuid
+  key           String
+  value         Json
+
+  planVersion PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([planVersionId, key])
+  @@map("plan_entitlements")
+  @@schema("billing")
+}
+
+model PlanPrice {
+  id            String @id @default(uuid()) @db.Uuid
+  planVersionId String @map("plan_version_id") @db.Uuid
+  currency      String
+  interval      String
+  amountMinor   Int    @map("amount_minor")
+
+  planVersion PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([planVersionId, currency, interval])
+  @@map("plan_prices")
+  @@schema("billing")
+}
+
+model Subscription {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @unique @map("organization_id") @db.Uuid
+  planVersionId  String    @map("plan_version_id") @db.Uuid
+  status         String    @default("TRIALING")
+  trialEndsAt    DateTime? @map("trial_ends_at") @db.Timestamptz
+  currentPeriodStart DateTime @map("current_period_start") @db.Timestamptz
+  currentPeriodEnd   DateTime @map("current_period_end") @db.Timestamptz
+  providerCustomerId String? @map("provider_customer_id")
+  providerSubscriptionId String? @map("provider_subscription_id")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  planVersion PlanVersion @relation(fields: [planVersionId], references: [id])
+  usageRecords UsageRecord[]
+
+  @@map("subscriptions")
+  @@schema("billing")
+}
+
+model UsageRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  subscriptionId String   @map("subscription_id") @db.Uuid
+  metricKey      String   @map("metric_key")
+  quantity       Decimal  @db.Decimal(18, 4)
+  periodStart    DateTime @map("period_start") @db.Timestamptz
+  periodEnd      DateTime @map("period_end") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, metricKey, periodStart])
+  @@map("usage_records")
+  @@schema("billing")
+}

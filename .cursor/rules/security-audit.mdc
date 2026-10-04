@@ -1,0 +1,30 @@
+---
+description: Security baseline and mandatory audit logging of every action
+alwaysApply: true
+---
+
+# Security & Audit Logging
+
+## Security Baseline
+- Auth: short-lived JWT access tokens + rotating refresh tokens (reuse detection), stored in httpOnly, Secure, SameSite cookies.
+- Authorization: RBAC (extendable to ABAC) via guards; roles and permissions stored in DB/config — never hardcoded.
+- Rate limiting (`@nestjs/throttler`, Redis-backed) with limits from config.
+- `helmet`, strict CORS (origins from config), CSRF protection for cookie-based flows.
+- class-validator DTOs on every input; global ValidationPipe with `whitelist` and `forbidNonWhitelisted`.
+- Follow OWASP Top 10. Never leak stack traces, internal errors, or secrets. Secrets only from env/secret manager, never committed.
+
+## Audit Log (mandatory for ALL actions)
+Every action is audited — no exceptions:
+- All create/update/delete operations in every domain.
+- Auth events: login, logout, failed login, token refresh, password/MFA changes.
+- Authorization changes: role/permission grants and revocations.
+- Sensitive reads and exports, admin actions, config/feature-flag changes, system/job-initiated changes.
+
+Implementation:
+- A dedicated `audit` domain owns the audit store; other modules emit audit events through its public interface/events — never write the table directly.
+- Captured automatically via a global interceptor + domain events so no action can be missed; explicit `@Audit()` decorator for custom metadata.
+- Each record: UUID, timestamp (UTC), actor ID + type (user/system/service), action, entity type + ID, before/after diff, outcome (success/failure + reason), IP, user agent, correlation ID.
+- Append-only and immutable: no updates/deletes (enforced at DB level via permissions/triggers).
+- Written reliably via the outbox/queue so audit never blocks or is lost.
+- PII redacted per config; retention period, partitioning (by time), and archival are configurable.
+- Indexed for querying by actor, entity, action, and time range; exposed via a permission-protected read API.

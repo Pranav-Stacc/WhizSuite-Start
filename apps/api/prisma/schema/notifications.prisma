@@ -1,0 +1,57 @@
+model NotificationType {
+  id          String @id @default(uuid()) @db.Uuid
+  key         String @unique
+  category    String
+  defaultChannels Json @map("default_channels")
+  priority    String @default("NORMAL")
+
+  @@map("notification_types")
+  @@schema("notifications")
+}
+
+model Notification {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  recipientId    String    @map("recipient_id") @db.Uuid
+  typeKey        String    @map("type_key")
+  title          String
+  body           String
+  data           Json?
+  readAt         DateTime? @map("read_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  deliveries NotificationDelivery[]
+
+  @@index([organizationId, recipientId, readAt])
+  @@map("notifications")
+  @@schema("notifications")
+}
+
+model NotificationDelivery {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  notificationId String    @map("notification_id") @db.Uuid
+  channel        String
+  status         String    @default("QUEUED")
+  providerRef    String?   @map("provider_ref")
+  error          String?
+  sentAt         DateTime? @map("sent_at") @db.Timestamptz
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, notificationId])
+  @@map("notification_deliveries")
+  @@schema("notifications")
+}
+
+model NotificationPreference {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  userId         String @map("user_id") @db.Uuid
+  typeKey        String @map("type_key")
+  channels       Json
+
+  @@unique([organizationId, userId, typeKey])
+  @@map("notification_preferences")
+  @@schema("notifications")
+}

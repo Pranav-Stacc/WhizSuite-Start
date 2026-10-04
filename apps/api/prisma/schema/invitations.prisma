@@ -1,0 +1,36 @@
+model Invitation {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  email          String
+  tokenHash      String    @map("token_hash")
+  membershipType String    @map("membership_type")
+  roleIds        String[]  @map("role_ids") @db.Uuid
+  scopePayload   Json?     @map("scope_payload")
+  status         String    @default("PENDING")
+  invitedById    String    @map("invited_by_id") @db.Uuid
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz
+  acceptedAt     DateTime? @map("accepted_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId, status])
+  @@index([tokenHash])
+  @@map("invitations")
+  @@schema("invitations")
+}
+
+model InvitationLink {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  tokenHash      String   @map("token_hash")
+  membershipType String   @map("membership_type")
+  roleIds        String[] @map("role_ids") @db.Uuid
+  maxUses        Int?     @map("max_uses")
+  useCount       Int      @default(0) @map("use_count")
+  allowedDomains String[] @map("allowed_domains")
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([organizationId])
+  @@map("invitation_links")
+  @@schema("invitations")
+}

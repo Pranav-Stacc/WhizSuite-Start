@@ -1,0 +1,158 @@
+model Client {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  workspaceId    String    @map("workspace_id") @db.Uuid
+  displayName    String    @map("display_name")
+  legalName      String?   @map("legal_name")
+  industry       String?
+  website        String?
+  status         String    @default("ONBOARDING")
+  tier           String?
+  timezone       String?
+  customFields   Json      @default("{}") @map("custom_fields")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int       @default(1)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  brands      ClientBrand[]
+  contacts    ClientContact[]
+  assignments ClientAssignment[]
+  brandKit    BrandKit?
+  retainers   Retainer[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, workspaceId])
+  @@map("clients")
+  @@schema("clients")
+}
+
+model ClientBrand {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  clientId       String   @map("client_id") @db.Uuid
+  name           String
+  isPrimary      Boolean  @default(false) @map("is_primary")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, clientId])
+  @@map("client_brands")
+  @@schema("clients")
+}
+
+model ClientContact {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  clientId       String   @map("client_id") @db.Uuid
+  firstName      String   @map("first_name")
+  lastName       String?  @map("last_name")
+  email          String?
+  phone          String?
+  whatsapp       String?
+  role           String?
+  isDecisionMaker Boolean @default(false) @map("is_decision_maker")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, clientId])
+  @@map("client_contacts")
+  @@schema("clients")
+}
+
+model ClientAssignment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  clientId       String   @map("client_id") @db.Uuid
+  membershipId   String?  @map("membership_id") @db.Uuid
+  teamId         String?  @map("team_id") @db.Uuid
+  role           String   @default("ACCOUNT_MANAGER")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, clientId])
+  @@map("client_assignments")
+  @@schema("clients")
+}
+
+model BrandKit {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  clientId       String   @unique @map("client_id") @db.Uuid
+  voiceTone      Json?    @map("voice_tone")
+  colors         Json?
+  fonts          Json?
+  hashtagSets    Json?    @map("hashtag_sets")
+  contentPillars Json?    @map("content_pillars")
+  competitors    Json?
+  personas       Json?
+  version        Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("brand_kits")
+  @@schema("clients")
+}
+
+model Retainer {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  name           String
+  period         String    @default("MONTHLY")
+  feeMinor       Int       @map("fee_minor")
+  currency       String    @default("INR")
+  startDate      DateTime  @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  autoRenew      Boolean   @default(true) @map("auto_renew")
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  client    Client                  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  quotas    RetainerDeliverableQuota[]
+  periods   RetainerPeriod[]
+
+  @@index([organizationId, clientId])
+  @@map("retainers")
+  @@schema("clients")
+}
+
+model RetainerDeliverableQuota {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  retainerId     String @map("retainer_id") @db.Uuid
+  deliverableType String @map("deliverable_type")
+  quantity       Int
+  rolloverRule   String @default("EXPIRE") @map("rollover_rule")
+
+  retainer Retainer @relation(fields: [retainerId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, retainerId])
+  @@map("retainer_deliverable_quotas")
+  @@schema("clients")
+}
+
+model RetainerPeriod {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  retainerId     String   @map("retainer_id") @db.Uuid
+  periodStart    DateTime @map("period_start") @db.Date
+  periodEnd      DateTime @map("period_end") @db.Date
+  status         String   @default("ACTIVE")
+  usageSnapshot  Json?    @map("usage_snapshot")
+
+  retainer Retainer @relation(fields: [retainerId], references: [id], onDelete: Cascade)
+
+  @@unique([retainerId, periodStart])
+  @@index([organizationId])
+  @@map("retainer_periods")
+  @@schema("clients")
+}

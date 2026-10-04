@@ -1,0 +1,167 @@
+model SocialAccount {
+  id               String    @id @default(uuid()) @db.Uuid
+  organizationId   String    @map("organization_id") @db.Uuid
+  clientId         String    @map("client_id") @db.Uuid
+  platform         String
+  externalAccountId String   @map("external_account_id")
+  displayName      String    @map("display_name")
+  status           String    @default("CONNECTED")
+  connectionId     String?   @map("connection_id") @db.Uuid
+  publishingPaused Boolean   @default(false) @map("publishing_paused")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  channels SocialChannel[]
+
+  @@index([organizationId, clientId])
+  @@map("social_accounts")
+  @@schema("social")
+}
+
+model SocialChannel {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  accountId      String   @map("account_id") @db.Uuid
+  channelType    String   @map("channel_type")
+  externalId     String   @map("external_id")
+  name           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  account SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  variants ContentVariant[]
+
+  @@index([organizationId, accountId])
+  @@map("social_channels")
+  @@schema("social")
+}
+
+model Campaign {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  name           String
+  objective      String?
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  budgetMinor    Int?      @map("budget_minor")
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  contentItems ContentItem[]
+
+  @@index([organizationId, clientId])
+  @@map("campaigns")
+  @@schema("social")
+}
+
+model ContentItem {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  clientId       String    @map("client_id") @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  campaignId     String?   @map("campaign_id") @db.Uuid
+  title          String
+  brief          String?
+  caption        String?
+  contentType    String    @map("content_type")
+  status         String    @default("DRAFT")
+  pillar         String?
+  workflowVersionId String? @map("workflow_version_id") @db.Uuid
+  currentVersion Int       @default(1) @map("current_version")
+  customFields   Json      @default("{}") @map("custom_fields")
+  revisionRound  Int       @default(0) @map("revision_round")
+  createdById    String?   @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  version        Int       @default(1)
+  deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
+
+  campaign Campaign? @relation(fields: [campaignId], references: [id])
+  versions ContentVersion[]
+  variants ContentVariant[]
+
+  @@index([organizationId, clientId, status])
+  @@index([organizationId, campaignId])
+  @@map("content_items")
+  @@schema("social")
+}
+
+model ContentVersion {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  contentItemId  String   @map("content_item_id") @db.Uuid
+  version        Int
+  snapshot       Json
+  createdById    String?  @map("created_by_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  contentItem ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+
+  @@unique([contentItemId, version])
+  @@map("content_versions")
+  @@schema("social")
+}
+
+model ContentVariant {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  contentItemId  String    @map("content_item_id") @db.Uuid
+  channelId      String    @map("channel_id") @db.Uuid
+  caption        String?
+  mediaRefs      Json      @default("[]") @map("media_refs")
+  format         String?
+  scheduledAt    DateTime? @map("scheduled_at") @db.Timestamptz
+  publishStatus  String    @default("DRAFT") @map("publish_status")
+  platformPostId String?   @map("platform_post_id")
+  permalink      String?
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  contentItem ContentItem   @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  channel     SocialChannel @relation(fields: [channelId], references: [id])
+  publishJobs PublishJob[]
+
+  @@unique([contentItemId, channelId])
+  @@index([organizationId, scheduledAt, publishStatus])
+  @@map("content_variants")
+  @@schema("social")
+}
+
+model PublishJob {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  variantId      String    @map("variant_id") @db.Uuid
+  status         String    @default("QUEUED")
+  scheduledFor   DateTime  @map("scheduled_for") @db.Timestamptz
+  idempotencyKey String    @map("idempotency_key")
+  attempts       Int       @default(0)
+  lastError      String?   @map("last_error")
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  variant  ContentVariant   @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attemptsLog PublishAttempt[]
+
+  @@unique([idempotencyKey])
+  @@index([organizationId, status, scheduledFor])
+  @@map("publish_jobs")
+  @@schema("social")
+}
+
+model PublishAttempt {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  jobId          String   @map("job_id") @db.Uuid
+  status         String
+  errorCode      String?  @map("error_code")
+  errorMessage   String?  @map("error_message")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  job PublishJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, jobId])
+  @@map("publish_attempts")
+  @@schema("social")
+}

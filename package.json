@@ -1,0 +1,23 @@
+{
+  "name": "agency-os",
+  "private": true,
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:api": "pnpm --filter @agency-os/api dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @agency-os/api test:e2e",
+    "db:generate": "pnpm --filter @agency-os/api db:generate",
+    "db:migrate": "pnpm --filter @agency-os/api db:migrate",
+    "db:push": "pnpm --filter @agency-os/api db:push",
+    "db:seed": "pnpm --filter @agency-os/api db:seed",
+    "db:studio": "pnpm --filter @agency-os/api db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

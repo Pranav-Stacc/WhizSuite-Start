@@ -1,0 +1,204 @@
+import { z } from 'zod';
+import {
+  ApprovalActions,
+  ClientStatuses,
+  ContentTypes,
+  MembershipTypes,
+  Platforms,
+  Priorities,
+  ProjectStatuses,
+  TaskStatuses,
+} from '../domain/statuses.js';
+
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v ? v : undefined));
+
+const optionalDate = z
+  .string()
+  .optional()
+  .transform((v) => (v ? v : undefined));
+
+export const loginSchema = z.object({
+  email: z.string().trim().email('validation.email'),
+  password: z.string().min(1, 'validation.required'),
+});
+export type LoginInput = z.infer<typeof loginSchema>;
+
+export const registerSchema = z.object({
+  firstName: z.string().trim().min(1, 'validation.required'),
+  lastName: optionalText,
+  email: z.string().trim().email('validation.email'),
+  password: z.string().min(12, 'validation.password'),
+  organizationName: z.string().trim().min(2, 'validation.min2'),
+  organizationSlug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9-]+$/, 'validation.slug'),
+});
+export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const createClientSchema = z.object({
+  displayName: z.string().trim().min(2, 'validation.min2'),
+  industry: optionalText,
+  website: optionalText,
+  tier: optionalText,
+  contactName: optionalText,
+  contactEmail: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || z.string().email().safeParse(v).success, 'validation.email')
+    .transform((v) => (v ? v : undefined)),
+});
+export type CreateClientInput = z.infer<typeof createClientSchema>;
+
+export const brandKitSchema = z.object({
+  primary: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'validation.color'),
+  secondary: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'validation.color'),
+  accent: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'validation.color'),
+  voice: optionalText,
+  hashtags: optionalText,
+  pillars: optionalText,
+});
+export type BrandKitInput = z.infer<typeof brandKitSchema>;
+
+export const createProjectSchema = z.object({
+  name: z.string().trim().min(2, 'validation.min2'),
+  clientId: z.string().min(1, 'validation.required'),
+  type: optionalText,
+  endDate: optionalDate,
+  budget: z.coerce.number().min(0).optional(),
+  status: z.enum(ProjectStatuses).default('ACTIVE'),
+});
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+
+export const createTaskSchema = z.object({
+  title: z.string().trim().min(2, 'validation.min2'),
+  projectId: z.string().min(1, 'validation.required'),
+  priority: z.enum(Priorities).default('MEDIUM'),
+  status: z.enum(TaskStatuses).default('TODO'),
+  dueDate: optionalDate,
+  assigneeId: optionalText,
+  description: optionalText,
+  estimateHours: z.coerce.number().min(0).max(200).optional(),
+});
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+export const createContentSchema = z.object({
+  title: z.string().trim().min(2, 'validation.min2'),
+  clientId: z.string().min(1, 'validation.required'),
+  contentType: z.enum(ContentTypes).default('POST'),
+  caption: optionalText,
+  platforms: z.array(z.enum(Platforms)).min(1, 'validation.platform'),
+  scheduledAt: optionalDate,
+  submitForApproval: z.coerce.boolean().default(false),
+});
+export type CreateContentInput = z.infer<typeof createContentSchema>;
+
+export const createLeadSchema = z.object({
+  companyName: z.string().trim().min(2, 'validation.min2'),
+  industry: optionalText,
+  source: optionalText,
+  website: optionalText,
+  estimatedValue: z.coerce.number().min(0).optional(),
+  contactName: optionalText,
+  contactEmail: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || z.string().email().safeParse(v).success, 'validation.email')
+    .transform((v) => (v ? v : undefined)),
+  nextStep: optionalText,
+  nextStepAt: optionalText,
+  ownerId: optionalText,
+});
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
+export const invoiceLineSchema = z.object({
+  description: z.string().trim().min(1, 'validation.required'),
+  quantity: z.coerce.number().min(1),
+  unitPrice: z.coerce.number().min(0),
+});
+
+export const createInvoiceSchema = z.object({
+  clientId: z.string().min(1, 'validation.required'),
+  dueDate: z.string().min(1, 'validation.required'),
+  taxRate: z.coerce.number().min(0).max(100).default(18),
+  lines: z.array(invoiceLineSchema).min(1, 'validation.lines'),
+});
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+
+export const inviteMemberSchema = z.object({
+  email: z.string().trim().email('validation.email'),
+  membershipType: z.enum(MembershipTypes).default('MEMBER'),
+  note: optionalText,
+});
+export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+
+export const logTimeSchema = z.object({
+  projectId: z.string().min(1, 'validation.required'),
+  minutes: z.coerce.number().int().min(1).max(1440),
+  date: z.string().min(1, 'validation.required'),
+  note: optionalText,
+});
+export type LogTimeInput = z.infer<typeof logTimeSchema>;
+
+export const createAutomationSchema = z.object({
+  name: z.string().trim().min(2, 'validation.min2'),
+});
+export type CreateAutomationInput = z.infer<typeof createAutomationSchema>;
+
+export const clientStatusSchema = z.enum(ClientStatuses);
+
+export const scheduleSchema = z.object({
+  scheduledAt: z.string().min(1, 'validation.required'),
+});
+
+export const ArticleCategories = ['SOP', 'PLAYBOOK', 'TEMPLATE', 'POLICY', 'ONBOARDING'] as const;
+export type ArticleCategory = (typeof ArticleCategories)[number];
+
+export const createArticleSchema = z.object({
+  title: z.string().trim().min(2, 'validation.min2'),
+  category: z.enum(ArticleCategories).default('SOP'),
+  body: z.string().trim().min(10, 'validation.min10'),
+});
+export type CreateArticleInput = z.infer<typeof createArticleSchema>;
+
+export const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'validation.min2'),
+  title: optionalText,
+});
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+export const AssetKinds = ['image', 'video', 'document'] as const;
+export type AssetKind = (typeof AssetKinds)[number];
+
+export const createAssetSchema = z.object({
+  name: z.string().trim().min(2, 'validation.min2'),
+  clientId: z.string().min(1, 'validation.required'),
+  kind: z.enum(AssetKinds).default('image'),
+  tags: optionalText,
+});
+export type CreateAssetInput = z.infer<typeof createAssetSchema>;
+
+export const messageSchema = z.object({
+  body: z.string().trim().min(1, 'validation.required').max(2000),
+});
+export type MessageInput = z.infer<typeof messageSchema>;
+
+export const decisionSchema = z.object({
+  contentId: z.string().min(1),
+  action: z.enum(ApprovalActions),
+  comment: optionalText,
+});
+export type DecisionInput = z.infer<typeof decisionSchema>;
+
+export const createWorkflowSchema = z.object({
+  name: z.string().trim().min(2, 'validation.min2'),
+  slaHours: z.coerce.number().int().min(1).max(720).default(48),
+});
+export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;

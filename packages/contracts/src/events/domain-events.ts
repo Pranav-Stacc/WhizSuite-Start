@@ -1,0 +1,37 @@
+/** Versioned domain event type catalog — single source of truth */
+export const DomainEventTypes = {
+  ORGANIZATION_CREATED: 'organization.created.v1',
+  ORGANIZATION_UPDATED: 'organization.updated.v1',
+  WORKSPACE_CREATED: 'workspace.created.v1',
+  MEMBER_JOINED: 'member.joined.v1',
+  INVITATION_SENT: 'invitation.sent.v1',
+  INVITATION_ACCEPTED: 'invitation.accepted.v1',
+  USER_REGISTERED: 'user.registered.v1',
+  USER_LOGIN_SUCCEEDED: 'user.login.succeeded.v1',
+  USER_LOGIN_FAILED: 'user.login.failed.v1',
+  CLIENT_CREATED: 'client.created.v1',
+  CLIENT_UPDATED: 'client.updated.v1',
+  LEAD_CREATED: 'lead.created.v1',
+  LEAD_WON: 'lead.won.v1',
+  PROJECT_CREATED: 'project.created.v1',
+  TASK_CREATED: 'task.created.v1',
+  TASK_ASSIGNED: 'task.assigned.v1',
+  TASK_STATE_CHANGED: 'task.state_changed.v1',
+  CONTENT_CREATED: 'content.created.v1',
+  CONTENT_STATE_CHANGED: 'content.state_changed.v1',
+  CONTENT_SCHEDULED: 'content.scheduled.v1',
+  SOCIAL_POST_PUBLISHED: 'social_post.published.v1',
+  SOCIAL_POST_FAILED: 'social_post.failed.v1',
+  APPROVAL_REQUESTED: 'approval.requested.v1',
+  APPROVAL_COMPLETED: 'approval.completed.v1',
+  FEEDBACK_CREATED: 'feedback.thread_created.v1',
+  FILE_UPLOADED: 'file.uploaded.v1',
+  INBOX_MESSAGE_RECEIVED: 'inbox.message_received.v1',
+  NOTIFICATION_CREATED: 'notification.created.v1',
+  AUTOMATION_RUN_STARTED: 'automation.run_started.v1',
+  INVOICE_PAID: 'invoice.paid.v1',
+  AUDIT_RECORDED: 'audit.recorded.v1',
+} as const;
+
+export type DomainEventType =
+  (typeof DomainEventTypes)[keyof typeof DomainEventTypes];

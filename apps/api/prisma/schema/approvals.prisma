@@ -1,0 +1,77 @@
+model ApprovalPolicy {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  subjectType    String   @map("subject_type")
+  definition     Json
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  requests ApprovalRequest[]
+
+  @@index([organizationId, subjectType])
+  @@map("approval_policies")
+  @@schema("approvals")
+}
+
+model ApprovalRequest {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  policyId       String?   @map("policy_id") @db.Uuid
+  subjectType    String    @map("subject_type")
+  subjectId      String    @map("subject_id") @db.Uuid
+  subjectVersion String    @map("subject_version")
+  status         String    @default("PENDING")
+  requestedById  String    @map("requested_by_id") @db.Uuid
+  dueAt          DateTime? @map("due_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  policy ApprovalPolicy? @relation(fields: [policyId], references: [id])
+  steps  ApprovalStep[]
+  actions ApprovalAction[]
+
+  @@index([organizationId, status])
+  @@index([organizationId, subjectType, subjectId])
+  @@map("approval_requests")
+  @@schema("approvals")
+}
+
+model ApprovalStep {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  requestId      String    @map("request_id") @db.Uuid
+  order          Int
+  name           String
+  rule           String    @default("ANY")
+  status         String    @default("PENDING")
+  approverSpec   Json      @map("approver_spec")
+  dueAt          DateTime? @map("due_at") @db.Timestamptz
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, order])
+  @@map("approval_steps")
+  @@schema("approvals")
+}
+
+model ApprovalAction {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  requestId      String   @map("request_id") @db.Uuid
+  stepId         String?  @map("step_id") @db.Uuid
+  actorId        String   @map("actor_id") @db.Uuid
+  actorType      String   @map("actor_type")
+  action         String
+  comment        String?
+  metadata       Json?
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  request ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, requestId])
+  @@map("approval_actions")
+  @@schema("approvals")
+}

@@ -1,0 +1,125 @@
+import { Injectable } from '@nestjs/common';
+import { ErrorCodes, DomainEventTypes } from '@agency-os/contracts';
+import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { OutboxService } from '../../../../shared/events/outbox.service';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { TenancyRepository } from '../../infrastructure/repositories/tenancy.repository';
+import { AuditService } from '../../../audit/application/services/audit.service';
+
+@Injectable()
+export class TenancyService {
+  constructor(
+    private readonly repo: TenancyRepository,
+    private readonly outbox: OutboxService,
+    private readonly audit: AuditService,
+  ) {}
+
+  async getOrganization(organizationId: string) {
+    const org = await this.repo.findOrganization(organizationId);
+    if (!org) {
+      throw new ProblemDetailsException(
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: ErrorCodes.NOT_FOUND,
+        },
+        404,
+      );
+    }
+    return org;
+  }
+
+  async listWorkspaces(organizationId: string) {
+    return this.repo.listWorkspaces(organizationId);
+  }
+
+  async createWorkspace(
+    organizationId: string,
+    actorId: string,
+    input: { name: string; slug: string; timezone?: string },
+  ) {
+    const workspace = await this.repo.createWorkspace({
+      organizationId,
+      name: input.name,
+      slug: input.slug.toLowerCase(),
+      timezone: input.timezone,
+    });
+
+    await this.outbox.write({
+      type: DomainEventTypes.WORKSPACE_CREATED,
+      version: 1,
+      organizationId,
+      payload: { workspaceId: workspace.id, name: workspace.name },
+      actor: { id: actorId, type: 'user' },
+    });
+
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'workspace.create',
+      entityType: 'workspace',
+      entityId: workspace.id,
+      after: workspace as unknown as Record<string, unknown>,
+    });
+
+    return workspace;
+  }
+
+  async createDepartment(
+    organizationId: string,
+    actorId: string,
+    input: { name: string; parentId?: string },
+  ) {
+    const department = await this.repo.createDepartment(organizationId, input);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'department.create',
+      entityType: 'department',
+      entityId: department.id,
+      after: department as unknown as Record<string, unknown>,
+    });
+    return department;
+  }
+
+  async listDepartments(organizationId: string) {
+    return this.repo.listDepartments(organizationId);
+  }
+
+  async createTeam(
+    organizationId: string,
+    actorId: string,
+    input: { name: string; description?: string; workspaceId?: string },
+  ) {
+    const team = await this.repo.createTeam(organizationId, input);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'team.create',
+      entityType: 'team',
+      entityId: team.id,
+      after: team as unknown as Record<string, unknown>,
+    });
+    return team;
+  }
+
+  requireOrgFromContext(): string {
+    const orgId = TenantContext.getOrganizationId();
+    if (!orgId) {
+      throw new ProblemDetailsException(
+        {
+          type: 'about:blank',
+          title: 'Tenant Required',
+          status: 400,
+          code: ErrorCodes.TENANT_REQUIRED,
+        },
+        400,
+      );
+    }
+    return orgId;
+  }
+}
