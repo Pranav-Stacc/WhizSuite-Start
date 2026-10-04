@@ -1,22 +1,39 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CreateBucketCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
+  NotFound,
   PutObjectCommand,
   S3Client,
+  S3ServiceException,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import type { MediaDownloadDisposition } from '@agency-os/contracts';
 import type { AppConfig } from '../config/app.config';
+
+const S3_DELETE_BATCH_SIZE = 1000;
+const HTTP_NOT_FOUND = 404;
+
+export interface StoredObjectMetadata {
+  sizeBytes: number;
+  contentType: string | undefined;
+}
 
 @Injectable()
 export class StorageService {
   private readonly client: S3Client;
+  private readonly bucket: string;
   private bucketReady = false;
 
   constructor(private readonly config: ConfigService<AppConfig, true>) {
     const accessKeyId = this.config.get('STORAGE_ACCESS_KEY');
     const secretAccessKey = this.config.get('STORAGE_SECRET_KEY');
+    this.bucket = this.config.get('STORAGE_BUCKET');
     this.client = new S3Client({
       endpoint: this.config.get('STORAGE_ENDPOINT'),
       region: this.config.get('STORAGE_REGION'),
@@ -24,23 +41,28 @@ export class StorageService {
       credentials:
         accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
       forcePathStyle: this.config.get('STORAGE_FORCE_PATH_STYLE'),
+      maxAttempts: this.config.get('STORAGE_MAX_ATTEMPTS'),
+      requestHandler: {
+        requestTimeout: this.config.get('STORAGE_REQUEST_TIMEOUT_MS'),
+        connectionTimeout: this.config.get('STORAGE_REQUEST_TIMEOUT_MS'),
+      },
     });
   }
 
   async ensureBucket(): Promise<void> {
     if (this.bucketReady) return;
-    const bucket = this.config.get('STORAGE_BUCKET');
     try {
-      await this.client.send(new HeadBucketCommand({ Bucket: bucket }));
-    } catch {
-      await this.client.send(new CreateBucketCommand({ Bucket: bucket }));
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+    } catch (error) {
+      if (!isNotFound(error)) throw error;
+      await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
     }
     this.bucketReady = true;
   }
 
   buildObjectKey(organizationId: string, filename: string): string {
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    return `orgs/${organizationId}/media/${Date.now()}-${safeName}`;
+    return `orgs/${organizationId}/media/${randomUUID()}/${safeName}`;
   }
 
   async createPresignedUpload(input: {
@@ -48,24 +70,72 @@ export class StorageService {
     filename: string;
     mimeType: string;
     sizeBytes: number;
-    expiresInSeconds?: number;
   }) {
     await this.ensureBucket();
-    const key = this.buildObjectKey(input.organizationId, input.filename);
+    const storageKey = this.buildObjectKey(input.organizationId, input.filename);
+    const expiresInSeconds = this.config.get('STORAGE_UPLOAD_URL_TTL_SECONDS');
     const command = new PutObjectCommand({
-      Bucket: this.config.get('STORAGE_BUCKET'),
-      Key: key,
+      Bucket: this.bucket,
+      Key: storageKey,
       ContentType: input.mimeType,
       ContentLength: input.sizeBytes,
     });
-    const uploadUrl = await getSignedUrl(this.client, command, {
-      expiresIn: input.expiresInSeconds ?? 900,
-    });
+    const uploadUrl = await getSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
     return {
       uploadUrl,
-      storageKey: key,
-      bucket: this.config.get('STORAGE_BUCKET'),
-      expiresInSeconds: input.expiresInSeconds ?? 900,
+      storageKey,
+      headers: { 'content-type': input.mimeType },
+      expiresInSeconds,
     };
   }
+
+  async createPresignedDownload(
+    storageKey: string,
+    options: { filename: string; disposition: MediaDownloadDisposition },
+  ) {
+    const expiresInSeconds = this.config.get('STORAGE_DOWNLOAD_URL_TTL_SECONDS');
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: storageKey,
+      ResponseContentDisposition: contentDisposition(options.disposition, options.filename),
+    });
+    const url = await getSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
+    return { url, expiresInSeconds };
+  }
+
+  async getObjectMetadata(storageKey: string): Promise<StoredObjectMetadata | null> {
+    try {
+      const head = await this.client.send(
+        new HeadObjectCommand({ Bucket: this.bucket, Key: storageKey }),
+      );
+      return { sizeBytes: head.ContentLength ?? 0, contentType: head.ContentType };
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw error;
+    }
+  }
+
+  async deleteObjects(storageKeys: string[]): Promise<void> {
+    for (let start = 0; start < storageKeys.length; start += S3_DELETE_BATCH_SIZE) {
+      const batch = storageKeys.slice(start, start + S3_DELETE_BATCH_SIZE);
+      await this.client.send(
+        new DeleteObjectsCommand({
+          Bucket: this.bucket,
+          Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: true },
+        }),
+      );
+    }
+  }
+}
+
+function isNotFound(error: unknown): boolean {
+  if (error instanceof NotFound) return true;
+  return (
+    error instanceof S3ServiceException && error.$metadata.httpStatusCode === HTTP_NOT_FOUND
+  );
+}
+
+function contentDisposition(disposition: MediaDownloadDisposition, filename: string): string {
+  const asciiFallback = filename.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  return `${disposition}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }

@@ -27,6 +27,21 @@ export const appConfigSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
+  STORAGE_UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(104_857_600),
+  STORAGE_ALLOWED_MIME_TYPES: z
+    .string()
+    .default('image/*,video/*,audio/*,application/pdf')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  STORAGE_UPLOAD_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  STORAGE_DOWNLOAD_URL_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+  STORAGE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  STORAGE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
+  MEDIA_LIST_LIMIT: z.coerce.number().int().positive().default(200),
   EMAIL_PROVIDER: z.string().default('mailpit'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(1025),

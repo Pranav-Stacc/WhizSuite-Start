@@ -8,6 +8,6 @@ import { MediaResourceController } from './interface/http/controllers/media-reso
   imports: [SharedModule],
   controllers: [MediaResourceController],
   providers: [MediaService, MediaRepository],
-  exports: [MediaService, MediaRepository],
+  exports: [MediaService],
 })
 export class MediaModule {}

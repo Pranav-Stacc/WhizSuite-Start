@@ -5,3 +5,4 @@ export * from './events/domain-events.js';
 export * from './auth/permissions.js';
 export * from './domain/statuses.js';
 export * from './schemas/forms.js';
+export * from './media/media.js';
