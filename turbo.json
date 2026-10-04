@@ -3,7 +3,8 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "env": ["APP_DATA_MODE", "API_BASE_URL", "API_TIMEOUT_MS", "SESSION_*", "NEXT_PUBLIC_*"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "dev": {
       "cache": false,
