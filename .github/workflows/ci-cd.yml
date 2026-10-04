@@ -30,12 +30,16 @@ jobs:
               - 'packages/**'
               - 'deploy/**'
               - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'turbo.json'
               - '.github/workflows/ci-cd.yml'
             web:
               - 'apps/web/**'
               - 'packages/**'
               - 'amplify.yml'
               - 'pnpm-lock.yaml'
+              - 'package.json'
+              - 'turbo.json'
               - '.github/workflows/ci-cd.yml'
 
   verify:
