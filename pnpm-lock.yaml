@@ -120,6 +120,9 @@ importers:
         specifier: ^3.24.4
         version: 3.25.76
     devDependencies:
+      '@agency-os/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@eslint/eslintrc':
         specifier: ^3.2.0
         version: 3.3.7

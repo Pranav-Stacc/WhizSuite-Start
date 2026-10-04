@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 import { toInputJson } from '../../../../shared/database/prisma-json.util';
 
@@ -45,7 +46,7 @@ export class ApprovalsRepository {
             order: s.order,
             name: s.name,
             rule: s.rule,
-            approverSpec: toInputJson(s.approverSpec),
+            approverSpec: s.approverSpec as Prisma.InputJsonObject,
             status: 'PENDING',
           })),
         },

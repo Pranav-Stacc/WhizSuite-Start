@@ -1,0 +1,24 @@
+version: 1
+applications:
+  - appRoot: apps/web
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - nvm install 22 && nvm use 22
+            - corepack enable && corepack prepare pnpm@10.14.0 --activate
+            # Amplify's SSR packaging needs a flat node_modules for pnpm workspaces.
+            - echo "node-linker=hoisted" >> ../../.npmrc
+            - pnpm --dir ../.. install --frozen-lockfile
+        build:
+          commands:
+            # Amplify only exposes console env vars at build time; persist server-side ones for the SSR runtime.
+            - env | grep -E '^(APP_DATA_MODE|API_BASE_URL|API_TIMEOUT_MS|SESSION_COOKIE_SECURE|SESSION_SECRET|SESSION_TTL_SECONDS|NEXT_PUBLIC_[A-Z0-9_]+)=' > .env.production
+            - pnpm --dir ../.. exec turbo run build --filter=@agency-os/web
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .next/cache/**/*

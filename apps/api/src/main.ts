@@ -20,7 +20,7 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.enableCors({
-    origin: config.get('CORS_ORIGINS').split(',').map((o) => o.trim()),
+    origin: config.get('CORS_ORIGINS').split(',').map((o: string) => o.trim()),
     credentials: true,
   });
 

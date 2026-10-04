@@ -15,13 +15,14 @@ export class StorageService {
   private bucketReady = false;
 
   constructor(private readonly config: ConfigService<AppConfig, true>) {
+    const accessKeyId = this.config.get('STORAGE_ACCESS_KEY');
+    const secretAccessKey = this.config.get('STORAGE_SECRET_KEY');
     this.client = new S3Client({
       endpoint: this.config.get('STORAGE_ENDPOINT'),
       region: this.config.get('STORAGE_REGION'),
-      credentials: {
-        accessKeyId: this.config.get('STORAGE_ACCESS_KEY'),
-        secretAccessKey: this.config.get('STORAGE_SECRET_KEY'),
-      },
+      // Without static keys the SDK uses the default chain (e.g. the EC2 instance role).
+      credentials:
+        accessKeyId && secretAccessKey ? { accessKeyId, secretAccessKey } : undefined,
       forcePathStyle: this.config.get('STORAGE_FORCE_PATH_STYLE'),
     });
   }

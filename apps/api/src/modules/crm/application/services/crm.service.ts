@@ -62,7 +62,8 @@ export class CrmService {
   ): Promise<Record<string, unknown>> {
     if (data.pipelineId && data.stageId) return data;
     const pipeline = await this.repository.findDefaultPipeline(organizationId);
-    if (!pipeline?.stages.length) {
+    const firstStage = pipeline?.stages[0];
+    if (!pipeline || !firstStage) {
       throw new ProblemDetailsException(
         {
           type: 'about:blank',
@@ -77,7 +78,7 @@ export class CrmService {
     return {
       ...data,
       pipelineId: pipeline.id,
-      stageId: pipeline.stages[0].id,
+      stageId: firstStage.id,
     };
   }
 }

@@ -178,16 +178,14 @@ export class IdentityRepository {
         },
       });
       const stageNames = ['New', 'Qualified', 'Proposal', 'Won'];
-      for (let i = 0; i < stageNames.length; i++) {
-        await tx.pipelineStage.create({
-          data: {
-            organizationId: organization.id,
-            pipelineId: pipeline.id,
-            name: stageNames[i],
-            order: i,
-          },
-        });
-      }
+      await tx.pipelineStage.createMany({
+        data: stageNames.map((name, order) => ({
+          organizationId: organization.id,
+          pipelineId: pipeline.id,
+          name,
+          order,
+        })),
+      });
 
       return { user, organization, workspace, membership };
     });

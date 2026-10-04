@@ -19,8 +19,8 @@ export const appConfigSchema = z.object({
   COOKIE_DOMAIN: z.string().default('localhost'),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
   STORAGE_ENDPOINT: z.string().url(),
-  STORAGE_ACCESS_KEY: z.string(),
-  STORAGE_SECRET_KEY: z.string(),
+  STORAGE_ACCESS_KEY: z.string().default(''),
+  STORAGE_SECRET_KEY: z.string().default(''),
   STORAGE_BUCKET: z.string(),
   STORAGE_REGION: z.string().default('us-east-1'),
   STORAGE_FORCE_PATH_STYLE: z
