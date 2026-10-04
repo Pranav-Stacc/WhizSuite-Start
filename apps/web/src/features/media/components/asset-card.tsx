@@ -2,13 +2,23 @@ import { FileText, Film, ImageIcon, Trash2 } from 'lucide-react';
 import type { AssetKind } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { formatFileSize, relativeTime } from '@/shared/lib/format';
+import { Badge } from '@/shared/ui/badge';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { deleteAssetAction } from '../actions/media.actions';
 import type { Asset } from '../data/media.repository';
+import { AssetDownloadButton } from './asset-download-button';
 
 const KIND_ICON = { image: ImageIcon, video: Film, document: FileText } satisfies Record<AssetKind, typeof ImageIcon>;
 
-export function AssetCard({ asset, clientName, canDelete }: { asset: Asset; clientName?: string; canDelete: boolean }) {
+interface AssetCardProps {
+  asset: Asset;
+  clientName?: string;
+  canDelete: boolean;
+  /** True when the asset is backed by a stored file the user can download. */
+  canDownload: boolean;
+}
+
+export function AssetCard({ asset, clientName, canDelete, canDownload }: AssetCardProps) {
   const Icon = KIND_ICON[asset.kind];
   return (
     <article className="card-surface card-hover group overflow-hidden">
@@ -36,9 +46,19 @@ export function AssetCard({ asset, clientName, canDelete }: { asset: Asset; clie
             ))}
           </ul>
         ) : null}
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center justify-between gap-2 pt-1">
           <span className="text-[11px] text-muted">{relativeTime(asset.createdAt)}</span>
-          {canDelete ? <ConfirmButton action={deleteAssetAction.bind(null, asset.id)} label={t('common.delete')} icon={<Trash2 />} size="sm" /> : null}
+          {asset.status !== 'READY' ? (
+            asset.status === 'FAILED' ? (
+              <Badge tone="danger">{t('media.status.FAILED')}</Badge>
+            ) : (
+              <Badge tone="warning">{t('media.status.PENDING_UPLOAD')}</Badge>
+            )
+          ) : null}
+          <div className="flex items-center gap-1">
+            {canDownload && asset.status === 'READY' ? <AssetDownloadButton assetId={asset.id} name={asset.name} /> : null}
+            {canDelete ? <ConfirmButton action={deleteAssetAction.bind(null, asset.id)} label={t('common.delete')} icon={<Trash2 />} size="sm" /> : null}
+          </div>
         </div>
       </div>
     </article>

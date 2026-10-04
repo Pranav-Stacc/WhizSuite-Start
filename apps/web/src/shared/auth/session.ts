@@ -78,3 +78,10 @@ export async function endSession(): Promise<void> {
   const store = await cookies();
   store.delete(SESSION_COOKIE);
 }
+
+/** Persist rotated tokens after a silent refresh. */
+export async function updateSessionTokens(accessToken: string, refreshToken: string): Promise<void> {
+  const session = await getSession();
+  if (!session) return;
+  await startSession({ ...session, accessToken, refreshToken });
+}

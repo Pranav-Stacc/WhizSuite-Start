@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Platform } from '@agency-os/contracts';
+import { inboxLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 
 export const InboxKinds = ['comment', 'dm', 'mention'] as const;
@@ -54,4 +55,5 @@ export const inboxRepository = createRepository<InboxItem>('inbox', () =>
     reply: i === 9 ? 'Congrats to @priya.brews — a month of coffee is on its way! ☕' : undefined,
     assigneeId: i % 3 === 0 ? 'm-meera' : undefined,
   })),
+  inboxLive,
 );

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { AutomationAction, AutomationTrigger } from '@agency-os/contracts';
+import { automationsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow, hoursAgo } from '@/shared/lib/format';
 
@@ -27,7 +28,7 @@ export const automationsRepository = createRepository<Automation>('automations',
   { id: 'au3', name: 'Alert team about overdue tasks', trigger: 'task.overdue', action: 'notify.team', enabled: true, runs: 58, failures: 0, lastRunAt: daysFromNow(-1, 8), createdAt: daysFromNow(-150) },
   { id: 'au4', name: 'Dunning email for overdue invoices', trigger: 'invoice.overdue', action: 'send.email', enabled: false, runs: 12, failures: 2, lastRunAt: daysFromNow(-12, 10), createdAt: daysFromNow(-120) },
   { id: 'au5', name: 'Escalate negative comments to #community', trigger: 'inbox.negative', action: 'post.webhook', enabled: true, runs: 31, failures: 0, lastRunAt: hoursAgo(1), createdAt: daysFromNow(-60) },
-]);
+], automationsLive);
 
 export const automationRunsRepository = createRepository<AutomationRun>('automation-runs', () => [
   { id: 'ar1', automationId: 'au1', at: hoursAgo(2), ok: true, detail: 'Emailed Neha Kapoor — “Origin of the bean” is ready for review' },

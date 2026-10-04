@@ -8,6 +8,8 @@ import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { dateKeyToIso, toMinorUnits } from '@/shared/lib/format';
+import { patchLead } from '@/shared/api/live/mutations';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { onboardClient } from '@/features/clients/services/clients.service';
 import { LeadStages, leadsRepository, type Lead, type LeadStage } from '../data/leads.repository';
@@ -71,7 +73,8 @@ export async function moveLeadAction(id: string, stage: string): Promise<ActionR
     if (!LeadStages.includes(stage as LeadStage)) return fail(t('toast.failed'));
     const before = await leadsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
-    await leadsRepository.update(id, { stage: stage as LeadStage });
+    if (isLiveMode) await patchLead(id, { stage });
+    else await leadsRepository.update(id, { stage: stage as LeadStage });
     await recordAudit({
       action: 'lead.stage_changed',
       entityType: 'lead',

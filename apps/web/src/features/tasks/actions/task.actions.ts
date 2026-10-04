@@ -8,6 +8,8 @@ import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { dateKeyToIso } from '@/shared/lib/format';
+import { transitionTask } from '@/shared/api/live/mutations';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { getProject } from '@/features/projects/services/projects.service';
@@ -97,7 +99,8 @@ export async function moveTaskAction(id: string, status: string): Promise<Action
     if (!TaskStatuses.includes(status as TaskStatus)) return fail(t('toast.failed'));
     const before = await tasksRepository.get(id);
     if (!before) return fail(t('toast.failed'));
-    await tasksRepository.update(id, { status: status as TaskStatus });
+    if (isLiveMode) await transitionTask(id, status);
+    else await tasksRepository.update(id, { status: status as TaskStatus });
     await recordAudit({ action: 'task.status_changed', entityType: 'task', entityId: id, entityLabel: before.title, summary: `Moved task to ${t(`status.task.${status as TaskStatus}`)}`, diff: { status: { from: before.status, to: status } } });
     await refreshData('tasks', 'projects');
     return succeed();

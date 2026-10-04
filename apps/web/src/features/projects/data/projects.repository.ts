@@ -1,5 +1,6 @@
 import 'server-only';
 import type { ProjectStatus } from '@agency-os/contracts';
+import { projectsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -25,4 +26,4 @@ export const projectsRepository = createRepository<Project>('projects', () => [
   { id: 'pr-nimbus-launch', clientId: 'cl-nimbus', name: 'Nimbus 3.0 launch', type: 'Product launch', status: 'ACTIVE', startDate: daysFromNow(-25), endDate: daysFromNow(12), budgetMinor: rupees(450000), ownerId: 'm-aarav' },
   { id: 'pr-urban-onboard', clientId: 'cl-urban', name: 'Brand onboarding & audit', type: 'Onboarding', status: 'ACTIVE', startDate: daysFromNow(-10), endDate: daysFromNow(18), budgetMinor: rupees(60000), ownerId: 'm-priya' },
   { id: 'pr-atlas-q3', clientId: 'cl-atlas', name: 'Q3 listings push', type: 'Campaign', status: 'ON_HOLD', startDate: daysFromNow(-60), endDate: daysFromNow(-5), budgetMinor: rupees(210000), ownerId: 'm-aarav' },
-]);
+], projectsLive);

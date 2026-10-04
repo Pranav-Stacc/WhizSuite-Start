@@ -1,5 +1,6 @@
 import 'server-only';
 import type { ArticleCategory } from '@agency-os/contracts';
+import { knowledgeLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -52,4 +53,4 @@ export const knowledgeRepository = createRepository<Article>('knowledge', () => 
     authorId: 'm-aarav',
     updatedAt: daysFromNow(-90),
   },
-]);
+], knowledgeLive);

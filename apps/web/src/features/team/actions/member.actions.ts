@@ -7,6 +7,8 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
+import { inviteMember } from '@/shared/api/live/mutations';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { ASSIGNABLE_ROLES, DEFAULT_INVITE_CAPACITY_HOURS, ROLE_FOR_MEMBERSHIP } from '../config';
 import { membersRepository, type MemberRole } from '../data/members.repository';
@@ -28,16 +30,32 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult> {
     const normalized = email.toLowerCase();
     if ((await membersRepository.list()).some((m) => m.email.toLowerCase() === normalized)) return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
 
-    const member = await membersRepository.create({
-      name: normalized,
-      email: normalized,
-      role,
-      title: note ?? '',
-      capacityHours: DEFAULT_INVITE_CAPACITY_HOURS,
-      skills: [],
-      status: 'INVITED',
-      joinedAt: new Date().toISOString(),
-    });
+    let member;
+    if (isLiveMode) {
+      await inviteMember(normalized, membershipType);
+      member = {
+        id: normalized,
+        name: normalized,
+        email: normalized,
+        role,
+        title: note ?? '',
+        capacityHours: DEFAULT_INVITE_CAPACITY_HOURS,
+        skills: [],
+        status: 'INVITED' as const,
+        joinedAt: new Date().toISOString(),
+      };
+    } else {
+      member = await membersRepository.create({
+        name: normalized,
+        email: normalized,
+        role,
+        title: note ?? '',
+        capacityHours: DEFAULT_INVITE_CAPACITY_HOURS,
+        skills: [],
+        status: 'INVITED',
+        joinedAt: new Date().toISOString(),
+      });
+    }
     await recordAudit({ action: 'member.invited', entityType: 'member', entityId: member.id, entityLabel: member.email, summary: 'Invited team member' });
     await refreshData('team');
     return succeed(undefined, t('team.invited', { email: member.email }));

@@ -5,6 +5,7 @@ import type { Session } from '@/shared/auth/session';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { Logo } from '@/shared/ui/logo';
 import { UserMenu } from '@/features/shell/components/shell-actions';
+import { PortalMobileDock, PortalMobileMenu } from './portal-mobile-nav';
 import { portalSummary } from '../services/portal.service';
 
 const NAV: Array<{ href: string; label: MessageKey; icon: typeof Home; badgeKey?: 'approvals' | 'openInvoices' }> = [
@@ -27,6 +28,7 @@ export async function PortalShell({ session, children }: { session: Session; chi
             <Logo compact />
             <span className="hidden text-sm font-semibold sm:inline">{session.orgName}</span>
           </Link>
+          <PortalMobileMenu badges={summary} />
           <nav aria-label={t('portal.nav')} className="ml-auto hidden items-center gap-1 md:flex">
             {NAV.map((item) => {
               const Icon = item.icon;
@@ -43,7 +45,8 @@ export async function PortalShell({ session, children }: { session: Session; chi
           <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl animate-fade-up px-4 py-6 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-5xl animate-fade-up px-4 pb-28 pt-6 sm:px-6 md:pb-6">{children}</main>
+      <PortalMobileDock badges={summary} />
     </div>
   );
 }

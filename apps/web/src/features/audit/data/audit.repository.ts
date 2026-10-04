@@ -1,4 +1,5 @@
 import 'server-only';
+import { auditLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -37,4 +38,5 @@ const SEEDS: Array<Omit<AuditEntry, 'id' | 'correlationId' | 'ip'>> = [
 
 export const auditRepository = createRepository<AuditEntry>('audit', () =>
   SEEDS.map((entry, index) => ({ ...entry, id: `aud-${index + 1}`, ip: '10.0.0.' + (10 + index), correlationId: `corr-${(1000 + index * 37).toString(16)}` })),
+  auditLive,
 );

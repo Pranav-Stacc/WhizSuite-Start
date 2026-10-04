@@ -1,5 +1,6 @@
 import 'server-only';
 import type { ContentStatus, ContentType, Platform } from '@agency-os/contracts';
+import { contentLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -64,6 +65,7 @@ export const contentRepository = createRepository<Post>('content', () =>
     updatedAt: daysFromNow(-1),
     version: 1,
   })),
+  contentLive,
 );
 
 export const contentEventsRepository = createRepository<ContentEvent>('content-events', () => [

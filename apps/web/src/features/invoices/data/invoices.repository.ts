@@ -1,5 +1,6 @@
 import 'server-only';
 import type { InvoiceStatus } from '@agency-os/contracts';
+import { invoicesLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -32,7 +33,7 @@ export const invoicesRepository = createRepository<Invoice>('invoices', () => [
   { id: 'inv5', number: 'INV-2026-0005', clientId: 'cl-lumen', status: 'SENT', issueDate: daysFromNow(-4), dueDate: daysFromNow(11), taxRate: 18, lines: [...retainer('cl-lumen', 'Social retainer — October', 85000), { description: 'Winter blend launch campaign', quantity: 1, unitMinor: rupees(120000) }] },
   { id: 'inv6', number: 'INV-2026-0006', clientId: 'cl-orbit', status: 'DRAFT', issueDate: daysFromNow(0), dueDate: daysFromNow(15), taxRate: 18, lines: retainer('cl-orbit', 'Social retainer — October', 120000) },
   { id: 'inv7', number: 'INV-2026-0007', clientId: 'cl-urban', status: 'PAID', issueDate: daysFromNow(-10), dueDate: daysFromNow(5), paidAt: daysFromNow(-6), taxRate: 18, lines: retainer('cl-urban', 'Onboarding & brand audit', 60000) },
-]);
+], invoicesLive);
 
 export function invoiceTotals(invoice: Pick<Invoice, 'lines' | 'taxRate'>): { subtotal: number; tax: number; total: number } {
   const subtotal = invoice.lines.reduce((acc, line) => acc + line.quantity * line.unitMinor, 0);

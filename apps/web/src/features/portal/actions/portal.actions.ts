@@ -6,6 +6,8 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
+import { transitionContent } from '@/shared/api/live/mutations';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { contentEventsRepository, contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
@@ -43,7 +45,9 @@ export async function clientDecideContentAction(id: string, decision: string, ra
     if (!post || post.clientId !== session.clientId) return fail(t('content.error.forbidden'));
     if (post.status !== 'IN_REVIEW') return fail(t('content.error.transition'));
 
-    await contentRepository.update(id, { status: DECISION_TARGET[action], updatedAt: new Date().toISOString() });
+    const nextStatus = DECISION_TARGET[action];
+    if (isLiveMode) await transitionContent(id, nextStatus);
+    else await contentRepository.update(id, { status: nextStatus, updatedAt: new Date().toISOString() });
     await logEvent(id, DECISION_EVENT[action], session, comment);
     await notifyAuthor(post, session, t(`content.notify.${action}`));
     await recordAudit({

@@ -8,6 +8,8 @@ import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { dateTimeLocalToIso } from '@/shared/lib/format';
+import { transitionContent } from '@/shared/api/live/mutations';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { listMembers } from '@/features/team/services/members.service';
@@ -130,7 +132,8 @@ export async function moveContentAction(id: string, target: string): Promise<Act
     if (check === 'forbidden') return fail(t('content.error.forbidden'));
     if (check === 'needsSchedule') return fail(t('content.error.needsSchedule'));
 
-    await contentRepository.update(id, { status: target as ContentStatus, updatedAt: new Date().toISOString() });
+    if (isLiveMode) await transitionContent(id, target);
+    else await contentRepository.update(id, { status: target as ContentStatus, updatedAt: new Date().toISOString() });
     if (target === 'IN_REVIEW') {
       await logEvent(id, 'submitted', session, t('content.event.submitted'));
       await notifyApprovers(post, session);
@@ -164,7 +167,9 @@ export async function decideContentAction(id: string, decision: string, raw: unk
     if (!post) return fail(t('toast.failed'));
     if (post.status !== 'IN_REVIEW') return fail(t('content.error.transition'));
 
-    await contentRepository.update(id, { status: DECISION_TARGET[action], updatedAt: new Date().toISOString() });
+    const nextStatus = DECISION_TARGET[action];
+    if (isLiveMode) await transitionContent(id, nextStatus);
+    else await contentRepository.update(id, { status: nextStatus, updatedAt: new Date().toISOString() });
     await logEvent(id, DECISION_EVENT[action], session, comment);
     await notifyAuthor(post, session, t(`content.notify.${action}`));
     await recordAudit({

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { apiFetch } from '@/shared/api/api-client';
 import { isLiveMode } from '@/shared/config/env';
 import { getSession } from '@/shared/auth/session';
+import { unwrapList } from '@/shared/api/live/utils';
 
 export interface Entity {
   id: string;
@@ -13,12 +14,16 @@ type RawRecord = Record<string, unknown>;
 export interface LiveBinding<T extends Entity> {
   /** API collection path for the active organisation, e.g. `v1/organizations/{org}/clients`. */
   path: (organizationId: string) => string;
+  /** Optional direct-item path; falls back to scanning the list. */
+  itemPath?: (organizationId: string, id: string) => string;
   /** Maps an API row to the UI shape. */
   fromApi: (raw: RawRecord) => T;
   /** Maps UI input to an API create/update body. */
   toApi?: (input: Partial<T>) => Promise<RawRecord> | RawRecord;
   /** Cache tag suffix (namespaced per organisation). */
   tag: string;
+  /** When true, `remove` issues DELETE against the collection item path. */
+  deletable?: boolean;
 }
 
 export interface Repository<T extends Entity> {
@@ -57,19 +62,28 @@ export function createRepository<T extends Entity>(
   const orgId = async (): Promise<string> => (await getSession())?.orgId ?? '';
 
   return {
-    tag: (org) => `org:${org}:${name}`,
+    tag: (org) => `org:${org}:${live?.tag ?? name}`,
 
     async list() {
       if (useLive(live)) {
         const org = await orgId();
-        const data = await apiFetch<RawRecord[]>(live.path(org), { tags: [`org:${org}:${live.tag}`] });
-        return data.map(live.fromApi);
+        const data = await apiFetch<unknown>(live.path(org), { tags: [`org:${org}:${live.tag}`] });
+        return unwrapList(data).map(live.fromApi);
       }
       return [...rows()];
     },
 
     async get(id) {
       if (useLive(live)) {
+        const org = await orgId();
+        if (live.itemPath) {
+          try {
+            const raw = await apiFetch<RawRecord>(live.itemPath(org, id), { tags: [`org:${org}:${live.tag}`] });
+            return live.fromApi(raw);
+          } catch {
+            return undefined;
+          }
+        }
         const all = await this.list();
         return all.find((item) => item.id === id);
       }
@@ -104,7 +118,12 @@ export function createRepository<T extends Entity>(
     },
 
     async remove(id) {
-      if (useLive(live)) return;
+      if (useLive(live)) {
+        if (!live.deletable) return;
+        const org = await orgId();
+        await apiFetch(`${live.path(org)}/${id}`, { method: 'DELETE' });
+        return;
+      }
       const list = rows();
       const index = list.findIndex((item) => item.id === id);
       if (index !== -1) list.splice(index, 1);

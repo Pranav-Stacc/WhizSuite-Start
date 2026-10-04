@@ -1,5 +1,6 @@
 import 'server-only';
-import type { AssetKind } from '@agency-os/contracts';
+import type { AssetKind, MediaAssetStatus } from '@agency-os/contracts';
+import { mediaLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -7,6 +8,8 @@ export interface Asset extends Entity {
   clientId: string;
   name: string;
   kind: AssetKind;
+  mimeType: string;
+  status: MediaAssetStatus;
   sizeKb: number;
   tags: string[];
   hue: number;
@@ -15,6 +18,8 @@ export interface Asset extends Entity {
 }
 
 type Seed = [id: string, clientId: string, name: string, kind: AssetKind, sizeKb: number, tags: string[], hue: number];
+
+export const DEMO_MIME_TYPES: Record<AssetKind, string> = { image: 'image/jpeg', video: 'video/mp4', document: 'application/pdf' };
 
 const SEEDS: Seed[] = [
   ['a1', 'cl-lumen', 'winter-blend-hero.jpg', 'image', 2840, ['hero', 'winter'], 32],
@@ -39,10 +44,13 @@ export const mediaRepository = createRepository<Asset>('media', () =>
     clientId,
     name,
     kind,
+    mimeType: DEMO_MIME_TYPES[kind],
+    status: 'READY' as const,
     sizeKb,
     tags,
     hue,
     uploadedBy: i % 2 ? 'm-rohan' : 'm-kabir',
     createdAt: daysFromNow(-(i + 1)),
   })),
+  mediaLive,
 );

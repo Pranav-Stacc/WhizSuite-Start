@@ -1,4 +1,5 @@
 import 'server-only';
+import { leadsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -33,4 +34,4 @@ export const leadsRepository = createRepository<Lead>('leads', () => [
   { id: 'l7', company: 'Kalpa Wellness', contact: 'Dr. Aditi Rao', email: 'aditi@kalpa.health', industry: 'Wellness', source: 'Website', stage: 'NEGOTIATION', valueMinor: rupees(180000), ownerId: 'm-aarav', nextStep: 'Contract signature', nextStepAt: daysFromNow(4, 11), createdAt: daysFromNow(-18) },
   { id: 'l8', company: 'Sundar Jewellers', contact: 'Meenal Sundar', email: 'meenal@sundarjewels.in', industry: 'Luxury', source: 'Referral', stage: 'WON', valueMinor: rupees(160000), ownerId: 'm-aarav', nextStep: 'Kickoff', createdAt: daysFromNow(-30) },
   { id: 'l9', company: 'QuickMart Express', contact: 'Harsh Vora', email: 'harsh@quickmart.in', industry: 'Retail', source: 'Cold email', stage: 'LOST', valueMinor: rupees(60000), ownerId: 'm-priya', nextStep: 'Revisit next quarter', createdAt: daysFromNow(-25) },
-]);
+], leadsLive);

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { ClientStatus, Platform } from '@agency-os/contracts';
+import { clientsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -134,4 +135,4 @@ export const clientsRepository = createRepository<Client>('clients', () => [
     ownerId: 'm-aarav',
     brand: { primary: '#60A5FA', secondary: '#1E3A8A', accent: '#DBEAFE', voice: 'Trustworthy, premium, informative.', hashtags: ['#AtlasHomes'], pillars: ['Listings', 'Market insights', 'Testimonials'] },
   },
-]);
+], clientsLive);

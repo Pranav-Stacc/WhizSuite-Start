@@ -1,7 +1,7 @@
 import 'server-only';
 import { redirect } from 'next/navigation';
 import { env } from '@/shared/config/env';
-import { getSession } from '@/shared/auth/session';
+import { getSession, updateSessionTokens } from '@/shared/auth/session';
 
 export class ApiError extends Error {
   constructor(
@@ -29,6 +29,8 @@ export interface ApiRequest {
   token?: string;
   organizationId?: string;
   retries?: number;
+  /** Internal: skip one refresh attempt when retrying after rotation. */
+  _refreshed?: boolean;
 }
 
 const RETRY_DELAY_MS = 200;
@@ -39,6 +41,24 @@ function buildUrl(path: string, query?: ApiRequest['query']): string {
     if (value !== undefined) url.searchParams.set(key, String(value));
   }
   return url.toString();
+}
+
+async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string } | null> {
+  try {
+    const response = await fetch(buildUrl('v1/auth/refresh'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(env.API_TIMEOUT_MS),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as { accessToken: string; refreshToken: string };
+    await updateSessionTokens(body.accessToken, body.refreshToken);
+    return body;
+  } catch {
+    return null;
+  }
 }
 
 /** Server-only gateway to apps/api. The browser never sees the API URL or tokens. */
@@ -66,6 +86,10 @@ export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promi
           : { cache: 'no-store' as const }),
       });
 
+      if (response.status === 401 && token && session?.refreshToken && !request._refreshed) {
+        const rotated = await refreshAccessToken(session.refreshToken);
+        if (rotated) return apiFetch<T>(path, { ...request, token: rotated.accessToken, _refreshed: true });
+      }
       if (response.status === 401 && token) redirect('/login?expired=1');
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as ProblemDetails;

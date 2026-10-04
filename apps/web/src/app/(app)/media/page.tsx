@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { ImageIcon, Plus } from 'lucide-react';
+import { ImageIcon, Plus, UploadCloud } from 'lucide-react';
 import { AssetKinds } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
@@ -14,6 +15,7 @@ import { SearchInput } from '@/shared/ui/search-input';
 import { clientsById } from '@/features/clients/services/clients.service';
 import { AssetCard } from '@/features/media/components/asset-card';
 import { AssetDialog } from '@/features/media/components/asset-dialog';
+import { AssetUploader } from '@/features/media/components/asset-uploader';
 import { listAssets } from '@/features/media/services/media.service';
 
 export const metadata: Metadata = { title: t('media.title') };
@@ -39,10 +41,11 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
   const clientOptions = [...clients.values()].map((c) => ({ id: c.id, name: c.name }));
   const addButton = (
     <Button variant="primary">
-      <Plus />
-      {t('media.add')}
+      {isLiveMode ? <UploadCloud /> : <Plus />}
+      {isLiveMode ? t('media.upload') : t('media.add')}
     </Button>
   );
+  const openOnLoad = param(sp, 'new') === '1';
 
   return (
     <div>
@@ -53,7 +56,11 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
         actions={
           <>
             <PageGuide items={GUIDE} />
-            <AssetDialog clients={clientOptions} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} trigger={addButton} />
+            {isLiveMode ? (
+              <AssetUploader clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
+            ) : (
+              <AssetDialog clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
+            )}
           </>
         }
       />
@@ -84,7 +91,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((asset) => (
             <li key={asset.id}>
-              <AssetCard asset={asset} clientName={clients.get(asset.clientId)?.name} canDelete={ROLES_LEADERSHIP.includes(session.role) || asset.uploadedBy === session.userId} />
+              <AssetCard asset={asset} clientName={clients.get(asset.clientId)?.name} canDelete={ROLES_LEADERSHIP.includes(session.role) || asset.uploadedBy === session.userId} canDownload={isLiveMode} />
             </li>
           ))}
         </ul>

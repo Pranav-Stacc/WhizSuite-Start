@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Priority, TaskStatus } from '@agency-os/contracts';
+import { tasksLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
 
@@ -60,4 +61,5 @@ export const tasksRepository = createRepository<Task>('tasks', () =>
     estimateHours,
     createdAt: daysFromNow(-8),
   })),
+  tasksLive,
 );

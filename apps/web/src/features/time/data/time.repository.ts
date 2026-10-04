@@ -1,4 +1,5 @@
 import 'server-only';
+import { timeLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow, toDateKey } from '@/shared/lib/format';
 
@@ -49,6 +50,7 @@ export const timeRepository = createRepository<TimeEntry>('time', () =>
     note,
     billable: true,
   })),
+  timeLive,
 );
 
 export const timersRepository = createRepository<ActiveTimer>('timers', () => []);
