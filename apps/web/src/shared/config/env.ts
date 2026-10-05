@@ -11,6 +11,8 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(16).default('dev-only-session-secret-change-me'),
   API_TIMEOUT_MS: z.coerce.number().int().positive().default(8000),
   SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 60 * 24 * 7),
+  SESSION_REFRESH_SKEW_SECONDS: z.coerce.number().int().nonnegative().default(60),
+  SESSION_REFRESH_SHARE_MS: z.coerce.number().int().nonnegative().default(10_000),
 });
 
 function loadEnv() {
