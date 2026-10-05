@@ -27,6 +27,28 @@ export class CreateClientDto {
   website?: string;
 }
 
+export class UpdateClientDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  displayName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  industry?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  website?: string;
+
+  @ApiProperty({ required: false, example: 'ACTIVE' })
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
 export class UpdateBrandKitDto {
   @ApiProperty({ required: false })
   @IsOptional()

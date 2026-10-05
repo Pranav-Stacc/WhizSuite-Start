@@ -15,27 +15,35 @@ interface StatCardProps {
   href?: string;
   invertDelta?: boolean;
   className?: string;
+  compact?: boolean;
 }
 
-export function StatCard({ label, value, icon, delta, hint, spark, href, invertDelta, className }: StatCardProps) {
+export function StatGrid({ children, className, cols = 4 }: { children: ReactNode; className?: string; cols?: 2 | 3 | 4 }) {
+  const colClass = cols === 2 ? 'sm:grid-cols-2' : cols === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4';
+  return <section className={cn('mb-4 grid gap-2', colClass, className)}>{children}</section>;
+}
+
+export function StatCard({ label, value, icon, delta, hint, spark, href, invertDelta, className, compact = true }: StatCardProps) {
   const positive = delta === undefined ? undefined : invertDelta ? delta <= 0 : delta >= 0;
   const body = (
-    <Card hover={Boolean(href)} className={cn('relative h-full overflow-hidden p-5', className)}>
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[13px] font-medium text-muted">{label}</p>
-        {icon ? <span className="grid size-8 place-items-center rounded-lg bg-primary/12 text-primary [&_svg]:size-4">{icon}</span> : null}
+    <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-3' : 'relative h-full overflow-hidden p-5', className)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] font-medium uppercase tracking-wide text-muted">{label}</p>
+        {icon ? <span className="grid size-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary [&_svg]:size-3.5">{icon}</span> : null}
       </div>
-      <p className="mt-2 text-[28px] font-semibold leading-none tracking-tight tabular-nums">{value}</p>
-      <div className="mt-2 flex items-center gap-2 text-xs">
-        {delta !== undefined ? (
-          <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium', positive ? 'bg-success/14 text-success' : 'bg-danger/14 text-danger')}>
-            {delta >= 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-            {Math.abs(delta)}%
-          </span>
-        ) : null}
-        {hint ? <span className="text-muted">{hint}</span> : null}
-      </div>
-      {spark ? <Sparkline data={spark} className="mt-3" /> : null}
+      <p className={cn('mt-1 font-semibold leading-none tracking-tight tabular-nums', compact ? 'text-xl' : 'text-[28px]')}>{value}</p>
+      {(delta !== undefined || hint) ? (
+        <div className="mt-1 flex items-center gap-1.5 text-[11px]">
+          {delta !== undefined ? (
+            <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium', positive ? 'bg-success/14 text-success' : 'bg-danger/14 text-danger')}>
+              {delta >= 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
+              {Math.abs(delta)}%
+            </span>
+          ) : null}
+          {hint ? <span className="truncate text-muted">{hint}</span> : null}
+        </div>
+      ) : null}
+      {spark ? <Sparkline data={spark} className="mt-2 h-8" /> : null}
     </Card>
   );
   return href ? (

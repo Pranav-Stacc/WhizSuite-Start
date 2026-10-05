@@ -60,6 +60,28 @@ export class ClientsRepository {
     });
   }
 
+  update(
+    organizationId: string,
+    clientId: string,
+    data: {
+      displayName?: string;
+      industry?: string;
+      website?: string;
+      status?: string;
+    },
+  ) {
+    return this.prisma.client.update({
+      where: { id: clientId, organizationId },
+      data: {
+        ...(data.displayName ? { displayName: data.displayName } : {}),
+        ...(data.industry ? { industry: data.industry } : {}),
+        ...(data.website !== undefined ? { website: data.website } : {}),
+        ...(data.status ? { status: data.status } : {}),
+      },
+      include: { brandKit: true, retainers: { where: { status: 'ACTIVE' } }, contacts: true },
+    });
+  }
+
   upsertBrandKit(
     organizationId: string,
     clientId: string,

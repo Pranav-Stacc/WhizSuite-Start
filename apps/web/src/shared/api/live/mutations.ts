@@ -22,6 +22,11 @@ export async function patchLead(leadId: string, body: Record<string, unknown>): 
   await apiFetch(`${orgPath(org, 'leads')}/${leadId}`, { method: 'PATCH', body });
 }
 
+export async function patchClient(clientId: string, body: Record<string, unknown>): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'clients')}/${clientId}`, { method: 'PATCH', body });
+}
+
 export async function patchClientBrandKit(clientId: string, body: Record<string, unknown>): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'clients')}/${clientId}/brand-kit`, { method: 'PATCH', body });

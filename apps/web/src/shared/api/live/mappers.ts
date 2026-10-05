@@ -15,6 +15,8 @@ import type { Invoice, InvoiceLine } from '@/features/invoices/data/invoices.rep
 import type { Article } from '@/features/knowledge/data/knowledge.repository';
 import type { Lead } from '@/features/leads/data/leads.repository';
 import type { Asset } from '@/features/media/data/media.repository';
+import type { Department } from '@/features/departments/data/departments.repository';
+import type { AgencyRole } from '@/features/roles/data/roles.repository';
 import type { Member, MemberRole } from '@/features/team/data/members.repository';
 import type { Notification } from '@/features/notifications/data/notifications.repository';
 import type { Project } from '@/features/projects/data/projects.repository';
@@ -27,7 +29,41 @@ import { hueFromId, iso, num, str } from './utils';
 
 type Raw = Record<string, unknown>;
 
-const EMPTY_BRAND: BrandKit = { primary: '#00FF66', secondary: '#18E889', accent: '#F59E0B', voice: '', hashtags: [], pillars: [] };
+const EMPTY_BRAND: BrandKit = { primary: '#ffffff', secondary: '#d1d1d1', accent: '#8D9B98', voice: '', hashtags: [], pillars: [] };
+
+const CONTENT_TYPE_TO_API: Record<string, string> = {
+  POST: 'STATIC_POST',
+  REEL: 'REEL',
+  STORY: 'STORY',
+  CAROUSEL: 'CAROUSEL',
+  VIDEO: 'VIDEO',
+};
+
+const CONTENT_TYPE_FROM_API: Record<string, Post['contentType']> = {
+  STATIC_POST: 'POST',
+  REEL: 'REEL',
+  STORY: 'STORY',
+  CAROUSEL: 'CAROUSEL',
+  VIDEO: 'VIDEO',
+};
+
+function brandFromKit(kit: Raw | undefined): BrandKit {
+  if (!kit) return EMPTY_BRAND;
+  const colors = (kit.colors ?? kit) as Raw;
+  const voiceTone = (kit.voiceTone ?? kit) as Raw;
+  const hashtagSets = kit.hashtagSets as Raw | undefined;
+  const contentPillars = kit.contentPillars as Raw | undefined;
+  const tags = hashtagSets && typeof hashtagSets === 'object' ? Object.values(hashtagSets).flat() : [];
+  const pillars = contentPillars && typeof contentPillars === 'object' ? Object.values(contentPillars).flat() : [];
+  return {
+    primary: str(colors, 'primary', EMPTY_BRAND.primary),
+    secondary: str(colors, 'secondary', EMPTY_BRAND.secondary),
+    accent: str(colors, 'accent', EMPTY_BRAND.accent),
+    voice: str(voiceTone, 'voice') || str(kit, 'voice'),
+    hashtags: Array.isArray(kit.hashtags) ? (kit.hashtags as string[]) : tags.filter((t): t is string => typeof t === 'string'),
+    pillars: Array.isArray(kit.pillars) ? (kit.pillars as string[]) : pillars.filter((p): p is string => typeof p === 'string'),
+  };
+}
 
 function asStatus<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && allowed.some((v) => v === value) ? (value as T) : fallback;
@@ -36,6 +72,10 @@ function asStatus<T extends string>(value: unknown, allowed: readonly T[], fallb
 export function clientFromApi(raw: Raw): Client {
   const id = str(raw, 'id');
   const kit = (raw.brandKit ?? raw.brand) as Raw | undefined;
+  const contacts = Array.isArray(raw.contacts) ? (raw.contacts as Raw[]) : [];
+  const primaryContact = contacts.find((c) => c.isPrimary) ?? contacts[0];
+  const retainers = Array.isArray(raw.retainers) ? (raw.retainers as Raw[]) : [];
+  const retainerMinor = retainers.reduce((sum, r) => sum + num(r, 'amountMinor'), 0);
   return {
     id,
     name: str(raw, 'displayName') || str(raw, 'name'),
@@ -44,35 +84,34 @@ export function clientFromApi(raw: Raw): Client {
     tier: str(raw, 'tier', 'Standard'),
     status: asStatus(raw.status, ['ACTIVE', 'ONBOARDING', 'PAUSED', 'CHURNED'] as const, 'ONBOARDING'),
     color: `hsl(${hueFromId(id)} 70% 45%)`,
-    contactName: str(raw, 'contactName'),
-    contactEmail: str(raw, 'contactEmail'),
-    health: 80,
-    retainerMinor: 0,
+    contactName: primaryContact ? str(primaryContact, 'name') : str(raw, 'contactName'),
+    contactEmail: primaryContact ? str(primaryContact, 'email') : str(raw, 'contactEmail'),
+    health: retainerMinor > 0 ? 85 : 70,
+    retainerMinor,
     platforms: [],
     since: iso(raw, 'createdAt'),
-    ownerId: str(raw, 'createdById'),
-    brand: kit
-      ? {
-          primary: str(kit, 'primary', EMPTY_BRAND.primary),
-          secondary: str(kit, 'secondary', EMPTY_BRAND.secondary),
-          accent: str(kit, 'accent', EMPTY_BRAND.accent),
-          voice: str(kit, 'voice'),
-          hashtags: Array.isArray(kit.hashtags) ? (kit.hashtags as string[]) : [],
-          pillars: Array.isArray(kit.pillars) ? (kit.pillars as string[]) : [],
-        }
-      : EMPTY_BRAND,
+    ownerId: str(raw, 'ownerId') || str(raw, 'createdById'),
+    brand: brandFromKit(kit),
   };
 }
 
 export async function clientToApi(input: Partial<Client>): Promise<Raw> {
   const workspaceId = await defaultWorkspaceId();
+  if (!workspaceId) throw new Error('No workspace configured for this organization');
+  const body: Raw = { workspaceId, displayName: input.name ?? '' };
+  if (input.industry) body.industry = input.industry;
+  if (input.website) body.website = input.website;
+  return body;
+}
+
+export function clientBrandKitToApi(input: Partial<Client>): Raw {
+  const brand = input.brand;
+  if (!brand) return {};
   return {
-    workspaceId,
-    displayName: input.name,
-    industry: input.industry,
-    website: input.website,
-    tier: input.tier,
-    status: input.status,
+    colors: { primary: brand.primary, secondary: brand.secondary, accent: brand.accent },
+    voiceTone: { voice: brand.voice },
+    hashtagSets: brand.hashtags.length ? { default: brand.hashtags } : undefined,
+    contentPillars: brand.pillars.length ? { default: brand.pillars } : undefined,
   };
 }
 
@@ -96,7 +135,11 @@ export function projectFromApi(raw: Raw): Project {
 
 export async function projectToApi(input: Partial<Project>): Promise<Raw> {
   const workspaceId = await defaultWorkspaceId();
-  return { workspaceId, clientId: input.clientId, name: input.name, type: input.type, status: input.status };
+  if (!workspaceId) throw new Error('No workspace configured for this organization');
+  const body: Raw = { workspaceId, clientId: input.clientId, name: input.name ?? '' };
+  if (input.type) body.type = input.type;
+  if (input.status) body.status = input.status;
+  return body;
 }
 
 export function taskFromApi(raw: Raw): Task {
@@ -122,15 +165,11 @@ export function taskFromApi(raw: Raw): Task {
 }
 
 export function taskToApi(input: Partial<Task>): Raw {
-  return {
-    projectId: input.projectId,
-    title: input.title,
-    description: input.description,
-    status: input.status,
-    priority: input.priority,
-    dueDate: input.dueDate,
-    estimateMinutes: input.estimateHours ? input.estimateHours * 60 : undefined,
-  };
+  const body: Raw = { projectId: input.projectId, title: input.title ?? '' };
+  if (input.description) body.description = input.description;
+  if (input.priority) body.priority = input.priority;
+  if (input.dueDate) body.dueDate = input.dueDate;
+  return body;
 }
 
 export function contentFromApi(raw: Raw): Post {
@@ -140,7 +179,7 @@ export function contentFromApi(raw: Raw): Post {
     clientId: str(raw, 'clientId'),
     title: str(raw, 'title'),
     caption: str(raw, 'caption'),
-    contentType: asStatus(raw.contentType, ['POST', 'REEL', 'STORY', 'CAROUSEL', 'VIDEO'] as const, 'POST'),
+    contentType: CONTENT_TYPE_FROM_API[String(raw.contentType)] ?? asStatus(raw.contentType, ['POST', 'REEL', 'STORY', 'CAROUSEL', 'VIDEO'] as const, 'POST'),
     platforms,
     status: asStatus(raw.status, ['DRAFT', 'IN_REVIEW', 'APPROVED', 'CHANGES_REQUESTED', 'SCHEDULED', 'PUBLISHED'] as const, 'DRAFT'),
     scheduledAt: raw.scheduledAt ? iso(raw, 'scheduledAt') : undefined,
@@ -153,13 +192,13 @@ export function contentFromApi(raw: Raw): Post {
 }
 
 export function contentToApi(input: Partial<Post>): Raw {
-  return {
+  const body: Raw = {
     clientId: input.clientId,
-    title: input.title,
-    caption: input.caption,
-    contentType: input.contentType,
-    status: input.status,
+    title: input.title ?? '',
+    contentType: input.contentType ? (CONTENT_TYPE_TO_API[input.contentType] ?? 'STATIC_POST') : 'STATIC_POST',
   };
+  if (input.caption) body.caption = input.caption;
+  return body;
 }
 
 export function leadFromApi(raw: Raw): Lead {
@@ -181,14 +220,13 @@ export function leadFromApi(raw: Raw): Lead {
 }
 
 export function leadToApi(input: Partial<Lead>): Raw {
-  return {
-    companyName: input.company,
-    brandName: input.company,
-    industry: input.industry,
-    source: input.source,
-    stage: input.stage,
-    valueMinor: input.valueMinor,
-  };
+  const body: Raw = { companyName: input.company, brandName: input.company };
+  if (input.industry) body.industry = input.industry;
+  if (input.source) body.source = input.source;
+  if (input.valueMinor) body.valueMinor = input.valueMinor;
+  if (input.contact) body.contactName = input.contact;
+  if (input.email) body.contactEmail = input.email;
+  return body;
 }
 
 export function invoiceFromApi(raw: Raw): Invoice {
@@ -362,4 +400,49 @@ export function timeEntryFromApi(raw: Raw): TimeEntry {
     note: str(raw, 'note'),
     billable: raw.billable !== false,
   };
+}
+
+export function roleFromApi(raw: Raw): AgencyRole {
+  const permissions = Array.isArray(raw.permissions) ? (raw.permissions as Raw[]) : [];
+  const keys = permissions
+    .map((row) => {
+      const perm = (row.permission ?? row) as Raw;
+      return str(perm, 'key');
+    })
+    .filter(Boolean);
+  const assignments = Array.isArray(raw.assignments) ? raw.assignments : [];
+  return {
+    id: str(raw, 'id'),
+    name: str(raw, 'name'),
+    description: str(raw, 'description'),
+    isSystem: Boolean(raw.isSystem),
+    permissionKeys: keys,
+    memberCount: assignments.length,
+  };
+}
+
+export function roleToApi(input: Partial<AgencyRole>): Raw {
+  return {
+    name: input.name,
+    description: input.description,
+    permissionKeys: input.permissionKeys ?? [],
+  };
+}
+
+export function departmentFromApi(raw: Raw): Department {
+  const designations = Array.isArray(raw.designations) ? raw.designations : [];
+  return {
+    id: str(raw, 'id'),
+    name: str(raw, 'name'),
+    path: str(raw, 'path'),
+    parentId: raw.parentId ? str(raw, 'parentId') : undefined,
+    headcount: designations.length,
+    createdAt: iso(raw, 'createdAt'),
+  };
+}
+
+export function departmentToApi(input: Partial<Department>): Raw {
+  const body: Raw = { name: input.name ?? '' };
+  if (input.parentId) body.parentId = input.parentId;
+  return body;
 }

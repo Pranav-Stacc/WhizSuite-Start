@@ -22,12 +22,12 @@ export type ThemeSettings = z.infer<typeof themeSchema>;
 export type ThemeColorKey = 'bg' | 'surface' | 'border' | 'primary' | 'secondary' | 'fg' | 'muted';
 
 export const DEFAULT_THEME: ThemeSettings = {
-  bg: '#040A09',
-  surface: '#0B1513',
-  border: '#193827',
-  primary: '#00FF66',
-  secondary: '#18E889',
-  fg: '#F5F7F6',
+  bg: '#040109',
+  surface: '#0B0B0B',
+  border: '#2A2A2A',
+  primary: '#FFFFFF',
+  secondary: '#D1D1D1',
+  fg: '#FFFFFF',
   muted: '#8D9B98',
   radius: 14,
   density: 'comfortable',
@@ -39,7 +39,7 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: 'neon', theme: DEFAULT_THEME },
+  { id: 'mono', theme: DEFAULT_THEME },
   {
     id: 'aurora',
     theme: {

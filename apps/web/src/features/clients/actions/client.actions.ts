@@ -7,6 +7,9 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
+import { patchClient, patchClientBrandKit } from '@/shared/api/live/mutations';
+import { clientBrandKitToApi } from '@/shared/api/live/mappers';
+import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { clientsRepository } from '../data/clients.repository';
 import { onboardClient } from '../services/clients.service';
@@ -62,17 +65,19 @@ export async function updateBrandKitAction(clientId: string, raw: unknown): Prom
     const before = await clientsRepository.get(clientId);
     if (!before) return fail(t('toast.failed'));
 
-    await clientsRepository.update(clientId, {
-      color: input.primary,
-      brand: {
-        primary: input.primary,
-        secondary: input.secondary,
-        accent: input.accent,
-        voice: input.voice ?? '',
-        hashtags: splitList(input.hashtags, LIST_SEPARATOR).map(normalizeHashtag),
-        pillars: splitList(input.pillars, PILLAR_SEPARATOR),
-      },
-    });
+    const brand = {
+      primary: input.primary,
+      secondary: input.secondary,
+      accent: input.accent,
+      voice: input.voice ?? '',
+      hashtags: splitList(input.hashtags, LIST_SEPARATOR).map(normalizeHashtag),
+      pillars: splitList(input.pillars, PILLAR_SEPARATOR),
+    };
+    if (isLiveMode) {
+      await patchClientBrandKit(clientId, clientBrandKitToApi({ brand }));
+    } else {
+      await clientsRepository.update(clientId, { color: input.primary, brand });
+    }
     await recordAudit({ action: 'client.brand_updated', entityType: 'client', entityId: clientId, entityLabel: before.name, summary: 'Updated brand kit' });
     await refreshData('clients');
     return succeed(undefined, t('clients.brand.updated'));
@@ -85,7 +90,8 @@ export async function setClientStatusAction(clientId: string, status: string): P
     if (!ClientStatuses.includes(status as ClientStatus)) return fail(t('toast.failed'));
     const before = await clientsRepository.get(clientId);
     if (!before) return fail(t('toast.failed'));
-    await clientsRepository.update(clientId, { status: status as ClientStatus });
+    if (isLiveMode) await patchClient(clientId, { status });
+    else await clientsRepository.update(clientId, { status: status as ClientStatus });
     await recordAudit({
       action: 'client.status_changed',
       entityType: 'client',

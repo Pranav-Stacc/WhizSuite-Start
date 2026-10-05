@@ -123,6 +123,67 @@ export class AccessRepository {
     }
   }
 
+  listRoles(organizationId: string) {
+    return this.prisma.role.findMany({
+      where: { organizationId },
+      orderBy: { name: 'asc' },
+      include: {
+        permissions: { include: { permission: true } },
+        assignments: { select: { id: true } },
+      },
+    });
+  }
+
+  listPermissions() {
+    return this.prisma.permission.findMany({ orderBy: [{ category: 'asc' }, { key: 'asc' }] });
+  }
+
+  async createRole(
+    organizationId: string,
+    input: { name: string; description?: string; permissionKeys: string[] },
+  ) {
+    const permissions = await this.prisma.permission.findMany({
+      where: { key: { in: input.permissionKeys } },
+    });
+    return this.prisma.role.create({
+      data: {
+        organizationId,
+        name: input.name,
+        description: input.description,
+        permissions: {
+          create: permissions.map((p) => ({ permissionId: p.id, effect: 'ALLOW' })),
+        },
+      },
+      include: { permissions: { include: { permission: true } } },
+    });
+  }
+
+  async updateRole(
+    organizationId: string,
+    roleId: string,
+    input: { name?: string; description?: string; permissionKeys?: string[] },
+  ) {
+    const role = await this.prisma.role.findFirst({ where: { id: roleId, organizationId } });
+    if (!role) return null;
+    if (input.permissionKeys) {
+      const permissions = await this.prisma.permission.findMany({
+        where: { key: { in: input.permissionKeys } },
+      });
+      await this.prisma.rolePermission.deleteMany({ where: { roleId } });
+      await this.prisma.rolePermission.createMany({
+        data: permissions.map((p) => ({ roleId, permissionId: p.id, effect: 'ALLOW' })),
+      });
+    }
+    return this.prisma.role.update({
+      where: { id: roleId },
+      data: {
+        ...(input.name ? { name: input.name } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+      },
+      include: { permissions: { include: { permission: true } }, assignments: { select: { id: true } } },
+    });
+  }
+
   async createSystemRole(
     organizationId: string,
     name: string,

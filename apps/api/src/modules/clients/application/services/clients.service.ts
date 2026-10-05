@@ -64,6 +64,31 @@ export class ClientsService {
     return client;
   }
 
+  async update(
+    organizationId: string,
+    clientId: string,
+    actorId: string,
+    data: {
+      displayName?: string;
+      industry?: string;
+      website?: string;
+      status?: string;
+    },
+  ) {
+    await this.get(organizationId, clientId);
+    const client = await this.repo.update(organizationId, clientId, data);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'client.update',
+      entityType: 'client',
+      entityId: clientId,
+      after: client as unknown as Record<string, unknown>,
+    });
+    return client;
+  }
+
   async updateBrandKit(
     organizationId: string,
     clientId: string,

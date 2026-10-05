@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { ClientsService } from '../../../application/services/clients.service';
-import { CreateClientDto, UpdateBrandKitDto } from '../dto/client.dto';
+import { CreateClientDto, UpdateBrandKitDto, UpdateClientDto } from '../dto/client.dto';
 
 @ApiTags('clients')
 @ApiBearerAuth()
@@ -50,6 +50,17 @@ export class ClientsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.clients.create(organizationId, user.userId, dto);
+  }
+
+  @Patch(':clientId')
+  @RequirePermissions(Permissions.CLIENTS_EDIT)
+  update(
+    @Param('organizationId') organizationId: string,
+    @Param('clientId') clientId: string,
+    @Body() dto: UpdateClientDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.clients.update(organizationId, clientId, user.userId, dto);
   }
 
   @Patch(':clientId/brand-kit')

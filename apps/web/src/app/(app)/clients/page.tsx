@@ -11,7 +11,7 @@ import { FilterChips, ViewToggle, param, withQuery, type SearchParams } from '@/
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { SearchInput } from '@/shared/ui/search-input';
-import { StatCard } from '@/shared/ui/stat-card';
+import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { statusLabel } from '@/shared/ui/status';
 import { healthBand } from '@/features/clients/config';
 import { ClientCard } from '@/features/clients/components/client-card';
@@ -72,11 +72,11 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
         }
       />
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <StatGrid cols={3}>
         <StatCard label={t('clients.mrr')} value={<span>{formatMoney(monthlyRecurring(clients), undefined, true)}</span>} icon={<Wallet />} hint={t('clients.mrr.hint', { count: payingCount })} />
         <StatCard label={t('clients.stat.risk')} value={<span>{atRisk}</span>} icon={<AlertTriangle />} hint={t('clients.health.risk')} />
         <StatCard label={t('clients.stat.channels')} value={<span>{channels}</span>} icon={<Users />} />
-      </section>
+      </StatGrid>
 
       <div role="search" aria-label={t('clients.filters.label')} className="mb-5 flex flex-wrap items-center gap-3">
         <SearchInput placeholder={t('clients.search')} className="max-w-64" />

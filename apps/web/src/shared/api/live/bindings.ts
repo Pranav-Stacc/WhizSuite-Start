@@ -12,6 +12,8 @@ import type { Lead } from '@/features/leads/data/leads.repository';
 import type { Asset } from '@/features/media/data/media.repository';
 import type { Notification } from '@/features/notifications/data/notifications.repository';
 import type { Project } from '@/features/projects/data/projects.repository';
+import type { Department } from '@/features/departments/data/departments.repository';
+import type { AgencyRole } from '@/features/roles/data/roles.repository';
 import type { Member } from '@/features/team/data/members.repository';
 import type { Task } from '@/features/tasks/data/tasks.repository';
 import type { TimeEntry } from '@/features/time/data/time.repository';
@@ -30,8 +32,12 @@ import {
   invoiceToApi,
   leadFromApi,
   leadToApi,
+  departmentFromApi,
+  departmentToApi,
   memberFromApi,
   notificationFromApi,
+  roleFromApi,
+  roleToApi,
   projectFromApi,
   projectToApi,
   taskFromApi,
@@ -76,6 +82,9 @@ export const auditLive: LiveBinding<AuditEntry> = {
   tag: 'audit',
   deletable: false,
 };
+
+export const rolesLive = binding<AgencyRole>('roles', 'roles', roleFromApi, roleToApi, { deletable: false });
+export const departmentsLive = binding<Department>('departments', 'departments', departmentFromApi, departmentToApi, { deletable: false });
 
 export const invitationsLive: LiveBinding<Member> = {
   path: (org) => orgPath(org, 'invitations'),

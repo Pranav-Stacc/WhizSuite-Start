@@ -1,4 +1,10 @@
 import type { ZodTypeAny } from 'zod';
+import { z } from 'zod';
+
+const createDepartmentFormSchema = z.object({
+  name: z.string().min(2),
+  parentId: z.string().optional(),
+});
 import {
   brandKitSchema,
   connectIntegrationSchema,
@@ -39,6 +45,7 @@ export const FORM_SCHEMAS = {
   message: messageSchema,
   workflow: createWorkflowSchema,
   integration: connectIntegrationSchema,
+  department: createDepartmentFormSchema,
 } satisfies Record<string, ZodTypeAny>;
 
 export type FormSchemaKey = keyof typeof FORM_SCHEMAS;
