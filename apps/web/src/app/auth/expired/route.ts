@@ -1,11 +1,11 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { SESSION_COOKIE } from '@/shared/auth/session';
 
-export function GET(request: NextRequest) {
-  const url = request.nextUrl.clone();
-  url.pathname = '/login';
-  url.search = '?expired=1';
-  const response = NextResponse.redirect(url);
+const TEMPORARY_REDIRECT = 307;
+
+/** Relative Location: behind Amplify's compute layer the request URL carries the internal host. */
+export function GET() {
+  const response = new NextResponse(null, { status: TEMPORARY_REDIRECT, headers: { location: '/login?expired=1' } });
   response.cookies.delete(SESSION_COOKIE);
   return response;
 }
