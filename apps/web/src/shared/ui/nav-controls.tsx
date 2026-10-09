@@ -13,23 +13,17 @@ export interface TabItem {
 /** Underline tabs driven by the URL — server rendered, instantly shareable. */
 export function TabLinks({ items, className }: { items: TabItem[]; className?: string }) {
   return (
-    <nav aria-label="Sections" className={cn('no-scrollbar mb-6 flex gap-1 overflow-x-auto border-b border-border-soft', className)}>
+    <nav aria-label="Sections" className={cn('no-scrollbar mb-8 flex gap-6 overflow-x-auto', className)}>
       {items.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           aria-current={item.active ? 'page' : undefined}
-          className={cn(
-            'relative inline-flex shrink-0 items-center gap-2 px-3.5 py-2.5 text-sm font-medium transition-colors [&_svg]:size-4',
-            item.active ? 'text-primary' : 'text-muted hover:text-foreground',
-          )}
+          className="nav-link inline-flex shrink-0 items-center gap-1.5 py-1 [&_svg]:size-3.5"
         >
           {item.icon}
           {item.label}
-          {item.count !== undefined ? (
-            <span className={cn('rounded-full px-1.5 text-[11px] tabular-nums', item.active ? 'bg-primary/16 text-primary' : 'bg-surface-3 text-muted')}>{item.count}</span>
-          ) : null}
-          {item.active ? <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" /> : null}
+          {item.count !== undefined ? <span className="tabular-nums opacity-60">· {item.count}</span> : null}
         </Link>
       ))}
     </nav>
@@ -38,15 +32,15 @@ export function TabLinks({ items, className }: { items: TabItem[]; className?: s
 
 export function FilterChips({ items, className }: { items: Array<{ href: string; label: string; active: boolean; count?: number }>; className?: string }) {
   return (
-    <div className={cn('no-scrollbar flex gap-2 overflow-x-auto', className)}>
+    <div className={cn('no-scrollbar flex items-center gap-1 overflow-x-auto', className)}>
       {items.map((item) => (
         <Link
           key={item.href + item.label}
           href={item.href}
           aria-current={item.active ? 'true' : undefined}
           className={cn(
-            'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors',
-            item.active ? 'border-primary/50 bg-primary/14 text-primary' : 'border-border-soft bg-surface-2 text-muted hover:border-border hover:text-foreground',
+            'inline-flex shrink-0 items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[10.5px] font-medium uppercase tracking-[0.14em] transition-colors',
+            item.active ? 'border-foreground text-foreground' : 'border-transparent text-muted hover:text-foreground',
           )}
         >
           {item.label}
@@ -59,7 +53,7 @@ export function FilterChips({ items, className }: { items: Array<{ href: string;
 
 export function ViewToggle({ items }: { items: Array<{ href: string; label: string; active: boolean; icon: ReactNode }> }) {
   return (
-    <div className="inline-flex rounded-lg border border-border-soft bg-surface-2 p-0.5">
+    <div className="inline-flex items-center gap-5">
       {items.map((item) => (
         <Link
           key={item.href}
@@ -67,7 +61,7 @@ export function ViewToggle({ items }: { items: Array<{ href: string; label: stri
           title={item.label}
           aria-label={item.label}
           aria-current={item.active ? 'true' : undefined}
-          className={cn('inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium transition-colors [&_svg]:size-4', item.active ? 'bg-primary/16 text-primary' : 'text-muted hover:text-foreground')}
+          className="nav-link inline-flex h-8 items-center gap-1.5 [&_svg]:size-3.5 [&_svg]:sm:hidden"
         >
           {item.icon}
           <span className="hidden sm:inline">{item.label}</span>

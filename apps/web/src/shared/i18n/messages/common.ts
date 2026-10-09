@@ -78,6 +78,8 @@ export const common = {
   'validation.platform': 'Select at least one platform',
   'validation.lines': 'Add at least one line item',
   'validation.stages': 'List at least two stages, separated by commas',
+  'validation.url': 'Enter a full link, starting with https://',
+  'validation.tooLong': 'This is too long',
   'toast.saved': 'Changes saved',
   'toast.created': 'Created successfully',
   'toast.invalid': 'Please fix the highlighted fields.',

@@ -17,6 +17,11 @@ export async function transitionContent(contentId: string, toStatus: string): Pr
   await apiFetch(`${orgPath(org, 'content')}/${contentId}/transition`, { method: 'POST', body: { toStatus } });
 }
 
+export async function reorderContent(clientId: string, orderedIds: string[]): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'content')}/reorder`, { method: 'POST', body: { clientId, orderedIds } });
+}
+
 export async function patchLead(leadId: string, body: Record<string, unknown>): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'leads')}/${leadId}`, { method: 'PATCH', body });

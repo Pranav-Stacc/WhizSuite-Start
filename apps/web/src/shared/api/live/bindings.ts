@@ -25,6 +25,7 @@ import {
   clientFromApi,
   clientToApi,
   contentFromApi,
+  contentPatchToApi,
   contentToApi,
   inboxFromApi,
   integrationFromApi,
@@ -66,7 +67,10 @@ function binding<T extends { id: string }>(
 export const clientsLive = binding<Client>('clients', 'clients', clientFromApi, clientToApi, { deletable: false });
 export const projectsLive = binding<Project>('projects', 'projects', projectFromApi, projectToApi);
 export const tasksLive = binding<Task>('tasks', 'tasks', taskFromApi, taskToApi);
-export const contentLive = binding<Post>('content', 'content', contentFromApi, contentToApi);
+export const contentLive: LiveBinding<Post> = {
+  ...binding<Post>('content', 'content', contentFromApi, contentToApi),
+  toApiPatch: contentPatchToApi,
+};
 export const leadsLive = binding<Lead>('leads', 'leads', leadFromApi, leadToApi);
 export const invoicesLive = binding<Invoice>('invoices', 'invoices', invoiceFromApi, invoiceToApi);
 export const integrationsLive = binding<Integration>('integrations/connections', 'integrations', integrationFromApi);

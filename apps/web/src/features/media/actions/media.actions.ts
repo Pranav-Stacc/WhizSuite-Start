@@ -14,7 +14,6 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { hueFor } from '@/shared/lib/format';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { DEMO_MIME_TYPES, mediaRepository } from '../data/media.repository';
 import { completeUpload, createDownloadUrl, presignUpload } from '../services/media-upload.service';
@@ -50,7 +49,6 @@ export async function createAssetAction(raw: unknown): Promise<ActionResult> {
       status: 'READY',
       sizeKb: 0,
       tags: (input.tags ?? '').split(TAG_SEPARATOR).filter(Boolean),
-      hue: hueFor(input.name),
       uploadedBy: session.userId,
       createdAt: new Date().toISOString(),
     });

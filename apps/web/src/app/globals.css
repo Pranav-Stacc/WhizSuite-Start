@@ -4,44 +4,46 @@
   Design tokens. Every colour below is user-customisable at runtime:
   the <html> element receives an inline style from the saved theme cookie,
   so there is no flash and no client-side re-render needed.
+  Defaults mirror DEFAULT_THEME (editorial) in shared/theme/theme.ts.
 */
 :root {
-  --bg: #040109;
-  --surface: #0b0b0b;
-  --border: #2a2a2a;
-  --primary: #ffffff;
-  --secondary: #d1d1d1;
-  --fg: #ffffff;
-  --muted: #8d9b98;
-  --primary-contrast: #040109;
-  --radius: 14px;
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --border: #d8d5ce;
+  --primary: #111111;
+  --secondary: #5c5a55;
+  --fg: #111111;
+  --muted: #8a877f;
+  --primary-contrast: #ffffff;
+  --radius: 2px;
   --density: 1;
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-2: color-mix(in oklab, var(--surface) 92%, var(--fg));
-  --color-surface-3: color-mix(in oklab, var(--surface) 84%, var(--fg));
+  --color-surface-2: color-mix(in oklab, var(--surface) 96%, var(--fg));
+  --color-surface-3: color-mix(in oklab, var(--surface) 91%, var(--fg));
   --color-border: var(--border);
-  --color-border-soft: color-mix(in oklab, var(--border) 55%, transparent);
+  --color-border-soft: color-mix(in oklab, var(--border) 62%, transparent);
+  --color-border-strong: color-mix(in oklab, var(--fg) 82%, var(--border));
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-foreground: var(--fg);
   --color-muted: var(--muted);
   --color-primary-contrast: var(--primary-contrast);
-  --color-success: #2ee59d;
-  --color-warning: #ffb020;
-  --color-danger: #ff5470;
-  --color-info: #4da3ff;
-  --color-violet: #a78bfa;
-  --color-pink: #ff7ac6;
+  --color-success: #4f8a65;
+  --color-warning: #c08a3e;
+  --color-danger: #bf5148;
+  --color-info: #5a7fae;
+  --color-violet: #8a7ab4;
+  --color-pink: #be7896;
 
   --radius-sm: calc(var(--radius) * 0.5);
-  --radius-md: calc(var(--radius) * 0.7);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.9);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -52,12 +54,13 @@
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-pulse-ring: pulse-ring 2s ease-out infinite;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-slide-in-right: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -75,7 +78,17 @@
 @keyframes pop {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(-4px);
+    transform: scale(0.98) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
   }
   to {
     opacity: 1;
@@ -92,10 +105,10 @@
 }
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 45%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 30%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 12px transparent;
+    box-shadow: 0 0 0 10px transparent;
   }
 }
 @keyframes float {
@@ -104,7 +117,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
 }
 
@@ -113,7 +126,7 @@
     border-color: var(--color-border-soft);
   }
   html {
-    color-scheme: dark;
+    color-scheme: light;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
@@ -121,30 +134,23 @@
     background-color: var(--bg);
     color: var(--fg);
     font-family: var(--font-sans);
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: 'ss01', 'tnum' 0;
+    letter-spacing: -0.005em;
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
-    background-image:
-      radial-gradient(
-        900px 420px at 12% -8%,
-        color-mix(in oklab, var(--primary) 13%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        700px 380px at 92% -12%,
-        color-mix(in oklab, var(--secondary) 9%, transparent),
-        transparent 70%
-      );
-    background-repeat: no-repeat;
-    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 400;
+    letter-spacing: -0.02em;
   }
   ::selection {
-    background: color-mix(in oklab, var(--primary) 35%, transparent);
+    background: color-mix(in oklab, var(--primary) 18%, transparent);
   }
   :focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 1px solid var(--primary);
     outline-offset: 2px;
-    border-radius: var(--radius-sm);
   }
   button,
   [role='button'],
@@ -152,11 +158,11 @@
     -webkit-tap-highlight-color: transparent;
   }
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-thumb {
-    background: color-mix(in oklab, var(--border) 80%, var(--fg) 10%);
+    background: color-mix(in oklab, var(--border) 90%, var(--fg) 10%);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: content-box;
@@ -182,56 +188,79 @@
 }
 
 @layer components {
+  /* Editorial type scale: tiny tracked uppercase for chrome, large light type for titles. */
+  .eyebrow {
+    font-size: 10.5px;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .nav-link {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-underline-offset: 6px;
+    transition: color 0.15s;
+  }
+  .nav-link:hover {
+    color: var(--fg);
+  }
+  .nav-link[aria-current='page'],
+  .nav-link[aria-current='true'] {
+    color: var(--fg);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  .wordmark {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+  .display {
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
   .glass {
-    background: color-mix(in oklab, var(--surface) 72%, transparent);
-    backdrop-filter: blur(18px) saturate(1.4);
-    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    background: color-mix(in oklab, var(--bg) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
   }
   .card-surface {
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--surface) 96%, var(--fg)),
-      var(--surface)
-    );
+    background: var(--surface);
     border: 1px solid var(--color-border-soft);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
   }
   .card-hover {
-    transition:
-      border-color 0.2s,
-      transform 0.2s,
-      box-shadow 0.2s;
+    transition: border-color 0.2s;
   }
   .card-hover:hover {
-    border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
-    box-shadow: 0 10px 40px -18px color-mix(in oklab, var(--primary) 45%, transparent);
-    transform: translateY(-1px);
+    border-color: var(--color-border-strong);
+  }
+  .rule {
+    border-color: var(--color-border-strong);
   }
   .text-gradient {
-    background-image: linear-gradient(100deg, var(--primary), var(--secondary) 60%, var(--fg));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--fg);
   }
   .glow {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent),
-      0 8px 38px -10px color-mix(in oklab, var(--primary) 55%, transparent);
+    box-shadow: 0 0 0 1px var(--color-border-strong);
   }
   .grid-bg {
     background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+      linear-gradient(to right, color-mix(in oklab, var(--border) 40%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--border) 40%, transparent) 1px, transparent 1px);
     background-size: 44px 44px;
     mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
   }
   .skeleton {
-    background: linear-gradient(
-      90deg,
-      var(--color-surface-2) 25%,
-      var(--color-surface-3) 50%,
-      var(--color-surface-2) 75%
-    );
+    background: linear-gradient(90deg, var(--color-surface-2) 25%, var(--color-surface-3) 50%, var(--color-surface-2) 75%);
     background-size: 200% 100%;
     animation: var(--animate-shimmer);
     border-radius: var(--radius-md);

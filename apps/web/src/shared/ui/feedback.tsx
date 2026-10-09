@@ -16,9 +16,9 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, body, action, className }: EmptyStateProps) {
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 px-6 py-14 text-center', className)}>
-      {icon ? <span className="grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary [&_svg]:size-6">{icon}</span> : null}
-      <h3 className="text-base font-semibold">{title}</h3>
-      {body ? <p className="max-w-sm text-sm text-muted">{body}</p> : null}
+      {icon ? <span className="text-muted [&_svg]:size-5">{icon}</span> : null}
+      <h3 className="eyebrow !text-foreground">{title}</h3>
+      {body ? <p className="max-w-sm text-[13px] text-muted">{body}</p> : null}
       {action}
     </div>
   );
@@ -35,8 +35,8 @@ export function Kbd({ children, className }: { children: ReactNode; className?: 
 export function Progress({ value, tone = 'primary', className }: { value: number; tone?: 'primary' | 'warning' | 'danger' | 'info'; className?: string }) {
   const color = { primary: 'bg-primary', warning: 'bg-warning', danger: 'bg-danger', info: 'bg-info' }[tone];
   return (
-    <div role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100} className={cn('h-1.5 w-full overflow-hidden rounded-full bg-surface-3', className)}>
-      <div className={cn('h-full rounded-full transition-all duration-500', color)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
+    <div role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100} className={cn('h-px w-full overflow-hidden bg-border', className)}>
+      <div className={cn('h-full transition-all duration-500', color)} style={{ width: `${Math.min(100, Math.max(0, value))}%` }} />
     </div>
   );
 }

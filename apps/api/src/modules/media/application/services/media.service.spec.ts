@@ -43,6 +43,7 @@ function setup() {
   const repository = {
     list: jest.fn(),
     findById: jest.fn().mockResolvedValue(asset()),
+    findForEmbedding: jest.fn().mockResolvedValue([]),
     findCurrentStorageKey: jest.fn().mockResolvedValue(KEY),
     findAllStorageKeys: jest.fn().mockResolvedValue([KEY]),
     createWithVersion: jest.fn().mockResolvedValue(asset()),
@@ -148,6 +149,73 @@ describe('MediaService', () => {
         url: 'https://s3/get',
         expiresInSeconds: 300,
       });
+    });
+  });
+
+  describe('list', () => {
+    const PDF_ID = '00000000-0000-4000-8000-000000000005';
+
+    it('adds preview urls only for ready images and videos, in one batch', async () => {
+      const { service, repository } = setup();
+      repository.list.mockResolvedValue([asset({ status: 'READY' }), asset({ id: PDF_ID, status: 'READY', mimeType: 'application/pdf' })]);
+      repository.findForEmbedding.mockResolvedValue([
+        { id: ASSET_ID, name: 'photo.png', mimeType: 'image/png', status: 'READY', currentVersion: 1, versions: [{ version: 1, storageKey: KEY }] },
+      ]);
+
+      const result = await service.list(ORG);
+
+      expect(repository.findForEmbedding).toHaveBeenCalledWith(ORG, [ASSET_ID]);
+      expect(result.map((a) => a.previewUrl)).toEqual(['https://s3/get', null]);
+    });
+  });
+
+  describe('resolveForEmbedding', () => {
+    const PENDING_ID = '00000000-0000-4000-8000-000000000004';
+
+    it('skips the query for an empty list', async () => {
+      const { service, repository } = setup();
+      await expect(service.resolveForEmbedding(ORG, [])).resolves.toEqual(new Map());
+      expect(repository.findForEmbedding).not.toHaveBeenCalled();
+    });
+
+    it('batch-loads assets once and signs inline urls only for READY ones', async () => {
+      const { service, repository, storage } = setup();
+      repository.findForEmbedding.mockResolvedValue([
+        {
+          id: ASSET_ID,
+          name: 'photo.png',
+          mimeType: 'image/png',
+          status: 'READY',
+          currentVersion: 2,
+          versions: [
+            { version: 1, storageKey: 'old' },
+            { version: 2, storageKey: KEY },
+          ],
+        },
+        {
+          id: PENDING_ID,
+          name: 'b.png',
+          mimeType: 'image/png',
+          status: 'PENDING_UPLOAD',
+          currentVersion: 1,
+          versions: [{ version: 1, storageKey: 'pending' }],
+        },
+      ]);
+
+      const result = await service.resolveForEmbedding(ORG, [ASSET_ID, PENDING_ID, ASSET_ID]);
+
+      expect(repository.findForEmbedding).toHaveBeenCalledTimes(1);
+      expect(repository.findForEmbedding).toHaveBeenCalledWith(ORG, [ASSET_ID, PENDING_ID]);
+      expect(storage.createPresignedDownload).toHaveBeenCalledTimes(1);
+      expect(storage.createPresignedDownload).toHaveBeenCalledWith(KEY, { filename: 'photo.png', disposition: 'inline' });
+      expect(result.get(ASSET_ID)).toEqual({
+        assetId: ASSET_ID,
+        name: 'photo.png',
+        mimeType: 'image/png',
+        status: 'READY',
+        url: 'https://s3/get',
+      });
+      expect(result.get(PENDING_ID)?.url).toBeNull();
     });
   });
 

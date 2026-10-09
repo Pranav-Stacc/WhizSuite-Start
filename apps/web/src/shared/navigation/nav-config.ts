@@ -86,7 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
     desc: 'nav.group.clients.desc',
     icon: Users,
     items: [
-      { href: '/clients', label: 'nav.clients', desc: 'nav.clients.desc', icon: Users, roles: ROLES_LEADERSHIP },
+      { href: '/clients', label: 'nav.clients', desc: 'nav.clients.desc', icon: Users, roles: ROLES_STAFF },
       { href: '/leads', label: 'nav.leads', desc: 'nav.leads.desc', icon: Target, roles: ROLES_LEADERSHIP },
       { href: '/inbox', label: 'nav.inbox', desc: 'nav.inbox.desc', icon: Inbox, roles: ROLES_STAFF },
     ],
@@ -128,6 +128,24 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
 ];
+
+/** Shown as flat text links in the top bar; every other page lives under "More". */
+export const PRIMARY_NAV_HREFS = ['/dashboard', '/clients', '/tasks', '/content', '/calendar', '/media', '/invoices'] as const;
+
+export function primaryNavForRole(role: UserRole): NavItem[] {
+  const byHref = new Map([HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)].map((item) => [item.href, item]));
+  return PRIMARY_NAV_HREFS.flatMap((href) => {
+    const item = byHref.get(href);
+    return item && item.roles.includes(role) ? [item] : [];
+  });
+}
+
+export function secondaryGroupsForRole(role: UserRole): NavGroup[] {
+  const primary = new Set<string>(PRIMARY_NAV_HREFS);
+  return groupsForRole(role)
+    .map((group) => ({ ...group, items: group.items.filter((item) => !primary.has(item.href)) }))
+    .filter((group) => group.items.length > 0);
+}
 
 export function groupsForRole(role: UserRole): NavGroup[] {
   return NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => item.roles.includes(role)) })).filter((group) => group.items.length > 0);

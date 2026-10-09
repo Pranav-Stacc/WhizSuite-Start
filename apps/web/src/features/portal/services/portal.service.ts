@@ -13,6 +13,12 @@ export async function portalClient(clientId: string) {
   return getClient(clientId);
 }
 
+/** Everything the client may see in the review desk: drafts stay internal to the agency. */
+export async function portalContent(clientId: string) {
+  const posts = await listContent();
+  return posts.filter((p) => p.clientId === clientId && p.status !== 'DRAFT');
+}
+
 export async function portalApprovals(clientId: string) {
   const posts = await listContent();
   return posts.filter((p) => p.clientId === clientId && p.status === 'IN_REVIEW').sort((a, b) => (a.scheduledAt ?? '').localeCompare(b.scheduledAt ?? ''));

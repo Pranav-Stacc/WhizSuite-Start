@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { MediaAssetStatus, UpdateMediaAssetInput } from '@agency-os/contracts';
 import { PrismaService } from '../../../../shared/database/prisma.service';
-import type { MediaAssetRecord } from '../../application/mappers/media-asset.mapper';
+import type { MediaAssetRecord, MediaEmbeddingRecord } from '../../application/mappers/media-asset.mapper';
 
 const ASSET_SELECT = {
   id: true,
@@ -35,6 +35,20 @@ export class MediaRepository {
     return this.prisma.mediaAsset.findFirst({
       where: { id, organizationId, deletedAt: null },
       select: ASSET_SELECT,
+    });
+  }
+
+  findForEmbedding(organizationId: string, ids: string[]): Promise<MediaEmbeddingRecord[]> {
+    return this.prisma.mediaAsset.findMany({
+      where: { id: { in: ids }, organizationId, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        mimeType: true,
+        status: true,
+        currentVersion: true,
+        versions: { select: { version: true, storageKey: true } },
+      },
     });
   }
 

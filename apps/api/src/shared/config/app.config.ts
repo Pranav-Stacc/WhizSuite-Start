@@ -1,4 +1,12 @@
 import { z } from 'zod';
+import {
+  CONTENT_HASHTAGS_MAX_DEFAULT,
+  CONTENT_LIST_LIMIT_DEFAULT,
+  CONTENT_MEDIA_MAX_DEFAULT,
+  CONTENT_REORDER_MAX_DEFAULT,
+  FEEDBACK_COMMENT_LIST_LIMIT_DEFAULT,
+  FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT,
+} from '@agency-os/contracts';
 
 export const appConfigSchema = z.object({
   NODE_ENV: z
@@ -42,6 +50,12 @@ export const appConfigSchema = z.object({
   STORAGE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   STORAGE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
   MEDIA_LIST_LIMIT: z.coerce.number().int().positive().default(200),
+  CONTENT_LIST_LIMIT: z.coerce.number().int().positive().default(CONTENT_LIST_LIMIT_DEFAULT),
+  CONTENT_MEDIA_MAX: z.coerce.number().int().positive().default(CONTENT_MEDIA_MAX_DEFAULT),
+  CONTENT_HASHTAGS_MAX: z.coerce.number().int().positive().default(CONTENT_HASHTAGS_MAX_DEFAULT),
+  CONTENT_REORDER_MAX: z.coerce.number().int().positive().default(CONTENT_REORDER_MAX_DEFAULT),
+  FEEDBACK_COMMENT_MAX_LENGTH: z.coerce.number().int().positive().default(FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT),
+  FEEDBACK_COMMENT_LIST_LIMIT: z.coerce.number().int().positive().default(FEEDBACK_COMMENT_LIST_LIMIT_DEFAULT),
   EMAIL_PROVIDER: z.string().default('mailpit'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(1025),

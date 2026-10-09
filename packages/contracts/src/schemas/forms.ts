@@ -11,6 +11,12 @@ import {
   ProjectStatuses,
   TaskStatuses,
 } from '../domain/statuses.js';
+import {
+  CONTENT_CTA_URL_MAX_LENGTH,
+  CONTENT_MEDIA_MAX_DEFAULT,
+  CONTENT_PILLAR_MAX_LENGTH,
+  normalizeHashtags,
+} from '../content/content.js';
 
 const optionalText = z
   .string()
@@ -90,12 +96,28 @@ export const createTaskSchema = z.object({
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
+const HASHTAG_SEPARATOR = /[\s,]+/;
+
 export const createContentSchema = z.object({
   title: z.string().trim().min(2, 'validation.min2'),
   clientId: z.string().min(1, 'validation.required'),
   contentType: z.enum(ContentTypes).default('POST'),
   caption: optionalText,
+  /** Free text; split on whitespace/commas and normalised to `#tag` form. */
+  hashtags: z
+    .string()
+    .optional()
+    .transform((v) => normalizeHashtags((v ?? '').split(HASHTAG_SEPARATOR))),
+  ctaUrl: z
+    .string()
+    .trim()
+    .max(CONTENT_CTA_URL_MAX_LENGTH)
+    .optional()
+    .refine((v) => !v || z.string().url().safeParse(v).success, 'validation.url')
+    .transform((v) => (v ? v : undefined)),
+  pillar: optionalText.refine((v) => !v || v.length <= CONTENT_PILLAR_MAX_LENGTH, 'validation.tooLong'),
   platforms: z.array(z.enum(Platforms)).min(1, 'validation.platform'),
+  mediaAssetIds: z.array(z.string().min(1)).max(CONTENT_MEDIA_MAX_DEFAULT).default([]),
   scheduledAt: optionalDate,
   submitForApproval: z.coerce.boolean().default(false),
 });

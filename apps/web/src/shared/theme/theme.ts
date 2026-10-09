@@ -4,6 +4,9 @@ import { z } from 'zod';
 export const THEME_COOKIE = 'ao_theme';
 export const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
+export const THEME_RADIUS_MIN = 0;
+export const THEME_RADIUS_MAX = 28;
+
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 export const themeSchema = z.object({
@@ -14,14 +17,40 @@ export const themeSchema = z.object({
   secondary: hex,
   fg: hex,
   muted: hex,
-  radius: z.number().min(4).max(28),
+  radius: z.number().min(THEME_RADIUS_MIN).max(THEME_RADIUS_MAX),
   density: z.enum(['comfortable', 'compact']),
 });
 
 export type ThemeSettings = z.infer<typeof themeSchema>;
 export type ThemeColorKey = 'bg' | 'surface' | 'border' | 'primary' | 'secondary' | 'fg' | 'muted';
 
+/** Editorial monochrome: off-white paper, ink text, hairline rules, square corners. */
 export const DEFAULT_THEME: ThemeSettings = {
+  bg: '#F7F6F3',
+  surface: '#FFFFFF',
+  border: '#D8D5CE',
+  primary: '#111111',
+  secondary: '#5C5A55',
+  fg: '#111111',
+  muted: '#8A877F',
+  radius: 2,
+  density: 'comfortable',
+};
+
+const NOIR_THEME: ThemeSettings = {
+  bg: '#0E0E0D',
+  surface: '#161615',
+  border: '#2E2D2A',
+  primary: '#F2F0EB',
+  secondary: '#B8B5AE',
+  fg: '#F2F0EB',
+  muted: '#8C8A85',
+  radius: 2,
+  density: 'comfortable',
+};
+
+/** The original dark, rounded look — kept as a preset. */
+const MONO_THEME: ThemeSettings = {
   bg: '#040109',
   surface: '#0B0B0B',
   border: '#2A2A2A',
@@ -39,11 +68,13 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: 'mono', theme: DEFAULT_THEME },
+  { id: 'editorial', theme: DEFAULT_THEME },
+  { id: 'noir', theme: NOIR_THEME },
+  { id: 'mono', theme: MONO_THEME },
   {
     id: 'aurora',
     theme: {
-      ...DEFAULT_THEME,
+      ...MONO_THEME,
       bg: '#07050F',
       surface: '#110D1F',
       border: '#2C2150',
@@ -56,7 +87,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'ocean',
     theme: {
-      ...DEFAULT_THEME,
+      ...MONO_THEME,
       bg: '#030B12',
       surface: '#0A1823',
       border: '#17344A',
@@ -69,7 +100,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'sunset',
     theme: {
-      ...DEFAULT_THEME,
+      ...MONO_THEME,
       bg: '#0D0705',
       surface: '#1A100C',
       border: '#4A2A1A',
@@ -82,7 +113,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'rose',
     theme: {
-      ...DEFAULT_THEME,
+      ...MONO_THEME,
       bg: '#0D0509',
       surface: '#1A0C13',
       border: '#4A1A2F',
@@ -95,7 +126,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   {
     id: 'daylight',
     theme: {
-      ...DEFAULT_THEME,
+      ...MONO_THEME,
       bg: '#F4F7F5',
       surface: '#FFFFFF',
       border: '#CFE0D6',

@@ -9,7 +9,8 @@ import { t } from '@/shared/i18n/t';
 import { transitionContent } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
-import { contentEventsRepository, contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
+import { contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
+import { recordContentEvent } from '@/features/content/services/content.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { threadRepository } from '../data/thread.repository';
 
@@ -23,7 +24,7 @@ async function requireClient(): Promise<Session & { clientId: string }> {
 }
 
 async function logEvent(contentId: string, kind: ContentEvent['kind'], session: Session, body: string): Promise<void> {
-  await contentEventsRepository.create({ contentId, kind, actorName: session.name, body, at: new Date().toISOString() });
+  await recordContentEvent(contentId, kind, session.name, body);
 }
 
 async function notifyAuthor(post: { id: string; authorId: string; title: string }, session: Session, title: string): Promise<void> {
@@ -60,6 +61,21 @@ export async function clientDecideContentAction(id: string, decision: string, ra
     });
     await refreshData('content', 'portal');
     return succeed(undefined, t(`content.decision.${action}`));
+  });
+}
+
+export async function clientCommentContentAction(id: string, raw: unknown): Promise<ActionResult> {
+  return guarded(async () => {
+    const session = await requireClient();
+    const parsed = parseInput(messageSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    const post = await contentRepository.get(id);
+    if (!post || post.clientId !== session.clientId) return fail(t('content.error.forbidden'));
+    await logEvent(id, 'comment', session, parsed.data.body);
+    await notifyAuthor(post, session, t('content.notify.comment'));
+    await recordAudit({ action: 'content.commented', entityType: 'content', entityId: id, entityLabel: post.title, summary: 'Client commented on content' });
+    await refreshData('content', 'portal');
+    return succeed(undefined, t('content.comment.sent'));
   });
 }
 

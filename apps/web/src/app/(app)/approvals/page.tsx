@@ -1,30 +1,28 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { CheckCircle2, PartyPopper } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
+import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
-import { dueInfo, relativeTime } from '@/shared/lib/format';
+import { initials } from '@/shared/lib/format';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
-import { Avatar } from '@/shared/ui/avatar';
-import { Badge } from '@/shared/ui/badge';
-import { Card, CardBody, CardHeader } from '@/shared/ui/card';
-import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
-import { param, type SearchParams } from '@/shared/ui/nav-controls';
+import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
-import { PlatformStack } from '@/shared/ui/platform';
 import { clientsById } from '@/features/clients/services/clients.service';
-import { ActivityTimeline } from '@/features/content/components/activity-timeline';
-import { ReviewActions } from '@/features/content/components/review-actions';
-import { allEvents, pendingApprovals } from '@/features/content/services/content.service';
-import { canApprove } from '@/features/content/workflow';
-import { membersById } from '@/features/team/services/members.service';
+import { addCommentAction } from '@/features/content/actions/content.actions';
+import { AGENCY_QUEUE_GROUPS, ApprovalQueue, defaultQueuePost, QueuePostPanel } from '@/features/content/components/planner/approval-queue';
+import { toGridTiles } from '@/features/content/components/planner/grid-tiles';
+import { PhoneGrid } from '@/features/content/components/planner/phone-grid';
+import { OpenPostButton, PlannerDrawerProvider } from '@/features/content/components/planner/planner-drawer';
+import { WorkflowActions } from '@/features/content/components/workflow-actions';
+import { eventsFor, listContent } from '@/features/content/services/content.service';
+import { loadPlanner } from '@/features/content/services/planner.service';
+import { canApprove, isEditable } from '@/features/content/workflow';
 
 export const metadata: Metadata = { title: t('approvals.title') };
 
-const RECENT_DECISIONS_LIMIT = 5;
-const DECISION_KINDS = ['approved', 'changes', 'rejected'];
+const BASE = '/approvals';
 
 const GUIDE: GuideItem[] = [
   { title: t('approvals.guide.review.title'), body: t('approvals.guide.review.body') },
@@ -37,12 +35,58 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const clientId = param(sp, 'client');
   const approver = canApprove(session.role);
 
-  const [pending, events, clients, members] = await Promise.all([pendingApprovals(), allEvents(), clientsById(), membersById()]);
-  const queue = pending.filter((p) => !clientId || p.clientId === clientId).sort((a, b) => (a.scheduledAt ?? '9').localeCompare(b.scheduledAt ?? '9'));
-  const decisions = events
-    .filter((e) => DECISION_KINDS.includes(e.kind))
-    .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, RECENT_DECISIONS_LIMIT);
+  const [all, clients] = await Promise.all([listContent(), clientsById()]);
+  const posts = all.filter((p) => p.status !== 'PUBLISHED' && (!clientId || p.clientId === clientId));
+  const selected = posts.find((p) => p.id === param(sp, 'post')) ?? defaultQueuePost(AGENCY_QUEUE_GROUPS, posts);
+  const selectedClient = selected ? clients.get(selected.clientId) : undefined;
+  const [thread, planner] = await Promise.all([selected ? eventsFor(selected.id) : [], selectedClient ? loadPlanner(selectedClient.id) : undefined]);
+  const hrefs = Object.fromEntries(all.map((p) => [p.id, withQuery(BASE, sp, { post: p.id })]));
+
+  const queue = (
+    <ApprovalQueue
+      groups={AGENCY_QUEUE_GROUPS}
+      posts={posts}
+      selectedId={selected?.id}
+      hrefs={hrefs}
+      aside={
+        selectedClient && planner ? (
+          <PhoneGrid
+            clientId={selectedClient.id}
+            clientName={selectedClient.name}
+            clientInitials={initials(selectedClient.name)}
+            tiles={toGridTiles(planner.posts)}
+            editable={false}
+            tileHrefs={hrefs}
+            selectedId={selected?.id}
+          />
+        ) : null
+      }
+    >
+      {selected ? (
+        <QueuePostPanel
+          post={selected}
+          thread={thread}
+          headerAction={
+            isEditable(selected.status) && planner ? (
+              <OpenPostButton postId={selected.id} className="nav-link">
+                {t('common.edit')}
+              </OpenPostButton>
+            ) : null
+          }
+          actions={<WorkflowActions post={selected} approver={approver} size="sm" />}
+          composer={
+            <InlineMessageForm
+              key={selected.id}
+              action={addCommentAction.bind(null, selected.id)}
+              label={t('content.comment.label')}
+              placeholder={t('content.comment.placeholder')}
+              submitLabel={t('content.comment.send')}
+            />
+          }
+        />
+      ) : null}
+    </ApprovalQueue>
+  );
 
   return (
     <div>
@@ -63,65 +107,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
           </>
         }
       />
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <section aria-label={t('approvals.queue')} className="space-y-4">
-          {queue.length === 0 ? (
-            <Card>
-              <EmptyState icon={<PartyPopper />} title={t('approvals.empty.title')} body={t('approvals.empty.body')} />
-            </Card>
-          ) : (
-            queue.map((post) => {
-              const client = clients.get(post.clientId);
-              const author = members.get(post.authorId);
-              const due = dueInfo(post.scheduledAt, false);
-              return (
-                <Card key={post.id}>
-                  <CardBody className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-2 text-xs text-muted">
-                          <span className="size-2 rounded-full" style={{ background: client?.color }} />
-                          {client?.name}
-                          <span aria-hidden>·</span>
-                          {t(`type.content.${post.contentType}`)}
-                        </p>
-                        <h2 className="mt-1 text-base font-semibold">
-                          <Link href={`/content/${post.id}`} className="hover:text-primary">
-                            {post.title}
-                          </Link>
-                        </h2>
-                      </div>
-                      <PlatformStack platforms={post.platforms} />
-                    </div>
-                    <p className="line-clamp-3 whitespace-pre-wrap text-sm text-muted">{post.caption}</p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-                      {author ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <Avatar name={author.name} size="xs" />
-                          {author.name}
-                        </span>
-                      ) : null}
-                      <span>{relativeTime(post.updatedAt)}</span>
-                      {post.scheduledAt ? <Badge tone={due.tone === 'danger' ? 'danger' : due.tone === 'warning' ? 'warning' : 'neutral'}>{t('approvals.goesLive', { when: due.label })}</Badge> : null}
-                    </div>
-                    <div className="border-t border-border-soft pt-4">
-                      {approver ? <ReviewActions contentId={post.id} title={post.title} size="sm" /> : <p className="text-sm text-muted">{t('content.waiting')}</p>}
-                    </div>
-                  </CardBody>
-                </Card>
-              );
-            })
-          )}
-        </section>
-
-        <Card className="h-fit">
-          <CardHeader title={t('approvals.recent')} description={t('approvals.recent.desc')} />
-          <CardBody>
-            <ActivityTimeline events={decisions} />
-          </CardBody>
-        </Card>
-      </div>
+      {planner ? <PlannerDrawerProvider {...planner.drawer}>{queue}</PlannerDrawerProvider> : queue}
     </div>
   );
 }

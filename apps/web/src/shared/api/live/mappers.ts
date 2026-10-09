@@ -2,13 +2,17 @@ import 'server-only';
 import {
   AutomationActions,
   AutomationTriggers,
+  ContentStatuses,
+  ContentTypes,
   Platforms,
+  type ApiContentType,
+  type ContentType,
   type Platform,
 } from '@agency-os/contracts';
 import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
-import type { Post } from '@/features/content/data/content.repository';
+import type { Post, PostMedia } from '@/features/content/data/content.repository';
 import type { InboxItem } from '@/features/inbox/data/inbox.repository';
 import type { Integration } from '@/features/integrations/data/integrations.repository';
 import type { Invoice, InvoiceLine } from '@/features/invoices/data/invoices.repository';
@@ -31,21 +35,18 @@ type Raw = Record<string, unknown>;
 
 const EMPTY_BRAND: BrandKit = { primary: '#ffffff', secondary: '#d1d1d1', accent: '#8D9B98', voice: '', hashtags: [], pillars: [] };
 
-const CONTENT_TYPE_TO_API: Record<string, string> = {
+const CONTENT_TYPE_TO_API: Record<ContentType, ApiContentType> = {
   POST: 'STATIC_POST',
   REEL: 'REEL',
   STORY: 'STORY',
   CAROUSEL: 'CAROUSEL',
   VIDEO: 'VIDEO',
+  ARTICLE: 'ARTICLE',
 };
 
-const CONTENT_TYPE_FROM_API: Record<string, Post['contentType']> = {
-  STATIC_POST: 'POST',
-  REEL: 'REEL',
-  STORY: 'STORY',
-  CAROUSEL: 'CAROUSEL',
-  VIDEO: 'VIDEO',
-};
+const CONTENT_TYPE_FROM_API: Record<string, ContentType> = Object.fromEntries(
+  Object.entries(CONTENT_TYPE_TO_API).map(([web, api]) => [api, web as ContentType]),
+);
 
 function brandFromKit(kit: Raw | undefined): BrandKit {
   if (!kit) return EMPTY_BRAND;
@@ -172,6 +173,16 @@ export function taskToApi(input: Partial<Task>): Raw {
   return body;
 }
 
+function postMediaFromApi(raw: unknown): PostMedia[] {
+  if (!Array.isArray(raw)) return [];
+  return (raw as Raw[]).map((m) => ({
+    assetId: str(m, 'assetId'),
+    name: str(m, 'name'),
+    mimeType: str(m, 'mimeType'),
+    url: typeof m.url === 'string' ? m.url : undefined,
+  }));
+}
+
 export function contentFromApi(raw: Raw): Post {
   const platforms = Array.isArray(raw.platforms) ? (raw.platforms as Platform[]) : [];
   return {
@@ -179,26 +190,52 @@ export function contentFromApi(raw: Raw): Post {
     clientId: str(raw, 'clientId'),
     title: str(raw, 'title'),
     caption: str(raw, 'caption'),
-    contentType: CONTENT_TYPE_FROM_API[String(raw.contentType)] ?? asStatus(raw.contentType, ['POST', 'REEL', 'STORY', 'CAROUSEL', 'VIDEO'] as const, 'POST'),
+    contentType: CONTENT_TYPE_FROM_API[String(raw.contentType)] ?? asStatus(raw.contentType, ContentTypes, 'POST'),
     platforms,
-    status: asStatus(raw.status, ['DRAFT', 'IN_REVIEW', 'APPROVED', 'CHANGES_REQUESTED', 'SCHEDULED', 'PUBLISHED'] as const, 'DRAFT'),
+    status: asStatus(raw.status, ContentStatuses, 'DRAFT'),
     scheduledAt: raw.scheduledAt ? iso(raw, 'scheduledAt') : undefined,
     authorId: str(raw, 'createdById'),
     hashtags: Array.isArray(raw.hashtags) ? (raw.hashtags as string[]) : [],
+    ctaUrl: str(raw, 'ctaUrl') || undefined,
+    pillar: str(raw, 'pillar') || undefined,
+    gridPosition: typeof raw.gridPosition === 'number' ? raw.gridPosition : undefined,
+    media: postMediaFromApi(raw.media),
     createdAt: iso(raw, 'createdAt'),
     updatedAt: iso(raw, 'updatedAt'),
     version: num(raw, 'version', 1),
   };
 }
 
-export function contentToApi(input: Partial<Post>): Raw {
-  const body: Raw = {
-    clientId: input.clientId,
-    title: input.title ?? '',
-    contentType: input.contentType ? (CONTENT_TYPE_TO_API[input.contentType] ?? 'STATIC_POST') : 'STATIC_POST',
+/** Editable fields shared by create and PATCH; `clear` sends null for keys explicitly set to undefined. */
+function contentFieldsToApi(input: Partial<Post>, clear: boolean): Raw {
+  const body: Raw = {};
+  const nullable = (key: keyof Post, value: unknown) => {
+    if (value !== undefined && value !== '') body[key] = value;
+    else if (clear && key in input) body[key] = null;
   };
-  if (input.caption) body.caption = input.caption;
+  if (input.title !== undefined) body.title = input.title;
+  if (input.contentType) body.contentType = CONTENT_TYPE_TO_API[input.contentType];
+  if (input.platforms) body.platforms = input.platforms;
+  if (input.hashtags) body.hashtags = input.hashtags;
+  if (input.media) body.mediaAssetIds = input.media.map((m) => m.assetId);
+  nullable('caption', input.caption);
+  nullable('pillar', input.pillar);
+  nullable('ctaUrl', input.ctaUrl);
+  nullable('scheduledAt', input.scheduledAt);
   return body;
+}
+
+export function contentToApi(input: Partial<Post>): Raw {
+  const body = contentFieldsToApi(input, false);
+  body.clientId = input.clientId;
+  body.title = input.title ?? '';
+  body.contentType ??= CONTENT_TYPE_TO_API.POST;
+  if (input.status === 'IN_REVIEW') body.status = input.status;
+  return body;
+}
+
+export function contentPatchToApi(patch: Partial<Post>): Raw {
+  return contentFieldsToApi(patch, true);
 }
 
 export function leadFromApi(raw: Raw): Lead {
@@ -319,9 +356,9 @@ export function assetFromApi(raw: Raw): Asset {
     status: asStatus(raw.status, MediaAssetStatuses, 'PENDING_UPLOAD'),
     sizeKb: Math.round(num(raw, 'sizeBytes', 0) / 1024),
     tags: Array.isArray(raw.tags) ? (raw.tags as string[]) : [],
-    hue: hueFromId(str(raw, 'id')),
     uploadedBy: str(raw, 'createdById'),
     createdAt: iso(raw, 'createdAt'),
+    url: str(raw, 'previewUrl') || undefined,
   };
 }
 

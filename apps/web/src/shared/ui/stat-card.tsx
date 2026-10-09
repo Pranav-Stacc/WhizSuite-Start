@@ -20,22 +20,22 @@ interface StatCardProps {
 
 export function StatGrid({ children, className, cols = 4 }: { children: ReactNode; className?: string; cols?: 2 | 3 | 4 }) {
   const colClass = cols === 2 ? 'sm:grid-cols-2' : cols === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4';
-  return <section className={cn('mb-4 grid gap-2', colClass, className)}>{children}</section>;
+  return <section className={cn('mb-6 grid gap-px overflow-hidden rounded-lg border border-border-soft bg-border-soft [&>*>*]:rounded-none [&>*]:rounded-none [&>*]:border-0 [&_.card-surface]:border-0', colClass, className)}>{children}</section>;
 }
 
 export function StatCard({ label, value, icon, delta, hint, spark, href, invertDelta, className, compact = true }: StatCardProps) {
   const positive = delta === undefined ? undefined : invertDelta ? delta <= 0 : delta >= 0;
   const body = (
-    <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-3' : 'relative h-full overflow-hidden p-5', className)}>
+    <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-4' : 'relative h-full overflow-hidden p-6', className)}>
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-[11px] font-medium uppercase tracking-wide text-muted">{label}</p>
-        {icon ? <span className="grid size-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary [&_svg]:size-3.5">{icon}</span> : null}
+        <p className="eyebrow truncate">{label}</p>
+        {icon ? <span className="shrink-0 text-muted [&_svg]:size-3.5">{icon}</span> : null}
       </div>
-      <p className={cn('mt-1 font-semibold leading-none tracking-tight tabular-nums', compact ? 'text-xl' : 'text-[28px]')}>{value}</p>
+      <p className={cn('display mt-3 tabular-nums', compact ? 'text-[26px]' : 'text-[36px]')}>{value}</p>
       {(delta !== undefined || hint) ? (
         <div className="mt-1 flex items-center gap-1.5 text-[11px]">
           {delta !== undefined ? (
-            <span className={cn('inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-medium', positive ? 'bg-success/14 text-success' : 'bg-danger/14 text-danger')}>
+            <span className={cn('inline-flex items-center gap-0.5 font-medium', positive ? 'text-success' : 'text-danger')}>
               {delta >= 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
               {Math.abs(delta)}%
             </span>

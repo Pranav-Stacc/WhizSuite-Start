@@ -1,78 +1,255 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import type {
+  ContentItemRecord,
+  ContentSnapshot,
+} from '../../application/mappers/content-item.mapper';
+
+export type SocialTx = Prisma.TransactionClient;
+
+const CONTENT_SELECT = {
+  id: true,
+  organizationId: true,
+  clientId: true,
+  title: true,
+  caption: true,
+  contentType: true,
+  status: true,
+  pillar: true,
+  platforms: true,
+  hashtags: true,
+  ctaUrl: true,
+  scheduledAt: true,
+  gridPosition: true,
+  currentVersion: true,
+  createdById: true,
+  createdAt: true,
+  updatedAt: true,
+  version: true,
+  media: {
+    select: { mediaAssetId: true, position: true },
+    orderBy: { position: 'asc' },
+  },
+} as const satisfies Prisma.ContentItemSelect;
+
+const PUBLISH_JOB_QUEUED = 'QUEUED';
+const PUBLISH_JOB_CANCELLED = 'CANCELLED';
+
+export interface ContentListFilter {
+  clientId?: string;
+  status?: string;
+  from?: Date;
+  to?: Date;
+}
+
+export interface ContentInsertData {
+  clientId: string;
+  projectId?: string;
+  campaignId?: string;
+  title: string;
+  caption?: string;
+  contentType: string;
+  status: string;
+  pillar?: string;
+  platforms: string[];
+  hashtags: string[];
+  ctaUrl?: string;
+  scheduledAt: Date | null;
+  createdById: string;
+  mediaAssetIds: string[];
+}
+
+export type ContentFieldChanges = Pick<
+  Prisma.ContentItemUpdateManyMutationInput,
+  | 'title'
+  | 'caption'
+  | 'contentType'
+  | 'pillar'
+  | 'platforms'
+  | 'hashtags'
+  | 'ctaUrl'
+  | 'scheduledAt'
+  | 'status'
+>;
 
 @Injectable()
 export class SocialRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  listContent(organizationId: string, clientId?: string, limit = 50) {
+  transaction<T>(fn: (tx: SocialTx) => Promise<T>): Promise<T> {
+    return this.prisma.$transaction(fn);
+  }
+
+  listContent(
+    organizationId: string,
+    filter: ContentListFilter,
+    limit: number,
+  ): Promise<ContentItemRecord[]> {
+    const scheduledAt =
+      filter.from || filter.to
+        ? {
+            ...(filter.from ? { gte: filter.from } : {}),
+            ...(filter.to ? { lt: filter.to } : {}),
+          }
+        : undefined;
     return this.prisma.contentItem.findMany({
       where: {
         organizationId,
         deletedAt: null,
-        ...(clientId ? { clientId } : {}),
+        ...(filter.clientId ? { clientId: filter.clientId } : {}),
+        ...(filter.status ? { status: filter.status } : {}),
+        ...(scheduledAt ? { scheduledAt } : {}),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { gridPosition: { sort: 'asc', nulls: 'last' } },
+        { scheduledAt: { sort: 'desc', nulls: 'first' } },
+        { createdAt: 'desc' },
+      ],
       take: limit,
-      include: { variants: true, campaign: true },
+      select: CONTENT_SELECT,
     });
   }
 
-  findContent(organizationId: string, id: string) {
-    return this.prisma.contentItem.findFirst({
-      where: { id, organizationId, deletedAt: null },
-      include: { variants: { include: { channel: true } }, versions: true },
-    });
-  }
-
-  createContent(
+  findContent(
     organizationId: string,
-    data: {
-      clientId: string;
-      projectId?: string;
-      campaignId?: string;
-      title: string;
-      caption?: string;
-      contentType: string;
-      createdById: string;
-    },
+    id: string,
+    client: SocialTx = this.prisma,
+  ): Promise<ContentItemRecord | null> {
+    return client.contentItem.findFirst({
+      where: { id, organizationId, deletedAt: null },
+      select: CONTENT_SELECT,
+    });
+  }
+
+  insertContent(
+    tx: SocialTx,
+    organizationId: string,
+    data: ContentInsertData,
+  ): Promise<ContentItemRecord> {
+    return tx.contentItem.create({
+      data: {
+        organizationId,
+        clientId: data.clientId,
+        projectId: data.projectId,
+        campaignId: data.campaignId,
+        title: data.title,
+        caption: data.caption,
+        contentType: data.contentType,
+        status: data.status,
+        pillar: data.pillar,
+        platforms: data.platforms,
+        hashtags: data.hashtags,
+        ctaUrl: data.ctaUrl,
+        scheduledAt: data.scheduledAt,
+        createdById: data.createdById,
+        media: { create: toMediaRows(organizationId, data.mediaAssetIds) },
+      },
+      select: CONTENT_SELECT,
+    });
+  }
+
+  /** Applies changes only if the row is still at `expectedVersion`; returns the number of rows updated (0 or 1). */
+  async updateContentIfVersion(
+    tx: SocialTx,
+    organizationId: string,
+    id: string,
+    expectedVersion: number,
+    changes: ContentFieldChanges,
+    options: { newSnapshot: boolean },
+  ): Promise<number> {
+    const result = await tx.contentItem.updateMany({
+      where: { id, organizationId, deletedAt: null, version: expectedVersion },
+      data: {
+        ...changes,
+        version: { increment: 1 },
+        ...(options.newSnapshot ? { currentVersion: { increment: 1 } } : {}),
+      },
+    });
+    return result.count;
+  }
+
+  async replaceMedia(
+    tx: SocialTx,
+    organizationId: string,
+    contentItemId: string,
+    mediaAssetIds: string[],
+  ): Promise<void> {
+    await tx.contentMedia.deleteMany({
+      where: { organizationId, contentItemId },
+    });
+    if (mediaAssetIds.length === 0) return;
+    await tx.contentMedia.createMany({
+      data: toMediaRows(organizationId, mediaAssetIds).map((row) => ({
+        ...row,
+        contentItemId,
+      })),
+    });
+  }
+
+  async insertVersionSnapshot(
+    tx: SocialTx,
+    organizationId: string,
+    contentItemId: string,
+    version: number,
+    snapshot: ContentSnapshot,
+    createdById: string,
+  ): Promise<void> {
+    await tx.contentVersion.create({
+      data: { organizationId, contentItemId, version, snapshot, createdById },
+    });
+  }
+
+  async softDeleteContent(
+    tx: SocialTx,
+    organizationId: string,
+    id: string,
+  ): Promise<number> {
+    const result = await tx.contentItem.updateMany({
+      where: { id, organizationId, deletedAt: null },
+      data: { deletedAt: new Date(), version: { increment: 1 } },
+    });
+    return result.count;
+  }
+
+  async cancelQueuedPublishJobs(
+    tx: SocialTx,
+    organizationId: string,
+    contentItemId: string,
+  ): Promise<void> {
+    await tx.publishJob.updateMany({
+      where: {
+        organizationId,
+        status: PUBLISH_JOB_QUEUED,
+        variant: { contentItemId },
+      },
+      data: { status: PUBLISH_JOB_CANCELLED },
+    });
+  }
+
+  /** Sets grid_position = index for every id in one statement; returns how many live rows of the client matched. */
+  applyGridOrder(
+    tx: SocialTx,
+    organizationId: string,
+    clientId: string,
+    orderedIds: string[],
+  ): Promise<number> {
+    const positions = orderedIds.map((_, index) => index);
+    return tx.$executeRaw`
+      UPDATE "social"."content_items" AS c
+      SET "grid_position" = v.position, "updated_at" = now()
+      FROM unnest(${orderedIds}::uuid[], ${positions}::int[]) AS v(id, position)
+      WHERE c."id" = v.id
+        AND c."organization_id" = ${organizationId}::uuid
+        AND c."client_id" = ${clientId}::uuid
+        AND c."deleted_at" IS NULL`;
+  }
+
+  scheduleVariant(
+    organizationId: string,
+    variantId: string,
+    scheduledAt: Date,
   ) {
-    return this.prisma.$transaction(async (tx) => {
-      const item = await tx.contentItem.create({
-        data: {
-          organizationId,
-          clientId: data.clientId,
-          projectId: data.projectId,
-          campaignId: data.campaignId,
-          title: data.title,
-          caption: data.caption,
-          contentType: data.contentType,
-          createdById: data.createdById,
-          status: 'DRAFT',
-        },
-      });
-      await tx.contentVersion.create({
-        data: {
-          organizationId,
-          contentItemId: item.id,
-          version: 1,
-          snapshot: { title: data.title, caption: data.caption },
-          createdById: data.createdById,
-        },
-      });
-      return item;
-    });
-  }
-
-  updateContent(organizationId: string, id: string, data: Record<string, unknown>) {
-    return this.prisma.contentItem.update({
-      where: { id, organizationId },
-      data: data as never,
-    });
-  }
-
-  scheduleVariant(organizationId: string, variantId: string, scheduledAt: Date) {
     return this.prisma.contentVariant.update({
       where: { id: variantId, organizationId },
       data: {
@@ -82,27 +259,34 @@ export class SocialRepository {
     });
   }
 
-  createPublishJob(organizationId: string, variantId: string, scheduledFor: Date) {
+  createPublishJob(
+    organizationId: string,
+    variantId: string,
+    scheduledFor: Date,
+  ) {
     return this.prisma.publishJob.create({
       data: {
         organizationId,
         variantId,
         scheduledFor,
-        status: 'QUEUED',
+        status: PUBLISH_JOB_QUEUED,
         idempotencyKey: `publish:${variantId}:${scheduledFor.toISOString()}`,
       },
     });
   }
 
-  recordStateHistory(data: {
-    organizationId: string;
-    entityType: string;
-    entityId: string;
-    fromState: string;
-    toState: string;
-    actorId: string;
-  }) {
-    return this.prisma.entityStateHistory.create({ data });
+  async recordStateHistory(
+    tx: SocialTx,
+    data: {
+      organizationId: string;
+      entityType: string;
+      entityId: string;
+      fromState: string;
+      toState: string;
+      actorId: string;
+    },
+  ): Promise<void> {
+    await tx.entityStateHistory.create({ data });
   }
 
   listCampaigns(organizationId: string, clientId?: string) {
@@ -118,4 +302,12 @@ export class SocialRepository {
       include: { channels: true },
     });
   }
+}
+
+function toMediaRows(organizationId: string, mediaAssetIds: string[]) {
+  return mediaAssetIds.map((mediaAssetId, position) => ({
+    organizationId,
+    mediaAssetId,
+    position,
+  }));
 }

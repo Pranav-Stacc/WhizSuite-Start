@@ -11,6 +11,8 @@ import {
   THEME_COOKIE,
   THEME_COOKIE_MAX_AGE,
   THEME_PRESETS,
+  THEME_RADIUS_MAX,
+  THEME_RADIUS_MIN,
   luminance,
   serializeTheme,
   themeToVars,
@@ -125,7 +127,7 @@ export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; 
                 {t('theme.radius')}
                 <span className="font-mono text-xs text-muted">{theme.radius}px</span>
               </label>
-              <input id="theme-radius" type="range" min={4} max={28} value={theme.radius} onChange={(e) => update({ radius: Number(e.target.value) })} className="w-full accent-[var(--primary)]" />
+              <input id="theme-radius" type="range" min={THEME_RADIUS_MIN} max={THEME_RADIUS_MAX} value={theme.radius} onChange={(e) => update({ radius: Number(e.target.value) })} className="w-full accent-[var(--primary)]" />
             </div>
             <div>
               <p className="mb-2 text-sm">{t('theme.density')}</p>

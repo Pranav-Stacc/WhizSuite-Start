@@ -4,25 +4,24 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/shared/lib/cn';
 
 export const buttonVariants = cva(
-  'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-all duration-150 select-none disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium uppercase tracking-[0.12em] transition-colors duration-150 select-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:size-3.5 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        primary:
-          'bg-primary text-primary-contrast shadow-[0_0_0_1px_color-mix(in_oklab,var(--primary)_60%,transparent),0_6px_24px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)] hover:brightness-110',
-        soft: 'bg-primary/12 text-primary hover:bg-primary/20',
-        secondary: 'border border-border-soft bg-surface-2 text-foreground hover:bg-surface-3 hover:border-border',
-        outline: 'border border-border text-foreground hover:bg-surface-2',
-        ghost: 'text-muted hover:bg-surface-2 hover:text-foreground',
-        danger: 'bg-danger/12 text-danger hover:bg-danger/20',
-        link: 'text-primary underline-offset-4 hover:underline',
+        primary: 'border border-primary bg-primary text-primary-contrast hover:bg-primary/85',
+        soft: 'border border-border-soft bg-surface-2 text-foreground hover:border-border-strong',
+        secondary: 'border border-border bg-surface text-foreground hover:border-border-strong',
+        outline: 'border border-border-strong bg-transparent text-foreground hover:bg-foreground hover:text-background',
+        ghost: 'text-muted hover:text-foreground',
+        danger: 'border border-danger/40 text-danger hover:bg-danger hover:text-white',
+        link: 'px-0 text-foreground underline-offset-4 hover:underline',
       },
       size: {
-        sm: 'h-8 px-3 text-[13px]',
-        md: 'h-10 px-4 text-sm',
-        lg: 'h-12 px-6 text-base',
-        icon: 'size-9',
-        'icon-sm': 'size-8',
+        sm: 'h-8 px-3 text-[10.5px]',
+        md: 'h-9 px-4 text-[11px]',
+        lg: 'h-11 px-6 text-xs',
+        icon: 'size-9 tracking-normal',
+        'icon-sm': 'size-8 tracking-normal',
       },
     },
     defaultVariants: { variant: 'secondary', size: 'md' },

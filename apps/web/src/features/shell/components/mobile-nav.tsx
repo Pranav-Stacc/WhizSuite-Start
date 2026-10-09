@@ -36,14 +36,14 @@ export function MobileMenu({ role, badges }: { role: UserRole; badges: Badges })
       </Button>
       <Sheet open={open} onOpenChange={setOpen} title={t('shell.menu')} width="max-w-sm">
         <nav className="space-y-6" aria-label={t('shell.menu')}>
-          <Link href={HOME_ITEM.href} onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3 text-sm font-medium text-primary">
-            <HomeIcon className="size-4" />
+          <Link href={HOME_ITEM.href} onClick={() => setOpen(false)} className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground">
+            <HomeIcon className="size-3.5" />
             {t(HOME_ITEM.label)}
           </Link>
           {groups.map((group) => (
             <section key={group.id}>
-              <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">{t(group.label)}</h3>
-              <ul className="grid grid-cols-2 gap-2">
+              <h3 className="eyebrow mb-2 px-1">{t(group.label)}</h3>
+              <ul className="grid grid-cols-2 gap-px border border-border-soft bg-border-soft">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const badge = badges[item.href];
@@ -53,13 +53,13 @@ export function MobileMenu({ role, badges }: { role: UserRole; badges: Badges })
                         href={item.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          'flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition-colors',
-                          isActivePath(pathname, item.href) ? 'border-primary/50 bg-primary/12 text-primary' : 'border-border-soft bg-surface-2/60 hover:border-border',
+                          'flex items-center gap-2.5 bg-surface px-3 py-3 text-[13px] transition-colors',
+                          isActivePath(pathname, item.href) ? 'text-foreground underline underline-offset-4' : 'text-muted hover:text-foreground',
                         )}
                       >
-                        <Icon className="size-4 shrink-0" />
+                        <Icon className="size-3.5 shrink-0" />
                         <span className="truncate">{t(item.label)}</span>
-                        {badge ? <span className="ml-auto rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-contrast">{badge}</span> : null}
+                        {badge ? <span className="ml-auto text-[11px] tabular-nums text-foreground">{badge}</span> : null}
                       </Link>
                     </li>
                   );
@@ -79,7 +79,7 @@ export function MobileDock({ role, badges }: { role: UserRole; badges: Badges })
   const dock = [HOME_ITEM, ...groupsForRole(role).flatMap((g) => g.items)].filter((item) => DOCK_HREFS.includes(item.href));
   return (
     <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden print:hidden">
-      <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-2xl p-1.5 shadow-2xl">
+      <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-md border border-border-soft p-1">
         {dock.map((item) => {
           const Icon = item.icon;
           const active = isActivePath(pathname, item.href);
@@ -88,11 +88,11 @@ export function MobileDock({ role, badges }: { role: UserRole; badges: Badges })
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={cn('relative flex flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-medium transition-colors', active ? 'bg-primary/16 text-primary' : 'text-muted')}
+                className={cn('relative flex flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] transition-colors', active ? 'text-foreground' : 'text-muted')}
               >
-                <Icon className="size-5" />
+                <Icon className="size-4" />
                 {t(item.label)}
-                {badges[item.href] ? <span className="absolute right-3 top-1 size-2 rounded-full bg-primary" /> : null}
+                {badges[item.href] ? <span className="absolute right-3 top-1.5 size-1.5 rounded-full bg-foreground" /> : null}
               </Link>
             </li>
           );
@@ -101,9 +101,9 @@ export function MobileDock({ role, badges }: { role: UserRole; badges: Badges })
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
-            className="flex w-full flex-col items-center gap-0.5 rounded-xl py-2 text-[10px] font-medium text-muted"
+            className="flex w-full flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] text-muted"
           >
-            <LayoutGrid className="size-5" />
+            <LayoutGrid className="size-4" />
             {t('shell.menu.more')}
           </button>
         </li>

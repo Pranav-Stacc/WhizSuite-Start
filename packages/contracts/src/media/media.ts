@@ -38,6 +38,8 @@ export type MediaAssetDto = {
   createdById: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Inline signed GET for ready images/videos in list responses; null otherwise. */
+  previewUrl?: string | null;
 };
 
 export interface PresignedMediaUploadDto {
@@ -53,3 +55,12 @@ export interface MediaDownloadUrlDto {
   url: string;
   expiresInSeconds: number;
 }
+
+/** Asset summary for embedding in other domains' responses; `url` is an inline signed GET, set only when READY. */
+export type EmbeddedMediaDto = {
+  assetId: string;
+  name: string;
+  mimeType: string;
+  status: MediaAssetStatus;
+  url: string | null;
+};

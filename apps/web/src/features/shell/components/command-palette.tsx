@@ -169,11 +169,11 @@ export function SearchTrigger({ compact = false }: { compact?: boolean }) {
       onClick={() => window.dispatchEvent(new Event('open-command-palette'))}
       aria-label={t('shell.search.open')}
       className={cn(
-        'group inline-flex h-9 items-center gap-2.5 rounded-lg border border-border-soft bg-surface-2/70 px-3 text-sm text-muted transition-colors hover:border-border hover:text-foreground',
-        compact ? 'w-9 justify-center px-0' : 'w-56 xl:w-72',
+        'group inline-flex h-9 items-center gap-2.5 text-sm text-muted transition-colors hover:text-foreground [&_svg]:size-4',
+        compact ? 'w-9 justify-center' : 'w-56 border-b border-border px-1 xl:w-72',
       )}
     >
-      <Search className="size-4" />
+      <Search />
       {compact ? null : (
         <>
           <span className="flex-1 truncate text-left">{t('shell.search.placeholder')}</span>

@@ -17,11 +17,12 @@ import { SearchInput } from '@/shared/ui/search-input';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import { clientsById } from '@/features/clients/services/clients.service';
 import { moveContentAction } from '@/features/content/actions/content.actions';
-import { toComposerClients } from '@/features/content/components/composer-mappers';
+import { toComposerAssets, toComposerClients } from '@/features/content/components/composer-mappers';
 import { ContentCardContent } from '@/features/content/components/content-card';
 import { ContentComposer } from '@/features/content/components/content-composer';
 import { ContentList } from '@/features/content/components/content-list';
 import { listContent } from '@/features/content/services/content.service';
+import { listAssets } from '@/features/media/services/media.service';
 import { membersById } from '@/features/team/services/members.service';
 
 export const metadata: Metadata = { title: t('content.title') };
@@ -45,7 +46,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const mine = param(sp, 'f') === 'mine';
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [posts, clients, members] = await Promise.all([listContent(), clientsById(), membersById()]);
+  const [posts, clients, members, assets] = await Promise.all([listContent(), clientsById(), membersById(), listAssets()]);
   const scoped = posts.filter(
     (p) =>
       (!clientId || p.clientId === clientId) &&
@@ -86,7 +87,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
                 { href: link({ view: 'list' }), label: t('tasks.view.list'), active: view === 'list', icon: <List /> },
               ]}
             />
-            <ContentComposer clients={composerClients} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} trigger={newButton} />
+            <ContentComposer clients={composerClients} assets={toComposerAssets(assets)} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} trigger={newButton} />
           </>
         }
       />

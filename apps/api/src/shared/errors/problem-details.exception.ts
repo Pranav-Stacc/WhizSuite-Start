@@ -20,3 +20,12 @@ export class ProblemDetailsException extends HttpException {
     super(problem, status);
   }
 }
+
+export function problem(
+  status: HttpStatus,
+  title: string,
+  code: ErrorCode,
+  detail?: string,
+): ProblemDetailsException {
+  return new ProblemDetailsException({ type: 'about:blank', title, status, code, detail }, status);
+}

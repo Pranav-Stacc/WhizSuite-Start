@@ -2,21 +2,24 @@ import type { ComponentProps } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/shared/lib/cn';
 
-const badgeVariants = cva('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium', {
-  variants: {
-    tone: {
-      neutral: 'bg-surface-3 text-muted',
-      primary: 'bg-primary/14 text-primary',
-      success: 'bg-success/14 text-success',
-      warning: 'bg-warning/14 text-warning',
-      danger: 'bg-danger/14 text-danger',
-      info: 'bg-info/14 text-info',
-      violet: 'bg-violet/14 text-violet',
-      pink: 'bg-pink/14 text-pink',
+const badgeVariants = cva(
+  'inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-1.5 py-px text-[10px] font-medium uppercase tracking-[0.12em]',
+  {
+    variants: {
+      tone: {
+        neutral: 'border-border text-muted',
+        primary: 'border-foreground/70 text-foreground',
+        success: 'border-success/40 text-success',
+        warning: 'border-warning/45 text-warning',
+        danger: 'border-danger/40 text-danger',
+        info: 'border-info/40 text-info',
+        violet: 'border-violet/40 text-violet',
+        pink: 'border-pink/40 text-pink',
+      },
     },
+    defaultVariants: { tone: 'neutral' },
   },
-  defaultVariants: { tone: 'neutral' },
-});
+);
 
 export type BadgeTone = NonNullable<VariantProps<typeof badgeVariants>['tone']>;
 

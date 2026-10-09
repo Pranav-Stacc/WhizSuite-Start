@@ -4,6 +4,7 @@ import { t } from '@/shared/i18n/t';
 import { formatFileSize, relativeTime } from '@/shared/lib/format';
 import { Badge } from '@/shared/ui/badge';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
+import { MediaThumb } from '@/shared/ui/media-thumb';
 import { deleteAssetAction } from '../actions/media.actions';
 import type { Asset } from '../data/media.repository';
 import { AssetDownloadButton } from './asset-download-button';
@@ -22,15 +23,18 @@ export function AssetCard({ asset, clientName, canDelete, canDownload }: AssetCa
   const Icon = KIND_ICON[asset.kind];
   return (
     <article className="card-surface card-hover group overflow-hidden">
-      <div
-        className="relative grid aspect-[4/3] place-items-center"
-        style={{ background: `linear-gradient(135deg, hsl(${asset.hue} 70% 42%), hsl(${(asset.hue + 40) % 360} 65% 18%))` }}
-      >
-        <Icon className="size-9 text-white/55" aria-hidden />
-        <span className="absolute left-2.5 top-2.5 rounded-md bg-black/45 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white backdrop-blur">{t(`media.kind.${asset.kind}`)}</span>
+      <div className="relative aspect-square border-b border-border-soft bg-surface-2">
+        {asset.url ? (
+          <MediaThumb url={asset.url} mimeType={asset.mimeType} alt={asset.name} />
+        ) : (
+          <div className="grid size-full place-items-center text-muted">
+            <Icon className="size-6" aria-hidden />
+          </div>
+        )}
+        <span className="absolute left-2 top-2 bg-surface/90 px-1.5 py-0.5 text-[9.5px] uppercase tracking-[0.14em]">{t(`media.kind.${asset.kind}`)}</span>
       </div>
       <div className="space-y-2 p-3.5">
-        <p className="truncate text-sm font-medium" title={asset.name}>
+        <p className="truncate text-[13px]" title={asset.name}>
           {asset.name}
         </p>
         <p className="flex items-center justify-between gap-2 text-xs text-muted">
@@ -40,7 +44,7 @@ export function AssetCard({ asset, clientName, canDelete, canDownload }: AssetCa
         {asset.tags.length ? (
           <ul className="flex flex-wrap gap-1">
             {asset.tags.map((tag) => (
-              <li key={tag} className="rounded bg-surface-3 px-1.5 py-0.5 text-[11px] text-muted">
+              <li key={tag} className="border border-border-soft px-1.5 py-0.5 text-[10.5px] text-muted">
                 {tag}
               </li>
             ))}

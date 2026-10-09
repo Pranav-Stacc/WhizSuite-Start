@@ -1,4 +1,4 @@
-import type { MediaAsset } from '@prisma/client';
+import type { MediaAsset, MediaAssetVersion } from '@prisma/client';
 import type { MediaAssetDto, MediaAssetStatus } from '@agency-os/contracts';
 
 export type MediaAssetRecord = Pick<
@@ -16,6 +16,11 @@ export type MediaAssetRecord = Pick<
   | 'createdAt'
   | 'updatedAt'
 >;
+
+export type MediaEmbeddingRecord = Pick<
+  MediaAsset,
+  'id' | 'name' | 'mimeType' | 'status' | 'currentVersion'
+> & { versions: Pick<MediaAssetVersion, 'version' | 'storageKey'>[] };
 
 export function toMediaAssetDto(asset: MediaAssetRecord): MediaAssetDto {
   return {

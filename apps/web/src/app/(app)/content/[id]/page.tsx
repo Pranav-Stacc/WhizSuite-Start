@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, CalendarClock, CalendarPlus, Pencil, Rocket, Send, Undo2 } from 'lucide-react';
+import { ArrowLeft, CalendarClock, Pencil } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { FormDialog } from '@/shared/forms/form-dialog';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
 import { formatDateTime, relativeTime, toDateTimeLocal } from '@/shared/lib/format';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
-import { ActionButton } from '@/shared/ui/action-button';
 import { Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
@@ -17,14 +16,15 @@ import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/na
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { StatusBadge } from '@/shared/ui/status';
 import { listClients } from '@/features/clients/services/clients.service';
-import { addCommentAction, deleteContentAction, moveContentAction, rescheduleContentAction } from '@/features/content/actions/content.actions';
+import { addCommentAction, deleteContentAction, rescheduleContentAction } from '@/features/content/actions/content.actions';
 import { ActivityTimeline } from '@/features/content/components/activity-timeline';
-import { toComposerClients, toComposerPost } from '@/features/content/components/composer-mappers';
+import { toComposerAssets, toComposerClients, toComposerPost } from '@/features/content/components/composer-mappers';
 import { ContentComposer } from '@/features/content/components/content-composer';
 import { PostPreview } from '@/features/content/components/post-preview';
-import { ReviewActions } from '@/features/content/components/review-actions';
+import { WorkflowActions } from '@/features/content/components/workflow-actions';
 import { eventsFor, getPost } from '@/features/content/services/content.service';
 import { canApprove, isEditable } from '@/features/content/workflow';
+import { listAssets } from '@/features/media/services/media.service';
 import { membersById } from '@/features/team/services/members.service';
 
 interface PageProps {
@@ -43,7 +43,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
   const post = await getPost(id);
   if (!post) notFound();
 
-  const [events, clients, members] = await Promise.all([eventsFor(post.id), listClients(), membersById()]);
+  const [events, clients, members, assets] = await Promise.all([eventsFor(post.id), listClients(), membersById(), listAssets()]);
   const client = clients.find((c) => c.id === post.clientId);
   const author = members.get(post.authorId);
   const approver = canApprove(session.role);
@@ -52,25 +52,26 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
   const base = `/content/${post.id}`;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <Link href="/content" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
-          <ArrowLeft className="size-4" />
-          {t('content.back')}
-        </Link>
-        <header className="flex flex-wrap items-end justify-between gap-4">
+        <nav aria-label={t('clients.workspace.breadcrumb')} className="mb-6 flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-muted">
+          <Link href="/content" className="inline-flex items-center gap-1.5 hover:text-foreground">
+            <ArrowLeft className="size-3.5" aria-hidden />
+            {t('content.back')}
+          </Link>
+          {client ? (
+            <>
+              <span aria-hidden>/</span>
+              <Link href={`/clients/${client.id}/grid`} className="hover:text-foreground">
+                {client.name}
+              </Link>
+            </>
+          ) : null}
+        </nav>
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm text-muted">
-              <span className="size-2.5 rounded-full" style={{ background: client?.color }} />
-              {client ? (
-                <Link href={`/clients/${client.id}`} className="hover:text-primary">
-                  {client.name}
-                </Link>
-              ) : null}
-              <span aria-hidden>·</span>
-              {t(`type.content.${post.contentType}`)}
-            </p>
-            <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight sm:text-[28px]">
+            <p className="eyebrow">{t(`type.content.${post.contentType}`)}</p>
+            <h1 className="display mt-2 flex flex-wrap items-center gap-3 text-[28px] sm:text-[34px]">
               {post.title}
               <StatusBadge kind="content" value={post.status} />
             </h1>
@@ -80,9 +81,10 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
               <ContentComposer
                 key={`${post.id}-${post.version}`}
                 clients={toComposerClients(clients)}
+                assets={toComposerAssets(assets)}
                 post={toComposerPost(post)}
                 trigger={
-                  <Button variant="secondary">
+                  <Button variant="outline">
                     <Pencil />
                     {t('common.edit')}
                   </Button>
@@ -125,7 +127,9 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
               platform={previewPlatform}
               contentType={post.contentType}
               caption={post.caption}
+              hashtags={post.hashtags}
               title={post.title}
+              media={post.media}
             />
           ) : null}
         </section>
@@ -150,29 +154,26 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                   <dt className="text-xs text-muted">{t('common.updated')}</dt>
                   <dd className="mt-1">{relativeTime(post.updatedAt)}</dd>
                 </div>
+                {post.pillar ? (
+                  <div>
+                    <dt className="text-xs text-muted">{t('content.detail.pillar')}</dt>
+                    <dd className="mt-1">{post.pillar}</dd>
+                  </div>
+                ) : null}
+                {post.ctaUrl ? (
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs text-muted">{t('content.detail.cta')}</dt>
+                    <dd className="mt-1 truncate">
+                      <a href={post.ctaUrl} target="_blank" rel="noreferrer noopener" className="underline-offset-4 hover:underline">
+                        {post.ctaUrl}
+                      </a>
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-border-soft pt-4">
-                {(post.status === 'DRAFT' || post.status === 'CHANGES_REQUESTED') && (
-                  <ActionButton variant="primary" icon={<Send />} label={t('content.action.submit')} action={moveContentAction.bind(null, post.id, 'IN_REVIEW')} />
-                )}
-                {post.status === 'IN_REVIEW' && approver ? <ReviewActions contentId={post.id} title={post.title} /> : null}
-                {post.status === 'IN_REVIEW' && !approver ? (
-                  <>
-                    <span className="text-sm text-muted">{t('content.waiting')}</span>
-                    <ActionButton variant="ghost" icon={<Undo2 />} label={t('content.action.withdraw')} action={moveContentAction.bind(null, post.id, 'DRAFT')} />
-                  </>
-                ) : null}
-                {post.status === 'APPROVED' && approver ? (
-                  <ActionButton variant="primary" icon={<CalendarPlus />} label={t('content.action.schedule')} action={moveContentAction.bind(null, post.id, 'SCHEDULED')} />
-                ) : null}
-                {post.status === 'SCHEDULED' && approver ? (
-                  <>
-                    <ActionButton variant="primary" icon={<Rocket />} label={t('content.action.publish')} action={moveContentAction.bind(null, post.id, 'PUBLISHED')} />
-                    <ActionButton variant="ghost" icon={<Undo2 />} label={t('content.action.unschedule')} action={moveContentAction.bind(null, post.id, 'APPROVED')} />
-                  </>
-                ) : null}
-                {post.status === 'PUBLISHED' ? <span className="text-sm text-muted">{t('content.published.note')}</span> : null}
+              <div className="border-t border-border-soft pt-4">
+                <WorkflowActions post={post} approver={approver} />
               </div>
             </CardBody>
           </Card>

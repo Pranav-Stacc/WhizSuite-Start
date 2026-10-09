@@ -23,9 +23,8 @@ export function QuickCreate({ role }: { role: UserRole }) {
     <Menu.Root>
       <Tooltip content={t('shell.quickCreate')}>
         <Menu.Trigger asChild>
-          <Button variant="primary" size="sm" aria-label={t('shell.quickCreate')} className="h-9">
+          <Button variant="ghost" size="icon" aria-label={t('shell.quickCreate')}>
             <Plus />
-            <span className="hidden xl:inline">{t('shell.quickCreate')}</span>
           </Button>
         </Menu.Trigger>
       </Tooltip>
@@ -65,7 +64,7 @@ export function NotificationsBell({ items, unread }: { items: NotificationView[]
         <Popover.Trigger asChild>
           <Button variant="ghost" size="icon" aria-label={`${t('shell.notifications')}${unread ? ` (${t('shell.notifications.unread', { count: unread })})` : ''}`} className="relative">
             <Bell />
-            {unread > 0 ? <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" /> : null}
+            {unread > 0 ? <span className="absolute right-2 top-2 size-1.5 rounded-full bg-foreground" /> : null}
           </Button>
         </Popover.Trigger>
       </Tooltip>
@@ -115,7 +114,7 @@ export function UserMenu({ name, email, role, orgName, demo, settingsHref }: { n
     <Menu.Root>
       <Menu.Trigger asChild>
         <button type="button" aria-label={name} className="rounded-full outline-none ring-offset-2 ring-offset-background transition focus-visible:ring-2 focus-visible:ring-primary">
-          <Avatar name={name} size="sm" className="ring-1 ring-border" />
+          <Avatar name={name} size="xs" className="ring-1 ring-border" />
         </button>
       </Menu.Trigger>
       <Menu.Content className="w-64">

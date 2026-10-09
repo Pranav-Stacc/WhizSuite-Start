@@ -20,6 +20,8 @@ export interface LiveBinding<T extends Entity> {
   fromApi: (raw: RawRecord) => T;
   /** Maps UI input to an API create/update body. */
   toApi?: (input: Partial<T>) => Promise<RawRecord> | RawRecord;
+  /** Maps a partial UI patch to a PATCH body when it differs from the create body. */
+  toApiPatch?: (patch: Partial<T>) => Promise<RawRecord> | RawRecord;
   /** Cache tag suffix (namespaced per organisation). */
   tag: string;
   /** When true, `remove` issues DELETE against the collection item path. */
@@ -105,7 +107,8 @@ export function createRepository<T extends Entity>(
     async update(id, patch) {
       if (useLive(live)) {
         const org = await orgId();
-        const body = live.toApi ? await live.toApi(patch) : (patch as RawRecord);
+        const toBody = live.toApiPatch ?? live.toApi;
+        const body = toBody ? await toBody(patch) : (patch as RawRecord);
         const updated = await apiFetch<RawRecord>(`${live.path(org)}/${id}`, { method: 'PATCH', body });
         return live.fromApi(updated);
       }

@@ -3,6 +3,7 @@ import { CheckSquare, PencilLine } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { formatDate, toDateKey } from '@/shared/lib/format';
+import { MediaThumb } from '@/shared/ui/media-thumb';
 import { PlatformStack } from '@/shared/ui/platform';
 import { StatusBadge } from '@/shared/ui/status';
 import type { CalendarItem } from '../services/calendar.service';
@@ -15,14 +16,21 @@ function timeOf(iso: string): string {
 
 function ItemChip({ item }: { item: CalendarItem }) {
   const Icon = item.kind === 'content' ? PencilLine : CheckSquare;
+  const thumb = item.kind === 'content' ? item.thumb : undefined;
   return (
     <Link
       href={item.href}
       title={item.title}
-      className="flex items-center gap-1.5 truncate rounded-md border-l-2 bg-surface-2 px-1.5 py-1 text-[11px] leading-tight transition-colors hover:bg-surface-3"
+      className="flex items-center gap-1.5 truncate border-l-2 bg-surface px-1.5 py-1 text-[11px] leading-tight transition-colors hover:bg-surface-2"
       style={{ borderLeftColor: item.clientColor }}
     >
-      <Icon className="size-3 shrink-0 text-muted" aria-hidden />
+      {thumb ? (
+        <span className="size-5 shrink-0 overflow-hidden">
+          <MediaThumb url={thumb.url} mimeType={thumb.mimeType} alt="" />
+        </span>
+      ) : (
+        <Icon className="size-3 shrink-0 text-muted" aria-hidden />
+      )}
       <span className="truncate">{item.title}</span>
     </Link>
   );
@@ -38,11 +46,11 @@ interface MonthGridProps {
 export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridProps) {
   const todayKey = toDateKey(new Date());
   return (
-    <div className="card-surface overflow-x-auto">
+    <div className="overflow-x-auto border border-border bg-surface">
       <div className="min-w-[760px]">
-        <div className="grid grid-cols-7 border-b border-border-soft text-center text-xs font-medium uppercase tracking-wide text-muted">
+        <div className="grid grid-cols-7 border-b border-border text-[10.5px] uppercase tracking-[0.16em] text-muted">
           {weekdayLabels.map((label) => (
-            <div key={label} className="py-2.5">
+            <div key={label} className="px-2.5 py-2.5">
               {label}
             </div>
           ))}
@@ -53,8 +61,8 @@ export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridP
             const items = itemsByDay.get(key) ?? [];
             const inMonth = day.getMonth() === month;
             return (
-              <div key={key} className={cn('min-h-28 border-b border-r border-border-soft p-1.5 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-surface/40')}>
-                <p className={cn('mb-1 inline-grid size-6 place-items-center rounded-full text-xs tabular-nums', key === todayKey ? 'bg-primary font-semibold text-primary-contrast' : inMonth ? 'text-foreground' : 'text-muted/50')}>
+              <div key={key} className={cn('min-h-32 border-b border-r border-border-soft p-2 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-background/60')}>
+                <p className={cn('mb-1.5 inline-block px-0.5 text-[12px] tabular-nums', key === todayKey ? 'border-b border-foreground text-foreground' : inMonth ? 'text-foreground' : 'text-muted/50')}>
                   {day.getDate()}
                 </p>
                 <ul className="space-y-1">

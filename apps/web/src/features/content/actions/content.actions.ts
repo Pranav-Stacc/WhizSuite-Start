@@ -1,6 +1,7 @@
 'use server';
 
-import { ContentStatuses, ApprovalActions, createContentSchema, messageSchema, scheduleSchema, type ApprovalAction, type ContentStatus } from '@agency-os/contracts';
+import { z } from 'zod';
+import { ContentStatuses, ApprovalActions, createContentSchema, messageSchema, scheduleSchema, type ApprovalAction, type ContentStatus, type CreateContentInput } from '@agency-os/contracts';
 import { requireSession, type Session } from '@/shared/auth/session';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
@@ -8,17 +9,23 @@ import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { dateTimeLocalToIso } from '@/shared/lib/format';
-import { transitionContent } from '@/shared/api/live/mutations';
+import { reorderContent, transitionContent } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
+import { listAssets } from '@/features/media/services/media.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { listMembers } from '@/features/team/services/members.service';
-import { contentEventsRepository, contentRepository, type ContentEvent, type Post } from '../data/content.repository';
+import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
+import { listClientContent, recordContentEvent } from '../services/content.service';
 import { canApprove, checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
 
-const HASHTAG_PATTERN = /#[\p{L}\p{N}_]+/gu;
 const DECISION_TARGET: Record<ApprovalAction, ContentStatus> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
 const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes', REJECTED: 'rejected' };
+
+const reorderSchema = z.object({
+  clientId: z.string().min(1),
+  orderedIds: z.array(z.string().min(1)).min(1),
+});
 
 async function authorize(): Promise<Session> {
   const session = await requireSession();
@@ -26,12 +33,8 @@ async function authorize(): Promise<Session> {
   return session;
 }
 
-function extractHashtags(caption: string): string[] {
-  return [...new Set(caption.match(HASHTAG_PATTERN) ?? [])];
-}
-
 async function logEvent(contentId: string, kind: ContentEvent['kind'], session: Session, body: string): Promise<void> {
-  await contentEventsRepository.create({ contentId, kind, actorName: session.name, body, at: new Date().toISOString() });
+  await recordContentEvent(contentId, kind, session.name, body);
 }
 
 async function notifyApprovers(post: Post, actor: Session): Promise<void> {
@@ -47,7 +50,30 @@ async function notifyAuthor(post: Post, actor: Session, title: string): Promise<
   }
 }
 
-export async function createContentAction(raw: unknown): Promise<ActionResult<{ href: string }>> {
+/** Resolves selected library assets into ordered slides; ids the library does not know are dropped. */
+async function resolveSlides(ids: string[], existing: PostMedia[] = []): Promise<PostMedia[]> {
+  if (!ids.length) return [];
+  const known = new Map<string, PostMedia>(existing.map((m) => [m.assetId, m]));
+  for (const asset of await listAssets()) known.set(asset.id, { assetId: asset.id, name: asset.name, mimeType: asset.mimeType, url: asset.url });
+  return ids.flatMap((id) => known.get(id) ?? []);
+}
+
+async function postFields(input: CreateContentInput, existing?: PostMedia[]) {
+  return {
+    clientId: input.clientId,
+    title: input.title,
+    caption: input.caption ?? '',
+    contentType: input.contentType,
+    platforms: input.platforms,
+    scheduledAt: input.scheduledAt ? dateTimeLocalToIso(input.scheduledAt) : undefined,
+    hashtags: input.hashtags,
+    ctaUrl: input.ctaUrl,
+    pillar: input.pillar,
+    media: await resolveSlides(input.mediaAssetIds, existing),
+  };
+}
+
+export async function createContentAction(raw: unknown): Promise<ActionResult<{ id: string; href: string }>> {
   return guarded(async () => {
     const session = await authorize();
     const parsed = parseInput(createContentSchema, raw);
@@ -56,15 +82,9 @@ export async function createContentAction(raw: unknown): Promise<ActionResult<{ 
     const now = new Date().toISOString();
 
     const post = await contentRepository.create({
-      clientId: input.clientId,
-      title: input.title,
-      caption: input.caption ?? '',
-      contentType: input.contentType,
-      platforms: input.platforms,
+      ...(await postFields(input)),
       status: input.submitForApproval ? 'IN_REVIEW' : 'DRAFT',
-      scheduledAt: input.scheduledAt ? dateTimeLocalToIso(input.scheduledAt) : undefined,
       authorId: session.userId,
-      hashtags: extractHashtags(input.caption ?? ''),
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -75,11 +95,11 @@ export async function createContentAction(raw: unknown): Promise<ActionResult<{ 
     }
     await recordAudit({ action: 'content.created', entityType: 'content', entityId: post.id, entityLabel: post.title, summary: 'Created content' });
     await refreshData('content');
-    return succeed({ href: `/content/${post.id}` }, t('content.created'));
+    return succeed({ id: post.id, href: `/content/${post.id}` }, t('content.created'));
   });
 }
 
-export async function updateContentAction(id: string, raw: unknown): Promise<ActionResult<{ href: string }>> {
+export async function updateContentAction(id: string, raw: unknown): Promise<ActionResult<{ id: string; href: string }>> {
   return guarded(async () => {
     const session = await authorize();
     const parsed = parseInput(createContentSchema, raw);
@@ -90,18 +110,14 @@ export async function updateContentAction(id: string, raw: unknown): Promise<Act
     if (!isEditable(before.status)) return fail(t('content.error.locked'));
 
     const status: ContentStatus = input.submitForApproval ? 'IN_REVIEW' : resetsApprovalOnEdit(before.status) ? 'DRAFT' : before.status;
+    const statusChanged = status !== before.status;
     await contentRepository.update(id, {
-      clientId: input.clientId,
-      title: input.title,
-      caption: input.caption ?? '',
-      contentType: input.contentType,
-      platforms: input.platforms,
-      status,
-      scheduledAt: input.scheduledAt ? dateTimeLocalToIso(input.scheduledAt) : undefined,
-      hashtags: extractHashtags(input.caption ?? ''),
+      ...(await postFields(input, before.media)),
+      ...(isLiveMode ? {} : { status }),
       updatedAt: new Date().toISOString(),
       version: before.version + 1,
     });
+    if (statusChanged && isLiveMode) await transitionContent(id, status);
     if (status === 'IN_REVIEW' && before.status !== 'IN_REVIEW') {
       await logEvent(id, 'submitted', session, t('content.event.submitted'));
       await notifyApprovers({ ...before, title: input.title }, session);
@@ -112,10 +128,10 @@ export async function updateContentAction(id: string, raw: unknown): Promise<Act
       entityId: id,
       entityLabel: input.title,
       summary: 'Updated content',
-      diff: before.status !== status ? { status: { from: before.status, to: status } } : undefined,
+      diff: statusChanged ? { status: { from: before.status, to: status } } : undefined,
     });
     await refreshData('content');
-    return succeed({ href: `/content/${id}` }, t('content.updated'));
+    return succeed({ id, href: `/content/${id}` }, t('content.updated'));
   });
 }
 
@@ -222,6 +238,24 @@ export async function rescheduleContentAction(id: string, raw: unknown): Promise
     });
     await refreshData('content');
     return succeed(undefined, t('calendar.rescheduled'));
+  });
+}
+
+/** Persists the client's grid planner order (first id = top-left tile). */
+export async function reorderGridAction(raw: unknown): Promise<ActionResult> {
+  return guarded(async () => {
+    await authorize();
+    const parsed = parseInput(reorderSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    const { clientId, orderedIds } = parsed.data;
+    const owned = new Set((await listClientContent(clientId)).map((p) => p.id));
+    if (!orderedIds.every((id) => owned.has(id))) return fail(t('content.error.forbidden'));
+
+    if (isLiveMode) await reorderContent(clientId, orderedIds);
+    else await Promise.all(orderedIds.map((id, gridPosition) => contentRepository.update(id, { gridPosition })));
+    await recordAudit({ action: 'content.reordered', entityType: 'client', entityId: clientId, entityLabel: clientId, summary: 'Reordered grid plan' });
+    await refreshData('content');
+    return succeed(undefined, t('grid.reordered'));
   });
 }
 

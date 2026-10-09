@@ -2,8 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
-  type ErrorCode,
+  type EmbeddedMediaDto,
   type MediaAssetDto,
+  type MediaAssetStatus,
   type MediaDownloadDisposition,
   type MediaDownloadUrlDto,
   type PresignMediaUploadInput,
@@ -11,7 +12,7 @@ import {
   type UpdateMediaAssetInput,
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { problem } from '../../../../shared/errors/problem-details.exception';
 import { StorageService } from '../../../../shared/storage/storage.service';
 import { MediaRepository } from '../../infrastructure/repositories/media.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
@@ -19,6 +20,11 @@ import { toMediaAssetDto, type MediaAssetRecord } from '../mappers/media-asset.m
 import { isMimeTypeAllowed } from '../utils/mime-type';
 
 const ENTITY_TYPE = 'mediaAsset';
+const PREVIEWABLE_MIME_PREFIXES = ['image/', 'video/'];
+
+function isPreviewable(mimeType: string): boolean {
+  return PREVIEWABLE_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix));
+}
 
 @Injectable()
 export class MediaService {
@@ -31,9 +37,12 @@ export class MediaService {
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
+  /** Library listing; ready images/videos carry a short-lived inline `previewUrl` for thumbnails. */
   async list(organizationId: string): Promise<MediaAssetDto[]> {
     const assets = await this.repository.list(organizationId, this.config.get('MEDIA_LIST_LIMIT'));
-    return assets.map(toMediaAssetDto);
+    const previewable = assets.filter((a) => a.status === 'READY' && isPreviewable(a.mimeType)).map((a) => a.id);
+    const previews = await this.resolveForEmbedding(organizationId, previewable);
+    return assets.map((asset) => ({ ...toMediaAssetDto(asset), previewUrl: previews.get(asset.id)?.url ?? null }));
   }
 
   async get(organizationId: string, id: string): Promise<MediaAssetDto> {
@@ -130,6 +139,29 @@ export class MediaService {
     return download;
   }
 
+  /** Batch lookup for other domains; ids that are missing, deleted or in another org are absent from the map. */
+  async resolveForEmbedding(organizationId: string, assetIds: string[]): Promise<Map<string, EmbeddedMediaDto>> {
+    const resolved = new Map<string, EmbeddedMediaDto>();
+    const uniqueIds = [...new Set(assetIds)];
+    if (uniqueIds.length === 0) return resolved;
+
+    const assets = await this.repository.findForEmbedding(organizationId, uniqueIds);
+    const entries = await Promise.all(
+      assets.map(async (asset): Promise<EmbeddedMediaDto> => {
+        const storageKey = asset.versions.find((v) => v.version === asset.currentVersion)?.storageKey;
+        const status = asset.status as MediaAssetStatus;
+        const url =
+          status === 'READY' && storageKey
+            ? (await this.storage.createPresignedDownload(storageKey, { filename: asset.name, disposition: 'inline' }))
+                .url
+            : null;
+        return { assetId: asset.id, name: asset.name, mimeType: asset.mimeType, status, url };
+      }),
+    );
+    for (const entry of entries) resolved.set(entry.assetId, entry);
+    return resolved;
+  }
+
   async update(
     organizationId: string,
     actorId: string,
@@ -189,8 +221,4 @@ export class MediaService {
       ...details,
     });
   }
-}
-
-function problem(status: number, title: string, code: ErrorCode, detail?: string) {
-  return new ProblemDetailsException({ type: 'about:blank', title, status, code, detail }, status);
 }

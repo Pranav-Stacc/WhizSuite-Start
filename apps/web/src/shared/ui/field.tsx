@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { cn } from '@/shared/lib/cn';
 
 const controlBase =
-  'w-full rounded-lg border border-border-soft bg-surface-2 px-3 text-sm text-foreground placeholder:text-muted/70 transition-colors hover:border-border focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50 aria-[invalid=true]:border-danger';
+  'w-full rounded-sm border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted/70 transition-colors hover:border-border-strong focus-visible:border-foreground focus-visible:outline-none disabled:opacity-50 aria-[invalid=true]:border-danger';
 
 export function Input({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(controlBase, 'h-10', className)} {...props} />;
@@ -21,7 +21,7 @@ export function Select({ className, children, ...props }: ComponentProps<'select
 }
 
 export function Label({ className, ...props }: ComponentProps<'label'>) {
-  return <label className={cn('mb-1.5 block text-[13px] font-medium text-foreground/90', className)} {...props} />;
+  return <label className={cn('eyebrow mb-1.5 block', className)} {...props} />;
 }
 
 interface FieldProps {
@@ -39,7 +39,7 @@ export function Field({ label, htmlFor, error, hint, required, children, classNa
     <div className={className}>
       <Label htmlFor={htmlFor}>
         {label}
-        {required ? <span className="ml-0.5 text-primary">*</span> : null}
+        {required ? <span className="ml-0.5 text-foreground">*</span> : null}
       </Label>
       {children}
       {error ? (

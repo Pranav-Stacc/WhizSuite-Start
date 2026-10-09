@@ -3,7 +3,7 @@ import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import { t } from '@/shared/i18n/t';
 import { getTheme } from '@/shared/theme/theme.server';
-import { themeToStyle } from '@/shared/theme/theme';
+import { DEFAULT_THEME, themeToStyle } from '@/shared/theme/theme';
 import { Toaster } from '@/shared/ui/toaster';
 import './globals.css';
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: t('app.tagline'),
 };
 
-export const viewport: Viewport = { themeColor: '#040A09', width: 'device-width', initialScale: 1 };
+export const viewport: Viewport = { themeColor: DEFAULT_THEME.bg, width: 'device-width', initialScale: 1 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await getTheme();

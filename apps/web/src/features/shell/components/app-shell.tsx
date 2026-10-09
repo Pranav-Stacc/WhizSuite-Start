@@ -26,39 +26,32 @@ export async function AppShell({ session, children }: { session: Session; childr
         {t('shell.skip')}
       </a>
       <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
-        <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-4 sm:gap-3 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-8 lg:gap-8 lg:px-12">
           <MobileMenu role={session.role} badges={badges} />
-          <Link href="/dashboard" className="mr-1 flex items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40" aria-label={t('app.name')}>
-            <Logo compact />
-            <span className="hidden min-w-0 flex-col leading-tight sm:flex">
-              <span className="max-w-40 truncate text-sm font-semibold">{session.orgName}</span>
-              <span className="text-[10px] uppercase tracking-[0.14em] text-muted">{t('shell.workspace')}</span>
-            </span>
+          <Link href="/dashboard" className="min-w-0 max-w-56 outline-none" aria-label={session.orgName}>
+            <Logo name={session.orgName} />
           </Link>
           {session.demo ? (
             <Badge tone="warning" title={t('common.demoBanner')} className="hidden md:inline-flex">
               {t('shell.demoBadge')}
             </Badge>
           ) : null}
-          <TopNav role={session.role} badges={badges} />
           <div className="flex-1" />
-          <div className="hidden md:block">
-            <SearchTrigger />
-          </div>
-          <div className="md:hidden">
+          <TopNav role={session.role} badges={badges} />
+          <div className="flex items-center gap-0.5">
             <SearchTrigger compact />
+            <QuickCreate role={session.role} />
+            <NotificationsBell
+              items={notifications.slice(0, 8).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, read: n.read, at: n.at }))}
+              unread={notifications.filter((n) => !n.read).length}
+            />
+            <ThemeCustomizer initial={theme} />
+            <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} settingsHref="/settings" />
           </div>
-          <QuickCreate role={session.role} />
-          <NotificationsBell
-            items={notifications.slice(0, 8).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, read: n.read, at: n.at }))}
-            unread={notifications.filter((n) => !n.read).length}
-          />
-          <ThemeCustomizer initial={theme} />
-          <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} settingsHref="/settings" />
         </div>
-        <ModuleTabs role={session.role} badges={badges} />
       </header>
-      <main id="main" className="mx-auto max-w-[1600px] animate-fade-up px-4 pb-28 pt-6 sm:px-6 lg:pb-12">
+      <main id="main" className="mx-auto max-w-[1600px] animate-fade-up px-4 pb-28 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
+        <ModuleTabs role={session.role} badges={badges} />
         {children}
       </main>
       <MobileDock role={session.role} badges={badges} />

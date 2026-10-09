@@ -18,6 +18,8 @@ export const DomainEventTypes = {
   TASK_ASSIGNED: 'task.assigned.v1',
   TASK_STATE_CHANGED: 'task.state_changed.v1',
   CONTENT_CREATED: 'content.created.v1',
+  CONTENT_UPDATED: 'content.updated.v1',
+  CONTENT_DELETED: 'content.deleted.v1',
   CONTENT_STATE_CHANGED: 'content.state_changed.v1',
   CONTENT_SCHEDULED: 'content.scheduled.v1',
   SOCIAL_POST_PUBLISHED: 'social_post.published.v1',

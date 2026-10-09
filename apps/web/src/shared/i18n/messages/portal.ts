@@ -19,7 +19,7 @@ export const portalMessages = {
   'portal.home.reports.cta': 'View report',
   'portal.approvals.title': 'Approvals',
   'portal.approvals.description': 'Posts waiting for your sign-off before publishing.',
-  'portal.approvals.scheduled': 'Scheduled for {when}',
+  'portal.approvals.decided': 'You have already reviewed this post. Leave a note below if anything changes.',
   'portal.approvals.empty.title': 'Nothing to review',
   'portal.approvals.empty.body': 'When your agency sends content for approval, it will appear here.',
   'portal.reports.title': 'Reports',
