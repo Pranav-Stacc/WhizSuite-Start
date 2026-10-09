@@ -15,7 +15,9 @@ import { SearchInput } from '@/shared/ui/search-input';
 import { StatCard } from '@/shared/ui/stat-card';
 import { listClients } from '@/features/clients/services/clients.service';
 import { ChannelRow } from '@/features/integrations/components/channel-row';
+import { MetaConnectToast } from '@/features/integrations/components/meta-connect-toast';
 import { listIntegrations } from '@/features/integrations/services/integrations.service';
+
 
 export const metadata: Metadata = { title: t('integrations.title') };
 
@@ -38,6 +40,8 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
   const sp = await searchParams;
   const filter = parseFilter(param(sp, 'f'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
+  const metaStatus = param(sp, 'meta');
+
 
   const [clients, integrations] = await Promise.all([listClients(), listIntegrations()]);
   const connected = integrations.filter((i) => i.connected);
@@ -55,7 +59,9 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
 
   return (
     <div>
+      <MetaConnectToast status={metaStatus} />
       <PageHeader title={t('integrations.title')} description={t('integrations.description')} eyebrow={<Plug className="inline size-3.5" />} actions={<PageGuide items={GUIDE} />} />
+
 
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatCard label={t('integrations.kpi.connected')} value={connected.length} icon={<Plug />} hint={t('integrations.kpi.connected.hint', { total: integrations.length })} />

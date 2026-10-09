@@ -334,6 +334,72 @@ export class SocialRepository {
       include: { channels: true },
     });
   }
+
+  async upsertConnectedAccount(input: {
+    organizationId: string;
+    clientId: string;
+    platform: string;
+    externalAccountId: string;
+    displayName: string;
+    connectionId: string;
+    channelExternalId: string;
+    channelName: string;
+  }) {
+    const existing = await this.prisma.socialAccount.findFirst({
+      where: {
+        organizationId: input.organizationId,
+        clientId: input.clientId,
+        platform: input.platform,
+        externalAccountId: input.externalAccountId,
+      },
+      include: { channels: true },
+    });
+
+    if (existing) {
+      await this.prisma.socialAccount.update({
+        where: { id: existing.id },
+        data: {
+          displayName: input.displayName,
+          status: 'CONNECTED',
+          connectionId: input.connectionId,
+          publishingPaused: false,
+        },
+      });
+      if (existing.channels.length === 0) {
+        await this.prisma.socialChannel.create({
+          data: {
+            organizationId: input.organizationId,
+            accountId: existing.id,
+            channelType: 'FEED',
+            externalId: input.channelExternalId,
+            name: input.channelName,
+          },
+        });
+      }
+      return existing.id;
+    }
+
+    const created = await this.prisma.socialAccount.create({
+      data: {
+        organizationId: input.organizationId,
+        clientId: input.clientId,
+        platform: input.platform,
+        externalAccountId: input.externalAccountId,
+        displayName: input.displayName,
+        status: 'CONNECTED',
+        connectionId: input.connectionId,
+        channels: {
+          create: {
+            organizationId: input.organizationId,
+            channelType: 'FEED',
+            externalId: input.channelExternalId,
+            name: input.channelName,
+          },
+        },
+      },
+    });
+    return created.id;
+  }
 }
 
 function toMediaRows(organizationId: string, mediaAssetIds: string[]) {

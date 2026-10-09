@@ -140,7 +140,7 @@ export const automationMessages = {
   'workflows.guide.sla.body': 'Named approvers are notified when a stage reaches them. Response time drives reminders.',
 
   'integrations.title': 'Integrations',
-  'integrations.description': 'Connect every client’s social channels so publishing, inbox and reports stay in sync.',
+  'integrations.description': 'Connect every client’s social channels so publishing, chat and reports stay in sync.',
   'integrations.search': 'Search clients…',
   'integrations.filters.label': 'Integration filters',
   'integrations.filter.all': 'All channels',
@@ -149,6 +149,13 @@ export const automationMessages = {
   'integrations.kpi.connected': 'Connected channels',
   'integrations.kpi.connected.hint': 'of {total} possible',
   'integrations.oauthRequired': 'Channels are connected through the platform’s sign-in flow, which is not enabled for this workspace yet.',
+  'integrations.meta.liveOnly': 'Meta Instagram / Facebook connect only works when the app is in live API mode.',
+  'integrations.meta.redirecting': 'Opening Meta to authorize…',
+  'integrations.meta.connectFailed': 'Could not start Meta connect. Check META_APP_ID / META_APP_SECRET / META_REDIRECT_URI on the API.',
+  'integrations.meta.useOauthButton': 'Use Connect to authorize with Meta (Facebook Login).',
+  'integrations.meta.connectedToast': 'Instagram / Facebook connected. You can record your App Review screencast now.',
+  'integrations.meta.errorToast': 'Meta connect failed. Try again or check that the Facebook user manages a Page with an Instagram Business account.',
+
   'integrations.kpi.followers': 'Combined audience',
   'integrations.kpi.followers.hint': 'followers across channels',
   'integrations.kpi.clients': 'Clients with channels',
@@ -172,7 +179,8 @@ export const automationMessages = {
   'integrations.empty.title': 'No channels to show',
   'integrations.empty.body': 'Try a different filter or search term.',
   'integrations.guide.connect.title': 'Connect a channel',
-  'integrations.guide.connect.body': 'Choose Connect next to a channel and enter the account handle.',
+  'integrations.guide.connect.body': 'Choose Connect next to Instagram or Facebook to authorize with Meta. Other channels may still use a handle in demo mode.',
+
   'integrations.guide.sync.title': 'Keep data fresh',
   'integrations.guide.sync.body': 'Sync now pulls the latest audience numbers and messages.',
   'integrations.guide.disconnect.title': 'Disconnect safely',

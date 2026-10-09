@@ -20,5 +20,6 @@ export * from './knowledge/articles.js';
 export * from './time/time-entries.js';
 export * from './chat/chat.js';
 export * from './platform/resources.js';
+export * from './integrations/meta.js';
 export * from './theme/theme.js';
 export * from './tenancy/branding.js';

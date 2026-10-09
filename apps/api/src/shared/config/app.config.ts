@@ -249,6 +249,11 @@ export const appConfigSchema = z
           .map((id) => id.trim())
           .filter(Boolean),
       ),
+    /** Meta (Facebook Login for Business / Instagram Graph). Empty = connect disabled. */
+    META_APP_ID: z.string().default(''),
+    META_APP_SECRET: z.string().default(''),
+    META_REDIRECT_URI: z.string().default(''),
+    META_GRAPH_API_VERSION: z.string().default('v21.0'),
   })
   .superRefine((config, ctx) => {
     if (config.PUSH_ENABLED) {

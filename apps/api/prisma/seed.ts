@@ -56,7 +56,19 @@ async function main() {
   });
 
   const integrationProviders = [
-    { key: 'meta', name: 'Meta', category: 'social', manifest: { scopes: ['pages_manage_posts'] } },
+    {
+      key: 'meta',
+      name: 'Meta',
+      category: 'social',
+      manifest: {
+        scopes: [
+          'pages_show_list',
+          'pages_read_engagement',
+          'instagram_basic',
+          'instagram_content_publish',
+        ],
+      },
+    },
     { key: 'linkedin', name: 'LinkedIn', category: 'social', manifest: { scopes: ['w_member_social'] } },
     { key: 'google', name: 'Google', category: 'productivity', manifest: {} },
   ];
@@ -70,7 +82,7 @@ async function main() {
 
   console.log('Seeded permissions catalog, starter plan, and integration providers');
 
-  // Demo org for local dev (optional — skip if exists)
+  // Demo org for local dev (optional â€” skip if exists)
   const demoSlug = 'demo-agency';
   const existing = await prisma.organization.findUnique({
     where: { slug: demoSlug },

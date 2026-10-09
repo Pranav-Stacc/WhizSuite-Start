@@ -12,10 +12,34 @@ import { setClientPlatforms } from '@/features/clients/services/clients.service'
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { integrationsRepository } from '../data/integrations.repository';
 import { connectedPlatforms } from '../services/integrations.service';
-
+import { beginMetaConnect } from '../services/meta.service';
 
 /** Live channels are linked by the provider OAuth flow, never by typing a handle. */
 const oauthRequired = (): ActionResult => fail(t('integrations.oauthRequired'));
+
+const META_PLATFORMS = new Set(['instagram', 'facebook']);
+
+/** Starts Meta Facebook Login → Instagram/Page token exchange (live only). */
+export async function connectMetaAction(
+  clientId: string,
+  platform: 'instagram' | 'facebook',
+): Promise<ActionResult<{ href: string }>> {
+  return guarded(async () => {
+    await authorize(Permissions.INTEGRATIONS_MANAGE);
+    if (!isLiveMode) return fail(t('integrations.meta.liveOnly'));
+    try {
+      const { authorizeUrl } = await beginMetaConnect({ clientId, platform });
+      return succeed(
+        { href: authorizeUrl },
+        t('integrations.meta.redirecting'),
+      );
+    } catch (error) {
+      return fail(
+        error instanceof Error ? error.message : t('integrations.meta.connectFailed'),
+      );
+    }
+  });
+}
 
 export async function connectIntegrationAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
@@ -25,6 +49,9 @@ export async function connectIntegrationAction(id: string, raw: unknown): Promis
     if (!parsed.ok) return parsed.result;
     const before = await integrationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
+    if (META_PLATFORMS.has(before.platform)) {
+      return fail(t('integrations.meta.useOauthButton'));
+    }
     const handle = parsed.data.handle.startsWith('@') ? parsed.data.handle : `@${parsed.data.handle}`;
     await integrationsRepository.update(id, { connected: true, handle, lastSyncAt: new Date().toISOString() });
     await setClientPlatforms(before.clientId, await connectedPlatforms(before.clientId));
