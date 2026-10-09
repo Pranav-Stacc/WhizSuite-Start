@@ -18,6 +18,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm install --frozen-lockfile --filter @agency-os/api...
 COPY packages ./packages
 COPY apps/api ./apps/api
+ENV NODE_OPTIONS=--max-old-space-size=3072
 RUN pnpm --filter @agency-os/contracts build \
   && pnpm --filter @agency-os/api exec prisma generate \
   && pnpm --filter @agency-os/api build
