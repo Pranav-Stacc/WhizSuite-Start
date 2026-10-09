@@ -43,7 +43,7 @@ export type ApprovalStatus = (typeof ApprovalStatuses)[number];
 export const ApprovalActions = ['APPROVED', 'REJECTED', 'CHANGES_REQUESTED'] as const;
 export type ApprovalAction = (typeof ApprovalActions)[number];
 
-export const AutomationTriggers = ['content.submitted', 'content.approved', 'content.published', 'task.overdue', 'invoice.overdue', 'lead.won', 'inbox.negative'] as const;
+export const AutomationTriggers = ['content.submitted', 'content.approved', 'content.published', 'task.overdue', 'invoice.overdue', 'lead.won', 'chat.message_mentioned'] as const;
 export type AutomationTrigger = (typeof AutomationTriggers)[number];
 
 export const AutomationActions = ['notify.client', 'notify.team', 'create.task', 'send.email', 'post.webhook'] as const;

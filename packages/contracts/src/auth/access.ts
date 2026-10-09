@@ -60,8 +60,9 @@ const STAFF_PERMISSIONS: readonly Permission[] = [
   Permissions.FEEDBACK_RESOLVE,
   Permissions.FILES_VIEW,
   Permissions.FILES_UPLOAD,
-  Permissions.INBOX_VIEW,
-  Permissions.INBOX_REPLY,
+  Permissions.CHAT_VIEW,
+  Permissions.CHAT_SEND,
+  Permissions.CHAT_CREATE_ROOM,
   Permissions.TIME_TRACK,
 ];
 
@@ -82,6 +83,8 @@ const CLIENT_PERMISSIONS: readonly Permission[] = [
   Permissions.FILES_VIEW,
   Permissions.INVOICES_VIEW,
   Permissions.REPORTS_VIEW,
+  Permissions.CHAT_VIEW,
+  Permissions.CHAT_SEND,
 ];
 
 const ORG_SCOPE = [AssignableScopeTypes.ORGANIZATION] as const;

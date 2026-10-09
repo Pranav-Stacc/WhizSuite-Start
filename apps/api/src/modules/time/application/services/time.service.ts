@@ -104,12 +104,14 @@ export class TimeService {
   ): Promise<RunningTimerDto> {
     const membershipId = await this.actorMembership(organizationId, actor);
     const task = await this.work.getTask(organizationId, taskId);
-    const project = await this.work.get(organizationId, task.projectId);
+    const project = task.projectId
+      ? await this.work.get(organizationId, task.projectId)
+      : null;
     const record = await this.repository.replaceRunning(organizationId, {
       membershipId,
       taskId,
-      projectId: task.projectId,
-      clientId: project.clientId ?? undefined,
+      projectId: task.projectId ?? undefined,
+      clientId: project?.clientId ?? task.clientId ?? undefined,
       minutes: 0,
       startedAt: new Date(),
       description: task.title,

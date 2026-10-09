@@ -8,6 +8,7 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ProblemDetailsFilter } from './shared/errors/problem-details.filter';
 import { ConfiguredIoAdapter } from './shared/http/configured-io.adapter';
+import { createCorsOriginChecker } from './shared/http/cors-origin';
 import type { AppConfig } from './shared/config/app.config';
 
 async function bootstrap() {
@@ -18,14 +19,12 @@ async function bootstrap() {
   const port = config.get('PORT', { infer: true });
   const apiPrefix = config.get('API_PREFIX', { infer: true });
 
-  const corsOrigins = config
-    .get('CORS_ORIGINS', { infer: true })
-    .split(',')
-    .map((o) => o.trim());
+  const corsRaw = config.get('CORS_ORIGINS', { infer: true });
+  const corsOrigin = createCorsOriginChecker(corsRaw);
   app.use(helmet());
   app.use(cookieParser());
-  app.enableCors({ origin: corsOrigins, credentials: true });
-  app.useWebSocketAdapter(new ConfiguredIoAdapter(app, corsOrigins));
+  app.enableCors({ origin: corsOrigin, credentials: true });
+  app.useWebSocketAdapter(new ConfiguredIoAdapter(app, corsOrigin));
   app.enableShutdownHooks();
 
   app.setGlobalPrefix(apiPrefix);

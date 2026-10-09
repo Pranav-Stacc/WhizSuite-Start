@@ -35,7 +35,15 @@ export const appConfigSchema = z
     CORS_ORIGINS: z
       .string()
       .default(
-        'http://localhost:3000,https://whizsuite.praanav.in,https://www.whizsuite.praanav.in',
+        [
+          'http://localhost:3000',
+          'https://whizsuite.com',
+          'https://www.whizsuite.com',
+          'https://*.whizsuite.com',
+          'https://whizsuite.praanav.in',
+          'https://www.whizsuite.praanav.in',
+          'https://*.whizsuite.praanav.in',
+        ].join(','),
       ),
     STORAGE_ENDPOINT: z.string().url(),
     STORAGE_ACCESS_KEY: z.string().default(''),
@@ -145,7 +153,8 @@ export const appConfigSchema = z
       .int()
       .positive()
       .default(TIME_ENTRY_LIST_LIMIT_DEFAULT),
-    INBOX_LIST_LIMIT: z.coerce.number().int().positive().default(200),
+    CHAT_ROOM_LIST_LIMIT: z.coerce.number().int().positive().default(100),
+    CHAT_MESSAGE_PAGE_LIMIT: z.coerce.number().int().positive().default(50),
     RESOURCE_LIST_LIMIT: z.coerce.number().int().positive().default(200),
     SEARCH_RESULT_LIMIT: z.coerce.number().int().positive().default(20),
     THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),

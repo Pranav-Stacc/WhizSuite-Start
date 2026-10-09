@@ -68,7 +68,7 @@ export const automationMessages = {
   'automations.trigger.task.overdue': 'a task becomes overdue',
   'automations.trigger.invoice.overdue': 'an invoice becomes overdue',
   'automations.trigger.lead.won': 'a lead is won',
-  'automations.trigger.inbox.negative': 'a negative message arrives',
+  'automations.trigger.chat.message_mentioned': 'someone is mentioned in chat',
   'automations.action.notify.client': 'notify the client',
   'automations.action.notify.team': 'notify the team',
   'automations.action.create.task': 'create a task',

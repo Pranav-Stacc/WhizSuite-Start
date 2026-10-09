@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, decodeSession, encodeSession, sessionCookieOptions } from '@/shared/auth/session-codec';
 import { accessTokenNeedsRefresh, rotateTokens } from '@/shared/auth/token-refresh';
+import { parseWorkspaceHost, workspaceHref } from '@/shared/workspace/host';
+import { isSharedPath, moduleForPath } from '@/shared/workspace/modules';
 
 const PUBLIC_PATHS = new Set([
   '/',
@@ -28,10 +30,14 @@ function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
   return response;
 }
 
+function rootDomain(): string | undefined {
+  return process.env.APP_ROOT_DOMAIN?.trim() || process.env.NEXT_PUBLIC_APP_ROOT_DOMAIN?.trim() || undefined;
+}
+
 /**
- * First-line gate: unauthenticated visitors never reach app routes, and live sessions get their
- * access token rotated here (the only server layer besides actions/route handlers that may set cookies).
- * Permission checks happen server-side in pages and layouts (requireSession / requirePermission).
+ * First-line gate: auth, token rotation, and CRM/Finance subdomain routing.
+ * When APP_ROOT_DOMAIN is set, paths owned by another module redirect to
+ * `crm.{slug}.…` / `finance.{slug}.…` / `{slug}.…`.
  */
 export async function proxy(request: NextRequest) {
   const pathname = normalizePath(request.nextUrl.pathname);
@@ -40,6 +46,28 @@ export async function proxy(request: NextRequest) {
   const raw = request.cookies.get(SESSION_COOKIE)?.value;
   const session = raw ? decodeSession(raw) : null;
   if (!session) return redirectToLogin(request, false);
+
+  const root = rootDomain();
+  const host = parseWorkspaceHost(request.headers.get('host'), root);
+  const pathModule = moduleForPath(pathname);
+
+  if (
+    root &&
+    host.subdomainMode &&
+    session.orgSlug &&
+    !isSharedPath(pathname) &&
+    pathModule !== host.module
+  ) {
+    const target = workspaceHref({
+      module: pathModule,
+      orgSlug: session.orgSlug,
+      rootDomain: root,
+      path: `${pathname}${request.nextUrl.search}`,
+      protocol: request.nextUrl.protocol.replace(':', ''),
+    });
+    return NextResponse.redirect(target);
+  }
+
   if (!session.accessToken || !session.refreshToken || !accessTokenNeedsRefresh(session.accessToken)) {
     return NextResponse.next();
   }

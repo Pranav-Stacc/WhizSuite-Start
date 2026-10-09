@@ -8,3 +8,8 @@ export interface RealtimeEmitter {
 export const userRoom = (userId: string): string => `user:${userId}`;
 export const orgRoom = (organizationId: string): string =>
   `org:${organizationId}`;
+export const chatRoomChannel = (
+  organizationId: string,
+  roomId: string,
+): string => `${orgRoom(organizationId)}:chat:${roomId}`;
+

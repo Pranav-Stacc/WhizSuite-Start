@@ -12,6 +12,8 @@ export interface Session {
   role: UserRole;
   orgId: string;
   orgName: string;
+  /** Platform-unique agency slug — powers `{slug}.whizsuite.com` / `crm.{slug}.…`. */
+  orgSlug?: string;
   clientId?: string;
   accessToken?: string;
   refreshToken?: string;
@@ -42,8 +44,9 @@ export function decodeSession(raw: string): Session | null {
 
 export const sessionCookieOptions = {
   httpOnly: true,
-  sameSite: 'lax',
+  sameSite: 'lax' as const,
   secure: env.SESSION_COOKIE_SECURE,
   path: '/',
   maxAge: env.SESSION_TTL_SECONDS,
-} as const;
+  ...(env.SESSION_COOKIE_DOMAIN ? { domain: env.SESSION_COOKIE_DOMAIN } : {}),
+};

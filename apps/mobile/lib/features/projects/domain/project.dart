@@ -134,8 +134,10 @@ class ProjectProgress {
     final done = <String, int>{};
     final total = <String, int>{};
     for (final task in tasks) {
-      total.update(task.projectId, (n) => n + 1, ifAbsent: () => 1);
-      if (task.isDone) done.update(task.projectId, (n) => n + 1, ifAbsent: () => 1);
+      final projectId = task.projectId;
+      if (projectId == null) continue;
+      total.update(projectId, (n) => n + 1, ifAbsent: () => 1);
+      if (task.isDone) done.update(projectId, (n) => n + 1, ifAbsent: () => 1);
     }
     return {
       for (final entry in total.entries) entry.key: ProjectProgress(done: done[entry.key] ?? 0, total: entry.value),

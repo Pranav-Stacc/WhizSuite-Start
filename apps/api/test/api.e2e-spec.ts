@@ -317,7 +317,7 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
   });
 
-  it('media, finance, time, feedback, inbox', async () => {
+  it('media, finance, time, feedback, chat', async () => {
     if (skipIfNoDb()) return;
 
     await request(app.getHttpServer())
@@ -390,18 +390,28 @@ describe('Agency OS API (e2e)', () => {
       .send({ status: 'OPEN' })
       .expect(200);
 
-    const conv = await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/inbox/conversations`)
+    const room = await request(app.getHttpServer())
+      .post(`/api/v1/organizations/${organizationId}/chat/rooms`)
       .set(auth())
-      .send({ clientId, type: 'DM' })
+      .send({
+        type: 'CLIENT',
+        name: 'Client chat',
+        clientId,
+        memberUserIds: [userId],
+      })
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(
-        `/api/v1/organizations/${organizationId}/inbox/conversations/${conv.body.id}`,
+      .post(
+        `/api/v1/organizations/${organizationId}/chat/rooms/${room.body.id}/messages`,
       )
       .set(auth())
-      .send({ status: 'OPEN' })
+      .send({ body: 'Hello from e2e' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .get(`/api/v1/organizations/${organizationId}/chat/rooms`)
+      .set(auth())
       .expect(200);
   });
 

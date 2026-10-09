@@ -5,8 +5,8 @@ import { daysFromNow, toDateKey } from '@/shared/lib/format';
 
 export interface TimeEntry extends Entity {
   userId: string;
-  projectId: string;
-  clientId: string;
+  projectId?: string;
+  clientId?: string;
   taskId?: string;
   minutes: number;
   date: string;
@@ -17,8 +17,8 @@ export interface TimeEntry extends Entity {
 export interface ActiveTimer extends Entity {
   userId: string;
   taskId: string;
-  projectId: string;
-  clientId: string;
+  projectId?: string;
+  clientId?: string;
   startedAt: string;
 }
 

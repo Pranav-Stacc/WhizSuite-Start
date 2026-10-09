@@ -9,7 +9,6 @@ import '../features/content/content_module.dart';
 import '../features/custom_fields/custom_fields_module.dart';
 import '../features/dashboard/dashboard_module.dart';
 import '../features/departments/departments_module.dart';
-import '../features/inbox/inbox_module.dart';
 import '../features/integrations/integrations_module.dart';
 import '../features/invoices/invoices_module.dart';
 import '../features/knowledge/knowledge_module.dart';
@@ -40,7 +39,6 @@ final List<FeatureModule> featureModules = [
   approvalsModule,
   mediaModule,
   leadsModule,
-  inboxModule,
   messagesModule,
   invoicesModule,
   timeModule,

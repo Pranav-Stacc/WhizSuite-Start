@@ -7,8 +7,8 @@ import {
   CreditCard,
   FolderKanban,
   Image as ImageIcon,
-  Inbox,
   LayoutDashboard,
+  MessageSquare,
   type LucideIcon,
   Plug,
   Receipt,
@@ -27,6 +27,11 @@ import {
 } from 'lucide-react';
 import { Permissions, type Permission } from '@agency-os/contracts';
 import type { MessageKey } from '@/shared/i18n/t';
+import {
+  MODULE_NAV_GROUPS,
+  MODULE_PRIMARY_HREFS,
+  type WorkspaceModule,
+} from '@/shared/workspace/modules';
 
 export interface NavItem {
   href: string;
@@ -62,6 +67,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/tasks', label: 'nav.tasks', desc: 'nav.tasks.desc', icon: CheckSquare, permission: Permissions.TASKS_VIEW },
       { href: '/projects', label: 'nav.projects', desc: 'nav.projects.desc', icon: Briefcase, permission: Permissions.PROJECTS_VIEW },
       { href: '/calendar', label: 'nav.calendar', desc: 'nav.calendar.desc', icon: CalendarDays, permission: Permissions.CONTENT_VIEW },
+      { href: '/chat', label: 'nav.chat', desc: 'nav.chat.desc', icon: MessageSquare, permission: Permissions.CHAT_VIEW },
       { href: '/time', label: 'nav.time', desc: 'nav.time.desc', icon: Timer, permission: Permissions.TIME_TRACK },
     ],
   },
@@ -84,7 +90,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/clients', label: 'nav.clients', desc: 'nav.clients.desc', icon: Users, permission: Permissions.CLIENTS_VIEW },
       { href: '/leads', label: 'nav.leads', desc: 'nav.leads.desc', icon: Target, permission: Permissions.LEADS_VIEW },
-      { href: '/inbox', label: 'nav.inbox', desc: 'nav.inbox.desc', icon: Inbox, permission: Permissions.INBOX_VIEW },
     ],
   },
   {
@@ -125,34 +130,66 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Shown as flat text links in the top bar; every other page lives under "More". */
-export const PRIMARY_NAV_HREFS = ['/dashboard', '/clients', '/tasks', '/content', '/calendar', '/media', '/invoices'] as const;
+/** Default primary bar when no module context is provided (legacy). Prefer `primaryNav(granted, module)`. */
+export const PRIMARY_NAV_HREFS = MODULE_PRIMARY_HREFS.main;
 
 export function isAllowed(item: { permission?: Permission }, granted: ReadonlySet<Permission>): boolean {
   return item.permission === undefined || granted.has(item.permission);
 }
 
-export function primaryNav(granted: ReadonlySet<Permission>): NavItem[] {
+export function primaryNav(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavItem[] {
   const byHref = new Map([HOME_ITEM, ...NAV_GROUPS.flatMap((g) => g.items)].map((item) => [item.href, item]));
-  return PRIMARY_NAV_HREFS.flatMap((href) => {
+  const hrefs = MODULE_PRIMARY_HREFS[module];
+  return hrefs.flatMap((href) => {
     const item = byHref.get(href);
     return item && isAllowed(item, granted) ? [item] : [];
   });
 }
 
-export function secondaryGroups(granted: ReadonlySet<Permission>): NavGroup[] {
-  const primary = new Set<string>(PRIMARY_NAV_HREFS);
-  return allowedGroups(granted)
+export function secondaryGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
+  const primary = new Set<string>(MODULE_PRIMARY_HREFS[module]);
+  return allowedGroups(granted, module)
     .map((group) => ({ ...group, items: group.items.filter((item) => !primary.has(item.href)) }))
     .filter((group) => group.items.length > 0);
 }
 
-export function allowedGroups(granted: ReadonlySet<Permission>): NavGroup[] {
-  return NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => isAllowed(item, granted)) })).filter((group) => group.items.length > 0);
+export function allowedGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
+  const allowedIds = new Set(MODULE_NAV_GROUPS[module]);
+  return NAV_GROUPS.filter((group) => allowedIds.has(group.id))
+    .map((group) => {
+      // Finance reuses the Work group only for Time — strip tasks/projects/calendar.
+      if (module === 'finance' && group.id === 'work') {
+        return {
+          ...group,
+          items: group.items.filter((item) => item.href === '/time' && isAllowed(item, granted)),
+        };
+      }
+      // CRM is lead-gen only; Clients / Inbox stay on Main after conversion.
+      if (module === 'crm' && group.id === 'clients') {
+        return {
+          ...group,
+          label: 'nav.leads' as const,
+          desc: 'nav.leads.desc' as const,
+          items: group.items.filter((item) => item.href === '/leads' && isAllowed(item, granted)),
+        };
+      }
+      // Main Clients group: accounts + inbox (not pipeline).
+      if (module === 'main' && group.id === 'clients') {
+        return {
+          ...group,
+          items: group.items.filter((item) => item.href !== '/leads' && isAllowed(item, granted)),
+        };
+      }
+      return { ...group, items: group.items.filter((item) => isAllowed(item, granted)) };
+    })
+    .filter((group) => group.items.length > 0);
 }
 
-export function activeGroupId(pathname: string): string | undefined {
-  return NAV_GROUPS.find((group) => group.items.some((item) => isActivePath(pathname, item.href)))?.id;
+export function activeGroupId(pathname: string, module: WorkspaceModule = 'main'): string | undefined {
+  const allowedIds = new Set(MODULE_NAV_GROUPS[module]);
+  return NAV_GROUPS.find(
+    (group) => allowedIds.has(group.id) && group.items.some((item) => isActivePath(pathname, item.href)),
+  )?.id;
 }
 
 export function isActivePath(pathname: string, href: string): boolean {

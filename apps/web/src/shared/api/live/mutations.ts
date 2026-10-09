@@ -28,11 +28,6 @@ export async function reorderContent(clientId: string, orderedIds: string[]): Pr
   await apiFetch(`${orgPath(org, 'content')}/reorder`, { method: 'POST', body: { clientId, orderedIds } });
 }
 
-export async function replyToConversation(conversationId: string, body: string): Promise<void> {
-  const org = await orgId();
-  await apiFetch(`${orgPath(org, 'inbox/conversations')}/${conversationId}/replies`, { method: 'POST', body: { body } });
-}
-
 export async function patchLead(leadId: string, body: Record<string, unknown>): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'leads')}/${leadId}`, { method: 'PATCH', body });

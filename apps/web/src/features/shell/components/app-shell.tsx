@@ -8,28 +8,33 @@ import { getTheme } from '@/shared/theme/theme.server';
 import { ThemeCustomizer } from '@/shared/theme/theme-customizer';
 import { Badge } from '@/shared/ui/badge';
 import { Logo } from '@/shared/ui/logo';
-import { openInboxCount } from '@/features/inbox/services/inbox.service';
+import { unreadChatCount } from '@/features/chat/services/chat.service';
 import { pendingApprovals } from '@/features/content/services/content.service';
 import { WebPushRegistrar } from '@/features/notifications/components/web-push-registrar';
 import { listForUser } from '@/features/notifications/services/notifications.service';
 import { isLiveMode } from '@/shared/config/env';
+import { getWorkspaceContext } from '@/shared/workspace/context';
+import { homePathForModule } from '@/shared/workspace/modules';
 import { CommandPalette, SearchTrigger } from './command-palette';
 import { MobileDock, MobileMenu } from './mobile-nav';
 import { ModuleTabs } from './module-tabs';
 import { NotificationsBell, QuickCreate, UserMenu } from './shell-actions';
 import { TopNav } from './top-nav';
+import { WorkspaceSwitcher } from './workspace-switcher';
 
-/** Staff workspace chrome: a two-tier top bar (mega-menu + contextual module tabs) instead of a sidebar. */
+/** Staff workspace chrome: product surface (main / CRM / Finance) + module tabs. */
 export async function AppShell({ session, children }: { session: Session; children: ReactNode }) {
   const granted = await getPermissions();
-  const [theme, notifications, approvals, inbox] = await Promise.all([
+  const workspace = await getWorkspaceContext();
+  const [theme, notifications, approvals, chatUnread] = await Promise.all([
     getTheme(),
     listForUser(session.userId),
     granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals() : [],
-    granted.has(Permissions.INBOX_VIEW) ? openInboxCount() : 0,
+    granted.has(Permissions.CHAT_VIEW) ? unreadChatCount() : 0,
   ]);
-  const badges: Record<string, number> = { '/approvals': approvals.length, '/inbox': inbox };
+  const badges: Record<string, number> = { '/approvals': approvals.length, '/chat': chatUnread };
   const permissions = [...granted];
+  const home = homePathForModule(workspace.module);
 
   return (
     <div className="min-h-dvh">
@@ -39,17 +44,23 @@ export async function AppShell({ session, children }: { session: Session; childr
       </a>
       <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-8 lg:gap-8 lg:px-12">
-          <MobileMenu permissions={permissions} badges={badges} />
-          <Link href="/dashboard" className="min-w-0 max-w-56 outline-none" aria-label={session.orgName}>
+          <MobileMenu permissions={permissions} badges={badges} module={workspace.module} />
+          <Link href={home} className="min-w-0 max-w-56 outline-none" aria-label={session.orgName}>
             <Logo name={session.orgName} />
           </Link>
+          <WorkspaceSwitcher
+            module={workspace.module}
+            orgSlug={session.orgSlug}
+            canCrm={granted.has(Permissions.LEADS_VIEW)}
+            canFinance={granted.has(Permissions.INVOICES_VIEW) || granted.has(Permissions.REPORTS_VIEW)}
+          />
           {session.demo ? (
             <Badge tone="warning" title={t('common.demoBanner')} className="hidden md:inline-flex">
               {t('shell.demoBadge')}
             </Badge>
           ) : null}
           <div className="flex-1" />
-          <TopNav permissions={permissions} badges={badges} />
+          <TopNav permissions={permissions} badges={badges} module={workspace.module} />
           <div className="flex items-center gap-0.5">
             <SearchTrigger compact />
             <QuickCreate permissions={permissions} />
@@ -63,11 +74,11 @@ export async function AppShell({ session, children }: { session: Session; childr
         </div>
       </header>
       <main id="main" className="mx-auto max-w-[1600px] animate-fade-up px-4 pb-28 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
-        <ModuleTabs permissions={permissions} badges={badges} />
+        <ModuleTabs permissions={permissions} badges={badges} module={workspace.module} />
         {children}
       </main>
-      <MobileDock permissions={permissions} badges={badges} />
-      <CommandPalette permissions={permissions} />
+      <MobileDock permissions={permissions} badges={badges} module={workspace.module} />
+      <CommandPalette permissions={permissions} module={workspace.module} />
     </div>
   );
 }

@@ -37,4 +37,9 @@ export class RealtimeService {
   ): void {
     this.emitter.emitToRoom(orgRoom(organizationId), event, payload);
   }
+
+  /** Emit to an already-qualified Socket.IO room (e.g. chat channel). */
+  publishToRoom(room: string, event: RealtimeEvent, payload: unknown): void {
+    this.emitter.emitToRoom(room, event, payload);
+  }
 }

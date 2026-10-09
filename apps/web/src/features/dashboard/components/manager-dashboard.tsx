@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CalendarClock, CheckSquare, Hourglass, Inbox, Plus, Users } from 'lucide-react';
+import { CalendarClock, CheckSquare, Hourglass, MessageSquare, Plus, Users } from 'lucide-react';
 import type { Session } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatDateTime, relativeTime } from '@/shared/lib/format';
@@ -13,7 +13,7 @@ import { StatusBadge } from '@/shared/ui/status';
 import type { GuideItem } from '@/shared/ui/page-guide';
 import { clientsById, listClients } from '@/features/clients/services/clients.service';
 import { listContent, pendingApprovals } from '@/features/content/services/content.service';
-import { openInboxCount } from '@/features/inbox/services/inbox.service';
+import { unreadChatCount } from '@/features/chat/services/chat.service';
 import { overdueTasks } from '@/features/tasks/services/tasks.service';
 import { membersById } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
@@ -29,11 +29,11 @@ const APPROVALS_SHOWN = 6;
 const WEEK_MS = UPCOMING_DAYS * 24 * 60 * 60 * 1000;
 
 export async function ManagerDashboard({ session }: { session: Session }) {
-  const [clients, approvals, overdue, inbox, content, byClient, byMember] = await Promise.all([
+  const [clients, approvals, overdue, chatUnread, content, byClient, byMember] = await Promise.all([
     listClients(),
     pendingApprovals(),
     overdueTasks(),
-    openInboxCount(),
+    unreadChatCount(),
     listContent(),
     clientsById(),
     membersById(),
@@ -66,7 +66,7 @@ export async function ManagerDashboard({ session }: { session: Session }) {
         <StatCard label={t('dashboard.kpi.clients')} value={active.length} icon={<Users />} hint={t('dashboard.kpi.clients.hint', { count: onboarding })} href="/clients" />
         <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
         <StatCard label={t('dashboard.kpi.overdue')} value={overdue.length} icon={<CheckSquare />} hint={t('dashboard.kpi.overdue.hint')} href="/tasks" invertDelta />
-        <StatCard label={t('dashboard.kpi.inbox')} value={inbox} icon={<Inbox />} hint={t('dashboard.kpi.inbox.hint')} href="/inbox" />
+        <StatCard label={t('dashboard.kpi.chat')} value={chatUnread} icon={<MessageSquare />} hint={t('dashboard.kpi.chat.hint')} href="/chat" />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
@@ -86,7 +86,9 @@ export async function ManagerDashboard({ session }: { session: Session }) {
                 </li>
               ))}
               {overdue.map((task) => {
-                const assignee = task.assigneeId ? byMember.get(task.assigneeId) : undefined;
+                const assignees = task.assigneeIds
+                  .map((id) => byMember.get(id))
+                  .filter((m): m is NonNullable<typeof m> => Boolean(m));
                 const due = dueInfo(task.dueDate, false);
                 return (
                   <li key={task.id}>
@@ -94,9 +96,17 @@ export async function ManagerDashboard({ session }: { session: Session }) {
                       <Badge tone={due.tone === 'danger' ? 'danger' : 'warning'}>{due.label}</Badge>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{task.title}</span>
-                        <span className="block truncate text-xs text-muted">{byClient.get(task.clientId)?.name}</span>
+                        <span className="block truncate text-xs text-muted">
+                          {task.clientId ? byClient.get(task.clientId)?.name : t('tasks.inbox')}
+                        </span>
                       </span>
-                      {assignee ? <Avatar name={assignee.name} size="xs" /> : null}
+                      {assignees.length > 0 ? (
+                        <span className="inline-flex -space-x-1.5">
+                          {assignees.slice(0, 3).map((m) => (
+                            <Avatar key={m.id} name={m.name} size="xs" />
+                          ))}
+                        </span>
+                      ) : null}
                     </RowLink>
                   </li>
                 );

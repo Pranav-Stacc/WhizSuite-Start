@@ -79,7 +79,11 @@ final calendarFeedProvider = FutureProvider.autoDispose<CalendarFeed>((ref) asyn
       for (final item in items) CalendarEntry.fromItem(item),
       for (final piece in content ?? const <ScheduledContent>[]) ?CalendarEntry.fromContent(piece),
       for (final task in tasks)
-        if (!task.isDone) ?CalendarEntry.fromTask(task, clientId: projects[task.projectId]?.parentId),
+        if (!task.isDone)
+          ?CalendarEntry.fromTask(
+            task,
+            clientId: task.clientId ?? (task.projectId == null ? null : projects[task.projectId]?.parentId),
+          ),
     ],
   );
 });

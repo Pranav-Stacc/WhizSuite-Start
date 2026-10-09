@@ -276,21 +276,29 @@ class _TaskFacts extends ConsumerWidget {
     final clients = ref.watch(clientDirectoryProvider).value ?? Directory.empty;
     final members = ref.watch(memberDirectoryProvider).value ?? Directory.empty;
 
-    final project = projects[task.projectId];
-    final clientId = project?.parentId;
+    final project = task.projectId == null ? null : projects[task.projectId];
+    final clientId = task.clientId ?? project?.parentId;
     final clientName = clients.nameOf(clientId);
-    final assignee = members.nameOf(task.assigneeUserId);
+    final assigneeNames = [
+      for (final id in task.assigneeUserIds) ?members.nameOf(id),
+    ];
+    final assigneeLabel = assigneeNames.isEmpty
+        ? l10n.unassigned
+        : assigneeNames.length == 1
+            ? assigneeNames.first
+            : l10n.taskAssignedToMany(assigneeNames.length);
     final dueDate = task.dueDate;
     final estimate = task.estimateMinutes;
 
     final assigneeValue = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (assignee != null) ...[
-          InitialsAvatar(name: assignee, seed: task.assigneeUserId, size: _avatarSize),
-          SizedBox(width: tokens.sm),
+        for (final id in task.assigneeUserIds.take(3)) ...[
+          InitialsAvatar(name: members.nameOf(id) ?? id, seed: id, size: _avatarSize),
+          SizedBox(width: tokens.xs),
         ],
-        Flexible(child: Text(assignee ?? l10n.unassigned, overflow: TextOverflow.ellipsis)),
+        if (task.assigneeUserIds.isNotEmpty) SizedBox(width: tokens.sm),
+        Flexible(child: Text(assigneeLabel, overflow: TextOverflow.ellipsis)),
       ],
     );
     final priorityBadge = StatusBadge(label: taskPriorityLabel(l10n, task.priority), tone: taskPriorityTone(task.priority));
@@ -301,7 +309,7 @@ class _TaskFacts extends ConsumerWidget {
           icon: Icons.folder_outlined,
           label: l10n.taskProject,
           value: project == null
-              ? Text(l10n.valueUnknown)
+              ? Text(l10n.taskInbox)
               : EntityLink(
                   label: project.name,
                   semanticLabel: l10n.taskOpenProject(project.name),
@@ -312,7 +320,7 @@ class _TaskFacts extends ConsumerWidget {
           icon: Icons.business_outlined,
           label: l10n.taskClient,
           value: clientId == null || clientName == null
-              ? Text(l10n.valueUnknown)
+              ? Text(l10n.valueNone)
               : EntityLink(
                   label: clientName,
                   semanticLabel: l10n.taskOpenClient(clientName),

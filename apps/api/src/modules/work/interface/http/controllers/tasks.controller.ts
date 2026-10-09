@@ -24,6 +24,7 @@ import { RequirePermissions } from '../../../../../shared/auth/permissions.decor
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { WorkService } from '../../../application/services/work.service';
 import {
+  CreateTaskCommentDto,
   CreateTaskDto,
   TransitionTaskDto,
   UpdateTaskDto,
@@ -100,6 +101,22 @@ export class TasksController {
       user.userId,
       taskId,
       dto.toStatus,
+    );
+  }
+
+  @Post(':taskId/comments')
+  @RequirePermissions(Permissions.TASKS_EDIT)
+  addComment(
+    @Param('organizationId') organizationId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: CreateTaskCommentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.work.addTaskComment(
+      requireOrganizationId(organizationId),
+      user.userId,
+      taskId,
+      dto,
     );
   }
 

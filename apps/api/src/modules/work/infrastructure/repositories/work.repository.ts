@@ -39,7 +39,8 @@ export type ProjectChangeRow = Partial<
 >;
 
 export interface TaskCreateRow {
-  projectId: string;
+  projectId?: string;
+  clientId?: string;
   title: string;
   description?: string;
   type?: string;
@@ -47,20 +48,24 @@ export interface TaskCreateRow {
   priority: string;
   dueDate?: Date;
   estimateMinutes?: number;
-  assigneeMembershipId?: string;
+  assigneeMembershipIds?: string[];
   createdById: string;
   calendarItemId?: string;
+  contentItemId?: string;
 }
 
 export interface TaskChangeRow {
-  projectId?: string;
+  projectId?: string | null;
+  clientId?: string | null;
   title?: string;
   description?: string;
   status?: string;
   priority?: string;
   dueDate?: Date;
   estimateMinutes?: number;
-  assigneeMembershipId?: string | null;
+  /** undefined keeps assignees; array (possibly empty) replaces them. */
+  assigneeMembershipIds?: string[];
+  contentItemId?: string | null;
 }
 
 @Injectable()
@@ -138,7 +143,17 @@ export class WorkRepository {
         status: { not: 'DONE' },
         dueDate: { gte: range.from, lt: range.to },
         ...(clientIds
-          ? { project: { clientId: { in: clientIds }, deletedAt: null } }
+          ? {
+              OR: [
+                { clientId: { in: clientIds } },
+                {
+                  project: {
+                    clientId: { in: clientIds },
+                    deletedAt: null,
+                  },
+                },
+              ],
+            }
           : {}),
       },
       orderBy: { dueDate: 'asc' },
@@ -149,6 +164,7 @@ export class WorkRepository {
         status: true,
         dueDate: true,
         projectId: true,
+        clientId: true,
         project: { select: { clientId: true } },
       },
     });
@@ -187,7 +203,7 @@ export class WorkRepository {
       where: { id, organizationId, deletedAt: null },
       include: {
         assignees: true,
-        comments: true,
+        comments: { orderBy: { createdAt: 'asc' } },
         dependencies: true,
         children: true,
       },
@@ -195,15 +211,18 @@ export class WorkRepository {
   }
 
   createTask(organizationId: string, data: TaskCreateRow) {
-    const { assigneeMembershipId, ...fields } = data;
+    const { assigneeMembershipIds, ...fields } = data;
     return this.prisma.task.create({
       data: {
         ...fields,
         organizationId,
-        ...(assigneeMembershipId
+        ...(assigneeMembershipIds?.length
           ? {
               assignees: {
-                create: { organizationId, membershipId: assigneeMembershipId },
+                create: assigneeMembershipIds.map((membershipId) => ({
+                  organizationId,
+                  membershipId,
+                })),
               },
             }
           : {}),
@@ -212,21 +231,22 @@ export class WorkRepository {
     });
   }
 
-  /** `assigneeMembershipId`: undefined keeps assignees, null clears them, a value replaces them. */
+  /** `assigneeMembershipIds`: undefined keeps assignees; array replaces the full set. */
   updateTask(organizationId: string, id: string, change: TaskChangeRow) {
-    const { assigneeMembershipId, ...fields } = change;
+    const { assigneeMembershipIds, ...fields } = change;
     return this.prisma.$transaction(async (tx) => {
-      if (assigneeMembershipId !== undefined) {
+      if (assigneeMembershipIds !== undefined) {
         await tx.taskAssignee.deleteMany({
           where: { organizationId, taskId: id },
         });
-        if (assigneeMembershipId) {
-          await tx.taskAssignee.create({
-            data: {
+        if (assigneeMembershipIds.length > 0) {
+          await tx.taskAssignee.createMany({
+            data: assigneeMembershipIds.map((membershipId) => ({
               organizationId,
               taskId: id,
-              membershipId: assigneeMembershipId,
-            },
+              membershipId,
+            })),
+            skipDuplicates: true,
           });
         }
       }
@@ -245,6 +265,20 @@ export class WorkRepository {
     await this.prisma.task.updateMany({
       where: { id, organizationId, deletedAt: null },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  createComment(
+    organizationId: string,
+    data: { taskId: string; authorId: string; body: string },
+  ) {
+    return this.prisma.taskComment.create({
+      data: {
+        organizationId,
+        taskId: data.taskId,
+        authorId: data.authorId,
+        body: data.body,
+      },
     });
   }
 

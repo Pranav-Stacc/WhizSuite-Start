@@ -8,9 +8,12 @@ import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { dateKeyToIso, toMinorUnits } from '@/shared/lib/format';
 import { patchLead } from '@/shared/api/live/mutations';
-import { isLiveMode } from '@/shared/config/env';
+import { env, isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { onboardClient } from '@/features/clients/services/clients.service';
+import { workspaceHref } from '@/shared/workspace/host';
+import { WORKSPACE_MODULE_COOKIE } from '@/shared/workspace/modules';
+import { cookies } from 'next/headers';
 import { leadsRepository, type Lead } from '../data/leads.repository';
 
 
@@ -100,7 +103,31 @@ export async function convertLeadAction(id: string): Promise<ActionResult<{ href
     await recordAudit({ action: 'lead.converted', entityType: 'lead', entityId: id, entityLabel: lead.company, summary: 'Converted lead to client', diff: { client: { to: client.id } } });
     await recordAudit({ action: 'client.created', entityType: 'client', entityId: client.id, entityLabel: client.name, summary: 'Created client from lead' });
     await refreshData('leads', 'clients');
-    return succeed({ href: `/clients/${client.id}` }, t('leads.convert.done', { name: lead.company }));
+
+    // Accounts live on Main; CRM only owns the pipeline until convert.
+    const clientPath = `/clients/${client.id}`;
+    const root = env.APP_ROOT_DOMAIN?.trim();
+    if (root && session.orgSlug) {
+      return succeed(
+        {
+          href: workspaceHref({
+            module: 'main',
+            orgSlug: session.orgSlug,
+            rootDomain: root,
+            path: clientPath,
+          }),
+        },
+        t('leads.convert.done', { name: lead.company }),
+      );
+    }
+    const jar = await cookies();
+    jar.set(WORKSPACE_MODULE_COOKIE, 'main', {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      httpOnly: false,
+    });
+    return succeed({ href: clientPath }, t('leads.convert.done', { name: lead.company }));
   });
 }
 

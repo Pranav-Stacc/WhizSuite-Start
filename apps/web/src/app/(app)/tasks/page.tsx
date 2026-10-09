@@ -57,8 +57,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const scoped = allTasks.filter(matchesScope);
   const predicates: Record<TaskFilter, (task: (typeof allTasks)[number]) => boolean> = {
     all: () => true,
-    mine: (task) => task.assigneeId === session.userId,
-    unassigned: (task) => !task.assigneeId,
+    mine: (task) => task.assigneeIds.includes(session.userId),
+    unassigned: (task) => task.assigneeIds.length === 0,
     overdue: (task) => isOverdue(task),
   };
   const tasks = scoped.filter(predicates[filter]);
@@ -69,9 +69,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name, clientName: clients.get(p.clientId)?.name }));
   const memberOptions = [...members.values()].filter((m) => m.status !== 'INVITED').map((m) => ({ id: m.id, name: m.name }));
-  const clientName = (id: string) => clients.get(id)?.name;
-  const clientColor = (id: string) => clients.get(id)?.color;
-  const assigneeName = (id: string | undefined) => (id ? members.get(id)?.name : undefined);
+  const clientName = (id: string | undefined) => (id ? clients.get(id)?.name : undefined);
+  const clientColor = (id: string | undefined) => (id ? clients.get(id)?.color : undefined);
+  const assigneeNames = (ids: string[]) => ids.map((id) => members.get(id)?.name).filter((n): n is string => Boolean(n));
 
   const filterLabels: Record<TaskFilter, string> = {
     all: t('tasks.filter.all'),
@@ -157,12 +157,25 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             id: task.id,
             columnId: task.status,
             href: link({ edit: task.id }),
-            content: <TaskCardContent task={task} clientName={clientName(task.clientId)} clientColor={clientColor(task.clientId)} assigneeName={assigneeName(task.assigneeId)} />,
+            content: (
+              <TaskCardContent
+                task={task}
+                clientName={clientName(task.clientId) ?? (task.projectId ? undefined : t('tasks.inbox'))}
+                clientColor={clientColor(task.clientId)}
+                assigneeNames={assigneeNames(task.assigneeIds)}
+              />
+            ),
           }))}
           moveAction={moveTaskAction}
         />
       ) : (
-        <TaskList tasks={tasks} clientName={clientName} clientColor={clientColor} assigneeName={assigneeName} editHref={(id) => link({ edit: id })} />
+        <TaskList
+          tasks={tasks}
+          clientName={clientName}
+          clientColor={clientColor}
+          assigneeNames={assigneeNames}
+          editHref={(id) => link({ edit: id })}
+        />
       )}
 
       {editTask ? <TaskDialog projects={projectOptions} members={memberOptions} task={editTask} defaultOpen /> : null}

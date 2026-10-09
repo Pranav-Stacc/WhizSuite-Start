@@ -5499,7 +5499,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskDescriptionEmpty => 'No description yet.';
 
   @override
-  String get taskProject => 'Project';
+  String get taskProject => 'Project (optional)';
 
   @override
   String taskProjectWithClient(String client, String project) {
@@ -5507,17 +5507,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get taskInbox => 'Inbox (no project)';
+
+  @override
   String get taskClient => 'Client';
 
   @override
-  String get taskAssignee => 'Assignee';
+  String get taskAssignee => 'Assignees';
 
   @override
-  String get taskAssigneeChange => 'Change assignee';
+  String get taskAssigneeChange => 'Change assignees';
+
+  @override
+  String get taskAssigneesDone => 'Save assignees';
 
   @override
   String taskAssignedTo(String name) {
     return 'Assigned to $name';
+  }
+
+  @override
+  String taskAssignedToMany(int count) {
+    return 'Assigned to $count people';
   }
 
   @override
@@ -5550,7 +5561,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskNoProjects =>
-      'Create a project first — every task belongs to one.';
+      'No projects yet — you can still create an inbox task.';
 
   @override
   String get navTeam => 'Team';

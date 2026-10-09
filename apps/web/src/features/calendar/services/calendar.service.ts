@@ -141,8 +141,8 @@ async function listDemo(): Promise<CalendarItem[]> {
       title: x.title,
       at: x.dueDate as string,
       href: `/tasks?edit=${x.id}`,
-      clientId: x.clientId,
-      clientColor: colorOf(x.clientId),
+      clientId: x.clientId ?? '',
+      clientColor: x.clientId ? colorOf(x.clientId) : FALLBACK_COLOR,
       status: x.status as TaskStatus,
     }));
 

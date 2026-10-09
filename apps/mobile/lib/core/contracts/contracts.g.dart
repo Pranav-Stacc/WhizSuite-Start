@@ -47,8 +47,10 @@ abstract final class Permissions {
   static const String filesView = 'files.view';
   static const String filesUpload = 'files.upload';
   static const String filesDelete = 'files.delete';
-  static const String inboxView = 'inbox.view';
-  static const String inboxReply = 'inbox.reply';
+  static const String chatView = 'chat.view';
+  static const String chatSend = 'chat.send';
+  static const String chatCreateRoom = 'chat.create_room';
+  static const String chatManage = 'chat.manage';
   static const String workflowsManage = 'workflows.manage';
   static const String automationsManage = 'automations.manage';
   static const String reportsView = 'reports.view';
@@ -58,7 +60,7 @@ abstract final class Permissions {
   static const String auditView = 'audit.view';
   static const String integrationsManage = 'integrations.manage';
 
-  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, inboxView, inboxReply, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage];
+  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, chatView, chatSend, chatCreateRoom, chatManage, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage];
 }
 
 abstract final class ScopeTypes {
@@ -142,11 +144,17 @@ abstract final class ErrorCodes {
 
 abstract final class NotificationTypeKeys {
   static const String taskAssigned = 'task.assigned';
+  static const String taskStateChanged = 'task.state_changed';
+  static const String taskCommented = 'task.commented';
+  static const String taskDueSoon = 'task.due_soon';
+  static const String taskOverdue = 'task.overdue';
   static const String contentApproved = 'content.approved';
   static const String contentChangesRequested = 'content.changes_requested';
   static const String approvalRequested = 'approval.requested';
+  static const String chatMessage = 'chat.message';
+  static const String chatMention = 'chat.mention';
 
-  static const List<String> values = <String>[taskAssigned, contentApproved, contentChangesRequested, approvalRequested];
+  static const List<String> values = <String>[taskAssigned, taskStateChanged, taskCommented, taskDueSoon, taskOverdue, contentApproved, contentChangesRequested, approvalRequested, chatMessage, chatMention];
 }
 
 abstract final class NotificationChannels {
@@ -169,8 +177,14 @@ abstract final class RealtimeEvents {
   static const String connected = 'connected';
   static const String pong = 'pong';
   static const String notificationCreated = 'notification.created';
+  static const String chatMessageCreated = 'chat.message.created';
+  static const String chatMessageUpdated = 'chat.message.updated';
+  static const String chatMessageDeleted = 'chat.message.deleted';
+  static const String chatRoomUpdated = 'chat.room.updated';
+  static const String chatTyping = 'chat.typing';
+  static const String chatRead = 'chat.read';
 
-  static const List<String> values = <String>[connected, pong, notificationCreated];
+  static const List<String> values = <String>[connected, pong, notificationCreated, chatMessageCreated, chatMessageUpdated, chatMessageDeleted, chatRoomUpdated, chatTyping, chatRead];
 }
 
 const String realtimeNamespace = '/realtime';
@@ -292,9 +306,9 @@ abstract final class AutomationTriggers {
   static const String taskOverdue = 'task.overdue';
   static const String invoiceOverdue = 'invoice.overdue';
   static const String leadWon = 'lead.won';
-  static const String inboxNegative = 'inbox.negative';
+  static const String chatMessageMentioned = 'chat.message_mentioned';
 
-  static const List<String> values = <String>[contentSubmitted, contentApproved, contentPublished, taskOverdue, invoiceOverdue, leadWon, inboxNegative];
+  static const List<String> values = <String>[contentSubmitted, contentApproved, contentPublished, taskOverdue, invoiceOverdue, leadWon, chatMessageMentioned];
 }
 
 abstract final class AutomationActions {
@@ -409,18 +423,7 @@ abstract final class CalendarSourceTypes {
   static const String invoice = 'INVOICE';
   static const String milestone = 'MILESTONE';
 
-  static const List<String> values = <String>[
-    manual,
-    content,
-    task,
-    meeting,
-    deadline,
-    shoot,
-    approval,
-    campaign,
-    invoice,
-    milestone,
-  ];
+  static const List<String> values = <String>[manual, content, task, meeting, deadline, shoot, approval, campaign, invoice, milestone];
 }
 
 abstract final class CustomFieldEntityTypes {
@@ -551,44 +554,59 @@ const Map<String, List<String>> invoiceTransitions = <String, List<String>>{
   'VOID': <String>[],
 };
 
-abstract final class InboxConversationTypes {
-  static const String comment = 'COMMENT';
+abstract final class ChatRoomTypes {
   static const String dm = 'DM';
-  static const String mention = 'MENTION';
+  static const String group = 'GROUP';
+  static const String client = 'CLIENT';
 
-  static const List<String> values = <String>[comment, dm, mention];
+  static const List<String> values = <String>[dm, group, client];
 }
 
-abstract final class InboxConversationStatuses {
-  static const String open = 'OPEN';
-  static const String replied = 'REPLIED';
-  static const String archived = 'ARCHIVED';
+abstract final class ChatMemberRoles {
+  static const String owner = 'OWNER';
+  static const String admin = 'ADMIN';
+  static const String member = 'MEMBER';
+  static const String guest = 'GUEST';
 
-  static const List<String> values = <String>[open, replied, archived];
+  static const List<String> values = <String>[owner, admin, member, guest];
 }
 
-abstract final class InboxPriorities {
-  static const String low = 'LOW';
-  static const String normal = 'NORMAL';
-  static const String high = 'HIGH';
-  static const String urgent = 'URGENT';
+abstract final class ChatMentionTypes {
+  static const String user = 'USER';
+  static const String client = 'CLIENT';
+  static const String task = 'TASK';
+  static const String project = 'PROJECT';
+  static const String content = 'CONTENT';
+  static const String calendarEvent = 'CALENDAR_EVENT';
+  static const String lead = 'LEAD';
 
-  static const List<String> values = <String>[low, normal, high, urgent];
+  static const List<String> values = <String>[user, client, task, project, content, calendarEvent, lead];
 }
 
-abstract final class InboxSentiments {
-  static const String positive = 'POSITIVE';
-  static const String neutral = 'NEUTRAL';
-  static const String negative = 'NEGATIVE';
+abstract final class ChatMessageTypes {
+  static const String text = 'TEXT';
+  static const String system = 'SYSTEM';
+  static const String media = 'MEDIA';
 
-  static const List<String> values = <String>[positive, neutral, negative];
+  static const List<String> values = <String>[text, system, media];
 }
 
-abstract final class InboxMessageDirections {
-  static const String inbound = 'INBOUND';
-  static const String outbound = 'OUTBOUND';
+abstract final class ChatAttachmentKinds {
+  static const String image = 'IMAGE';
+  static const String video = 'VIDEO';
+  static const String audio = 'AUDIO';
+  static const String file = 'FILE';
+  static const String link = 'LINK';
 
-  static const List<String> values = <String>[inbound, outbound];
+  static const List<String> values = <String>[image, video, audio, file, link];
+}
+
+abstract final class ChatNotificationLevels {
+  static const String all = 'ALL';
+  static const String mentions = 'MENTIONS';
+  static const String none = 'NONE';
+
+  static const List<String> values = <String>[all, mentions, none];
 }
 
 const int resourceNameMinLength = 2;
@@ -643,9 +661,15 @@ const int timeEntryMinutesMax = 1440;
 
 const int timeEntryNoteMaxLength = 1000;
 
-const int inboxHandleMaxLength = 200;
+const int chatMessageMaxLength = 10000;
 
-const int inboxMessageMaxLength = 5000;
+const int chatRoomNameMaxLength = 120;
+
+const int chatPreviewMaxLength = 280;
+
+const int chatMessagesPageMax = 100;
+
+const int chatRoomsPageMax = 100;
 
 const int feedbackCommentMaxLengthDefault = 2000;
 

@@ -101,7 +101,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final now = DateTime.now();
     final board = _view == _TaskView.board;
 
-    String? clientOf(String projectId) => projects[projectId]?.parentId;
+    String? clientOf(String? projectId) => projectId == null ? null : projects[projectId]?.parentId;
     final unscoped = _filter.copyWith(scope: () => null, status: board ? () => null : null);
     final scoped = [
       for (final task in tasks)

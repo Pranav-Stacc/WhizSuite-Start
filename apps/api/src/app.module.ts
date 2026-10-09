@@ -17,7 +17,7 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
 import { CrmModule } from './modules/crm/crm.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { SocialModule } from './modules/social/social.module';
-import { EngagementModule } from './modules/engagement/engagement.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { WorkModule } from './modules/work/work.module';
 import { WorkflowEngineModule } from './modules/workflow-engine/workflow-engine.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
@@ -72,7 +72,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     WorkModule,
     WorkflowEngineModule,
     SocialModule,
-    EngagementModule,
+    ChatModule,
     ApprovalsModule,
     FeedbackModule,
     MediaModule,

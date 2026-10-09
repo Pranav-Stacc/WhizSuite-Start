@@ -1,0 +1,148 @@
+/// Scalable org chat: DMs, groups, and client rooms with denormalized list fields.
+model ChatRoom {
+  id                 String    @id @default(uuid()) @db.Uuid
+  organizationId     String    @map("organization_id") @db.Uuid
+  type               String
+  name               String?
+  description        String?
+  avatarAssetId      String?   @map("avatar_asset_id") @db.Uuid
+  /// Set for CLIENT rooms (one primary room per client).
+  clientId           String?   @map("client_id") @db.Uuid
+  /// Sorted `userA:userB` key for unique DM lookup within an org.
+  dmKey              String?   @map("dm_key")
+  createdById        String?   @map("created_by_id") @db.Uuid
+  lastMessageAt      DateTime? @map("last_message_at") @db.Timestamptz
+  lastMessagePreview String?   @map("last_message_preview")
+  lastMessageId      String?   @map("last_message_id") @db.Uuid
+  memberCount        Int       @default(0) @map("member_count")
+  settings           Json      @default("{}")
+  version            Int       @default(1)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  archivedAt         DateTime? @map("archived_at") @db.Timestamptz
+  deletedAt          DateTime? @map("deleted_at") @db.Timestamptz
+
+  members  ChatRoomMember[]
+  messages ChatMessage[]
+
+  @@unique([organizationId, dmKey])
+  @@unique([organizationId, clientId])
+  @@index([organizationId, lastMessageAt(sort: Desc)])
+  @@index([organizationId, type, deletedAt])
+  @@map("chat_rooms")
+  @@schema("chat")
+}
+
+model ChatRoomMember {
+  id                  String    @id @default(uuid()) @db.Uuid
+  organizationId      String    @map("organization_id") @db.Uuid
+  roomId              String    @map("room_id") @db.Uuid
+  userId              String    @map("user_id") @db.Uuid
+  role                String    @default("MEMBER")
+  canPost             Boolean   @default(true) @map("can_post")
+  canAddMembers       Boolean   @default(false) @map("can_add_members")
+  canManage           Boolean   @default(false) @map("can_manage")
+  notificationLevel   String    @default("ALL") @map("notification_level")
+  mutedUntil          DateTime? @map("muted_until") @db.Timestamptz
+  lastReadMessageId   String?   @map("last_read_message_id") @db.Uuid
+  lastReadAt          DateTime? @map("last_read_at") @db.Timestamptz
+  lastDeliveredMsgId  String?   @map("last_delivered_message_id") @db.Uuid
+  pinnedAt            DateTime? @map("pinned_at") @db.Timestamptz
+  joinedAt            DateTime  @default(now()) @map("joined_at") @db.Timestamptz
+  leftAt              DateTime? @map("left_at") @db.Timestamptz
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([organizationId, userId, leftAt, pinnedAt])
+  @@index([organizationId, roomId, leftAt])
+  @@map("chat_room_members")
+  @@schema("chat")
+}
+
+model ChatMessage {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  roomId          String    @map("room_id") @db.Uuid
+  senderId        String?   @map("sender_id") @db.Uuid
+  /// Client-generated UUID for idempotent send / optimistic UI.
+  clientMessageId String?   @map("client_message_id") @db.Uuid
+  type            String    @default("TEXT")
+  body            String    @default("")
+  replyToId       String?   @map("reply_to_id") @db.Uuid
+  linkPreview     Json?     @map("link_preview")
+  metadata        Json?
+  editedAt        DateTime? @map("edited_at") @db.Timestamptz
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  room        ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  attachments ChatAttachment[]
+  mentions    ChatMention[]
+  reactions   ChatReaction[]
+
+  @@unique([roomId, clientMessageId])
+  @@index([organizationId, roomId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([organizationId, senderId, createdAt(sort: Desc)])
+  @@map("chat_messages")
+  @@schema("chat")
+}
+
+model ChatAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  messageId      String   @map("message_id") @db.Uuid
+  assetId        String?  @map("asset_id") @db.Uuid
+  kind           String
+  sortOrder      Int      @default(0) @map("sort_order")
+  url            String?
+  mimeType       String?  @map("mime_type")
+  sizeBytes      BigInt?  @map("size_bytes")
+  fileName       String?  @map("file_name")
+  width          Int?
+  height         Int?
+  durationMs     Int?     @map("duration_ms")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, messageId])
+  @@index([organizationId, assetId])
+  @@map("chat_attachments")
+  @@schema("chat")
+}
+
+model ChatMention {
+  id             String @id @default(uuid()) @db.Uuid
+  organizationId String @map("organization_id") @db.Uuid
+  messageId      String @map("message_id") @db.Uuid
+  type           String
+  targetId       String @map("target_id") @db.Uuid
+  displayText    String @map("display_text")
+  startOffset    Int?   @map("start_offset")
+  endOffset      Int?   @map("end_offset")
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, messageId])
+  @@index([organizationId, type, targetId])
+  @@map("chat_mentions")
+  @@schema("chat")
+}
+
+model ChatReaction {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  messageId      String   @map("message_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  emoji          String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([organizationId, messageId])
+  @@map("chat_reactions")
+  @@schema("chat")
+}

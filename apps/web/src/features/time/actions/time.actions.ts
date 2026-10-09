@@ -26,7 +26,13 @@ export async function startTimerAction(taskId: string): Promise<ActionResult> {
       if (!task) return fail(t('toast.failed'));
       const existing = await activeTimerFor(session.userId);
       if (existing) await timersRepository.remove(existing.id);
-      await timersRepository.create({ userId: session.userId, taskId, projectId: task.projectId, clientId: task.clientId, startedAt: new Date().toISOString() });
+      await timersRepository.create({
+        userId: session.userId,
+        taskId,
+        projectId: task.projectId,
+        clientId: task.clientId,
+        startedAt: new Date().toISOString(),
+      });
       await recordAudit({ action: 'time.timer_started', entityType: 'task', entityId: task.id, entityLabel: task.title, summary: 'Started timer' });
     }
     await refreshData('time');

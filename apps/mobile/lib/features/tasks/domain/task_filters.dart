@@ -35,22 +35,23 @@ class TaskFilter {
         query: query ?? this.query,
       );
 
-  /// [clientOf] resolves a task's client through its project.
-  bool matches(Task task, {required String? userId, required DateTime now, required String? Function(String projectId) clientOf}) {
+  /// [clientOf] resolves a task's client through its project when [Task.clientId] is unset.
+  bool matches(Task task, {required String? userId, required DateTime now, required String? Function(String? projectId) clientOf}) {
     final q = query.trim().toLowerCase();
     if (q.isNotEmpty && !task.title.toLowerCase().contains(q) && !task.description.toLowerCase().contains(q)) return false;
     if (status != null && task.status != status) return false;
     if (priority != null && task.priority != priority) return false;
     if (projectId != null && task.projectId != projectId) return false;
-    if (clientId != null && clientOf(task.projectId) != clientId) return false;
+    final resolvedClient = task.clientId ?? clientOf(task.projectId);
+    if (clientId != null && resolvedClient != clientId) return false;
     return scope == null || matchesScope(task, scope, userId: userId, now: now);
   }
 }
 
 bool matchesScope(Task task, TaskScope? scope, {required String? userId, required DateTime now}) => switch (scope) {
       null => true,
-      TaskScope.mine => userId != null && task.assigneeUserId == userId,
-      TaskScope.unassigned => task.assigneeUserId == null,
+      TaskScope.mine => userId != null && task.assigneeUserIds.contains(userId),
+      TaskScope.unassigned => task.assigneeUserIds.isEmpty,
       TaskScope.overdue => task.isOverdue(now),
     };
 

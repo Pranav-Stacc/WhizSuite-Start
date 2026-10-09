@@ -142,7 +142,9 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
             ) : (
               <ul className="divide-y divide-border-soft">
                 {projectTasks.map((task) => {
-                  const assignee = task.assigneeId ? members.get(task.assigneeId)?.name : undefined;
+                  const assigneeNames = task.assigneeIds
+                    .map((id) => members.get(id)?.name)
+                    .filter((n): n is string => Boolean(n));
                   const taskDue = dueInfo(task.dueDate, task.status === 'DONE');
                   return (
                     <li key={task.id}>
@@ -150,7 +152,13 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
                         <StatusBadge kind="task" value={task.status} />
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">{task.title}</span>
                         {task.dueDate ? <Badge tone={taskDue.tone === 'danger' ? 'danger' : taskDue.tone === 'warning' ? 'warning' : 'neutral'}>{taskDue.label}</Badge> : null}
-                        {assignee ? <Avatar name={assignee} size="xs" /> : null}
+                        {assigneeNames.length > 0 ? (
+                          <span className="inline-flex -space-x-1.5">
+                            {assigneeNames.slice(0, 3).map((name) => (
+                              <Avatar key={name} name={name} size="xs" />
+                            ))}
+                          </span>
+                        ) : null}
                       </Link>
                     </li>
                   );

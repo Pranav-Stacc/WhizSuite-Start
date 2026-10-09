@@ -49,10 +49,6 @@ Future<bool> showTaskForm(BuildContext context, WidgetRef ref, {Task? task, Stri
   if (clients == null || !context.mounted) return false;
   final staff = await _loadDirectory(context, ref, staffDirectoryProvider);
   if (staff == null || !context.mounted) return false;
-  if (projects.entries.isEmpty) {
-    showToast(context, l10n.taskNoProjects);
-    return false;
-  }
 
   final actions = ref.read(tasksActionsProvider);
   final canTransition = task == null || ref.read(accessPolicyProvider).can(Permissions.tasksTransition);
@@ -69,14 +65,14 @@ Future<bool> showTaskForm(BuildContext context, WidgetRef ref, {Task? task, Stri
   var status = task?.status ?? TaskStatuses.todo;
   var priority = task?.priority ?? Priorities.medium;
   var due = task?.dueDate;
-  var assignee = task?.assigneeUserId;
+  var assignees = Set<String>.from(task?.assigneeUserIds ?? const []);
 
   final projectOptions = projects.entries.map((p) => p.id).toList()
     ..sort((a, b) => taskProjectLabel(l10n, projects, clients, a).compareTo(taskProjectLabel(l10n, projects, clients, b)));
-  final currentAssignee = task?.assigneeUserId;
   final assigneeOptions = [
     ...staff.entries.map((m) => m.id),
-    if (currentAssignee != null && staff[currentAssignee] == null) currentAssignee,
+    for (final id in assignees)
+      if (staff[id] == null) id,
   ];
 
   String? optional(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
@@ -90,8 +86,8 @@ Future<bool> showTaskForm(BuildContext context, WidgetRef ref, {Task? task, Stri
         label: l10n.taskProject,
         value: project,
         options: projectOptions,
+        allowNone: true,
         labelOf: (id) => taskProjectLabel(l10n, projects, clients, id),
-        validator: (value) => value == null ? l10n.validationRequired : null,
         onChanged: (value) => setState(() => project = value),
       ),
       TextFormField(
@@ -140,46 +136,61 @@ Future<bool> showTaskForm(BuildContext context, WidgetRef ref, {Task? task, Stri
         validator: (value) =>
             (value == null || value.trim().isEmpty || minutesFromHours(value) != null) ? null : l10n.taskEstimateInvalid,
       ),
-      OptionField<String>(
-        label: l10n.taskAssignee,
-        value: assignee,
-        options: assigneeOptions,
-        allowNone: true,
-        labelOf: (id) => staff.nameOf(id) ?? l10n.valueUnknown,
-        onChanged: (value) => setState(() => assignee = value),
+      InputDecorator(
+        decoration: InputDecoration(labelText: l10n.taskAssignee, border: InputBorder.none),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final id in assigneeOptions)
+              FilterChip(
+                avatar: InitialsAvatar(name: staff.nameOf(id) ?? id, seed: id, size: 20),
+                label: Text(staff.nameOf(id) ?? l10n.valueUnknown),
+                selected: assignees.contains(id),
+                onSelected: (selected) => setState(() {
+                  if (selected) {
+                    assignees.add(id);
+                  } else {
+                    assignees.remove(id);
+                  }
+                }),
+              ),
+          ],
+        ),
       ),
     ],
     onSubmit: () async {
-      final selectedProject = project;
-      if (selectedProject == null) return;
       final minutes = minutesFromHours(estimate.text);
+      final assigneeList = assignees.toList();
       if (task == null) {
         await actions.create(
           TaskInput(
-            projectId: selectedProject,
+            projectId: project,
             title: title.text.trim(),
             priority: priority,
             description: optional(description),
             status: status,
             dueDate: due,
             estimateMinutes: minutes,
-            assigneeUserId: assignee,
+            assigneeUserIds: assigneeList,
           ),
         );
         return;
       }
       final clearsEstimate = minutes == null && (task.estimateMinutes ?? 0) > 0;
+      final projectChanged = project != task.projectId;
       await actions.update(
         task.id,
         TaskPatch(
-          projectId: selectedProject == task.projectId ? null : selectedProject,
+          projectId: projectChanged && project != null ? project : null,
+          clearProject: projectChanged && project == null,
           title: title.text.trim(),
           description: description.text.trim(),
           priority: priority,
           dueDate: due,
           estimateMinutes: clearsEstimate ? 0 : minutes,
-          assigneeUserId: assignee,
-          setsAssignee: assignee != task.assigneeUserId,
+          assigneeUserIds: assigneeList,
+          setsAssignees: true,
         ),
       );
       if (status != task.status) await actions.transition(task.id, status);
@@ -200,22 +211,22 @@ Future<String?> _pickToned(
       context: context,
       showDragHandle: true,
       useSafeArea: true,
+      isScrollControlled: true,
       builder: (context) => _SheetList(
         title: title,
         children: [
-          for (final option in options)
+          for (final value in options)
             ListTile(
-              leading: _ToneDot(color: toneOf(option).color(context.tokens)),
-              title: Text(labelOf(option)),
-              selected: option == current,
-              trailing: option == current ? const Icon(Icons.check) : null,
-              onTap: () => Navigator.of(context).pop(option),
+              leading: _ToneDot(color: toneOf(value).color(context.tokens)),
+              title: Text(labelOf(value)),
+              selected: value == current,
+              trailing: value == current ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.of(context).pop(value),
             ),
         ],
       ),
     );
 
-/// Bottom sheet listing every status; moves the task through the transition endpoint.
 Future<void> showTaskStatusSheet(BuildContext context, WidgetRef ref, Task task) async {
   final l10n = AppLocalizations.of(context);
   final next = await _pickToned(
@@ -234,7 +245,6 @@ Future<void> showTaskStatusSheet(BuildContext context, WidgetRef ref, Task task)
   );
 }
 
-/// Bottom sheet listing every priority; saves the choice immediately.
 Future<void> showTaskPrioritySheet(BuildContext context, WidgetRef ref, Task task) async {
   final l10n = AppLocalizations.of(context);
   final next = await _pickToned(
@@ -253,42 +263,53 @@ Future<void> showTaskPrioritySheet(BuildContext context, WidgetRef ref, Task tas
   );
 }
 
-/// Bottom sheet of staff members (plus "Unassigned") that reassigns the task.
+/// Multi-select sheet of staff members that replaces the task assignee set.
 Future<void> showTaskAssigneeSheet(BuildContext context, WidgetRef ref, Task task) async {
   final l10n = AppLocalizations.of(context);
   final staff = await _loadDirectory(context, ref, staffDirectoryProvider);
   if (staff == null || !context.mounted) return;
-  final picked = await showModalBottomSheet<(String?,)>(
+  var selected = Set<String>.from(task.assigneeUserIds);
+  final saved = await showModalBottomSheet<List<String>>(
     context: context,
     showDragHandle: true,
     useSafeArea: true,
     isScrollControlled: true,
-    builder: (context) => _SheetList(
-      title: l10n.taskAssigneeChange,
-      children: [
-        ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.person_off_outlined)),
-          title: Text(l10n.unassigned),
-          selected: task.assigneeUserId == null,
-          trailing: task.assigneeUserId == null ? const Icon(Icons.check) : null,
-          onTap: () => Navigator.of(context).pop((null,)),
-        ),
-        for (final member in staff.entries)
-          ListTile(
-            leading: InitialsAvatar(name: member.name, seed: member.id),
-            title: Text(member.name),
-            subtitle: member.detail == null ? null : Text(member.detail ?? ''),
-            selected: member.id == task.assigneeUserId,
-            trailing: member.id == task.assigneeUserId ? const Icon(Icons.check) : null,
-            onTap: () => Navigator.of(context).pop((member.id,)),
+    builder: (context) => StatefulBuilder(
+      builder: (context, setState) => _SheetList(
+        title: l10n.taskAssigneeChange,
+        children: [
+          for (final member in staff.entries)
+            CheckboxListTile(
+              secondary: InitialsAvatar(name: member.name, seed: member.id),
+              title: Text(member.name),
+              subtitle: member.detail == null ? null : Text(member.detail ?? ''),
+              value: selected.contains(member.id),
+              onChanged: (checked) => setState(() {
+                if (checked == true) {
+                  selected.add(member.id);
+                } else {
+                  selected.remove(member.id);
+                }
+              }),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop(selected.toList()),
+              child: Text(l10n.taskAssigneesDone),
+            ),
           ),
-      ],
+        ],
+      ),
     ),
   );
-  if (picked == null || picked.$1 == task.assigneeUserId || !context.mounted) return;
+  if (saved == null || !context.mounted) return;
+  final before = {...task.assigneeUserIds};
+  final after = {...saved};
+  if (before.length == after.length && before.containsAll(after)) return;
   await runAction(
     context,
-    () => ref.read(tasksActionsProvider).update(task.id, TaskPatch.assign(picked.$1)),
+    () => ref.read(tasksActionsProvider).update(task.id, TaskPatch.assignAll(saved)),
     success: l10n.savedToast,
   );
 }

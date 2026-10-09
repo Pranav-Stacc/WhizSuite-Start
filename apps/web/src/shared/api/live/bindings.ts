@@ -4,7 +4,6 @@ import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client } from '@/features/clients/data/clients.repository';
 import type { Post } from '@/features/content/data/content.repository';
-import type { InboxItem } from '@/features/inbox/data/inbox.repository';
 import type { Invoice } from '@/features/invoices/data/invoices.repository';
 import type { Article } from '@/features/knowledge/data/knowledge.repository';
 import type { Lead } from '@/features/leads/data/leads.repository';
@@ -30,8 +29,6 @@ import {
   contentFromApi,
   contentPatchToApi,
   contentToApi,
-  inboxFromApi,
-  inboxPatchToApi,
   invoiceFromApi,
   invoiceToApi,
   leadFromApi,
@@ -88,10 +85,6 @@ export const contentLive: LiveBinding<Post> = {
 export const leadsLive = binding<Lead>('leads', 'leads', leadFromApi, leadToApi);
 export const invoicesLive = binding<Invoice>('invoices', 'invoices', invoiceFromApi, invoiceToApi);
 export const mediaLive = binding<Asset>('media/assets', 'media', assetFromApi);
-export const inboxLive: LiveBinding<InboxItem> = {
-  ...binding<InboxItem>('inbox/conversations', 'inbox', inboxFromApi),
-  toApiPatch: inboxPatchToApi,
-};
 export const knowledgeLive = binding<Article>('knowledge/articles', 'knowledge', articleFromApi, articleToApi);
 export const automationsLive = binding<Automation>('automations', 'automations', automationFromApi, automationToApi);
 export const automationRunsLive: LiveBinding<AutomationRun> = {

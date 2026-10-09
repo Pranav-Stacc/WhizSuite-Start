@@ -52,7 +52,7 @@ Fine-grained, `resource.action` strings from a **platform permission catalog** (
 | Tasks | `tasks.view`, `tasks.create`, `tasks.assign`, `tasks.edit`, `tasks.delete`, `tasks.transition` |
 | Content | `content.view`, `content.create`, `content.edit`, `content.delete` |
 | Social | `social.accounts.view`, `social.accounts.connect`, `social.schedule`, `social.publish`, `social.analytics.view` |
-| Inbox | `inbox.view`, `inbox.reply`, `inbox.assign`, `inbox.moderate` |
+| Chat | `chat.view`, `chat.send`, `chat.create_room`, `chat.manage` |
 | Approvals | `approvals.view`, `approvals.create`, `approvals.approve`, `approvals.override` |
 | Feedback | `feedback.view`, `feedback.create`, `feedback.resolve` |
 | Files | `files.view`, `files.upload`, `files.download`, `files.delete`, `files.share` |

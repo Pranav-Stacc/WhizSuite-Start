@@ -17,6 +17,7 @@ import {
 import type { Server, Socket } from 'socket.io';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import {
+  chatRoomChannel,
   orgRoom,
   userRoom,
   type RealtimeEmitter,
@@ -57,6 +58,7 @@ export class RealtimeGateway implements OnGatewayConnection, RealtimeEmitter {
       client.disconnect(true);
       return;
     }
+    client.data.identity = identity;
     const org = orgRoom(identity.organizationId);
     await client.join([org, `${org}:${userRoom(identity.userId)}`]);
     client.emit(RealtimeEvents.CONNECTED, { status: 'ok' });
@@ -71,6 +73,28 @@ export class RealtimeGateway implements OnGatewayConnection, RealtimeEmitter {
       ts: data?.ts ?? Date.now(),
       serverTs: Date.now(),
     });
+  }
+
+  @SubscribeMessage('chat.join')
+  async handleChatJoin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId?: string },
+  ) {
+    const identity = client.data.identity as SocketIdentity | undefined;
+    if (!identity || typeof data?.roomId !== 'string') return { ok: false };
+    await client.join(chatRoomChannel(identity.organizationId, data.roomId));
+    return { ok: true };
+  }
+
+  @SubscribeMessage('chat.leave')
+  async handleChatLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId?: string },
+  ) {
+    const identity = client.data.identity as SocketIdentity | undefined;
+    if (!identity || typeof data?.roomId !== 'string') return { ok: false };
+    await client.leave(chatRoomChannel(identity.organizationId, data.roomId));
+    return { ok: true };
   }
 
   emitToRoom(room: string, event: RealtimeEvent, payload: unknown): void {

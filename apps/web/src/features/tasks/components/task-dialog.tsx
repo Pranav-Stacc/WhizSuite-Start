@@ -27,10 +27,16 @@ export function TaskDialog({ projects, members, task, trigger, defaultOpen, defa
       name: 'projectId',
       label: t('tasks.field.project'),
       type: 'select',
-      required: true,
+      required: false,
       options: projects.map((p) => ({ value: p.id, label: p.clientName ? `${p.clientName} · ${p.name}` : p.name })),
     },
-    { name: 'assigneeId', label: t('tasks.field.assignee'), type: 'select', options: members.map((m) => ({ value: m.id, label: m.name })) },
+    {
+      name: 'assigneeIds',
+      label: t('tasks.field.assignees'),
+      type: 'multiselect',
+      span: 2,
+      options: members.map((m) => ({ value: m.id, label: m.name })),
+    },
     { name: 'status', label: t('tasks.field.status'), type: 'select', required: true, options: TaskStatuses.map((s) => ({ value: s, label: statusLabel('task', s) })) },
     { name: 'priority', label: t('tasks.field.priority'), type: 'select', required: true, options: Priorities.map((p) => ({ value: p, label: statusLabel('priority', p) })) },
     { name: 'dueDate', label: t('tasks.field.due'), type: 'date' },
@@ -41,15 +47,24 @@ export function TaskDialog({ projects, members, task, trigger, defaultOpen, defa
   const defaults = task
     ? {
         title: task.title,
-        projectId: task.projectId,
-        assigneeId: task.assigneeId ?? '',
+        projectId: task.projectId ?? '',
+        assigneeIds: task.assigneeIds,
         status: task.status,
         priority: task.priority,
         dueDate: task.dueDate ? toDateKey(task.dueDate) : '',
         estimateHours: task.estimateHours ?? '',
         description: task.description,
       }
-    : { title: '', projectId: defaultProjectId ?? '', assigneeId: defaultAssigneeId ?? '', status: 'TODO', priority: 'MEDIUM', dueDate: '', estimateHours: '', description: '' };
+    : {
+        title: '',
+        projectId: defaultProjectId ?? '',
+        assigneeIds: defaultAssigneeId ? [defaultAssigneeId] : [],
+        status: 'TODO',
+        priority: 'MEDIUM',
+        dueDate: '',
+        estimateHours: '',
+        description: '',
+      };
 
   return (
     <FormDialog

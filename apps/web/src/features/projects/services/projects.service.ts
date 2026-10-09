@@ -20,6 +20,7 @@ export async function listProjectsWithProgress(): Promise<ProjectWithProgress[]>
   const [projects, tasks] = await Promise.all([listProjects(), listTasks()]);
   const counts = new Map<string, { total: number; done: number }>();
   for (const task of tasks) {
+    if (!task.projectId) continue;
     const entry = counts.get(task.projectId) ?? { total: 0, done: 0 };
     entry.total += 1;
     if (task.status === 'DONE') entry.done += 1;

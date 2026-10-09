@@ -36,7 +36,14 @@ export function ActionButton({ action, label, icon, variant = 'secondary', size 
             return;
           }
           toast.success(result.message ?? t('toast.saved'));
-          if (result.data?.href) router.push(result.data.href);
+          const href = result.data?.href;
+          if (!href) return;
+          // Cross-subdomain hops (e.g. CRM convert → Main client) need a full navigation.
+          if (/^https?:\/\//i.test(href)) {
+            window.location.assign(href);
+            return;
+          }
+          router.push(href);
         })
       }
     >

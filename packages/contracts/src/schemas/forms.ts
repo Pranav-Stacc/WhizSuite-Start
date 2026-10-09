@@ -115,15 +115,25 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export const createTaskSchema = z.object({
   title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
-  projectId: z.string().min(1, 'validation.required'),
+  /** Optional — tasks may live in an org inbox without a project. */
+  projectId: optionalText,
+  clientId: optionalText,
   priority: z.enum(Priorities).default('MEDIUM'),
   status: z.enum(TaskStatuses).default('TODO'),
   dueDate: optionalDate,
+  /** @deprecated Prefer assigneeIds; kept for single-select forms. */
   assigneeId: optionalText,
+  assigneeIds: z.array(z.string().min(1)).optional().default([]),
   description: optionalText,
   estimateHours: z.coerce.number().min(0).max(200).optional(),
+  contentItemId: optionalText,
 });
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+/** Merges legacy single assigneeId into assigneeIds. */
+export function resolveTaskAssigneeIds(input: CreateTaskInput): string[] {
+  return [...new Set([...(input.assigneeIds ?? []), ...(input.assigneeId ? [input.assigneeId] : [])])];
+}
 
 const HASHTAG_SEPARATOR = /[\s,]+/;
 

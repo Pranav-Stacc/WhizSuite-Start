@@ -6,14 +6,23 @@ import { ChevronDown } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { isActivePath, primaryNav, secondaryGroups } from '@/shared/navigation/nav-config';
+import type { WorkspaceModule } from '@/shared/workspace/modules';
 import { Menu } from '@/shared/ui/overlays';
 
-/** Flat editorial navigation: uppercase text links, everything else tucked under "More". */
-export function TopNav({ permissions, badges }: { permissions: Permission[]; badges: Record<string, number> }) {
+/** Flat editorial navigation scoped to the active product surface (main / CRM / Finance). */
+export function TopNav({
+  permissions,
+  badges,
+  module = 'main',
+}: {
+  permissions: Permission[];
+  badges: Record<string, number>;
+  module?: WorkspaceModule;
+}) {
   const pathname = usePathname();
   const granted = new Set(permissions);
-  const primary = primaryNav(granted);
-  const secondary = secondaryGroups(granted);
+  const primary = primaryNav(granted, module);
+  const secondary = secondaryGroups(granted, module);
   const moreActive = secondary.some((group) => group.items.some((item) => isActivePath(pathname, item.href)));
   const moreBadge = secondary.reduce((acc, group) => acc + group.items.reduce((sum, item) => sum + (badges[item.href] ?? 0), 0), 0);
 

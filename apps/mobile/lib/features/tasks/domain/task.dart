@@ -30,15 +30,17 @@ String hoursFromMinutes(int minutes) {
 class Task {
   const Task({
     required this.id,
-    required this.projectId,
     required this.title,
     required this.status,
     required this.priority,
     required this.createdAt,
+    this.projectId,
+    this.clientId,
     this.description = '',
     this.dueDate,
     this.estimateMinutes,
-    this.assigneeUserId,
+    this.assigneeUserIds = const [],
+    this.contentItemId,
   });
 
   factory Task.fromJson(Json json) {
@@ -46,14 +48,16 @@ class Task {
     final priority = json.str('priority');
     return Task(
       id: json.str('id'),
-      projectId: json.str('projectId'),
+      projectId: json.strOrNull('projectId'),
+      clientId: json.strOrNull('clientId'),
       title: json.str('title'),
       description: json.str('description'),
       status: TaskStatuses.values.contains(status) ? status : (_legacyStatuses[status] ?? TaskStatuses.todo),
       priority: Priorities.values.contains(priority) ? priority : Priorities.medium,
       dueDate: readDateOnly(json, 'dueDate'),
       estimateMinutes: json.integerOrNull('estimateMinutes'),
-      assigneeUserId: json.strings('assigneeUserIds').firstOrNull,
+      assigneeUserIds: json.strings('assigneeUserIds'),
+      contentItemId: json.strOrNull('contentItemId'),
       createdAt: json.date('createdAt') ?? DateTime.now(),
     );
   }
@@ -62,15 +66,20 @@ class Task {
   static const _legacyStatuses = {'BLOCKED': TaskStatuses.inProgress};
 
   final String id;
-  final String projectId;
+  final String? projectId;
+  final String? clientId;
   final String title;
   final String description;
   final String status;
   final String priority;
   final DateTime? dueDate;
   final int? estimateMinutes;
-  final String? assigneeUserId;
+  final List<String> assigneeUserIds;
+  final String? contentItemId;
   final DateTime createdAt;
+
+  /// First assignee for compact UI; prefer [assigneeUserIds] for filters and edits.
+  String? get assigneeUserId => assigneeUserIds.firstOrNull;
 
   bool get isDone => status == TaskStatuses.done;
 
@@ -83,13 +92,15 @@ class Task {
   Task withStatus(String next) => Task(
         id: id,
         projectId: projectId,
+        clientId: clientId,
         title: title,
         description: description,
         status: next,
         priority: priority,
         dueDate: dueDate,
         estimateMinutes: estimateMinutes,
-        assigneeUserId: assigneeUserId,
+        assigneeUserIds: assigneeUserIds,
+        contentItemId: contentItemId,
         createdAt: createdAt,
       );
 }
@@ -97,36 +108,42 @@ class Task {
 /// Fields of a new task (`POST tasks`).
 class TaskInput {
   const TaskInput({
-    required this.projectId,
     required this.title,
     required this.priority,
+    this.projectId,
+    this.clientId,
     this.description,
     this.status,
     this.dueDate,
     this.estimateMinutes,
-    this.assigneeUserId,
+    this.assigneeUserIds = const [],
+    this.contentItemId,
   });
 
-  final String projectId;
+  final String? projectId;
+  final String? clientId;
   final String title;
   final String priority;
   final String? description;
   final String? status;
   final DateTime? dueDate;
   final int? estimateMinutes;
-  final String? assigneeUserId;
+  final List<String> assigneeUserIds;
+  final String? contentItemId;
 
   Json toJson() {
     final due = dueDate;
     return {
-      'projectId': projectId,
+      if (projectId != null) 'projectId': projectId,
+      if (clientId != null) 'clientId': clientId,
       'title': title,
       'priority': priority,
       'description': ?description,
       'status': ?status,
       'dueDate': ?(due == null ? null : dateKey(due)),
       'estimateMinutes': ?estimateMinutes,
-      'assigneeUserId': ?assigneeUserId,
+      'assigneeUserIds': assigneeUserIds,
+      'contentItemId': ?contentItemId,
     };
   }
 }
@@ -135,39 +152,46 @@ class TaskInput {
 class TaskPatch {
   const TaskPatch({
     this.projectId,
+    this.clearProject = false,
+    this.clientId,
+    this.clearClient = false,
     this.title,
     this.description,
     this.priority,
     this.dueDate,
     this.estimateMinutes,
-    this.assigneeUserId,
-    this.setsAssignee = false,
+    this.assigneeUserIds,
+    this.setsAssignees = false,
   });
 
-  /// Only (re)assigns; a null [userId] unassigns.
-  const TaskPatch.assign(String? userId) : this(assigneeUserId: userId, setsAssignee: true);
+  /// Replaces the full assignee set (empty list unassigns everyone).
+  const TaskPatch.assignAll(List<String> userIds) : this(assigneeUserIds: userIds, setsAssignees: true);
 
   final String? projectId;
+  final bool clearProject;
+  final String? clientId;
+  final bool clearClient;
   final String? title;
   final String? description;
   final String? priority;
   final DateTime? dueDate;
   final int? estimateMinutes;
-  final String? assigneeUserId;
+  final List<String>? assigneeUserIds;
 
-  /// Sends [assigneeUserId] even when null, which the API treats as "unassign".
-  final bool setsAssignee;
+  /// Sends [assigneeUserIds] even when empty, which the API treats as "unassign all".
+  final bool setsAssignees;
 
   Json toJson() {
     final due = dueDate;
     return {
-      'projectId': ?projectId,
+      if (clearProject) 'projectId': null else if (projectId != null) 'projectId': projectId,
+      if (clearClient) 'clientId': null else if (clientId != null) 'clientId': clientId,
       'title': ?title,
       'description': ?description,
       'priority': ?priority,
       'dueDate': ?(due == null ? null : dateKey(due)),
       'estimateMinutes': ?estimateMinutes,
-      if (setsAssignee) 'assigneeUserId': assigneeUserId,
+      if (setsAssignees) 'assigneeUserIds': assigneeUserIds ?? const <String>[],
     };
   }
 }

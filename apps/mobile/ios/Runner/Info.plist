@@ -66,5 +66,15 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>WhizSuite needs photo library access so you can attach images to content, messages, and client work.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>WhizSuite needs camera access so you can capture photos for content and client deliverables.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>WhizSuite may save media you export to your photo library.</string>
 </dict>
 </plist>

@@ -39,10 +39,15 @@ class TaskCard extends ConsumerWidget {
     final clients = ref.watch(clientDirectoryProvider).value ?? Directory.empty;
     final members = ref.watch(memberDirectoryProvider).value ?? Directory.empty;
 
-    final project = projects[task.projectId];
-    final clientId = project?.parentId;
-    final where = [clients.nameOf(clientId), project?.name].whereType<String>().join(' · ');
-    final assignee = members.nameOf(task.assigneeUserId);
+    final project = task.projectId == null ? null : projects[task.projectId];
+    final clientId = task.clientId ?? project?.parentId;
+    final where = task.projectId == null
+        ? (clients.nameOf(clientId) ?? l10n.taskInbox)
+        : [clients.nameOf(clientId), project?.name].whereType<String>().join(' · ');
+    final assigneeNames = [
+      for (final id in task.assigneeUserIds) ?members.nameOf(id),
+    ];
+    final assignee = assigneeNames.isEmpty ? null : assigneeNames.join(', ');
     final dueDate = task.dueDate;
     final due = dueDate == null ? null : formats.due(dueDate, done: task.isDone);
     final estimate = task.estimateMinutes;
@@ -58,7 +63,11 @@ class TaskCard extends ConsumerWidget {
         priorityLabel,
         if (where.isNotEmpty) where,
         due?.label ?? l10n.noDueDate,
-        assignee == null ? l10n.unassigned : l10n.taskAssignedTo(assignee),
+        assignee == null
+            ? l10n.unassigned
+            : assigneeNames.length == 1
+                ? l10n.taskAssignedTo(assignee)
+                : l10n.taskAssignedToMany(assigneeNames.length),
       ].join(', '),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +151,11 @@ class TaskCard extends ConsumerWidget {
               ),
               SizedBox(width: tokens.sm),
               Tooltip(
-                message: assignee == null ? l10n.unassigned : l10n.taskAssignedTo(assignee),
+                message: assignee == null
+                    ? l10n.unassigned
+                    : assigneeNames.length == 1
+                        ? l10n.taskAssignedTo(assignee)
+                        : l10n.taskAssignedToMany(assigneeNames.length),
                 child: assignee == null
                     ? Container(
                         width: _avatarSize,
@@ -153,7 +166,25 @@ class TaskCard extends ConsumerWidget {
                         ),
                         child: Icon(Icons.person_outline, size: _metaIconSize, color: tokens.muted),
                       )
-                    : InitialsAvatar(name: assignee, seed: task.assigneeUserId, size: _avatarSize),
+                    : assigneeNames.length == 1
+                        ? InitialsAvatar(name: assigneeNames.first, seed: task.assigneeUserIds.first, size: _avatarSize)
+                        : SizedBox(
+                            width: _avatarSize + (assigneeNames.length.clamp(0, 3) - 1) * 12,
+                            height: _avatarSize,
+                            child: Stack(
+                              children: [
+                                for (final (i, id) in task.assigneeUserIds.take(3).indexed)
+                                  Positioned(
+                                    left: i * 12,
+                                    child: InitialsAvatar(
+                                      name: members.nameOf(id) ?? id,
+                                      seed: id,
+                                      size: _avatarSize,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
               ),
             ],
           ),

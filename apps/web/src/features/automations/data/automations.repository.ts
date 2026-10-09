@@ -27,7 +27,7 @@ export const automationsRepository = createRepository<Automation>('automations',
   { id: 'au2', name: 'Create follow-up task after approval', trigger: 'content.approved', action: 'create.task', enabled: true, runs: 96, failures: 0, lastRunAt: daysFromNow(-1, 16), createdAt: daysFromNow(-180) },
   { id: 'au3', name: 'Alert team about overdue tasks', trigger: 'task.overdue', action: 'notify.team', enabled: true, runs: 58, failures: 0, lastRunAt: daysFromNow(-1, 8), createdAt: daysFromNow(-150) },
   { id: 'au4', name: 'Dunning email for overdue invoices', trigger: 'invoice.overdue', action: 'send.email', enabled: false, runs: 12, failures: 2, lastRunAt: daysFromNow(-12, 10), createdAt: daysFromNow(-120) },
-  { id: 'au5', name: 'Escalate negative comments to #community', trigger: 'inbox.negative', action: 'post.webhook', enabled: true, runs: 31, failures: 0, lastRunAt: hoursAgo(1), createdAt: daysFromNow(-60) },
+  { id: 'au5', name: 'Notify on chat mentions', trigger: 'chat.message_mentioned', action: 'post.webhook', enabled: true, runs: 31, failures: 0, lastRunAt: hoursAgo(1), createdAt: daysFromNow(-60) },
 ], automationsLive);
 
 export const automationRunsRepository = createRepository<AutomationRun>('automation-runs', () => [

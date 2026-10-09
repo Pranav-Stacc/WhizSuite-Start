@@ -198,7 +198,7 @@ export class CalendarFeedService {
           startsAt: row.dueDate!.toISOString(),
           endsAt: null,
           allDay: true,
-          clientId: row.project.clientId,
+          clientId: row.clientId ?? row.project?.clientId ?? null,
           projectId: row.projectId,
           status: row.status,
           href: `/tasks?edit=${row.id}`,

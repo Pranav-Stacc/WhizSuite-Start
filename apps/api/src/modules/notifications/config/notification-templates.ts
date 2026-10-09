@@ -18,6 +18,26 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: 'You were assigned "{title}".',
     actionLabel: 'Open task',
   },
+  [NotificationTypeKeys.TASK_STATE_CHANGED]: {
+    subject: 'Task status updated',
+    body: '"{title}" moved to {toStatus}.',
+    actionLabel: 'Open task',
+  },
+  [NotificationTypeKeys.TASK_COMMENTED]: {
+    subject: 'New comment on task',
+    body: 'Someone commented on "{title}".',
+    actionLabel: 'Open task',
+  },
+  [NotificationTypeKeys.TASK_DUE_SOON]: {
+    subject: 'Task due soon',
+    body: '"{title}" is due soon.',
+    actionLabel: 'Open task',
+  },
+  [NotificationTypeKeys.TASK_OVERDUE]: {
+    subject: 'Task overdue',
+    body: '"{title}" is overdue.',
+    actionLabel: 'Open task',
+  },
   [NotificationTypeKeys.CONTENT_APPROVED]: {
     subject: 'Content approved',
     body: '"{title}" was approved.',
@@ -32,6 +52,16 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     subject: 'Approval requested',
     body: 'Your approval is needed on "{title}".',
     actionLabel: 'Review',
+  },
+  [NotificationTypeKeys.CHAT_MESSAGE]: {
+    subject: 'New chat message',
+    body: '{title}',
+    actionLabel: 'Open chat',
+  },
+  [NotificationTypeKeys.CHAT_MENTION]: {
+    subject: 'You were mentioned in chat',
+    body: '{title}',
+    actionLabel: 'Open chat',
   },
 };
 

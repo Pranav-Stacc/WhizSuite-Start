@@ -16,8 +16,11 @@ export async function overdueTasks(): Promise<Task[]> {
 export function openHoursByAssignee(tasks: Task[]): Map<string, number> {
   const hours = new Map<string, number>();
   for (const task of tasks) {
-    if (task.status === 'DONE' || !task.assigneeId) continue;
-    hours.set(task.assigneeId, (hours.get(task.assigneeId) ?? 0) + (task.estimateHours ?? 0));
+    if (task.status === 'DONE' || task.assigneeIds.length === 0) continue;
+    const share = (task.estimateHours ?? 0) / task.assigneeIds.length;
+    for (const assigneeId of task.assigneeIds) {
+      hours.set(assigneeId, (hours.get(assigneeId) ?? 0) + share);
+    }
   }
   return hours;
 }

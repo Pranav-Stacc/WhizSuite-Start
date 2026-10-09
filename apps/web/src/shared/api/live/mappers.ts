@@ -4,7 +4,6 @@ import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
 import type { Post, PostMedia } from '@/features/content/data/content.repository';
-import type { InboxItem } from '@/features/inbox/data/inbox.repository';
 import type { Invoice, InvoiceLine } from '@/features/invoices/data/invoices.repository';
 import type { Article } from '@/features/knowledge/data/knowledge.repository';
 import type { Lead } from '@/features/leads/data/leads.repository';
@@ -153,12 +152,19 @@ export function projectToApi(input: Partial<Project>): Raw {
 }
 
 export function taskFromApi(raw: Raw): Task {
-  const assigneeUserIds = Array.isArray(raw.assigneeUserIds) ? raw.assigneeUserIds : [];
-  const firstAssignee = assigneeUserIds.find((id): id is string => typeof id === 'string');
+  const assigneeUserIds = Array.isArray(raw.assigneeUserIds)
+    ? raw.assigneeUserIds.filter((id): id is string => typeof id === 'string')
+    : [];
+  const projectId = raw.projectId ? str(raw, 'projectId') : undefined;
+  const clientId = raw.clientId
+    ? str(raw, 'clientId')
+    : typeof (raw.project as Raw | undefined)?.clientId === 'string'
+      ? str(raw.project as Raw, 'clientId')
+      : undefined;
   return {
     id: str(raw, 'id'),
-    projectId: str(raw, 'projectId'),
-    clientId: str(raw, 'clientId'),
+    projectId,
+    clientId,
     title: str(raw, 'title'),
     description: str(raw, 'description'),
     status: (() => {
@@ -167,35 +173,43 @@ export function taskFromApi(raw: Raw): Task {
       return asStatus(api, ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'] as const, 'TODO');
     })(),
     priority: asStatus(raw.priority, ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const, 'MEDIUM'),
-    assigneeId: firstAssignee,
+    assigneeIds: assigneeUserIds,
+    assigneeId: assigneeUserIds[0],
     dueDate: raw.dueDate ? iso(raw, 'dueDate') : undefined,
     estimateHours: typeof raw.estimateMinutes === 'number' ? raw.estimateMinutes / MINUTES_PER_HOUR : undefined,
+    contentItemId: raw.contentItemId ? str(raw, 'contentItemId') : undefined,
     createdAt: iso(raw, 'createdAt'),
   };
 }
 
 function taskFieldsToApi(input: Partial<Task>): Raw {
   const body: Raw = {};
-  if (input.projectId) body.projectId = input.projectId;
+  if ('projectId' in input) body.projectId = input.projectId ?? null;
+  if ('clientId' in input) body.clientId = input.clientId ?? null;
   if (input.title !== undefined) body.title = input.title;
   if (input.description !== undefined) body.description = input.description;
   if (input.priority) body.priority = input.priority;
   if (input.dueDate) body.dueDate = input.dueDate;
   if (input.estimateHours !== undefined) body.estimateMinutes = Math.round(input.estimateHours * MINUTES_PER_HOUR);
+  if ('contentItemId' in input) body.contentItemId = input.contentItemId ?? null;
   return body;
 }
 
 export function taskToApi(input: Partial<Task>): Raw {
   const body = taskFieldsToApi(input);
   if (input.status) body.status = input.status;
-  if (input.assigneeId) body.assigneeUserId = input.assigneeId;
+  const ids = input.assigneeIds ?? (input.assigneeId ? [input.assigneeId] : undefined);
+  if (ids) body.assigneeUserIds = ids;
   return body;
 }
 
 /** Status changes go through the transition endpoint, so PATCH carries only editable fields. */
 export function taskPatchToApi(patch: Partial<Task>): Raw {
   const body = taskFieldsToApi(patch);
-  if ('assigneeId' in patch) body.assigneeUserId = patch.assigneeId ?? null;
+  if ('assigneeIds' in patch) body.assigneeUserIds = patch.assigneeIds ?? [];
+  else if ('assigneeId' in patch) {
+    body.assigneeUserIds = patch.assigneeId ? [patch.assigneeId] : [];
+  }
   return body;
 }
 
@@ -387,36 +401,6 @@ export function assetFromApi(raw: Raw): Asset {
     projectId: raw.projectId ? str(raw, 'projectId') : null,
     url: str(raw, 'previewUrl') || undefined,
   };
-}
-
-export function inboxFromApi(raw: Raw): InboxItem {
-  const type = str(raw, 'type').toLowerCase();
-  const kind = type === 'comment' || type === 'dm' || type === 'mention' ? type : 'dm';
-  const statusRaw = str(raw, 'status').toLowerCase();
-  const status = statusRaw === 'replied' || statusRaw === 'archived' ? statusRaw : 'open';
-  const sentimentRaw = str(raw, 'sentiment').toLowerCase();
-  const sentiment = sentimentRaw === 'positive' || sentimentRaw === 'negative' ? sentimentRaw : 'neutral';
-  return {
-    id: str(raw, 'id'),
-    clientId: str(raw, 'clientId'),
-    kind,
-    platform: asStatus(raw.platform, Platforms, 'instagram'),
-    author: str(raw, 'authorHandle'),
-    handle: str(raw, 'authorHandle'),
-    body: str(raw, 'preview'),
-    status,
-    sentiment,
-    assigneeId: raw.assigneeId ? str(raw, 'assigneeId') : undefined,
-    receivedAt: iso(raw, 'updatedAt') || iso(raw, 'createdAt'),
-  };
-}
-
-/** Only status and assignment are editable; replies go through `replyToConversation`. */
-export function inboxPatchToApi(patch: Partial<InboxItem>): Raw {
-  const body: Raw = {};
-  if (patch.status) body.status = patch.status.toUpperCase();
-  if ('assigneeId' in patch) body.assigneeId = patch.assigneeId ?? null;
-  return body;
 }
 
 export function articleFromApi(raw: Raw): Article {

@@ -52,5 +52,11 @@ export const RealtimeEvents = {
   CONNECTED: 'connected',
   PONG: 'pong',
   NOTIFICATION_CREATED: 'notification.created',
+  CHAT_MESSAGE_CREATED: 'chat.message.created',
+  CHAT_MESSAGE_UPDATED: 'chat.message.updated',
+  CHAT_MESSAGE_DELETED: 'chat.message.deleted',
+  CHAT_ROOM_UPDATED: 'chat.room.updated',
+  CHAT_TYPING: 'chat.typing',
+  CHAT_READ: 'chat.read',
 } as const;
 export type RealtimeEvent = (typeof RealtimeEvents)[keyof typeof RealtimeEvents];

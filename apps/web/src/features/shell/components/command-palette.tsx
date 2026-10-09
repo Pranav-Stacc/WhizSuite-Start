@@ -9,6 +9,7 @@ import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { allowedGroups } from '@/shared/navigation/nav-config';
 import { QUICK_CREATE } from '@/shared/navigation/quick-create';
+import type { WorkspaceModule } from '@/shared/workspace/modules';
 import { Kbd } from '@/shared/ui/feedback';
 import type { SearchGroup } from './search-types';
 
@@ -19,7 +20,13 @@ const itemClass =
   'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground outline-none data-[selected=true]:bg-primary/12 data-[selected=true]:text-primary [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted data-[selected=true]:[&_svg]:text-primary';
 const headingClass = '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted';
 
-export function CommandPalette({ permissions }: { permissions: Permission[] }) {
+export function CommandPalette({
+  permissions,
+  module = 'main',
+}: {
+  permissions: Permission[];
+  module?: WorkspaceModule;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -74,10 +81,10 @@ export function CommandPalette({ permissions }: { permissions: Permission[] }) {
   const granted = useMemo(() => new Set(permissions), [permissions]);
   const pages = useMemo(
     () =>
-      allowedGroups(granted)
+      allowedGroups(granted, module)
         .flatMap((g) => g.items)
         .filter((item) => !needle || t(item.label).toLowerCase().includes(needle) || t(item.desc).toLowerCase().includes(needle)),
-    [granted, needle],
+    [granted, module, needle],
   );
   const actions = useMemo(
     () => QUICK_CREATE.filter((a) => granted.has(a.permission) && (!needle || t(a.label).toLowerCase().includes(needle))),

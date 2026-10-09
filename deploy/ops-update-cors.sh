@@ -16,8 +16,9 @@ upsert() {
   fi
 }
 
-upsert CORS_ORIGINS 'https://whizsuite.praanav.in,https://www.whizsuite.praanav.in'
-upsert WEB_APP_URL 'https://whizsuite.praanav.in'
+# Exact apex + single-label wildcard (crm-{slug}, finance-{slug}, {slug}).
+upsert CORS_ORIGINS 'https://whizsuite.com,https://www.whizsuite.com,https://*.whizsuite.com,https://whizsuite.praanav.in,https://www.whizsuite.praanav.in,https://*.whizsuite.praanav.in,http://localhost:3000'
+upsert WEB_APP_URL 'https://whizsuite.com'
 upsert API_DOMAIN 'api.whizsuite.praanav.in'
 upsert COOKIE_DOMAIN 'api.whizsuite.praanav.in'
 

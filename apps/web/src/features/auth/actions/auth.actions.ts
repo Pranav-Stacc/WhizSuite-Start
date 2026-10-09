@@ -66,27 +66,41 @@ function sessionFromPersona(persona: Persona): Session {
     role: persona.role,
     orgId: DEMO_ORG_ID,
     orgName: DEMO_ORG_NAME,
+    orgSlug: 'demo',
     clientId: persona.clientId,
     demo: true,
   };
 }
 
-async function organizationName(response: AuthResponse, orgId: string): Promise<string> {
-  if (response.organization?.name) return response.organization.name;
-  const org = await apiFetch<{ name: string }>('v1/organizations/current', { token: response.accessToken, organizationId: orgId });
-  return org.name;
+async function organizationProfile(
+  response: AuthResponse,
+  orgId: string,
+): Promise<{ name: string; slug?: string }> {
+  if (response.organization?.name) {
+    return {
+      name: response.organization.name,
+      slug: 'slug' in response.organization ? String((response.organization as { slug?: string }).slug ?? '') || undefined : undefined,
+    };
+  }
+  const org = await apiFetch<{ name: string; slug?: string }>('v1/organizations/current', {
+    token: response.accessToken,
+    organizationId: orgId,
+  });
+  return { name: org.name, slug: org.slug };
 }
 
 async function sessionFromApi(response: AuthResponse): Promise<Session> {
   const claims = claimsOf(response.accessToken);
   const orgId = response.organization?.id ?? response.organizationId ?? '';
+  const org = await organizationProfile(response, orgId);
   return {
     userId: response.user.id,
     name: [response.user.firstName, response.user.lastName].filter(Boolean).join(' '),
     email: response.user.email,
     role: claims.membershipType ? MEMBERSHIP_TO_ROLE[claims.membershipType] : UserRoles.CREATOR,
     orgId,
-    orgName: await organizationName(response, orgId),
+    orgName: org.name,
+    orgSlug: org.slug,
     clientId: claims.clientId,
     accessToken: response.accessToken,
     refreshToken: response.refreshToken,
@@ -180,7 +194,13 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
       }
     } else {
       const owner = personaByRole(UserRoles.OWNER);
-      session = { ...sessionFromPersona(owner), name: [input.firstName, input.lastName].filter(Boolean).join(' '), email: input.email, orgName: input.organizationName };
+      session = {
+        ...sessionFromPersona(owner),
+        name: [input.firstName, input.lastName].filter(Boolean).join(' '),
+        email: input.email,
+        orgName: input.organizationName,
+        orgSlug: input.organizationSlug,
+      };
     }
 
     await beginAuthenticatedSession(session);

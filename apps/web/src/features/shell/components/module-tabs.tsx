@@ -5,15 +5,26 @@ import { usePathname } from 'next/navigation';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { allowedGroups, isActivePath } from '@/shared/navigation/nav-config';
+import type { WorkspaceModule } from '@/shared/workspace/modules';
 
 /** Client workspaces render their own section tabs, so module tabs step aside there. */
 const CLIENT_WORKSPACE = /^\/clients\/[^/]+/;
 
 /** Second bar: the sibling pages of whichever module you are in, so any related screen is one click away. */
-export function ModuleTabs({ permissions, badges }: { permissions: Permission[]; badges: Record<string, number> }) {
+export function ModuleTabs({
+  permissions,
+  badges,
+  module = 'main',
+}: {
+  permissions: Permission[];
+  badges: Record<string, number>;
+  module?: WorkspaceModule;
+}) {
   const pathname = usePathname();
   if (CLIENT_WORKSPACE.test(pathname)) return null;
-  const group = allowedGroups(new Set(permissions)).find((g) => g.items.some((item) => isActivePath(pathname, item.href)));
+  const group = allowedGroups(new Set(permissions), module).find((g) =>
+    g.items.some((item) => isActivePath(pathname, item.href)),
+  );
   if (!group || group.items.length < 2) return null;
 
   return (

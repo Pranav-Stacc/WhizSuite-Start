@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
+import { getWorkspaceContext } from '@/shared/workspace/context';
 import { ClientWorkspaceNav } from '@/features/clients/components/client-workspace-nav';
 import { getClient } from '@/features/clients/services/clients.service';
 import { clientSectionsFor } from '@/features/clients/workspace';
@@ -25,7 +26,11 @@ export default async function ClientWorkspaceLayout({ params, children }: Layout
 
   return (
     <div>
-      <ClientWorkspaceNav clientId={client.id} clientName={client.name} sections={clientSectionsFor(await getPermissions())} />
+      <ClientWorkspaceNav
+        clientId={client.id}
+        clientName={client.name}
+        sections={clientSectionsFor(await getPermissions(), (await getWorkspaceContext()).module)}
+      />
       {children}
     </div>
   );

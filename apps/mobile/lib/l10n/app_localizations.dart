@@ -7874,7 +7874,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskProject.
   ///
   /// In en, this message translates to:
-  /// **'Project'**
+  /// **'Project (optional)'**
   String get taskProject;
 
   /// No description provided for @taskProjectWithClient.
@@ -7882,6 +7882,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{client} · {project}'**
   String taskProjectWithClient(String client, String project);
+
+  /// No description provided for @taskInbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Inbox (no project)'**
+  String get taskInbox;
 
   /// No description provided for @taskClient.
   ///
@@ -7892,20 +7898,32 @@ abstract class AppLocalizations {
   /// No description provided for @taskAssignee.
   ///
   /// In en, this message translates to:
-  /// **'Assignee'**
+  /// **'Assignees'**
   String get taskAssignee;
 
   /// No description provided for @taskAssigneeChange.
   ///
   /// In en, this message translates to:
-  /// **'Change assignee'**
+  /// **'Change assignees'**
   String get taskAssigneeChange;
+
+  /// No description provided for @taskAssigneesDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Save assignees'**
+  String get taskAssigneesDone;
 
   /// No description provided for @taskAssignedTo.
   ///
   /// In en, this message translates to:
   /// **'Assigned to {name}'**
   String taskAssignedTo(String name);
+
+  /// No description provided for @taskAssignedToMany.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to {count} people'**
+  String taskAssignedToMany(int count);
 
   /// No description provided for @taskDueDate.
   ///
@@ -7958,7 +7976,7 @@ abstract class AppLocalizations {
   /// No description provided for @taskNoProjects.
   ///
   /// In en, this message translates to:
-  /// **'Create a project first — every task belongs to one.'**
+  /// **'No projects yet — you can still create an inbox task.'**
   String get taskNoProjects;
 
   /// No description provided for @navTeam.

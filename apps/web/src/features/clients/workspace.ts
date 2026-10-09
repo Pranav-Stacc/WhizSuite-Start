@@ -1,4 +1,5 @@
 import { Permissions, type Permission } from '@agency-os/contracts';
+import { MODULE_CLIENT_SECTIONS, type WorkspaceModule } from '@/shared/workspace/modules';
 
 export const CLIENT_WORKSPACE_SECTIONS = [
   'overview',
@@ -19,15 +20,21 @@ const SECTION_PERMISSION: Record<ClientSection, Permission> = {
   brand: Permissions.CLIENTS_VIEW,
   grid: Permissions.CONTENT_VIEW,
   calendar: Permissions.CONTENT_VIEW,
-  messages: Permissions.INBOX_VIEW,
+  messages: Permissions.CHAT_VIEW,
   assets: Permissions.FILES_VIEW,
   agreements: Permissions.INVOICES_VIEW,
   invoices: Permissions.INVOICES_VIEW,
   integrations: Permissions.INTEGRATIONS_MANAGE,
 };
 
-export function clientSectionsFor(granted: ReadonlySet<Permission>): ClientSection[] {
-  return CLIENT_WORKSPACE_SECTIONS.filter((section) => granted.has(SECTION_PERMISSION[section]));
+export function clientSectionsFor(
+  granted: ReadonlySet<Permission>,
+  module: WorkspaceModule = 'main',
+): ClientSection[] {
+  const allowed = new Set(MODULE_CLIENT_SECTIONS[module]);
+  return CLIENT_WORKSPACE_SECTIONS.filter(
+    (section) => allowed.has(section) && granted.has(SECTION_PERMISSION[section]),
+  );
 }
 
 export function clientSectionHref(clientId: string, section: ClientSection): string {

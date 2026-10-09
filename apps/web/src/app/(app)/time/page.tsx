@@ -64,18 +64,27 @@ export default async function TimePage({ searchParams }: { searchParams: Promise
   const totalMinutes = scoped.reduce((total, e) => total + e.minutes, 0);
   const billableMinutes = scoped.filter((e) => e.billable).reduce((total, e) => total + e.minutes, 0);
 
-  const sumBy = (key: (e: (typeof scoped)[number]) => string): Map<string, number> => {
+  const sumBy = (key: (e: (typeof scoped)[number]) => string | undefined): Map<string, number> => {
     const map = new Map<string, number>();
-    for (const e of scoped) map.set(key(e), (map.get(key(e)) ?? 0) + e.minutes);
+    for (const e of scoped) {
+      const id = key(e) ?? '__none__';
+      map.set(id, (map.get(id) ?? 0) + e.minutes);
+    }
     return map;
   };
-  const byClient = [...sumBy((e) => e.clientId)].sort((a, b) => b[1] - a[1]).map(([id, minutes]) => ({ label: clients.get(id)?.name ?? id, value: minutes / MINUTES_PER_HOUR, color: clients.get(id)?.color }));
+  const byClient = [...sumBy((e) => e.clientId)]
+    .sort((a, b) => b[1] - a[1])
+    .map(([id, minutes]) => ({
+      label: id === '__none__' ? t('tasks.inbox') : (clients.get(id)?.name ?? id),
+      value: minutes / MINUTES_PER_HOUR,
+      color: id === '__none__' ? undefined : clients.get(id)?.color,
+    }));
   const byPerson = [...sumBy((e) => e.userId)].sort((a, b) => b[1] - a[1]).map(([id, minutes]) => ({ label: members.get(id)?.name ?? id, value: minutes / MINUTES_PER_HOUR }));
   const hours = (value: number): string => t('common.hours', { hours: Math.round(value * 10) / 10 });
 
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, ...overrides });
   const rangeLabels: Record<Range, string> = { week: t('time.range.week'), month: t('time.range.month'), all: t('time.range.all') };
-  const myOpenTasks = tasks.filter((x) => x.assigneeId === session.userId && x.status !== 'DONE');
+  const myOpenTasks = tasks.filter((x) => x.assigneeIds.includes(session.userId) && x.status !== 'DONE');
   const timerTask = timer ? tasks.find((x) => x.id === timer.taskId) : undefined;
 
   const rows = scoped.map((e) => ({
@@ -83,8 +92,8 @@ export default async function TimePage({ searchParams }: { searchParams: Promise
     date: e.date,
     minutes: e.minutes,
     note: e.note,
-    projectLabel: projectsById.get(e.projectId)?.name ?? e.projectId,
-    clientColor: clients.get(e.clientId)?.color,
+    projectLabel: e.projectId ? (projectsById.get(e.projectId)?.name ?? e.projectId) : t('tasks.inbox'),
+    clientColor: e.clientId ? clients.get(e.clientId)?.color : undefined,
     personName: members.get(e.userId)?.name,
     canDelete: isLeader || e.userId === session.userId,
   }));

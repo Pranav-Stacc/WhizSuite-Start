@@ -29,6 +29,7 @@ import type {
   UpdateProjectDto,
 } from '../../interface/http/dto/project.dto';
 import type {
+  CreateTaskCommentDto,
   CreateTaskDto,
   UpdateTaskDto,
 } from '../../interface/http/dto/task.dto';
@@ -247,12 +248,17 @@ export class WorkService {
     actorId: string,
     dto: CreateTaskDto,
   ) {
-    await this.get(organizationId, dto.projectId);
-    const assigneeMembershipId = dto.assigneeUserId
-      ? await this.membershipFor(organizationId, dto.assigneeUserId)
-      : undefined;
-    const created = await this.repository.createTask(organizationId, {
+    const links = await this.resolveTaskLinks(organizationId, {
       projectId: dto.projectId,
+      clientId: dto.clientId,
+    });
+    const assigneeMembershipIds = await this.membershipIdsFor(
+      organizationId,
+      mergeAssigneeIds(dto.assigneeUserIds, dto.assigneeUserId),
+    );
+    const created = await this.repository.createTask(organizationId, {
+      projectId: links.projectId,
+      clientId: links.clientId,
       title: dto.title,
       description: dto.description,
       type: dto.type,
@@ -260,16 +266,21 @@ export class WorkService {
       priority: dto.priority ?? DEFAULT_TASK_PRIORITY,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
       estimateMinutes: dto.estimateMinutes,
-      assigneeMembershipId,
+      assigneeMembershipIds,
       createdById: actorId,
       calendarItemId: dto.calendarItemId,
+      contentItemId: dto.contentItemId,
     });
     const task = await this.withAssigneeUser(organizationId, created);
     await this.outbox.write({
       type: DomainEventTypes.TASK_CREATED,
       version: 1,
       organizationId,
-      payload: { taskId: task.id, projectId: task.projectId },
+      payload: {
+        taskId: task.id,
+        projectId: task.projectId,
+        clientId: task.clientId,
+      },
       actor: { id: actorId, type: 'user' },
     });
     await this.announceAssignees(organizationId, actorId, task, []);
@@ -292,18 +303,39 @@ export class WorkService {
     dto: UpdateTaskDto,
   ) {
     const before = await this.getTask(organizationId, taskId);
-    if (dto.projectId) await this.get(organizationId, dto.projectId);
-    const assigneeMembershipId = dto.assigneeUserId
-      ? await this.membershipFor(organizationId, dto.assigneeUserId)
-      : dto.assigneeUserId;
+    const links =
+      dto.projectId !== undefined || dto.clientId !== undefined
+        ? await this.resolveTaskLinks(organizationId, {
+            projectId:
+              dto.projectId === undefined
+                ? (before.projectId ?? undefined)
+                : (dto.projectId ?? undefined),
+            clientId:
+              dto.clientId === undefined
+                ? (before.clientId ?? undefined)
+                : (dto.clientId ?? undefined),
+            clearingProject: dto.projectId === null,
+            clearingClient: dto.clientId === null,
+          })
+        : undefined;
+    const assigneeMembershipIds = await this.resolveAssigneeChange(
+      organizationId,
+      dto,
+    );
     const changed = await this.repository.updateTask(organizationId, taskId, {
-      projectId: dto.projectId,
+      projectId:
+        links === undefined
+          ? undefined
+          : (links.projectId ?? null),
+      clientId:
+        links === undefined ? undefined : (links.clientId ?? null),
       title: dto.title,
       description: dto.description,
       priority: dto.priority,
       dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
       estimateMinutes: dto.estimateMinutes,
-      assigneeMembershipId,
+      assigneeMembershipIds,
+      contentItemId: dto.contentItemId,
     });
     const updated = await this.withAssigneeUser(organizationId, changed);
     await this.announceAssignees(
@@ -323,6 +355,43 @@ export class WorkService {
       after: { ...updated },
     });
     return updated;
+  }
+
+  async addTaskComment(
+    organizationId: string,
+    actorId: string,
+    taskId: string,
+    dto: CreateTaskCommentDto,
+  ) {
+    const task = await this.getTask(organizationId, taskId);
+    const comment = await this.repository.createComment(organizationId, {
+      taskId,
+      authorId: actorId,
+      body: dto.body.trim(),
+    });
+    await this.outbox.write({
+      type: DomainEventTypes.TASK_COMMENTED,
+      version: 1,
+      organizationId,
+      payload: {
+        taskId,
+        title: task.title,
+        commentId: comment.id,
+        authorId: actorId,
+        recipientIds: task.assigneeUserIds,
+      },
+      actor: { id: actorId, type: 'user' },
+    });
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'task.comment',
+      entityType: TASK_ENTITY_TYPE,
+      entityId: taskId,
+      after: { commentId: comment.id },
+    });
+    return comment;
   }
 
   /** Emits one assignment event per newly added assignee. */
@@ -399,10 +468,72 @@ export class WorkService {
       type: DomainEventTypes.TASK_STATE_CHANGED,
       version: 1,
       organizationId,
-      payload: { taskId, fromStatus, toStatus },
+      payload: {
+        taskId,
+        title: updated.title,
+        fromStatus,
+        toStatus,
+        recipientIds: updated.assigneeUserIds,
+      },
       actor: { id: actorId, type: 'user' },
     });
     return updated;
+  }
+
+  /**
+   * Resolves optional project/client links. Project always wins for clientId when set.
+   * Clearing project keeps an explicit client unless that is also cleared.
+   */
+  private async resolveTaskLinks(
+    organizationId: string,
+    input: {
+      projectId?: string;
+      clientId?: string;
+      clearingProject?: boolean;
+      clearingClient?: boolean;
+    },
+  ): Promise<{ projectId?: string; clientId?: string }> {
+    if (input.clearingProject && input.clearingClient) {
+      return {};
+    }
+    if (input.projectId) {
+      const project = await this.get(organizationId, input.projectId);
+      return { projectId: project.id, clientId: project.clientId };
+    }
+    if (input.clearingProject) {
+      if (input.clearingClient || !input.clientId) return {};
+      await this.clients.get(organizationId, input.clientId);
+      return { clientId: input.clientId };
+    }
+    if (input.clientId) {
+      await this.clients.get(organizationId, input.clientId);
+      return { clientId: input.clientId };
+    }
+    return {};
+  }
+
+  private async resolveAssigneeChange(
+    organizationId: string,
+    dto: UpdateTaskDto,
+  ): Promise<string[] | undefined> {
+    if (dto.assigneeUserIds !== undefined) {
+      return this.membershipIdsFor(organizationId, dto.assigneeUserIds);
+    }
+    if (dto.assigneeUserId === undefined) return undefined;
+    if (dto.assigneeUserId === null) return [];
+    return this.membershipIdsFor(organizationId, [dto.assigneeUserId]);
+  }
+
+  private async membershipIdsFor(
+    organizationId: string,
+    userIds: readonly string[],
+  ): Promise<string[]> {
+    const unique = [...new Set(userIds)];
+    const membershipIds: string[] = [];
+    for (const userId of unique) {
+      membershipIds.push(await this.membershipFor(organizationId, userId));
+    }
+    return membershipIds;
   }
 
   private async requireTask(organizationId: string, taskId: string) {
@@ -482,4 +613,11 @@ function addAssigneeUsers<T extends AssignedTask>(
       (a) => users.get(a.membershipId) ?? [],
     ),
   };
+}
+
+function mergeAssigneeIds(
+  ids: string[] | undefined,
+  single: string | undefined,
+): string[] {
+  return [...new Set([...(ids ?? []), ...(single ? [single] : [])])];
 }

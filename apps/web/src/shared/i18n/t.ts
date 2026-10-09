@@ -5,6 +5,7 @@ import { dashboard } from './messages/dashboard';
 import { work } from './messages/work';
 import { contentMessages } from './messages/content';
 import { clientsMessages } from './messages/clients';
+import { chatMessages } from './messages/chat';
 import { automationMessages } from './messages/automation';
 import { moneyMessages } from './messages/money';
 import { agencyMessages } from './messages/agency';
@@ -20,6 +21,7 @@ export const messages = {
   ...work,
   ...contentMessages,
   ...clientsMessages,
+  ...chatMessages,
   ...automationMessages,
   ...moneyMessages,
   ...agencyMessages,

@@ -15,7 +15,7 @@ Start with **01** (why/who), then **22** (what ships when). Domain documents (02
 | 03 | [Identity & Access Control](03-identity-and-access-control.md) | Auth, invitations, RBAC + scopes + conditions, permission catalog, system roles |
 | 04 | [CRM & Clients](04-crm-and-clients.md) | Leads pipeline, clients/brands, brand kit, retainers & deliverable quotas, onboarding, health score |
 | 05 | [Social Publishing](05-social-publishing.md) | Accounts, campaigns, content items, composer, content calendar, scheduling/publishing engine |
-| 06 | [Engagement Inbox](06-engagement-inbox.md) | Unified comments/DMs/mentions, assignment, SLA, saved replies, sentiment |
+| 06 | [Chat](06-chat.md) | Org DMs/groups/client rooms, media, mentions, permissions, realtime |
 | 07 | [Projects, Tasks & Workflow States](07-projects-tasks-and-workflow-states.md) | Projects, tasks, views, configurable state machine with guards |
 | 08 | [Approvals](08-approvals.md) | Multi-step versioned approval engine, bulk calendar approvals |
 | 09 | [Feedback & Creative Review](09-feedback-and-creative-review.md) | Image pins, video timestamps, PDF comments, revision rounds |

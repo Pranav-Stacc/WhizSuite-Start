@@ -7,20 +7,29 @@ import { LayoutGrid, Menu as MenuIcon } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { HOME_ITEM, allowedGroups, isActivePath } from '@/shared/navigation/nav-config';
+import { HOME_ITEM, allowedGroups, isActivePath, primaryNav } from '@/shared/navigation/nav-config';
+import { homePathForModule, type WorkspaceModule } from '@/shared/workspace/modules';
 import { Button } from '@/shared/ui/button';
 import { Sheet } from '@/shared/ui/overlays';
 
 const OPEN_EVENT = 'open-mobile-menu';
-const DOCK_HREFS = ['/dashboard', '/tasks', '/content', '/approvals'];
 
 type Badges = Record<string, number>;
 
 /** Hamburger + full menu sheet used below the `lg` breakpoint. Also opened by the bottom dock's "More". */
-export function MobileMenu({ permissions, badges }: { permissions: Permission[]; badges: Badges }) {
+export function MobileMenu({
+  permissions,
+  badges,
+  module = 'main',
+}: {
+  permissions: Permission[];
+  badges: Badges;
+  module?: WorkspaceModule;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const groups = allowedGroups(new Set(permissions));
+  const groups = allowedGroups(new Set(permissions), module);
+  const homeHref = homePathForModule(module);
   const HomeIcon = HOME_ITEM.icon;
 
   useEffect(() => {
@@ -36,7 +45,7 @@ export function MobileMenu({ permissions, badges }: { permissions: Permission[];
       </Button>
       <Sheet open={open} onOpenChange={setOpen} title={t('shell.menu')} width="max-w-sm">
         <nav className="space-y-6" aria-label={t('shell.menu')}>
-          <Link href={HOME_ITEM.href} onClick={() => setOpen(false)} className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground">
+          <Link href={homeHref} onClick={() => setOpen(false)} className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground">
             <HomeIcon className="size-3.5" />
             {t(HOME_ITEM.label)}
           </Link>
@@ -73,10 +82,18 @@ export function MobileMenu({ permissions, badges }: { permissions: Permission[];
   );
 }
 
-/** Thumb-reach bottom dock for phones: the four most used pages plus the full menu. */
-export function MobileDock({ permissions, badges }: { permissions: Permission[]; badges: Badges }) {
+/** Thumb-reach bottom dock for phones: primary module pages plus the full menu. */
+export function MobileDock({
+  permissions,
+  badges,
+  module = 'main',
+}: {
+  permissions: Permission[];
+  badges: Badges;
+  module?: WorkspaceModule;
+}) {
   const pathname = usePathname();
-  const dock = [HOME_ITEM, ...allowedGroups(new Set(permissions)).flatMap((g) => g.items)].filter((item) => DOCK_HREFS.includes(item.href));
+  const dock = primaryNav(new Set(permissions), module).slice(0, 4);
   return (
     <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden print:hidden">
       <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-md border border-border-soft p-1">

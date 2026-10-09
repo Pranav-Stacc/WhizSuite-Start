@@ -37,14 +37,18 @@
   "taskTitleHint": "What needs to be done?",
   "taskDescription": "Description",
   "taskDescriptionEmpty": "No description yet.",
-  "taskProject": "Project",
+  "taskProject": "Project (optional)",
   "taskProjectWithClient": "{client} · {project}",
   "@taskProjectWithClient": { "placeholders": { "client": { "type": "String" }, "project": { "type": "String" } } },
+  "taskInbox": "Inbox (no project)",
   "taskClient": "Client",
-  "taskAssignee": "Assignee",
-  "taskAssigneeChange": "Change assignee",
+  "taskAssignee": "Assignees",
+  "taskAssigneeChange": "Change assignees",
+  "taskAssigneesDone": "Save assignees",
   "taskAssignedTo": "Assigned to {name}",
   "@taskAssignedTo": { "placeholders": { "name": { "type": "String" } } },
+  "taskAssignedToMany": "Assigned to {count} people",
+  "@taskAssignedToMany": { "placeholders": { "count": { "type": "int" } } },
   "taskDueDate": "Due date",
   "taskEstimate": "Estimate",
   "taskEstimateHours": "Estimate (hours)",
@@ -55,5 +59,5 @@
   "@taskOpenProject": { "placeholders": { "name": { "type": "String" } } },
   "taskOpenClient": "Open client {name}",
   "@taskOpenClient": { "placeholders": { "name": { "type": "String" } } },
-  "taskNoProjects": "Create a project first — every task belongs to one."
+  "taskNoProjects": "No projects yet — you can still create an inbox task."
 }

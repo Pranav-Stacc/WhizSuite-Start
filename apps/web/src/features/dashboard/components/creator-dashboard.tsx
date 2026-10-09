@@ -38,7 +38,7 @@ export async function CreatorDashboard({ session }: { session: Session }) {
     membersById(),
   ]);
   const me = byMember.get(session.userId);
-  const mine = tasks.filter((x) => x.assigneeId === session.userId && x.status !== 'DONE');
+  const mine = tasks.filter((x) => x.assigneeIds.includes(session.userId) && x.status !== 'DONE');
   const sorted = [...mine].sort((a, b) => Number(isOverdue(b)) - Number(isOverdue(a)) || (a.dueDate ?? '9').localeCompare(b.dueDate ?? '9'));
   const myPosts = content.filter((c) => c.authorId === session.userId);
   const myPostIds = new Set(myPosts.map((p) => p.id));
@@ -47,7 +47,7 @@ export async function CreatorDashboard({ session }: { session: Session }) {
   const weekMinutes = minutesThisWeek(entries, session.userId);
   const capacity = me?.capacityHours ?? DEFAULT_WEEKLY_CAPACITY_HOURS;
   const weekHours = weekMinutes / MINUTES_PER_HOUR;
-  const completed = tasks.filter((x) => x.assigneeId === session.userId && x.status === 'DONE').length;
+  const completed = tasks.filter((x) => x.assigneeIds.includes(session.userId) && x.status === 'DONE').length;
   const timerTask = timer ? tasks.find((x) => x.id === timer.taskId) : undefined;
 
   return (
@@ -101,10 +101,12 @@ export async function CreatorDashboard({ session }: { session: Session }) {
                 return (
                   <li key={task.id}>
                     <RowLink href={`/tasks?edit=${task.id}`} className="py-3">
-                      <span className="size-2.5 shrink-0 rounded-full" style={{ background: byClient.get(task.clientId)?.color }} />
+                      <span className="size-2.5 shrink-0 rounded-full" style={{ background: task.clientId ? byClient.get(task.clientId)?.color : undefined }} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{task.title}</span>
-                        <span className="block truncate text-xs text-muted">{byClient.get(task.clientId)?.name}</span>
+                        <span className="block truncate text-xs text-muted">
+                          {task.clientId ? byClient.get(task.clientId)?.name : t('tasks.inbox')}
+                        </span>
                       </span>
                       <StatusBadge kind="priority" value={task.priority} dot={false} />
                       <Badge tone={due.tone === 'danger' ? 'danger' : due.tone === 'warning' ? 'warning' : 'neutral'}>{due.label}</Badge>

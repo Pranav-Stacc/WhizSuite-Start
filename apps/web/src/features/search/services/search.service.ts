@@ -43,7 +43,12 @@ export async function searchWorkspace(query: string, granted: ReadonlySet<Permis
     {
       type: 'task',
       label: 'search.type.task',
-      items: tasks.filter((x) => matches(needle, x.title)).slice(0, PER_GROUP).map((x) => ({ id: x.id, title: x.title, subtitle: clientName.get(x.clientId), href: `/tasks?q=${encodeURIComponent(x.title)}` })),
+      items: tasks.filter((x) => matches(needle, x.title)).slice(0, PER_GROUP).map((x) => ({
+        id: x.id,
+        title: x.title,
+        subtitle: x.clientId ? clientName.get(x.clientId) : undefined,
+        href: `/tasks?q=${encodeURIComponent(x.title)}`,
+      })),
     },
     {
       type: 'content',

@@ -66,7 +66,7 @@ class CalendarEntry {
       start: due,
       allDay: true,
       clientId: clientId,
-      projectId: task.projectId,
+      projectId: task.projectId, // nullable for inbox tasks
       taskId: task.id,
       status: task.status,
     );
