@@ -2,6 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { Permissions } from '@agency-os/contracts';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 
+const MEMBERSHIP_ACTIVE = 'ACTIVE';
+const MEMBERSHIP_DEACTIVATED = 'DEACTIVATED';
+
+const PROFILE_SELECT = {
+  id: true,
+  email: true,
+  firstName: true,
+  lastName: true,
+  jobTitle: true,
+} as const;
+
 @Injectable()
 export class IdentityRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -31,6 +42,28 @@ export class IdentityRepository {
     });
   }
 
+  findProfile(userId: string) {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: PROFILE_SELECT,
+    });
+  }
+
+  updateProfile(
+    userId: string,
+    data: {
+      firstName?: string;
+      lastName?: string | null;
+      jobTitle?: string | null;
+    },
+  ) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: PROFILE_SELECT,
+    });
+  }
+
   findPrimaryMembership(userId: string) {
     return this.prisma.organizationMembership.findFirst({
       where: { userId, status: 'ACTIVE' },
@@ -48,6 +81,53 @@ export class IdentityRepository {
     return this.prisma.organizationMembership.findFirst({
       where: { organizationId, userId, status: 'ACTIVE' },
       select: { id: true },
+    });
+  }
+
+  findMembershipOfUser(organizationId: string, userId: string) {
+    return this.prisma.organizationMembership.findFirst({
+      where: { organizationId, userId, status: MEMBERSHIP_ACTIVE },
+      select: { id: true, type: true },
+    });
+  }
+
+  /** Switches the membership type and replaces its role assignments with the given organisation-wide role. */
+  changeMembershipType(
+    organizationId: string,
+    membershipId: string,
+    type: string,
+    roleId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.roleAssignment.deleteMany({
+        where: { organizationId, membershipId },
+      });
+      await tx.roleAssignment.create({
+        data: {
+          organizationId,
+          membershipId,
+          roleId,
+          scopes: { create: [{ organizationId, scopeType: 'ORGANIZATION' }] },
+        },
+      });
+      return tx.organizationMembership.update({
+        where: { id: membershipId },
+        data: { type },
+        select: { id: true, type: true, status: true },
+      });
+    });
+  }
+
+  /** Revokes all access: the membership is kept for history but loses every role. */
+  deactivateMembership(organizationId: string, membershipId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.roleAssignment.deleteMany({
+        where: { organizationId, membershipId },
+      });
+      await tx.organizationMembership.update({
+        where: { id: membershipId },
+        data: { status: MEMBERSHIP_DEACTIVATED },
+      });
     });
   }
 
@@ -110,6 +190,7 @@ export class IdentityRepository {
         firstName: true,
         lastName: true,
         avatarUrl: true,
+        jobTitle: true,
       },
     });
     const byId = new Map(users.map((u) => [u.id, u]));

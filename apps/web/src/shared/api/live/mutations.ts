@@ -60,3 +60,28 @@ export async function inviteMember(email: string, membershipType: string, client
     body: { email, membershipType, clientId },
   });
 }
+
+export async function markNotificationRead(notificationId: string): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'notifications')}/${notificationId}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'notifications')}/read-all`, { method: 'PATCH' });
+}
+
+export async function revokeInvitation(invitationId: string): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'invitations')}/${invitationId}`, { method: 'DELETE' });
+}
+
+export async function changeMembershipType(userId: string, membershipType: string): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'members')}/${userId}`, { method: 'PATCH', body: { membershipType } });
+}
+
+export async function deactivateMember(userId: string): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'members')}/${userId}`, { method: 'DELETE' });
+}

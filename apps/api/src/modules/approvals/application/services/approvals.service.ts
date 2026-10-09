@@ -21,7 +21,12 @@ export class ApprovalsService {
     const item = await this.repository.findById(organizationId, id);
     if (!item) {
       throw new ProblemDetailsException(
-        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: ErrorCodes.NOT_FOUND,
+        },
         404,
       );
     }
@@ -35,7 +40,12 @@ export class ApprovalsService {
       subjectType: string;
       subjectId: string;
       subjectVersion: string;
-      steps: Array<{ name: string; order: number; rule: string; approverSpec: Record<string, unknown> }>;
+      steps: Array<{
+        name: string;
+        order: number;
+        rule: string;
+        approverSpec: Record<string, unknown>;
+      }>;
     },
   ) {
     const request = await this.repository.createRequest(organizationId, {
@@ -77,7 +87,11 @@ export class ApprovalsService {
           ? 'REJECTED'
           : 'CHANGES_REQUESTED';
 
-    await this.repository.updateRequestStatus(organizationId, requestId, newStatus);
+    await this.repository.updateRequestStatus(
+      organizationId,
+      requestId,
+      newStatus,
+    );
 
     if (allApproved) {
       await this.outbox.write({

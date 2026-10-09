@@ -59,7 +59,7 @@ export class ClientsService {
       action: 'client.create',
       entityType: 'client',
       entityId: client.id,
-      after: client as unknown as Record<string, unknown>,
+      after: client,
     });
     return client;
   }
@@ -84,7 +84,7 @@ export class ClientsService {
       action: 'client.update',
       entityType: 'client',
       entityId: clientId,
-      after: client as unknown as Record<string, unknown>,
+      after: client,
     });
     return client;
   }
@@ -109,7 +109,7 @@ export class ClientsService {
       action: 'brand_kit.update',
       entityType: 'brand_kit',
       entityId: kit.id,
-      after: kit as unknown as Record<string, unknown>,
+      after: kit,
     });
     return kit;
   }

@@ -1,5 +1,42 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+
+const PROJECT_SELECT = {
+  id: true,
+  clientId: true,
+  workspaceId: true,
+  name: true,
+  type: true,
+  status: true,
+  startDate: true,
+  endDate: true,
+  budgetMinor: true,
+  currency: true,
+  ownerId: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.ProjectSelect;
+
+export type ProjectRecord = Prisma.ProjectGetPayload<{
+  select: typeof PROJECT_SELECT;
+}>;
+
+export interface ProjectCreateRow {
+  workspaceId: string;
+  clientId: string;
+  name: string;
+  type?: string;
+  status: string;
+  startDate?: Date;
+  endDate?: Date;
+  budgetMinor?: number;
+  ownerId?: string;
+}
+
+export type ProjectChangeRow = Partial<
+  Omit<ProjectCreateRow, 'workspaceId' | 'clientId'>
+>;
 
 export interface TaskCreateRow {
   projectId: string;
@@ -29,40 +66,37 @@ export interface TaskChangeRow {
 export class WorkRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  listProjects(organizationId: string, limit = 50) {
+  listProjects(organizationId: string, limit: number) {
     return this.prisma.project.findMany({
       where: { organizationId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: limit,
-      include: { tasks: { where: { deletedAt: null }, take: 5 } },
+      select: PROJECT_SELECT,
     });
   }
 
   findProject(organizationId: string, id: string) {
     return this.prisma.project.findFirst({
       where: { id, organizationId, deletedAt: null },
-      include: {
-        tasks: { where: { deletedAt: null } },
-        milestones: true,
-        members: true,
-      },
+      select: PROJECT_SELECT,
     });
   }
 
-  createProject(organizationId: string, data: Record<string, unknown>) {
+  createProject(organizationId: string, row: ProjectCreateRow) {
     return this.prisma.project.create({
-      data: { ...data, organizationId } as never,
+      data: { ...row, organizationId },
+      select: PROJECT_SELECT,
     });
   }
 
-  updateProject(
+  async updateProject(
     organizationId: string,
     id: string,
-    data: Record<string, unknown>,
-  ) {
-    return this.prisma.project.updateMany({
-      where: { id, organizationId },
-      data: data as never,
+    row: ProjectChangeRow,
+  ): Promise<void> {
+    await this.prisma.project.updateMany({
+      where: { id, organizationId, deletedAt: null },
+      data: { ...row, version: { increment: 1 } },
     });
   }
 

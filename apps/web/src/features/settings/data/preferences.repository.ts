@@ -1,25 +1,12 @@
 import 'server-only';
+import type { NotificationTypeKey } from '@agency-os/contracts';
 import { createRepository, type Entity } from '@/shared/data/repository';
 
-export const PreferenceKeys = ['emailApprovals', 'emailDigest', 'pushMentions', 'pushTasks', 'mfa'] as const;
-export type PreferenceKey = (typeof PreferenceKeys)[number];
-
-export interface Preferences extends Entity, Record<PreferenceKey, boolean> {
+/** Demo-mode store for a user's profile and in-app notification choices; live mode uses the API. */
+export interface Preferences extends Entity {
   displayName?: string;
   title?: string;
+  notifications: Partial<Record<NotificationTypeKey, boolean>>;
 }
-
-const DEFAULTS: Record<PreferenceKey, boolean> = {
-  emailApprovals: true,
-  emailDigest: true,
-  pushMentions: true,
-  pushTasks: false,
-  mfa: false,
-};
 
 export const preferencesRepository = createRepository<Preferences>('preferences', () => []);
-
-export async function getPreferences(userId: string): Promise<Preferences> {
-  const existing = await preferencesRepository.get(userId);
-  return existing ?? { id: userId, ...DEFAULTS };
-}

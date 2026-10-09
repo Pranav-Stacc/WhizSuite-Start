@@ -10,7 +10,10 @@ import type { OutboxService } from '../../../../shared/events/outbox.service';
 import type { AuditService } from '../../../audit/application/services/audit.service';
 import type { MediaService } from '../../../media/application/services/media.service';
 import type { SocialRepository } from '../../infrastructure/repositories/social.repository';
-import { toContentSnapshot, type ContentItemRecord } from '../mappers/content-item.mapper';
+import {
+  toContentSnapshot,
+  type ContentItemRecord,
+} from '../mappers/content-item.mapper';
 import { SocialService } from './social.service';
 
 const ORG = '00000000-0000-4000-8000-000000000001';
@@ -297,7 +300,12 @@ describe('SocialService', () => {
       expect(outbox.write).toHaveBeenCalledWith(
         expect.objectContaining({
           type: DomainEventTypes.CONTENT_UPDATED,
-          payload: { contentId: CONTENT_ID, clientId: CLIENT_ID, version: 2, changedFields },
+          payload: {
+            contentId: CONTENT_ID,
+            clientId: CLIENT_ID,
+            version: 2,
+            changedFields,
+          },
         }),
         TX,
       );
@@ -308,7 +316,10 @@ describe('SocialService', () => {
           after: toContentSnapshot(after),
         }),
       );
-      expect(toContentSnapshot(after).mediaAssetIds).toEqual([ASSET_B, ASSET_A]);
+      expect(toContentSnapshot(after).mediaAssetIds).toEqual([
+        ASSET_B,
+        ASSET_A,
+      ]);
       expect(media.resolveForEmbedding).toHaveBeenCalledTimes(1);
       expect(result.media.map((m) => m.assetId)).toEqual([ASSET_B, ASSET_A]);
     });

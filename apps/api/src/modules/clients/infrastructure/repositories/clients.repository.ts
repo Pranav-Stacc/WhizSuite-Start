@@ -78,7 +78,11 @@ export class ClientsRepository {
         ...(data.website !== undefined ? { website: data.website } : {}),
         ...(data.status ? { status: data.status } : {}),
       },
-      include: { brandKit: true, retainers: { where: { status: 'ACTIVE' } }, contacts: true },
+      include: {
+        brandKit: true,
+        retainers: { where: { status: 'ACTIVE' } },
+        contacts: true,
+      },
     });
   }
 

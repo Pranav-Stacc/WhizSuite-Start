@@ -1,10 +1,17 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   DomainEventTypes,
   ErrorCodes,
+  ProjectStatuses,
   type Priority,
+  type ProjectDto,
+  type ProjectStatus,
   type TaskStatus,
 } from '@agency-os/contracts';
+import type { AppConfig } from '../../../../shared/config/app.config';
+import { ClientsService } from '../../../clients/application/services/clients.service';
+import { TenancyService } from '../../../tenancy/application/services/tenancy.service';
 import {
   ProblemDetailsException,
   problem,
@@ -12,11 +19,59 @@ import {
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
-import { WorkRepository } from '../../infrastructure/repositories/work.repository';
+import {
+  WorkRepository,
+  type ProjectRecord,
+} from '../../infrastructure/repositories/work.repository';
+import type {
+  CreateProjectDto,
+  UpdateProjectDto,
+} from '../../interface/http/dto/project.dto';
 import type {
   CreateTaskDto,
   UpdateTaskDto,
 } from '../../interface/http/dto/task.dto';
+
+const DATE_KEY_LENGTH = 10;
+const DEFAULT_PROJECT_STATUS: ProjectStatus = 'ACTIVE';
+
+const toDate = (value: string | undefined) =>
+  value ? new Date(value) : undefined;
+const toDateKey = (value: Date | null) =>
+  value ? value.toISOString().slice(0, DATE_KEY_LENGTH) : null;
+
+function assertDateRange(start?: string, end?: string): void {
+  if (start && end && new Date(end) < new Date(start)) {
+    throw problem(
+      HttpStatus.BAD_REQUEST,
+      'Bad Request',
+      ErrorCodes.VALIDATION_FAILED,
+      'endDate must not be before startDate',
+    );
+  }
+}
+
+function toProjectStatus(value: string): ProjectStatus {
+  return ProjectStatuses.find((s) => s === value) ?? DEFAULT_PROJECT_STATUS;
+}
+
+function toProjectDto(record: ProjectRecord): ProjectDto {
+  return {
+    id: record.id,
+    clientId: record.clientId,
+    workspaceId: record.workspaceId,
+    name: record.name,
+    type: record.type,
+    status: toProjectStatus(record.status),
+    startDate: toDateKey(record.startDate),
+    endDate: toDateKey(record.endDate),
+    budgetMinor: record.budgetMinor,
+    currency: record.currency,
+    ownerUserId: record.ownerId,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
 
 const TASK_ENTITY_TYPE = 'task';
 const DEFAULT_TASK_STATUS: TaskStatus = 'TODO';
@@ -29,13 +84,18 @@ export class WorkService {
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly identity: AuthService,
+    private readonly clients: ClientsService,
+    private readonly tenancy: TenancyService,
+    private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
-  list(organizationId: string) {
-    return this.repository.listProjects(organizationId);
+  async list(organizationId: string): Promise<ProjectDto[]> {
+    const limit = this.config.get('PROJECT_LIST_LIMIT', { infer: true });
+    const rows = await this.repository.listProjects(organizationId, limit);
+    return rows.map(toProjectDto);
   }
 
-  async get(organizationId: string, id: string) {
+  async get(organizationId: string, id: string): Promise<ProjectDto> {
     const item = await this.repository.findProject(organizationId, id);
     if (!item) {
       throw new ProblemDetailsException(
@@ -48,20 +108,44 @@ export class WorkService {
         404,
       );
     }
-    return item;
+    return toProjectDto(item);
   }
 
   async create(
     organizationId: string,
     actorId: string,
-    data: Record<string, unknown>,
-  ) {
-    const item = await this.repository.createProject(organizationId, data);
+    dto: CreateProjectDto,
+  ): Promise<ProjectDto> {
+    await this.clients.get(organizationId, dto.clientId);
+    if (dto.ownerUserId)
+      await this.membershipFor(organizationId, dto.ownerUserId);
+    assertDateRange(dto.startDate, dto.endDate);
+    const workspaceId = await this.tenancy.defaultWorkspaceId(organizationId);
+    if (!workspaceId) {
+      throw problem(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        'No workspace configured',
+        ErrorCodes.VALIDATION_FAILED,
+      );
+    }
+    const item = toProjectDto(
+      await this.repository.createProject(organizationId, {
+        workspaceId,
+        clientId: dto.clientId,
+        name: dto.name,
+        type: dto.type,
+        status: dto.status ?? DEFAULT_PROJECT_STATUS,
+        startDate: toDate(dto.startDate),
+        endDate: toDate(dto.endDate),
+        budgetMinor: dto.budgetMinor,
+        ownerId: dto.ownerUserId,
+      }),
+    );
     await this.outbox.write({
       type: DomainEventTypes.PROJECT_CREATED,
       version: 1,
       organizationId,
-      payload: { projectId: (item as { id: string }).id },
+      payload: { projectId: item.id },
       actor: { id: actorId, type: 'user' },
     });
     await this.audit.record({
@@ -70,8 +154,8 @@ export class WorkService {
       actorType: 'user',
       action: 'project.create',
       entityType: 'project',
-      entityId: (item as { id: string }).id,
-      after: item,
+      entityId: item.id,
+      after: { ...item },
     });
     return item;
   }
@@ -80,11 +164,36 @@ export class WorkService {
     organizationId: string,
     actorId: string,
     id: string,
-    data: Record<string, unknown>,
-  ) {
-    await this.get(organizationId, id);
-    await this.repository.updateProject(organizationId, id, data);
-    return this.get(organizationId, id);
+    dto: UpdateProjectDto,
+  ): Promise<ProjectDto> {
+    const before = await this.get(organizationId, id);
+    if (dto.ownerUserId)
+      await this.membershipFor(organizationId, dto.ownerUserId);
+    assertDateRange(
+      dto.startDate ?? before.startDate ?? undefined,
+      dto.endDate ?? before.endDate ?? undefined,
+    );
+    await this.repository.updateProject(organizationId, id, {
+      name: dto.name,
+      type: dto.type,
+      status: dto.status,
+      startDate: toDate(dto.startDate),
+      endDate: toDate(dto.endDate),
+      budgetMinor: dto.budgetMinor,
+      ownerId: dto.ownerUserId,
+    });
+    const after = await this.get(organizationId, id);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'project.update',
+      entityType: 'project',
+      entityId: id,
+      before: { ...before },
+      after: { ...after },
+    });
+    return after;
   }
 
   async listTasks(organizationId: string, projectId?: string) {
@@ -128,6 +237,7 @@ export class WorkService {
       payload: { taskId: task.id, projectId: task.projectId },
       actor: { id: actorId, type: 'user' },
     });
+    await this.announceAssignees(organizationId, actorId, task, []);
     await this.audit.record({
       organizationId,
       actorId,
@@ -161,6 +271,12 @@ export class WorkService {
       assigneeMembershipId,
     });
     const updated = await this.withAssigneeUser(organizationId, changed);
+    await this.announceAssignees(
+      organizationId,
+      actorId,
+      updated,
+      before.assigneeUserIds,
+    );
     await this.audit.record({
       organizationId,
       actorId,
@@ -172,6 +288,26 @@ export class WorkService {
       after: { ...updated },
     });
     return updated;
+  }
+
+  /** Emits one assignment event per newly added assignee. */
+  private async announceAssignees(
+    organizationId: string,
+    actorId: string,
+    task: { id: string; title: string; assigneeUserIds: string[] },
+    previous: readonly string[],
+  ): Promise<void> {
+    const known = new Set(previous);
+    for (const assigneeUserId of task.assigneeUserIds) {
+      if (known.has(assigneeUserId)) continue;
+      await this.outbox.write({
+        type: DomainEventTypes.TASK_ASSIGNED,
+        version: 1,
+        organizationId,
+        payload: { taskId: task.id, title: task.title, assigneeUserId },
+        actor: { id: actorId, type: 'user' },
+      });
+    }
   }
 
   async deleteTask(
@@ -263,7 +399,7 @@ export class WorkService {
         HttpStatus.UNPROCESSABLE_ENTITY,
         'Unprocessable Entity',
         ErrorCodes.VALIDATION_FAILED,
-        'Assignee is not an active member of this organization',
+        'User is not an active member of this organization',
       );
     }
     return membershipId;

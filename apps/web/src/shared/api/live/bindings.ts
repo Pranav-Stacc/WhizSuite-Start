@@ -42,6 +42,7 @@ import {
   roleFromApi,
   roleToApi,
   projectFromApi,
+  projectPatchToApi,
   projectToApi,
   taskFromApi,
   taskPatchToApi,
@@ -71,7 +72,10 @@ function binding<T extends { id: string }>(
 }
 
 export const clientsLive = binding<Client>('clients', 'clients', clientFromApi, clientToApi, { deletable: false });
-export const projectsLive = binding<Project>('projects', 'projects', projectFromApi, projectToApi);
+export const projectsLive: LiveBinding<Project> = {
+  ...binding<Project>('projects', 'projects', projectFromApi, projectToApi),
+  toApiPatch: projectPatchToApi,
+};
 export const tasksLive: LiveBinding<Task> = {
   ...binding<Task>('tasks', 'tasks', taskFromApi, taskToApi),
   toApiPatch: taskPatchToApi,

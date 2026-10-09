@@ -285,6 +285,7 @@ model TimeEntry {
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   @@index([organizationId, membershipId, startedAt])
+  @@index([organizationId, membershipId, endedAt])
   @@map("time_entries")
   @@schema("time")
 }

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ErrorCodes, Permissions } from '@agency-os/contracts';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
@@ -24,7 +32,10 @@ export class RolesResourceController {
 
   @Post()
   @RequirePermissions(Permissions.ROLES_MANAGE)
-  create(@Param('organizationId') organizationId: string, @Body() dto: CreateRoleDto) {
+  create(
+    @Param('organizationId') organizationId: string,
+    @Body() dto: CreateRoleDto,
+  ) {
     return this.access.createRole(requireOrganizationId(organizationId), dto);
   }
 
@@ -39,7 +50,12 @@ export class RolesResourceController {
     const role = await this.access.updateRole(orgId, roleId, dto);
     if (!role) {
       throw new ProblemDetailsException(
-        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: ErrorCodes.NOT_FOUND,
+        },
         404,
       );
     }

@@ -1,8 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -49,6 +53,21 @@ export class InvitationsResourceController {
       requireOrganizationId(organizationId),
       user.userId,
       dto,
+    );
+  }
+
+  @Delete(':invitationId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permissions.MEMBERS_INVITE)
+  revoke(
+    @Param('organizationId') organizationId: string,
+    @Param('invitationId', ParseUUIDPipe) invitationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invitations.revoke(
+      requireOrganizationId(organizationId),
+      user.userId,
+      invitationId,
     );
   }
 }

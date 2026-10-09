@@ -10,6 +10,7 @@ import {
   INVOICE_LINES_MAX_DEFAULT,
   INVOICE_LIST_LIMIT_DEFAULT,
   LEAD_LIST_LIMIT_DEFAULT,
+  PROJECT_LIST_LIMIT_DEFAULT,
   TIME_ENTRY_LIST_LIMIT_DEFAULT,
 } from '@agency-os/contracts';
 
@@ -124,6 +125,11 @@ export const appConfigSchema = z.object({
     .positive()
     .default(LEAD_LIST_LIMIT_DEFAULT),
   CRM_DEFAULT_PIPELINE_NAME: z.string().min(1).default('Sales'),
+  PROJECT_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(PROJECT_LIST_LIMIT_DEFAULT),
   ARTICLE_LIST_LIMIT: z.coerce
     .number()
     .int()

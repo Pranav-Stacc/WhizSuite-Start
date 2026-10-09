@@ -46,7 +46,7 @@ export class OutboxService {
         organizationId: envelope.organizationId,
         type: envelope.type,
         version: envelope.version,
-        payload: envelope.payload as object,
+        payload: envelope.payload,
         correlationId: envelope.correlationId,
         causationId: envelope.causationId,
         actorId: envelope.actor.id,

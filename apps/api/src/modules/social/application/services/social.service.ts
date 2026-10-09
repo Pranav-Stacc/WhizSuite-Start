@@ -345,6 +345,8 @@ export class SocialService {
         DomainEventTypes.CONTENT_STATE_CHANGED,
         {
           contentId,
+          title: before.title,
+          createdById: before.createdById,
           fromStatus: before.status,
           toStatus,
         },

@@ -6,6 +6,7 @@ model User {
   firstName     String?   @map("first_name")
   lastName      String?   @map("last_name")
   avatarUrl     String?   @map("avatar_url")
+  jobTitle      String?   @map("job_title")
   locale        String?
   timezone      String?
   status        String    @default("ACTIVE")

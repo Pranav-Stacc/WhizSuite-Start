@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import type { MediaAssetStatus, UpdateMediaAssetInput } from '@agency-os/contracts';
+import type {
+  MediaAssetStatus,
+  UpdateMediaAssetInput,
+} from '@agency-os/contracts';
 import { PrismaService } from '../../../../shared/database/prisma.service';
-import type { MediaAssetRecord, MediaEmbeddingRecord } from '../../application/mappers/media-asset.mapper';
+import type {
+  MediaAssetRecord,
+  MediaEmbeddingRecord,
+} from '../../application/mappers/media-asset.mapper';
 
 const ASSET_SELECT = {
   id: true,
@@ -31,14 +37,20 @@ export class MediaRepository {
     });
   }
 
-  findById(organizationId: string, id: string): Promise<MediaAssetRecord | null> {
+  findById(
+    organizationId: string,
+    id: string,
+  ): Promise<MediaAssetRecord | null> {
     return this.prisma.mediaAsset.findFirst({
       where: { id, organizationId, deletedAt: null },
       select: ASSET_SELECT,
     });
   }
 
-  findForEmbedding(organizationId: string, ids: string[]): Promise<MediaEmbeddingRecord[]> {
+  findForEmbedding(
+    organizationId: string,
+    ids: string[],
+  ): Promise<MediaEmbeddingRecord[]> {
     return this.prisma.mediaAsset.findMany({
       where: { id: { in: ids }, organizationId, deletedAt: null },
       select: {
@@ -52,20 +64,36 @@ export class MediaRepository {
     });
   }
 
-  async findCurrentStorageKey(organizationId: string, asset: MediaAssetRecord): Promise<string | null> {
+  async findCurrentStorageKey(
+    organizationId: string,
+    asset: MediaAssetRecord,
+  ): Promise<string | null> {
     const version = await this.prisma.mediaAssetVersion.findFirst({
-      where: { organizationId, assetId: asset.id, version: asset.currentVersion },
+      where: {
+        organizationId,
+        assetId: asset.id,
+        version: asset.currentVersion,
+      },
       select: { storageKey: true },
     });
     return version?.storageKey ?? null;
   }
 
-  async findAllStorageKeys(organizationId: string, assetId: string): Promise<string[]> {
+  async findAllStorageKeys(
+    organizationId: string,
+    assetId: string,
+  ): Promise<string[]> {
     const versions = await this.prisma.mediaAssetVersion.findMany({
       where: { organizationId, assetId },
-      select: { storageKey: true, renditions: { select: { storageKey: true } } },
+      select: {
+        storageKey: true,
+        renditions: { select: { storageKey: true } },
+      },
     });
-    return versions.flatMap((v) => [v.storageKey, ...v.renditions.map((r) => r.storageKey)]);
+    return versions.flatMap((v) => [
+      v.storageKey,
+      ...v.renditions.map((r) => r.storageKey),
+    ]);
   }
 
   createWithVersion(
@@ -98,14 +126,22 @@ export class MediaRepository {
     });
   }
 
-  async update(organizationId: string, id: string, data: UpdateMediaAssetInput): Promise<void> {
+  async update(
+    organizationId: string,
+    id: string,
+    data: UpdateMediaAssetInput,
+  ): Promise<void> {
     await this.prisma.mediaAsset.updateMany({
       where: { id, organizationId, deletedAt: null },
       data,
     });
   }
 
-  async setStatus(organizationId: string, id: string, status: MediaAssetStatus): Promise<void> {
+  async setStatus(
+    organizationId: string,
+    id: string,
+    status: MediaAssetStatus,
+  ): Promise<void> {
     await this.prisma.mediaAsset.updateMany({
       where: { id, organizationId, deletedAt: null },
       data: { status },

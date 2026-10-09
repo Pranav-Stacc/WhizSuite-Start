@@ -25,12 +25,19 @@ export class RealtimeGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: Socket, @MessageBody() data: { ts?: number }) {
+  handlePing(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { ts?: number },
+  ) {
     client.emit('pong', { ts: data?.ts ?? Date.now(), serverTs: Date.now() });
     return { event: 'pong', data: { ok: true } };
   }
 
-  broadcastToOrg(organizationId: string, event: string, payload: unknown): void {
+  broadcastToOrg(
+    organizationId: string,
+    event: string,
+    payload: unknown,
+  ): void {
     this.server.to(`org:${organizationId}`).emit(event, payload);
   }
 }

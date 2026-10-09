@@ -8,11 +8,12 @@ import type { FormDialogResult } from '@/shared/forms/form-dialog';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { inviteMember } from '@/shared/api/live/mutations';
+import { changeMembershipType, deactivateMember, inviteMember, revokeInvitation } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { ASSIGNABLE_ROLES, DEFAULT_WEEKLY_CAPACITY_HOURS, ROLE_FOR_MEMBERSHIP } from '../config';
 import { membersRepository, type MemberRole } from '../data/members.repository';
+import { listMembers, membersById } from '../services/members.service';
 
 const CLIENT_MEMBERSHIP: MembershipType = 'CLIENT';
 
@@ -20,6 +21,11 @@ async function authorize(allowed: readonly string[]) {
   const session = await requireSession();
   if (!allowed.includes(session.role)) throw new Error('forbidden');
   return session;
+}
+
+function membershipFor(role: MemberRole): MembershipType | undefined {
+  const entry = Object.entries(ROLE_FOR_MEMBERSHIP).find(([, mapped]) => mapped === role);
+  return entry?.[0] as MembershipType | undefined;
 }
 
 export async function inviteMemberAction(raw: unknown): Promise<ActionResult<FormDialogResult>> {
@@ -31,38 +37,31 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult<For
     const role = ROLE_FOR_MEMBERSHIP[membershipType];
     if (!role) return fail(t('toast.failed'), { membershipType: 'validation.required' });
     const normalized = email.toLowerCase();
-    if ((await membersRepository.list()).some((m) => m.email.toLowerCase() === normalized)) return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
+    if ((await listMembers()).some((m) => m.email.toLowerCase() === normalized)) return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
 
-    let member;
+    let memberId: string;
     let shareLink: string | undefined;
     if (isLiveMode) {
-      shareLink = (await inviteMember(normalized, membershipType)).acceptUrl;
-      member = {
-        id: normalized,
-        name: normalized,
-        email: normalized,
-        role,
-        title: note ?? '',
-        capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
-        skills: [],
-        status: 'INVITED' as const,
-        joinedAt: new Date().toISOString(),
-      };
+      const created = await inviteMember(normalized, membershipType);
+      memberId = created.invitationId;
+      shareLink = created.acceptUrl;
     } else {
-      member = await membersRepository.create({
-        name: normalized,
-        email: normalized,
-        role,
-        title: note ?? '',
-        capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
-        skills: [],
-        status: 'INVITED',
-        joinedAt: new Date().toISOString(),
-      });
+      memberId = (
+        await membersRepository.create({
+          name: normalized,
+          email: normalized,
+          role,
+          title: note ?? '',
+          capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
+          skills: [],
+          status: 'INVITED',
+          joinedAt: new Date().toISOString(),
+        })
+      ).id;
     }
-    await recordAudit({ action: 'member.invited', entityType: 'member', entityId: member.id, entityLabel: member.email, summary: 'Invited team member' });
+    await recordAudit({ action: 'member.invited', entityType: 'member', entityId: memberId, entityLabel: normalized, summary: 'Invited team member' });
     await refreshData('team');
-    return succeed({ shareLink }, t('team.invited', { email: member.email }));
+    return succeed({ shareLink }, t('team.invited', { email: normalized }));
   });
 }
 
@@ -83,18 +82,25 @@ export async function invitePortalUserAction(clientId: string, raw: unknown): Pr
 export async function changeMemberRoleAction(id: string, role: string): Promise<ActionResult> {
   return guarded(async () => {
     const session = await authorize(ROLES_OWNER);
-    if (!ASSIGNABLE_ROLES.some((r) => r === role)) return fail(t('toast.failed'));
-    const before = await membersRepository.get(id);
-    if (!before) return fail(t('toast.failed'));
+    const nextRole = ASSIGNABLE_ROLES.find((r) => r === role);
+    if (!nextRole) return fail(t('toast.failed'));
+    const before = (await membersById()).get(id);
+    if (!before || before.status === 'INVITED') return fail(t('toast.failed'));
     if (before.role === UserRoles.OWNER || before.id === session.userId) return fail(t('team.role.protected'));
-    await membersRepository.update(id, { role: role as MemberRole });
+    if (isLiveMode) {
+      const membershipType = membershipFor(nextRole);
+      if (!membershipType) return fail(t('toast.failed'));
+      await changeMembershipType(id, membershipType);
+    } else {
+      await membersRepository.update(id, { role: nextRole });
+    }
     await recordAudit({
       action: 'member.role_changed',
       entityType: 'member',
       entityId: id,
       entityLabel: before.name,
-      summary: `Changed role to ${t(`shell.role.${role as MemberRole}`)}`,
-      diff: { role: { from: before.role, to: role } },
+      summary: `Changed role to ${t(`shell.role.${nextRole}`)}`,
+      diff: { role: { from: before.role, to: nextRole } },
     });
     await refreshData('team');
     return succeed(undefined, t('team.role.updated'));
@@ -104,18 +110,23 @@ export async function changeMemberRoleAction(id: string, role: string): Promise<
 export async function removeMemberAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
     const session = await authorize(ROLES_OWNER);
-    const before = await membersRepository.get(id);
+    const before = (await membersById()).get(id);
     if (!before) return fail(t('toast.failed'));
     if (before.role === UserRoles.OWNER || before.id === session.userId) return fail(t('team.remove.protected'));
-    await membersRepository.remove(id);
+    const invited = before.status === 'INVITED';
+    if (isLiveMode) {
+      await (invited ? revokeInvitation(id) : deactivateMember(id));
+    } else {
+      await membersRepository.remove(id);
+    }
     await recordAudit({
-      action: before.status === 'INVITED' ? 'member.invite_revoked' : 'member.removed',
+      action: invited ? 'member.invite_revoked' : 'member.removed',
       entityType: 'member',
       entityId: id,
       entityLabel: before.name,
-      summary: before.status === 'INVITED' ? 'Revoked invitation' : 'Removed team member',
+      summary: invited ? 'Revoked invitation' : 'Removed team member',
     });
     await refreshData('team', 'tasks');
-    return succeed(undefined, before.status === 'INVITED' ? t('team.invite.revoked') : t('team.removed'));
+    return succeed(undefined, invited ? t('team.invite.revoked') : t('team.removed'));
   });
 }

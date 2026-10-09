@@ -145,6 +145,20 @@ export class InvitationsService {
     return { invitationId: invitation.id, acceptUrl, expiresAt };
   }
 
+  async revoke(organizationId: string, actorId: string, id: string) {
+    if (!(await this.repository.revokePending(organizationId, id)))
+      throw invalid('Not Found', 404, ErrorCodes.NOT_FOUND);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'invitation.revoke',
+      entityType: 'invitation',
+      entityId: id,
+      after: { status: INVITATION_STATUS.REVOKED },
+    });
+  }
+
   /** Public details shown on the accept page; never reveals anything beyond the invitee's own invitation. */
   async preview(token: string) {
     const invitation = await this.findPending(token);
@@ -208,7 +222,10 @@ export class InvitationsService {
 
   private async join(invitation: InvitationRecord, userId: string) {
     if (
-      await this.repository.hasMembership(invitation.organizationId, userId)
+      await this.repository.hasActiveMembership(
+        invitation.organizationId,
+        userId,
+      )
     ) {
       throw invalid(
         'Already a member of this organisation',

@@ -1,5 +1,7 @@
 import 'server-only';
+import { isLiveMode } from '@/shared/config/env';
 import { toDateKey } from '@/shared/lib/format';
+import { fetchRunningTimer } from '../data/timer.api';
 import { timeRepository, timersRepository, type ActiveTimer, type TimeEntry } from '../data/time.repository';
 
 export async function listEntries(): Promise<TimeEntry[]> {
@@ -7,7 +9,9 @@ export async function listEntries(): Promise<TimeEntry[]> {
   return rows.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/** In live mode the API only ever returns the signed-in user's own timer. */
 export async function activeTimerFor(userId: string): Promise<ActiveTimer | undefined> {
+  if (isLiveMode) return fetchRunningTimer();
   return (await timersRepository.list()).find((t) => t.userId === userId);
 }
 

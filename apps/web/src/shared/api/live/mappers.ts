@@ -28,7 +28,7 @@ import type { Project } from '@/features/projects/data/projects.repository';
 import type { Task } from '@/features/tasks/data/tasks.repository';
 import type { TimeEntry } from '@/features/time/data/time.repository';
 import type { Workflow } from '@/features/workflows/data/workflows.repository';
-import { MediaAssetStatuses, UserRoles } from '@agency-os/contracts';
+import { MediaAssetStatuses, UserRoles, type NotificationData } from '@agency-os/contracts';
 import { assetKindFromMimeType } from '@/features/media/utils/asset-kind';
 import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
 import { HEALTH_BASELINE } from '@/features/clients/config';
@@ -138,17 +138,27 @@ export function projectFromApi(raw: Raw): Project {
     startDate: raw.startDate ? iso(raw, 'startDate') : iso(raw, 'createdAt'),
     endDate: raw.endDate ? iso(raw, 'endDate') : undefined,
     budgetMinor: num(raw, 'budgetMinor'),
-    ownerId: str(raw, 'createdById'),
+    ownerId: str(raw, 'ownerUserId'),
   };
 }
 
-export async function projectToApi(input: Partial<Project>): Promise<Raw> {
-  const workspaceId = await defaultWorkspaceId();
-  if (!workspaceId) throw new Error('No workspace configured for this organization');
-  const body: Raw = { workspaceId, clientId: input.clientId, name: input.name ?? '' };
-  if (input.type) body.type = input.type;
-  if (input.status) body.status = input.status;
-  return body;
+const DATE_KEY_LENGTH = 10;
+const dateKey = (value: string | undefined) => (value ? value.slice(0, DATE_KEY_LENGTH) : undefined);
+
+export function projectPatchToApi(input: Partial<Project>): Raw {
+  return {
+    name: input.name,
+    type: input.type || undefined,
+    status: input.status,
+    startDate: dateKey(input.startDate),
+    endDate: dateKey(input.endDate),
+    budgetMinor: input.budgetMinor,
+    ownerUserId: input.ownerId || undefined,
+  };
+}
+
+export function projectToApi(input: Partial<Project>): Raw {
+  return { ...projectPatchToApi(input), clientId: input.clientId };
 }
 
 export function taskFromApi(raw: Raw): Task {
@@ -336,13 +346,14 @@ export function invoiceToApi(input: Partial<Invoice>): Raw {
 
 export function notificationFromApi(raw: Raw, userId: string): Notification {
   const event = NOTIFICATION_EVENTS[str(raw, 'typeKey')];
+  const data: NotificationData = raw.data && typeof raw.data === 'object' ? (raw.data as NotificationData) : {};
   return {
     id: str(raw, 'id'),
     userId,
     kind: event?.kind ?? 'system',
     title: event ? t(event.title) : str(raw, 'title'),
-    body: str(raw, 'body'),
-    href: event?.href ?? NOTIFICATIONS_HREF,
+    body: data.title ?? str(raw, 'body'),
+    href: event?.href(data) ?? NOTIFICATIONS_HREF,
     read: Boolean(raw.readAt),
     at: iso(raw, 'createdAt'),
   };

@@ -5,7 +5,10 @@ import { PrismaService } from '../../../../shared/database/prisma.service';
 export const INVITATION_STATUS = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
+  REVOKED: 'REVOKED',
 } as const;
+
+const MEMBERSHIP_ACTIVE = 'ACTIVE';
 
 export interface InvitationScopePayload {
   clientId?: string;
@@ -77,10 +80,23 @@ export class InvitationsRepository {
     return org?.name;
   }
 
-  hasMembership(organizationId: string, userId: string): Promise<boolean> {
+  hasActiveMembership(
+    organizationId: string,
+    userId: string,
+  ): Promise<boolean> {
     return this.prisma.organizationMembership
-      .count({ where: { organizationId, userId } })
+      .count({ where: { organizationId, userId, status: MEMBERSHIP_ACTIVE } })
       .then((count) => count > 0);
+  }
+
+  /** Marks a still-pending invitation as revoked; returns false when nothing was pending. */
+  revokePending(organizationId: string, id: string): Promise<boolean> {
+    return this.prisma.invitation
+      .updateMany({
+        where: { id, organizationId, status: INVITATION_STATUS.PENDING },
+        data: { status: INVITATION_STATUS.REVOKED },
+      })
+      .then((result) => result.count > 0);
   }
 
   acceptInvitation(
@@ -93,13 +109,21 @@ export class InvitationsRepository {
       : { organizationId, scopeType: 'ORGANIZATION' };
 
     return this.prisma.$transaction(async (tx) => {
-      const membership = await tx.organizationMembership.create({
-        data: {
+      // A previously deactivated member is re-activated rather than duplicated.
+      const membership = await tx.organizationMembership.upsert({
+        where: {
+          organizationId_userId: { organizationId, userId: input.userId },
+        },
+        create: {
           organizationId,
           userId: input.userId,
           type: invitation.membershipType,
-          status: 'ACTIVE',
+          status: MEMBERSHIP_ACTIVE,
         },
+        update: { type: invitation.membershipType, status: MEMBERSHIP_ACTIVE },
+      });
+      await tx.roleAssignment.deleteMany({
+        where: { organizationId, membershipId: membership.id },
       });
 
       for (const roleId of input.roleIds) {

@@ -11,7 +11,8 @@ import { TabLinks, param, withQuery, type SearchParams } from '@/shared/ui/nav-c
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { SignOutButton } from '@/features/auth/components/sign-out-button';
-import { PreferenceKeys, getPreferences } from '@/features/settings/data/preferences.repository';
+import type { NotificationTypeKey } from '@agency-os/contracts';
+import { getNotificationPreferences, getProfile } from '@/features/settings/services/settings.service';
 import { PreferenceRow } from '@/features/settings/components/preference-row';
 import { ProfileForm } from '@/features/settings/components/profile-form';
 
@@ -35,8 +36,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const session = await requireSession();
   const sp = await searchParams;
   const tab = parseTab(param(sp, 'tab'));
-  const [prefs, theme] = await Promise.all([getPreferences(session.userId), getTheme()]);
-  const displayName = prefs.displayName ?? session.name;
+  const [profile, notificationPrefs, theme] = await Promise.all([
+    getProfile(session),
+    tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
+    getTheme(),
+  ]);
+  const displayName = profile.name;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -53,12 +58,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       {tab === 'profile' ? (
         <Card>
-          <CardHeader title={t('settings.profile.heading')} action={<ProfileForm name={displayName} title={prefs.title} defaultOpen={param(sp, 'edit') === '1'} />} />
+          <CardHeader title={t('settings.profile.heading')} action={<ProfileForm name={displayName} title={profile.title} defaultOpen={param(sp, 'edit') === '1'} />} />
           <CardBody className="flex items-center gap-4">
             <Avatar name={displayName} size="lg" />
             <div>
               <p className="text-lg font-semibold">{displayName}</p>
-              <p className="text-sm text-muted">{prefs.title || t('team.noTitle')}</p>
+              <p className="text-sm text-muted">{profile.title || t('team.noTitle')}</p>
               <p className="mt-1 text-sm text-muted">{session.email}</p>
               <p className="text-xs text-muted">{session.orgName} · {t(`shell.role.${session.role}`)}</p>
             </div>
@@ -79,8 +84,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <Card>
           <CardHeader title={t('settings.notifications.title')} description={t('settings.notifications.desc')} />
           <CardBody>
-            {PreferenceKeys.filter((k) => k !== 'mfa').map((key) => (
-              <PreferenceRow key={key} keyName={key} enabled={prefs[key]} />
+            {notificationPrefs.map((pref) => (
+              <PreferenceRow key={pref.typeKey} typeKey={pref.typeKey as NotificationTypeKey} enabled={pref.enabled} />
             ))}
           </CardBody>
         </Card>
@@ -88,12 +93,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       {tab === 'security' ? (
         <div className="space-y-4">
-          <Card>
-            <CardHeader title={t('settings.security.title')} description={t('settings.security.desc')} />
-            <CardBody>
-              <PreferenceRow keyName="mfa" enabled={prefs.mfa} />
-            </CardBody>
-          </Card>
           <Card>
             <CardBody className="flex flex-wrap items-center justify-between gap-3">
               <div>

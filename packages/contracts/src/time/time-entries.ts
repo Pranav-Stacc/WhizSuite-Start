@@ -25,3 +25,17 @@ export interface TimeEntryDto {
   billable: boolean;
   createdAt: string;
 }
+
+export interface TimerStartInput {
+  taskId: string;
+}
+
+/** A timer the caller has started but not stopped yet. */
+export interface RunningTimerDto {
+  id: string;
+  userId: string;
+  taskId: string | null;
+  projectId: string | null;
+  clientId: string | null;
+  startedAt: string;
+}

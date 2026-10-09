@@ -13,15 +13,13 @@ export class AuditRepository {
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
       take: options.limit + 1,
-      ...(options.cursor
-        ? { cursor: { id: options.cursor }, skip: 1 }
-        : {}),
+      ...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
     });
     const hasMore = items.length > options.limit;
     const page = hasMore ? items.slice(0, options.limit) : items;
     return {
       items: page,
-      nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+      nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
       hasMore,
     };
   }

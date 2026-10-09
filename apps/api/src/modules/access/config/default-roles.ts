@@ -12,6 +12,10 @@ export const INVITABLE_MEMBERSHIP_TYPES: readonly InvitableMembershipType[] = [
   'CLIENT',
 ];
 
+/** Agency staff membership types an owner can switch a member between. */
+export const STAFF_MEMBERSHIP_TYPES = ['ADMIN', 'MEMBER'] as const;
+export type StaffMembershipType = (typeof STAFF_MEMBERSHIP_TYPES)[number];
+
 interface DefaultRoleTemplate {
   name: string;
   permissions: readonly Permission[];

@@ -16,14 +16,19 @@ import { problem } from '../../../../shared/errors/problem-details.exception';
 import { StorageService } from '../../../../shared/storage/storage.service';
 import { MediaRepository } from '../../infrastructure/repositories/media.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
-import { toMediaAssetDto, type MediaAssetRecord } from '../mappers/media-asset.mapper';
+import {
+  toMediaAssetDto,
+  type MediaAssetRecord,
+} from '../mappers/media-asset.mapper';
 import { isMimeTypeAllowed } from '../utils/mime-type';
 
 const ENTITY_TYPE = 'mediaAsset';
 const PREVIEWABLE_MIME_PREFIXES = ['image/', 'video/'];
 
 function isPreviewable(mimeType: string): boolean {
-  return PREVIEWABLE_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix));
+  return PREVIEWABLE_MIME_PREFIXES.some((prefix) =>
+    mimeType.startsWith(prefix),
+  );
 }
 
 @Injectable()
@@ -39,10 +44,21 @@ export class MediaService {
 
   /** Library listing; ready images/videos carry a short-lived inline `previewUrl` for thumbnails. */
   async list(organizationId: string): Promise<MediaAssetDto[]> {
-    const assets = await this.repository.list(organizationId, this.config.get('MEDIA_LIST_LIMIT'));
-    const previewable = assets.filter((a) => a.status === 'READY' && isPreviewable(a.mimeType)).map((a) => a.id);
-    const previews = await this.resolveForEmbedding(organizationId, previewable);
-    return assets.map((asset) => ({ ...toMediaAssetDto(asset), previewUrl: previews.get(asset.id)?.url ?? null }));
+    const assets = await this.repository.list(
+      organizationId,
+      this.config.get('MEDIA_LIST_LIMIT'),
+    );
+    const previewable = assets
+      .filter((a) => a.status === 'READY' && isPreviewable(a.mimeType))
+      .map((a) => a.id);
+    const previews = await this.resolveForEmbedding(
+      organizationId,
+      previewable,
+    );
+    return assets.map((asset) => ({
+      ...toMediaAssetDto(asset),
+      previewUrl: previews.get(asset.id)?.url ?? null,
+    }));
   }
 
   async get(organizationId: string, id: string): Promise<MediaAssetDto> {
@@ -55,12 +71,27 @@ export class MediaService {
     input: PresignMediaUploadInput,
   ): Promise<PresignedMediaUploadDto> {
     const mimeType = input.mimeType.toLowerCase();
-    if (!isMimeTypeAllowed(mimeType, this.config.get('STORAGE_ALLOWED_MIME_TYPES'))) {
-      throw problem(400, 'Bad Request', ErrorCodes.MEDIA_TYPE_NOT_ALLOWED, `File type ${mimeType} is not allowed`);
+    if (
+      !isMimeTypeAllowed(
+        mimeType,
+        this.config.get('STORAGE_ALLOWED_MIME_TYPES'),
+      )
+    ) {
+      throw problem(
+        400,
+        'Bad Request',
+        ErrorCodes.MEDIA_TYPE_NOT_ALLOWED,
+        `File type ${mimeType} is not allowed`,
+      );
     }
     const maxBytes = this.config.get('STORAGE_UPLOAD_MAX_BYTES');
     if (input.sizeBytes > maxBytes) {
-      throw problem(400, 'Bad Request', ErrorCodes.MEDIA_TOO_LARGE, `File exceeds the ${maxBytes} byte limit`);
+      throw problem(
+        400,
+        'Bad Request',
+        ErrorCodes.MEDIA_TOO_LARGE,
+        `File exceeds the ${maxBytes} byte limit`,
+      );
     }
 
     const presigned = await this.storage.createPresignedUpload({
@@ -79,9 +110,15 @@ export class MediaService {
       folderId: input.folderId,
     });
     const dto = toMediaAssetDto(asset);
-    await this.record(organizationId, actorId, 'media/assets.presign', asset.id, {
-      after: { ...dto, storageKey: presigned.storageKey },
-    });
+    await this.record(
+      organizationId,
+      actorId,
+      'media/assets.presign',
+      asset.id,
+      {
+        after: { ...dto, storageKey: presigned.storageKey },
+      },
+    );
     return {
       asset: dto,
       uploadUrl: presigned.uploadUrl,
@@ -91,14 +128,28 @@ export class MediaService {
     };
   }
 
-  async completeUpload(organizationId: string, actorId: string, id: string): Promise<MediaAssetDto> {
+  async completeUpload(
+    organizationId: string,
+    actorId: string,
+    id: string,
+  ): Promise<MediaAssetDto> {
     const asset = await this.findOrThrow(organizationId, id);
     if (asset.status === 'READY') return toMediaAssetDto(asset);
 
-    const storageKey = await this.repository.findCurrentStorageKey(organizationId, asset);
-    const stored = storageKey ? await this.storage.getObjectMetadata(storageKey) : null;
+    const storageKey = await this.repository.findCurrentStorageKey(
+      organizationId,
+      asset,
+    );
+    const stored = storageKey
+      ? await this.storage.getObjectMetadata(storageKey)
+      : null;
     if (!storageKey || !stored) {
-      throw problem(409, 'Conflict', ErrorCodes.MEDIA_UPLOAD_INCOMPLETE, 'The file has not been uploaded yet');
+      throw problem(
+        409,
+        'Conflict',
+        ErrorCodes.MEDIA_UPLOAD_INCOMPLETE,
+        'The file has not been uploaded yet',
+      );
     }
     if (stored.sizeBytes !== Number(asset.sizeBytes)) {
       await this.repository.setStatus(organizationId, id, 'FAILED');
@@ -107,7 +158,12 @@ export class MediaService {
         outcome: 'FAILURE',
         reason: `size mismatch: expected ${asset.sizeBytes}, got ${stored.sizeBytes}`,
       });
-      throw problem(409, 'Conflict', ErrorCodes.MEDIA_UPLOAD_INCOMPLETE, 'Uploaded file size does not match');
+      throw problem(
+        409,
+        'Conflict',
+        ErrorCodes.MEDIA_UPLOAD_INCOMPLETE,
+        'Uploaded file size does not match',
+      );
     }
 
     await this.repository.setStatus(organizationId, id, 'READY');
@@ -125,9 +181,17 @@ export class MediaService {
     disposition: MediaDownloadDisposition,
   ): Promise<MediaDownloadUrlDto> {
     const asset = await this.findOrThrow(organizationId, id);
-    const storageKey = await this.repository.findCurrentStorageKey(organizationId, asset);
+    const storageKey = await this.repository.findCurrentStorageKey(
+      organizationId,
+      asset,
+    );
     if (asset.status !== 'READY' || !storageKey) {
-      throw problem(409, 'Conflict', ErrorCodes.MEDIA_NOT_READY, 'The file is not available yet');
+      throw problem(
+        409,
+        'Conflict',
+        ErrorCodes.MEDIA_NOT_READY,
+        'The file is not available yet',
+      );
     }
     const download = await this.storage.createPresignedDownload(storageKey, {
       filename: asset.name,
@@ -140,22 +204,40 @@ export class MediaService {
   }
 
   /** Batch lookup for other domains; ids that are missing, deleted or in another org are absent from the map. */
-  async resolveForEmbedding(organizationId: string, assetIds: string[]): Promise<Map<string, EmbeddedMediaDto>> {
+  async resolveForEmbedding(
+    organizationId: string,
+    assetIds: string[],
+  ): Promise<Map<string, EmbeddedMediaDto>> {
     const resolved = new Map<string, EmbeddedMediaDto>();
     const uniqueIds = [...new Set(assetIds)];
     if (uniqueIds.length === 0) return resolved;
 
-    const assets = await this.repository.findForEmbedding(organizationId, uniqueIds);
+    const assets = await this.repository.findForEmbedding(
+      organizationId,
+      uniqueIds,
+    );
     const entries = await Promise.all(
       assets.map(async (asset): Promise<EmbeddedMediaDto> => {
-        const storageKey = asset.versions.find((v) => v.version === asset.currentVersion)?.storageKey;
+        const storageKey = asset.versions.find(
+          (v) => v.version === asset.currentVersion,
+        )?.storageKey;
         const status = asset.status as MediaAssetStatus;
         const url =
           status === 'READY' && storageKey
-            ? (await this.storage.createPresignedDownload(storageKey, { filename: asset.name, disposition: 'inline' }))
-                .url
+            ? (
+                await this.storage.createPresignedDownload(storageKey, {
+                  filename: asset.name,
+                  disposition: 'inline',
+                })
+              ).url
             : null;
-        return { assetId: asset.id, name: asset.name, mimeType: asset.mimeType, status, url };
+        return {
+          assetId: asset.id,
+          name: asset.name,
+          mimeType: asset.mimeType,
+          status,
+          url,
+        };
       }),
     );
     for (const entry of entries) resolved.set(entry.assetId, entry);
@@ -178,9 +260,16 @@ export class MediaService {
     return after;
   }
 
-  async remove(organizationId: string, actorId: string, id: string): Promise<void> {
+  async remove(
+    organizationId: string,
+    actorId: string,
+    id: string,
+  ): Promise<void> {
     const asset = await this.findOrThrow(organizationId, id);
-    const storageKeys = await this.repository.findAllStorageKeys(organizationId, id);
+    const storageKeys = await this.repository.findAllStorageKeys(
+      organizationId,
+      id,
+    );
     await this.repository.softDelete(organizationId, id);
     await this.record(organizationId, actorId, 'media/assets.delete', id, {
       before: toMediaAssetDto(asset),
@@ -188,11 +277,17 @@ export class MediaService {
     try {
       await this.storage.deleteObjects(storageKeys);
     } catch (error) {
-      this.logger.warn({ err: error, assetId: id, storageKeys }, 'Failed to delete media objects from storage');
+      this.logger.warn(
+        { err: error, assetId: id, storageKeys },
+        'Failed to delete media objects from storage',
+      );
     }
   }
 
-  private async findOrThrow(organizationId: string, id: string): Promise<MediaAssetRecord> {
+  private async findOrThrow(
+    organizationId: string,
+    id: string,
+  ): Promise<MediaAssetRecord> {
     const asset = await this.repository.findById(organizationId, id);
     if (!asset) throw problem(404, 'Not Found', ErrorCodes.NOT_FOUND);
     return asset;

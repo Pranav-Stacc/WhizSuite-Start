@@ -7,7 +7,8 @@ export class SearchRepository {
 
   async search(organizationId: string, query: string, limit = 20) {
     const q = query.trim();
-    if (!q) return { clients: [], projects: [], tasks: [], leads: [], content: [] };
+    if (!q)
+      return { clients: [], projects: [], tasks: [], leads: [], content: [] };
 
     const [clients, projects, tasks, leads, content] = await Promise.all([
       this.prisma.client.findMany({

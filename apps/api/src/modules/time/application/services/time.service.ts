@@ -2,7 +2,9 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
+  TIME_ENTRY_MINUTES_MAX,
   type MembershipType,
+  type RunningTimerDto,
   type TimeEntryDto,
 } from '@agency-os/contracts';
 import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
@@ -19,6 +21,9 @@ import type { CreateTimeEntryDto } from '../../interface/http/dto/time-entry.dto
 
 const ENTITY_TYPE = 'timeEntry';
 const DEFAULT_BILLABLE = true;
+const MS_PER_MINUTE = 60_000;
+/** A stopped timer always records at least this much time. */
+const MIN_TIMER_MINUTES = 1;
 /** Membership types that may remove other people's time entries. */
 const ENTRY_MODERATOR_TYPES: readonly MembershipType[] = ['OWNER', 'ADMIN'];
 
@@ -54,13 +59,15 @@ export class TimeService {
       ? await this.work.get(organizationId, input.projectId)
       : null;
     if (input.taskId) await this.work.getTask(organizationId, input.taskId);
+    const startedAt = new Date(input.date);
     const record = await this.repository.create(organizationId, {
       membershipId,
       projectId: input.projectId,
       clientId: input.clientId ?? project?.clientId,
       taskId: input.taskId,
       minutes: input.minutes,
-      startedAt: new Date(input.date),
+      startedAt,
+      endedAt: new Date(startedAt.getTime() + input.minutes * MS_PER_MINUTE),
       description: input.note,
       billable: input.billable ?? DEFAULT_BILLABLE,
     });
@@ -70,6 +77,92 @@ export class TimeService {
       actorId: actor.userId,
       actorType: 'user',
       action: 'timeEntry.create',
+      entityType: ENTITY_TYPE,
+      entityId: dto.id,
+      after: { ...dto },
+    });
+    return dto;
+  }
+
+  async runningTimer(
+    organizationId: string,
+    actor: AuthenticatedUser,
+  ): Promise<RunningTimerDto | null> {
+    const membershipId = await this.actorMembership(organizationId, actor);
+    const record = await this.repository.findRunning(
+      organizationId,
+      membershipId,
+    );
+    return record ? toRunningTimerDto(record, actor.userId) : null;
+  }
+
+  /** Starts a timer on a task; any timer already running for the caller is discarded. */
+  async startTimer(
+    organizationId: string,
+    actor: AuthenticatedUser,
+    taskId: string,
+  ): Promise<RunningTimerDto> {
+    const membershipId = await this.actorMembership(organizationId, actor);
+    const task = await this.work.getTask(organizationId, taskId);
+    const project = await this.work.get(organizationId, task.projectId);
+    const record = await this.repository.replaceRunning(organizationId, {
+      membershipId,
+      taskId,
+      projectId: task.projectId,
+      clientId: project.clientId ?? undefined,
+      minutes: 0,
+      startedAt: new Date(),
+      description: task.title,
+      billable: DEFAULT_BILLABLE,
+    });
+    await this.audit.record({
+      organizationId,
+      actorId: actor.userId,
+      actorType: 'user',
+      action: 'timeEntry.timer_start',
+      entityType: ENTITY_TYPE,
+      entityId: record.id,
+      after: { taskId, startedAt: record.startedAt.toISOString() },
+    });
+    return toRunningTimerDto(record, actor.userId);
+  }
+
+  /** Stops the caller's running timer and turns it into a finished entry. */
+  async stopTimer(
+    organizationId: string,
+    actor: AuthenticatedUser,
+  ): Promise<TimeEntryDto> {
+    const membershipId = await this.actorMembership(organizationId, actor);
+    const running = await this.repository.findRunning(
+      organizationId,
+      membershipId,
+    );
+    if (!running) {
+      throw problem(
+        HttpStatus.NOT_FOUND,
+        'Not Found',
+        ErrorCodes.NOT_FOUND,
+        'No timer is running',
+      );
+    }
+    const endedAt = new Date();
+    const elapsed = Math.round(
+      (endedAt.getTime() - running.startedAt.getTime()) / MS_PER_MINUTE,
+    );
+    const minutes = Math.min(
+      TIME_ENTRY_MINUTES_MAX,
+      Math.max(MIN_TIMER_MINUTES, elapsed),
+    );
+    const record = await this.repository.finish(organizationId, running.id, {
+      minutes,
+      endedAt,
+    });
+    const dto = await this.toDto(organizationId, record);
+    await this.audit.record({
+      organizationId,
+      actorId: actor.userId,
+      actorType: 'user',
+      action: 'timeEntry.timer_stop',
       entityType: ENTITY_TYPE,
       entityId: dto.id,
       after: { ...dto },
@@ -162,6 +255,20 @@ export class TimeService {
     ]);
     return toTimeEntryDto(record, users);
   }
+}
+
+function toRunningTimerDto(
+  record: TimeEntryRecord,
+  userId: string,
+): RunningTimerDto {
+  return {
+    id: record.id,
+    userId,
+    taskId: record.taskId,
+    projectId: record.projectId,
+    clientId: record.clientId,
+    startedAt: record.startedAt.toISOString(),
+  };
 }
 
 function toTimeEntryDto(

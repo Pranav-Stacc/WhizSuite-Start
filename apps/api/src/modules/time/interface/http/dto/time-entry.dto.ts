@@ -15,6 +15,7 @@ import {
   TIME_ENTRY_MINUTES_MAX,
   TIME_ENTRY_NOTE_MAX_LENGTH,
   type TimeEntryCreateInput,
+  type TimerStartInput,
 } from '@agency-os/contracts';
 
 const trim = ({ value }: { value: unknown }) =>
@@ -57,4 +58,10 @@ export class CreateTimeEntryDto implements TimeEntryCreateInput {
   @IsOptional()
   @IsBoolean()
   billable?: boolean;
+}
+
+export class StartTimerDto implements TimerStartInput {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  taskId!: string;
 }

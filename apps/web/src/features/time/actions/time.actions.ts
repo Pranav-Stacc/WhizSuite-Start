@@ -2,6 +2,7 @@
 
 import { UserRoles, logTimeSchema } from '@agency-os/contracts';
 import { requireSession } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -10,6 +11,7 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { getProject } from '@/features/projects/services/projects.service';
 import { listTasks } from '@/features/tasks/services/tasks.service';
 import { timeRepository, timersRepository } from '../data/time.repository';
+import { startRunningTimer, stopRunningTimer } from '../data/timer.api';
 import { activeTimerFor } from '../services/time.service';
 
 const MS_PER_MINUTE = 60_000;
@@ -17,12 +19,16 @@ const MS_PER_MINUTE = 60_000;
 export async function startTimerAction(taskId: string): Promise<ActionResult> {
   return guarded(async () => {
     const session = await requireSession();
-    const task = (await listTasks()).find((x) => x.id === taskId);
-    if (!task) return fail(t('toast.failed'));
-    const existing = await activeTimerFor(session.userId);
-    if (existing) await timersRepository.remove(existing.id);
-    await timersRepository.create({ userId: session.userId, taskId, projectId: task.projectId, clientId: task.clientId, startedAt: new Date().toISOString() });
-    await recordAudit({ action: 'time.timer_started', entityType: 'task', entityId: task.id, entityLabel: task.title, summary: 'Started timer' });
+    if (isLiveMode) {
+      await startRunningTimer(taskId);
+    } else {
+      const task = (await listTasks()).find((x) => x.id === taskId);
+      if (!task) return fail(t('toast.failed'));
+      const existing = await activeTimerFor(session.userId);
+      if (existing) await timersRepository.remove(existing.id);
+      await timersRepository.create({ userId: session.userId, taskId, projectId: task.projectId, clientId: task.clientId, startedAt: new Date().toISOString() });
+      await recordAudit({ action: 'time.timer_started', entityType: 'task', entityId: task.id, entityLabel: task.title, summary: 'Started timer' });
+    }
     await refreshData('time');
     return succeed(undefined, t('dashboard.timer.started'));
   });
@@ -31,6 +37,11 @@ export async function startTimerAction(taskId: string): Promise<ActionResult> {
 export async function stopTimerAction(): Promise<ActionResult> {
   return guarded(async () => {
     const session = await requireSession();
+    if (isLiveMode) {
+      await stopRunningTimer();
+      await refreshData('time');
+      return succeed(undefined, t('dashboard.timer.saved'));
+    }
     const timer = await activeTimerFor(session.userId);
     if (!timer) return fail(t('toast.failed'));
     const minutes = Math.max(1, Math.round((Date.now() - new Date(timer.startedAt).getTime()) / MS_PER_MINUTE));

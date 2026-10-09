@@ -26,9 +26,17 @@ export interface TimeEntryRow {
   taskId?: string;
   minutes: number;
   startedAt: Date;
+  /** Omitted only for a running timer. */
+  endedAt?: Date;
   description?: string;
   billable: boolean;
 }
+
+/** Running timers have no end time; every finished entry does. */
+const FINISHED = {
+  endedAt: { not: null },
+} satisfies Prisma.TimeEntryWhereInput;
+const RUNNING = { endedAt: null } satisfies Prisma.TimeEntryWhereInput;
 
 @Injectable()
 export class TimeRepository {
@@ -36,7 +44,7 @@ export class TimeRepository {
 
   list(organizationId: string, limit: number): Promise<TimeEntryRecord[]> {
     return this.prisma.timeEntry.findMany({
-      where: { organizationId },
+      where: { organizationId, ...FINISHED },
       select: TIME_ENTRY_SELECT,
       orderBy: { startedAt: 'desc' },
       take: limit,
@@ -48,14 +56,53 @@ export class TimeRepository {
     id: string,
   ): Promise<TimeEntryRecord | null> {
     return this.prisma.timeEntry.findFirst({
-      where: { id, organizationId },
+      where: { id, organizationId, ...FINISHED },
       select: TIME_ENTRY_SELECT,
+    });
+  }
+
+  findRunning(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<TimeEntryRecord | null> {
+    return this.prisma.timeEntry.findFirst({
+      where: { organizationId, membershipId, ...RUNNING },
+      select: TIME_ENTRY_SELECT,
+      orderBy: { startedAt: 'desc' },
     });
   }
 
   create(organizationId: string, row: TimeEntryRow): Promise<TimeEntryRecord> {
     return this.prisma.timeEntry.create({
       data: { ...row, organizationId },
+      select: TIME_ENTRY_SELECT,
+    });
+  }
+
+  /** Discards any running timer of the member and starts a new one atomically. */
+  replaceRunning(
+    organizationId: string,
+    row: TimeEntryRow,
+  ): Promise<TimeEntryRecord> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.timeEntry.deleteMany({
+        where: { organizationId, membershipId: row.membershipId, ...RUNNING },
+      });
+      return tx.timeEntry.create({
+        data: { ...row, organizationId },
+        select: TIME_ENTRY_SELECT,
+      });
+    });
+  }
+
+  finish(
+    organizationId: string,
+    id: string,
+    data: { minutes: number; endedAt: Date; description?: string },
+  ): Promise<TimeEntryRecord> {
+    return this.prisma.timeEntry.update({
+      where: { id, organizationId },
+      data,
       select: TIME_ENTRY_SELECT,
     });
   }
