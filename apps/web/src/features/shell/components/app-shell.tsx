@@ -10,7 +10,9 @@ import { Badge } from '@/shared/ui/badge';
 import { Logo } from '@/shared/ui/logo';
 import { openInboxCount } from '@/features/inbox/services/inbox.service';
 import { pendingApprovals } from '@/features/content/services/content.service';
+import { WebPushRegistrar } from '@/features/notifications/components/web-push-registrar';
 import { listForUser } from '@/features/notifications/services/notifications.service';
+import { isLiveMode } from '@/shared/config/env';
 import { CommandPalette, SearchTrigger } from './command-palette';
 import { MobileDock, MobileMenu } from './mobile-nav';
 import { ModuleTabs } from './module-tabs';
@@ -31,6 +33,7 @@ export async function AppShell({ session, children }: { session: Session; childr
 
   return (
     <div className="min-h-dvh">
+      <WebPushRegistrar enabled={isLiveMode} />
       <a href="#main" className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 font-medium text-primary-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {t('shell.skip')}
       </a>
@@ -54,7 +57,7 @@ export async function AppShell({ session, children }: { session: Session; childr
               items={notifications.slice(0, 8).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, read: n.read, at: n.at }))}
               unread={notifications.filter((n) => !n.read).length}
             />
-            <ThemeCustomizer initial={theme} />
+            <ThemeCustomizer initial={theme} canSaveOrg={granted.has(Permissions.ORG_BRANDING_MANAGE)} />
             <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} settingsHref="/settings" />
           </div>
         </div>

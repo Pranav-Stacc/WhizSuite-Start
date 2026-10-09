@@ -47,6 +47,7 @@ export const contentMessages = {
   'content.field.caption.count': '{count} / {limit}',
   'content.composer.deleteConfirm': 'Confirm delete',
   'content.composer.slides': 'Slides · {count}',
+  'content.composer.upload': 'Upload assets',
   'content.composer.slides.pick': 'Choose from library',
   'content.composer.slides.done': 'Done',
   'content.composer.slides.empty': 'No media yet — choose slides from the library',

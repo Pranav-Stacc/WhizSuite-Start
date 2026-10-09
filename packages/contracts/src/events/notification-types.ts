@@ -3,6 +3,7 @@ export const NotificationTypeKeys = {
   TASK_ASSIGNED: 'task.assigned',
   CONTENT_APPROVED: 'content.approved',
   CONTENT_CHANGES_REQUESTED: 'content.changes_requested',
+  APPROVAL_REQUESTED: 'approval.requested',
 } as const;
 
 export type NotificationTypeKey =
@@ -12,5 +13,6 @@ export type NotificationTypeKey =
 export interface NotificationData {
   taskId?: string;
   contentId?: string;
+  approvalRequestId?: string;
   title?: string;
 }

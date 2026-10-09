@@ -15,6 +15,8 @@ export interface Asset extends Entity {
   tags: string[];
   uploadedBy: string;
   createdAt: string;
+  folderId?: string | null;
+  projectId?: string | null;
   /** Inline preview URL, present only for ready assets. */
   url?: string;
 }

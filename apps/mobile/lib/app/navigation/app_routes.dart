@@ -3,6 +3,7 @@ abstract final class AppRoutes {
   static const splash = '/splash';
   static const login = '/login';
   static const register = '/register';
+  static const portalAccess = '/portal-access';
   static const home = '/home';
   static const more = '/more';
   static const notifications = '/notifications';
@@ -10,5 +11,5 @@ abstract final class AppRoutes {
   static const appearance = '/settings/appearance';
   static const notificationPreferences = '/settings/notifications';
 
-  static const public = {login, register};
+  static const public = {login, register, portalAccess};
 }

@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Platform } from '@agency-os/contracts';
+import { ApiError } from '@/shared/api/api-client';
 import { isLiveMode } from '@/shared/config/env';
 import { listContent } from '@/features/content/services/content.service';
 import { listInvoices } from '@/features/invoices/services/invoices.service';
@@ -66,8 +67,14 @@ async function riskSignalsByClient(): Promise<Map<string, RiskSignals>> {
 
 async function withLiveHealth(clients: Client[]): Promise<Client[]> {
   if (!isLiveMode || clients.length === 0) return clients;
-  const signals = await riskSignalsByClient();
-  return clients.map((client) => ({ ...client, health: scoreHealth(client, signals.get(client.id)) }));
+  try {
+    const signals = await riskSignalsByClient();
+    return clients.map((client) => ({ ...client, health: scoreHealth(client, signals.get(client.id)) }));
+  } catch (error) {
+    // Portal / narrow roles may lack invoice or content list access — keep stored health.
+    if (error instanceof ApiError) return clients;
+    throw error;
+  }
 }
 
 export async function listClients(): Promise<Client[]> {

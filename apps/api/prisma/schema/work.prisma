@@ -66,6 +66,8 @@ model Task {
   projectId      String    @map("project_id") @db.Uuid
   parentId       String?   @map("parent_id") @db.Uuid
   contentItemId  String?   @map("content_item_id") @db.Uuid
+  /// Optional link to a calendar event (e.g. shoot day tasks).
+  calendarItemId String?   @map("calendar_item_id") @db.Uuid
   title          String
   description    String?
   type           String?
@@ -91,6 +93,7 @@ model Task {
   comments     TaskComment[]
 
   @@index([organizationId, projectId, status])
+  @@index([organizationId, calendarItemId])
   @@map("tasks")
   @@schema("work")
 }

@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { Session } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Logo } from '@/shared/ui/logo';
+import { WebPushRegistrar } from '@/features/notifications/components/web-push-registrar';
 import { UserMenu } from '@/features/shell/components/shell-actions';
 import { PortalDesktopNav, PortalMobileDock, PortalMobileMenu } from './portal-mobile-nav';
 import { portalSummary } from '../services/portal.service';
@@ -12,6 +14,7 @@ export async function PortalShell({ session, children }: { session: Session; chi
 
   return (
     <div className="min-h-dvh bg-background">
+      <WebPushRegistrar enabled={isLiveMode} />
       <a href="#main" className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 font-medium text-primary-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {t('shell.skip')}
       </a>

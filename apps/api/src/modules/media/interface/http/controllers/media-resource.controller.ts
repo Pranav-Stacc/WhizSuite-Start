@@ -24,8 +24,11 @@ import { RequirePermissions } from '../../../../../shared/auth/permissions.decor
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { MediaService } from '../../../application/services/media.service';
 import {
+  ListMediaAssetsQueryDto,
   MediaDownloadQueryDto,
   PresignMediaUploadDto,
+  RecordMediaUsageDto,
+  TagMediaAssetDto,
   UpdateMediaAssetDto,
 } from '../dto/media.dto';
 
@@ -38,8 +41,11 @@ export class MediaResourceController {
 
   @Get()
   @RequirePermissions(Permissions.FILES_VIEW)
-  list(@Param('organizationId') organizationId: string) {
-    return this.service.list(requireOrganizationId(organizationId));
+  list(
+    @Param('organizationId') organizationId: string,
+    @Query() query: ListMediaAssetsQueryDto,
+  ) {
+    return this.service.list(requireOrganizationId(organizationId), query);
   }
 
   @Post('presign')
@@ -50,6 +56,20 @@ export class MediaResourceController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.createPresignedUpload(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Post('usage')
+  @RequirePermissions(Permissions.FILES_UPLOAD)
+  recordUsage(
+    @Param('organizationId') organizationId: string,
+    @Body() body: RecordMediaUsageDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.recordUsage(
       requireOrganizationId(organizationId),
       user.userId,
       body,
@@ -109,6 +129,22 @@ export class MediaResourceController {
       user.userId,
       id,
       body,
+    );
+  }
+
+  @Post(':id/tags')
+  @RequirePermissions(Permissions.FILES_UPLOAD)
+  setTags(
+    @Param('organizationId') organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: TagMediaAssetDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.setTags(
+      requireOrganizationId(organizationId),
+      user.userId,
+      id,
+      body.tags,
     );
   }
 

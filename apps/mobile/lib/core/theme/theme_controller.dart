@@ -8,7 +8,8 @@ import 'theme_settings.dart';
 
 /// The device's appearance settings; persisted locally like the web `ao_theme` cookie.
 class ThemeController extends Notifier<ThemeSettings> {
-  static const _storageKey = 'appearance.theme';
+  /// Bumped so existing installs pick up the dark mobile default once.
+  static const _storageKey = 'appearance.theme.v2';
 
   @override
   ThemeSettings build() {
@@ -31,6 +32,9 @@ class ThemeController extends Notifier<ThemeSettings> {
   void setDensity(ThemeDensity density) => _save(state.copyWith(density: density));
 
   void reset() => _save(defaultThemeSettings);
+
+  /// Applies the agency theme after login so every team and client member sees the same colours.
+  void hydrateFromOrganization(ThemeSettings theme) => _save(theme);
 
   void _save(ThemeSettings next) {
     state = next;

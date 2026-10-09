@@ -27,6 +27,8 @@ function asset(overrides: Partial<MediaAssetRecord> = {}): MediaAssetRecord {
     organizationId: ORG,
     clientId: null,
     folderId: null,
+    projectId: null,
+    calendarItemId: null,
     name: 'photo.png',
     mimeType: 'image/png',
     sizeBytes: BigInt(SIZE),
@@ -35,6 +37,7 @@ function asset(overrides: Partial<MediaAssetRecord> = {}): MediaAssetRecord {
     createdById: ACTOR,
     createdAt: now,
     updatedAt: now,
+    tags: [],
     ...overrides,
   };
 }
@@ -50,6 +53,8 @@ function setup() {
     update: jest.fn(),
     setStatus: jest.fn(),
     softDelete: jest.fn(),
+    setAssetTags: jest.fn().mockResolvedValue([]),
+    recordUsage: jest.fn(),
   };
   const storage = {
     createPresignedUpload: jest.fn().mockResolvedValue({

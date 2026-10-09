@@ -27,7 +27,7 @@ class OverviewScrollView extends StatelessWidget {
       onRefresh: onRefresh,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.xxl * 2),
+        padding: EdgeInsets.fromLTRB(tokens.md, tokens.md, tokens.md, tokens.xxl),
         children: [
           Center(
             child: ConstrainedBox(
@@ -99,12 +99,12 @@ class OverviewColumns extends StatelessWidget {
   }
 }
 
-/// Responsive grid of KPI tiles (two per row on phones).
+/// Responsive grid of KPI tiles (two per row on phones, denser gaps).
 class MetricGrid extends StatelessWidget {
   const MetricGrid({required this.tiles, required this.semanticLabel, super.key});
 
-  static const _minTileWidth = 152.0;
-  static const _maxColumns = 6;
+  static const _minTileWidth = 140.0;
+  static const _maxColumns = 4;
   static const _minColumns = 2;
 
   final List<Widget> tiles;
@@ -114,7 +114,7 @@ class MetricGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     if (tiles.isEmpty) return const SizedBox.shrink();
-    final gap = tokens.sm + tokens.xs;
+    final gap = tokens.sm;
     return Semantics(
       container: true,
       label: semanticLabel,
@@ -188,9 +188,9 @@ class AsyncMetricTile<T> extends StatelessWidget {
 class _MetricSkeleton extends StatelessWidget {
   const _MetricSkeleton({required this.label, required this.icon});
 
-  static const _valueHeight = 28.0;
-  static const _valueWidth = 72.0;
-  static const _captionWidth = 96.0;
+  static const _valueHeight = 22.0;
+  static const _valueWidth = 56.0;
+  static const _captionWidth = 80.0;
 
   final String label;
   final IconData icon;
@@ -200,7 +200,7 @@ class _MetricSkeleton extends StatelessWidget {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
     return SurfaceCard(
-      padding: EdgeInsets.fromLTRB(tokens.md, tokens.md, tokens.md, tokens.sm + tokens.xs),
+      padding: EdgeInsets.fromLTRB(tokens.sm + tokens.xs, tokens.sm, tokens.sm + tokens.xs, tokens.sm),
       semanticLabel: label,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,19 +212,19 @@ class _MetricSkeleton extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: text.labelMedium?.copyWith(color: tokens.muted),
+                  style: text.labelSmall?.copyWith(color: tokens.muted),
                 ),
               ),
-              Icon(icon, size: 18, color: tokens.border),
+              Icon(icon, size: 16, color: tokens.border),
             ],
           ),
-          SizedBox(height: tokens.xs + 2),
+          SizedBox(height: tokens.xs),
           const Shimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonBox(width: _valueWidth, height: _valueHeight),
-                SizedBox(height: 8),
+                SizedBox(height: 6),
                 SkeletonBox(width: _captionWidth, height: 10),
               ],
             ),

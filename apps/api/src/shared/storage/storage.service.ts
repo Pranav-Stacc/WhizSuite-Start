@@ -1,7 +1,8 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  CopyObjectCommand,
   CreateBucketCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
@@ -22,6 +23,12 @@ const HTTP_NOT_FOUND = 404;
 export interface StoredObjectMetadata {
   sizeBytes: number;
   contentType: string | undefined;
+}
+
+export interface CopiedObjectResult {
+  storageKey: string;
+  contentHash: string;
+  sizeBytes: number;
 }
 
 @Injectable()
@@ -143,6 +150,39 @@ export class StorageService {
       if (isNotFound(error)) return null;
       throw error;
     }
+  }
+
+  /**
+   * Copies an object to a new key and returns a SHA-256 of the bytes.
+   * Used to freeze signed agreement PDFs at signing time.
+   */
+  async copyObjectImmutable(input: {
+    sourceKey: string;
+    organizationId: string;
+    filename: string;
+  }): Promise<CopiedObjectResult> {
+    await this.ensureBucket();
+    const storageKey = this.buildObjectKey(input.organizationId, input.filename);
+    await this.client.send(
+      new CopyObjectCommand({
+        Bucket: this.bucket,
+        CopySource: `${this.bucket}/${input.sourceKey}`,
+        Key: storageKey,
+        MetadataDirective: 'COPY',
+      }),
+    );
+    const object = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: storageKey }),
+    );
+    const bytes = await object.Body?.transformToByteArray();
+    if (!bytes?.length) {
+      throw new Error(`Signed copy ${storageKey} is empty`);
+    }
+    return {
+      storageKey,
+      contentHash: createHash('sha256').update(bytes).digest('hex'),
+      sizeBytes: bytes.byteLength,
+    };
   }
 
   async deleteObjects(storageKeys: string[]): Promise<void> {

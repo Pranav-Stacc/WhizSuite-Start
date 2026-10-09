@@ -1,15 +1,27 @@
 import { Permissions, type Permission } from '@agency-os/contracts';
 
-export const CLIENT_WORKSPACE_SECTIONS = ['overview', 'grid', 'calendar', 'messages', 'assets', 'invoices', 'integrations'] as const;
+export const CLIENT_WORKSPACE_SECTIONS = [
+  'overview',
+  'brand',
+  'grid',
+  'calendar',
+  'messages',
+  'assets',
+  'agreements',
+  'invoices',
+  'integrations',
+] as const;
 export type ClientSection = (typeof CLIENT_WORKSPACE_SECTIONS)[number];
 
 /** Permission the API requires for the data each workspace section shows. */
 const SECTION_PERMISSION: Record<ClientSection, Permission> = {
   overview: Permissions.CLIENTS_VIEW,
+  brand: Permissions.CLIENTS_VIEW,
   grid: Permissions.CONTENT_VIEW,
   calendar: Permissions.CONTENT_VIEW,
   messages: Permissions.INBOX_VIEW,
   assets: Permissions.FILES_VIEW,
+  agreements: Permissions.INVOICES_VIEW,
   invoices: Permissions.INVOICES_VIEW,
   integrations: Permissions.INTEGRATIONS_MANAGE,
 };

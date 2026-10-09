@@ -51,3 +51,7 @@ export type AutomationAction = (typeof AutomationActions)[number];
 
 export const MembershipTypes = ['OWNER', 'ADMIN', 'MEMBER', 'CLIENT'] as const;
 export type MembershipType = (typeof MembershipTypes)[number];
+
+/** Shareable portal access link: temporary guest session vs permanent account. */
+export const PortalAccessModes = ['TEMPORARY', 'PERMANENT'] as const;
+export type PortalAccessMode = (typeof PortalAccessModes)[number];

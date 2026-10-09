@@ -71,6 +71,30 @@ export async function inviteMember(
   });
 }
 
+export interface PortalAccessLinkCreated {
+  linkId: string;
+  shareUrl: string;
+  accessMode: string;
+  membershipTtlHours: number | null;
+  maxUses: number | null;
+  expiresAt: string;
+}
+
+export async function createPortalAccessLink(input: {
+  clientId: string;
+  accessMode?: string;
+  linkExpiresInHours?: number;
+  membershipTtlHours?: number;
+  maxUses?: number;
+  allowedDomains?: string[];
+}): Promise<PortalAccessLinkCreated> {
+  const org = await orgId();
+  return apiFetch<PortalAccessLinkCreated>(orgPath(org, 'portal-access-links'), {
+    method: 'POST',
+    body: input,
+  });
+}
+
 export async function markNotificationRead(notificationId: string): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'notifications')}/${notificationId}/read`, { method: 'PATCH' });

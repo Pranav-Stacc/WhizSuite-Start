@@ -51,6 +51,11 @@ export class CreateCalendarItemDto {
   @IsUUID()
   clientId?: string;
 
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
+
   @ApiProperty({ required: false, type: Object })
   @IsOptional()
   @IsObject()

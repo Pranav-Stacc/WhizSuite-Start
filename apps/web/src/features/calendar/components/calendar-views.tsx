@@ -1,28 +1,89 @@
 import Link from 'next/link';
-import { CheckSquare, PencilLine } from 'lucide-react';
+import {
+  Camera,
+  CheckSquare,
+  ClipboardCheck,
+  Flag,
+  Megaphone,
+  PencilLine,
+  Receipt,
+  CalendarDays,
+} from 'lucide-react';
+import {
+  ContentStatuses,
+  TaskStatuses,
+  type ContentStatus,
+  type TaskStatus,
+} from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { formatDate, toDateKey } from '@/shared/lib/format';
 import { MediaThumb } from '@/shared/ui/media-thumb';
 import { PlatformStack } from '@/shared/ui/platform';
 import { StatusBadge } from '@/shared/ui/status';
-import type { CalendarItem } from '../services/calendar.service';
+import type { CalendarItem, CalendarKind } from '../services/calendar.service';
 
-const MAX_CHIPS_PER_DAY = 3;
+function asContentStatus(value: string | undefined): ContentStatus | undefined {
+  return ContentStatuses.find((s) => s === value);
+}
+
+function asTaskStatus(value: string | undefined): TaskStatus | undefined {
+  return TaskStatuses.find((s) => s === value);
+}
+
+const MAX_CHIPS_PER_DAY = 8;
+
+const KIND_ICON: Record<CalendarKind, typeof PencilLine> = {
+  content: PencilLine,
+  task: CheckSquare,
+  shoot: Camera,
+  approval: ClipboardCheck,
+  campaign: Megaphone,
+  invoice: Receipt,
+  milestone: Flag,
+  meeting: CalendarDays,
+  deadline: Flag,
+  manual: CalendarDays,
+};
+
+function kindLabel(kind: CalendarKind): string {
+  switch (kind) {
+    case 'content':
+      return t('calendar.legend.content');
+    case 'task':
+      return t('calendar.legend.tasks');
+    case 'shoot':
+      return t('calendar.legend.shoots');
+    case 'approval':
+      return t('calendar.legend.approvals');
+    case 'campaign':
+      return t('calendar.legend.campaigns');
+    case 'invoice':
+      return t('calendar.legend.invoices');
+    case 'milestone':
+      return t('calendar.legend.milestones');
+    case 'meeting':
+      return t('calendar.legend.meetings');
+    case 'deadline':
+      return t('calendar.legend.deadlines');
+    default:
+      return t('calendar.legend.manual');
+  }
+}
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
 function ItemChip({ item }: { item: CalendarItem }) {
-  const Icon = item.kind === 'content' ? PencilLine : CheckSquare;
+  const Icon = KIND_ICON[item.kind] ?? CalendarDays;
   const thumb = item.kind === 'content' ? item.thumb : undefined;
   return (
     <Link
       href={item.href}
-      title={item.title}
+      title={`${kindLabel(item.kind)}: ${item.title}${item.platforms?.length ? ` · ${item.platforms.join(', ')}` : ''}`}
       className="flex items-center gap-1.5 truncate border-l-2 bg-surface px-1.5 py-1 text-[11px] leading-tight transition-colors hover:bg-surface-2"
-      style={{ borderLeftColor: item.clientColor }}
+      style={{ borderLeftColor: item.clientColor || 'var(--border)' }}
     >
       {thumb ? (
         <span className="size-5 shrink-0 overflow-hidden">
@@ -31,7 +92,8 @@ function ItemChip({ item }: { item: CalendarItem }) {
       ) : (
         <Icon className="size-3 shrink-0 text-muted" aria-hidden />
       )}
-      <span className="truncate">{item.title}</span>
+      <span className="min-w-0 flex-1 truncate">{item.title}</span>
+      {item.kind === 'content' && item.platforms?.length ? <PlatformStack platforms={item.platforms} size="xs" /> : null}
     </Link>
   );
 }
@@ -61,13 +123,20 @@ export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridP
             const items = itemsByDay.get(key) ?? [];
             const inMonth = day.getMonth() === month;
             return (
-              <div key={key} className={cn('min-h-32 border-b border-r border-border-soft p-2 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-background/60')}>
-                <p className={cn('mb-1.5 inline-block px-0.5 text-[12px] tabular-nums', key === todayKey ? 'border-b border-foreground text-foreground' : inMonth ? 'text-foreground' : 'text-muted/50')}>
-                  {day.getDate()}
-                </p>
-                <ul className="space-y-1">
+              <div key={key} className={cn('min-h-36 border-b border-r border-border-soft p-2 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-background/60')}>
+                <div className="mb-1.5 flex items-baseline justify-between gap-1">
+                  <p className={cn('inline-block px-0.5 text-[12px] tabular-nums', key === todayKey ? 'border-b border-foreground text-foreground' : inMonth ? 'text-foreground' : 'text-muted/50')}>
+                    {day.getDate()}
+                  </p>
+                  {items.length > 1 ? (
+                    <span className="text-[10px] tabular-nums text-muted" title={t('calendar.day.count', { count: items.length })}>
+                      {items.length}
+                    </span>
+                  ) : null}
+                </div>
+                <ul className="max-h-40 space-y-1 overflow-y-auto">
                   {items.slice(0, MAX_CHIPS_PER_DAY).map((item) => (
-                    <li key={`${item.kind}-${item.id}`}>
+                    <li key={`${item.kind}-${item.id}-${item.at}`}>
                       <ItemChip item={item} />
                     </li>
                   ))}
@@ -91,22 +160,28 @@ export function Agenda({ itemsByDay }: { itemsByDay: Map<string, CalendarItem[]>
           <h2 className="mb-2 text-sm font-semibold text-muted">{formatDate(key, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
           <ul className="card-surface divide-y divide-border-soft">
             {(itemsByDay.get(key) ?? []).map((item) => (
-              <li key={`${item.kind}-${item.id}`}>
+              <li key={`${item.kind}-${item.id}-${item.at}`}>
                 <Link href={item.href} className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2">
-                  <span className="h-8 w-1 rounded-full" style={{ background: item.clientColor }} />
+                  <span className="h-8 w-1 rounded-full" style={{ background: item.clientColor || 'var(--border)' }} />
                   <span className="w-16 shrink-0 text-xs tabular-nums text-muted">{timeOf(item.at)}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{item.title}</span>
-                    <span className="text-xs text-muted">{item.kind === 'content' ? t('calendar.legend.content') : t('calendar.legend.tasks')}</span>
+                    <span className="text-xs text-muted">{kindLabel(item.kind)}</span>
                   </span>
-                  {item.kind === 'content' ? (
-                    <>
-                      <PlatformStack platforms={item.platforms} size="xs" />
-                      <StatusBadge kind="content" value={item.status} dot={false} />
-                    </>
-                  ) : (
-                    <StatusBadge kind="task" value={item.status} dot={false} />
-                  )}
+                  {(() => {
+                    const contentStatus = item.kind === 'content' ? asContentStatus(item.status) : undefined;
+                    const taskStatus = item.kind === 'task' ? asTaskStatus(item.status) : undefined;
+                    if (item.kind === 'content' && item.platforms) {
+                      return (
+                        <>
+                          <PlatformStack platforms={item.platforms} size="xs" />
+                          {contentStatus ? <StatusBadge kind="content" value={contentStatus} dot={false} /> : null}
+                        </>
+                      );
+                    }
+                    if (taskStatus) return <StatusBadge kind="task" value={taskStatus} dot={false} />;
+                    return null;
+                  })()}
                 </Link>
               </li>
             ))}

@@ -19,18 +19,26 @@ model Invitation {
 }
 
 model InvitationLink {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  tokenHash      String   @map("token_hash")
-  membershipType String   @map("membership_type")
-  roleIds        String[] @map("role_ids") @db.Uuid
-  maxUses        Int?     @map("max_uses")
-  useCount       Int      @default(0) @map("use_count")
-  allowedDomains String[] @map("allowed_domains")
-  expiresAt      DateTime @map("expires_at") @db.Timestamptz
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id                   String   @id @default(uuid()) @db.Uuid
+  organizationId       String   @map("organization_id") @db.Uuid
+  tokenHash            String   @unique @map("token_hash")
+  membershipType       String   @map("membership_type")
+  roleIds              String[] @map("role_ids") @db.Uuid
+  /// CLIENT scope (and future scopes) carried on the shareable link.
+  scopePayload         Json?    @map("scope_payload")
+  /// TEMPORARY | PERMANENT — temporary memberships get expiresAt on redeem.
+  accessMode           String   @default("TEMPORARY") @map("access_mode")
+  /// How long a TEMPORARY membership lasts after redeem (hours).
+  membershipTtlHours   Int?     @map("membership_ttl_hours")
+  maxUses              Int?     @map("max_uses")
+  useCount             Int      @default(0) @map("use_count")
+  allowedDomains       String[] @map("allowed_domains")
+  status               String   @default("ACTIVE")
+  createdById          String   @map("created_by_id") @db.Uuid
+  expiresAt            DateTime @map("expires_at") @db.Timestamptz
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  @@index([organizationId])
+  @@index([organizationId, status])
   @@map("invitation_links")
   @@schema("invitations")
 }

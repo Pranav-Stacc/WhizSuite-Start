@@ -28,6 +28,14 @@ class ApiClient {
   Future<T> get<T>(String path, {Map<String, Object?>? query}) =>
       _send(() => _dio.get<T>(path, queryParameters: _clean(query)));
 
+  Future<T> getUnauthenticated<T>(String path, {Map<String, Object?>? query}) => _send(
+        () => _dio.get<T>(
+          path,
+          queryParameters: _clean(query),
+          options: unauthenticated(),
+        ),
+      );
+
   Future<T> post<T>(String path, {Object? body, bool authenticated = true}) => _send(
         () => _dio.post<T>(path, data: body, options: authenticated ? null : unauthenticated()),
       );

@@ -41,6 +41,25 @@ class CalendarItem {
     );
   }
 
+  /// Feed rows may use composite ids (`content:…`); keep `sourceId` for deep links.
+  factory CalendarItem.fromFeedJson(Json json) {
+    final type = json.str('sourceType');
+    final meta = Map<String, Object?>.from(json.object('metadata') ?? const {});
+    final projectId = json.strOrNull('projectId');
+    if (projectId != null) meta.putIfAbsent(projectKey, () => projectId);
+    return CalendarItem(
+      id: json.str('sourceId', json.str('id')),
+      sourceType: CalendarSourceTypes.values.contains(type) ? type : type,
+      sourceId: json.str('sourceId', json.str('id')),
+      title: json.str('title'),
+      startsAt: json.date('startsAt') ?? DateTime.now(),
+      endsAt: json.date('endsAt'),
+      allDay: json.flag('allDay'),
+      clientId: json.strOrNull('clientId'),
+      metadata: meta,
+    );
+  }
+
   static const visibilityKey = 'visibility';
   static const projectKey = 'projectId';
 

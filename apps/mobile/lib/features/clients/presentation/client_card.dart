@@ -25,6 +25,7 @@ class ClientCard extends StatelessWidget {
     final contact = client.primaryContact;
     return SurfaceCard(
       onTap: onTap,
+      padding: EdgeInsets.all(tokens.md),
       semanticLabel: '${client.name}, ${clientStatusLabel(l10n, client.status)}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -32,19 +33,19 @@ class ClientCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InitialsAvatar(name: client.name, seed: client.id, mark: true, size: 44),
-              SizedBox(width: tokens.md),
+              InitialsAvatar(name: client.name, seed: client.id, mark: true, size: 40),
+              SizedBox(width: tokens.sm + tokens.xs),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(client.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleMedium),
+                    Text(client.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleSmall),
                     if (subtitle != null)
                       Text(
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: text.bodySmall?.copyWith(color: tokens.muted),
+                        style: text.labelSmall?.copyWith(color: tokens.muted),
                       ),
                   ],
                 ),
@@ -53,7 +54,7 @@ class ClientCard extends StatelessWidget {
               StatusBadge(label: clientStatusLabel(l10n, client.status), tone: clientStatusTone(client.status)),
             ],
           ),
-          SizedBox(height: tokens.lg),
+          SizedBox(height: tokens.sm + tokens.xs),
           Row(
             children: [
               Expanded(
@@ -68,7 +69,7 @@ class ClientCard extends StatelessWidget {
             ],
           ),
           if (contact != null) ...[
-            SizedBox(height: tokens.md),
+            SizedBox(height: tokens.sm),
             Row(
               children: [
                 InitialsAvatar(name: contact.name, size: 22),

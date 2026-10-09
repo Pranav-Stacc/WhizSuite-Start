@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import { toInputJson } from '../../../../shared/database/prisma-json.util';
 
 export interface ApprovalStepRow {
   name: string;
   rule: string;
-  approverIds: string[];
+  /** Full approver spec including resolved user ids. */
+  approverSpec: Record<string, unknown>;
 }
 
 export interface ApprovalCreateRow {
@@ -48,6 +51,37 @@ export class ApprovalsRepository {
     });
   }
 
+  /** Pending requests whose due (or created) date falls in range — calendar feed. */
+  listPendingInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+    limit: number,
+  ) {
+    return this.prisma.approvalRequest.findMany({
+      where: {
+        organizationId,
+        status: 'PENDING',
+        OR: [
+          { dueAt: { gte: range.from, lt: range.to } },
+          {
+            dueAt: null,
+            createdAt: { gte: range.from, lt: range.to },
+          },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        subjectType: true,
+        subjectId: true,
+        status: true,
+        dueAt: true,
+        createdAt: true,
+      },
+    });
+  }
+
   findById(organizationId: string, id: string) {
     return this.prisma.approvalRequest.findFirst({
       where: { id, organizationId },
@@ -70,7 +104,8 @@ export class ApprovalsRepository {
             order: index + 1,
             name: step.name,
             rule: step.rule,
-            approverSpec: { approverIds: step.approverIds },
+            approverSpec:
+              toInputJson(step.approverSpec) ?? Prisma.JsonNull,
             status: 'PENDING',
           })),
         },

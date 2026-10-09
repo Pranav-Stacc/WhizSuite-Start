@@ -43,7 +43,9 @@ export function WorkflowCard({ workflow, editHref }: WorkflowCardProps) {
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft bg-surface-2 px-2.5 py-1">
               <span className="grid size-4 place-items-center rounded-full bg-primary/16 text-[10px] font-semibold text-primary">{index + 1}</span>
               {stage.name}
-              {stage.assigneeRoleId ? <UserCheck className="size-3 text-muted" aria-hidden /> : null}
+              {stage.assigneeRoleId || (stage.roleIds?.length ?? 0) > 0 || (stage.approverIds?.length ?? 0) > 0 ? (
+                <UserCheck className="size-3 text-muted" aria-hidden />
+              ) : null}
             </span>
             {index < workflow.stages.length - 1 ? <ChevronRight className="mx-0.5 size-4 text-muted" aria-hidden /> : null}
           </li>

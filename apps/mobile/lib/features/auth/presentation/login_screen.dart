@@ -10,7 +10,9 @@ import '../../../core/widgets/buttons.dart';
 import '../../../core/widgets/error_message.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../core/config/app_config.dart';
 import '../application/session_controller.dart';
+import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
 import 'auth_layout.dart';
 
@@ -26,6 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _submitting = false;
+  bool _googleSubmitting = false;
   String? _error;
 
   @override
@@ -52,11 +55,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _submitGoogle() async {
+    final l10n = AppLocalizations.of(context);
+    setState(() {
+      _googleSubmitting = true;
+      _error = null;
+    });
+    try {
+      final idToken = await ref.read(googleSignInServiceProvider).obtainIdToken();
+      await ref.read(sessionProvider.notifier).signInWithGoogle(idToken: idToken);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      if (error.detail == 'cancelled') {
+        setState(() => _error = l10n.authGoogleCancelled);
+      } else if (error.kind == ApiFailureKind.notFound) {
+        setState(() => _error = l10n.authGoogleNoAccount);
+      } else if (error.kind == ApiFailureKind.unauthorized) {
+        setState(() => _error = l10n.authGoogleInvalid);
+      } else {
+        setState(() => _error = describeError(l10n, error));
+      }
+    } finally {
+      if (mounted) setState(() => _googleSubmitting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final validators = Validators(l10n);
     final tokens = context.tokens;
+    final googleEnabled = ref.watch(appConfigProvider).googleSignInEnabled;
+    final busy = _submitting || _googleSubmitting;
     return AuthLayout(
       title: l10n.authLoginTitle,
       subtitle: l10n.authLoginSubtitle,
@@ -66,6 +96,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormErrorBanner(message: _error),
+            if (googleEnabled) ...[
+              OutlinedButton.icon(
+                onPressed: busy ? null : _submitGoogle,
+                icon: _googleSubmitting
+                    ? SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
+                      )
+                    : const Icon(Icons.g_mobiledata_rounded),
+                label: Text(l10n.authGoogleButton),
+              ),
+              SizedBox(height: tokens.lg),
+              Text(
+                l10n.authOrEmail,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              SizedBox(height: tokens.lg),
+            ],
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
@@ -82,7 +131,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onSubmitted: (_) => _submit(),
             ),
             SizedBox(height: tokens.xl),
-            PrimaryButton(label: l10n.authLoginSubmit, loading: _submitting, onPressed: _submit, icon: Icons.arrow_forward),
+            PrimaryButton(label: l10n.authLoginSubmit, loading: _submitting, onPressed: busy ? null : _submit, icon: Icons.arrow_forward),
           ],
         ),
       ),

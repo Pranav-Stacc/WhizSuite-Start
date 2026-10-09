@@ -12,6 +12,20 @@ export class TenancyRepository {
     });
   }
 
+  getSetting(organizationId: string, key: string) {
+    return this.prisma.organizationSetting.findUnique({
+      where: { organizationId_key: { organizationId, key } },
+    });
+  }
+
+  upsertSetting(organizationId: string, key: string, value: unknown) {
+    return this.prisma.organizationSetting.upsert({
+      where: { organizationId_key: { organizationId, key } },
+      create: { organizationId, key, value: value as object },
+      update: { value: value as object },
+    });
+  }
+
   findOrganizationBySlug(slug: string) {
     return this.prisma.organization.findUnique({ where: { slug } });
   }

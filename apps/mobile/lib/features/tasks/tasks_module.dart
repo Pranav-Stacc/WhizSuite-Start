@@ -16,7 +16,7 @@ final tasksModule = FeatureModule(
       anyOf: const [Permissions.tasksView],
       audiences: staffOnly,
       group: NavGroup.work,
-      primary: true,
+      primary: false,
     ),
   ],
   routes: [

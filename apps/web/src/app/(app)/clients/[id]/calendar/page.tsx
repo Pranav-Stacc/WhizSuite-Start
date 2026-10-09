@@ -1,13 +1,15 @@
-import { type ContentStatus, Permissions } from '@agency-os/contracts';
+import { Platforms, type ContentStatus, type Platform, Permissions } from '@agency-os/contracts';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { can, requirePermission } from '@/shared/auth/permissions';
+import { isLiveMode } from '@/shared/config/env';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
 import { initials, toDateKey } from '@/shared/lib/format';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
+import { PLATFORM_META } from '@/shared/ui/platform';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { MonthGrid } from '@/features/calendar/components/calendar-views';
 import { contentCalendarItem, groupByDay, isScheduled, monthGrid } from '@/features/calendar/services/calendar.service';
@@ -67,13 +69,16 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
   const base = `/clients/${client.id}/calendar`;
   const view: View = VIEWS.find((v) => v === param(sp, 'view')) ?? 'sheet';
   const filter: StatusFilter = (Object.keys(STATUS_FILTERS) as StatusFilter[]).find((f) => f === param(sp, 's')) ?? 'all';
+  const platform = Platforms.find((p) => p === param(sp, 'platform')) as Platform | undefined;
   const hideEmpty = param(sp, 'empty') === 'hide';
   const ref = parseMonth(param(sp, 'm'));
   const link = (overrides: Record<string, string | undefined>) => withQuery(base, sp, overrides);
 
   const planner = await loadPlanner(client.id);
   const statuses: readonly ContentStatus[] | undefined = STATUS_FILTERS[filter];
-  const filtered = planner.posts.filter((p) => !statuses || statuses.includes(p.status));
+  const filtered = planner.posts.filter(
+    (p) => (!statuses || statuses.includes(p.status)) && (!platform || p.platforms.includes(platform)),
+  );
   const monthPosts = filtered.filter((p) => inMonth(p, ref));
   const prev = shiftMonth(ref, -1);
   const next = shiftMonth(ref, 1);
@@ -137,7 +142,7 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
   }
 
   return (
-    <PlannerDrawerProvider {...planner.drawer}>
+    <PlannerDrawerProvider {...planner.drawer} uploadEnabled={isLiveMode}>
       <section>
         <SectionHeading number={clientSectionNumber('calendar')} title={t('clients.workspace.calendar')}>
           {viewNav}
@@ -160,6 +165,16 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
                 label: t(`sheet.filter.${f}`),
                 active: f === filter,
               }))}
+            />
+            <FilterChips
+              items={[
+                { href: link({ platform: undefined }), label: t('calendar.filter.platformAll'), active: !platform },
+                ...Platforms.map((p) => ({
+                  href: link({ platform: p }),
+                  label: PLATFORM_META[p].label,
+                  active: platform === p,
+                })),
+              ]}
             />
             {view === 'sheet' ? (
               <Link href={link({ empty: hideEmpty ? undefined : 'hide' })} className="nav-link ml-auto" aria-pressed={hideEmpty}>

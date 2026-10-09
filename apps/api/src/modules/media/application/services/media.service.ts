@@ -7,6 +7,7 @@ import {
   type MediaAssetStatus,
   type MediaDownloadDisposition,
   type MediaDownloadUrlDto,
+  type ListMediaAssetsQuery,
   type PresignMediaUploadInput,
   type PresignedMediaUploadDto,
   type UpdateMediaAssetInput,
@@ -47,11 +48,15 @@ export class MediaService {
   ) {}
 
   /** Library listing; ready images/videos carry a short-lived inline `previewUrl` for thumbnails. */
-  async list(organizationId: string): Promise<MediaAssetDto[]> {
+  async list(
+    organizationId: string,
+    query: ListMediaAssetsQuery = {},
+  ): Promise<MediaAssetDto[]> {
     const assets = await this.repository.list(
       organizationId,
       this.config.get('MEDIA_LIST_LIMIT', { infer: true }),
       TenantContext.clientScope(),
+      query,
     );
     const previewable = assets
       .filter((a) => a.status === 'READY' && isPreviewable(a.mimeType))
@@ -118,8 +123,16 @@ export class MediaService {
       createdById: actorId,
       clientId,
       folderId: input.folderId,
+      projectId: input.projectId,
+      calendarItemId: input.calendarItemId,
+      searchText: [input.filename, ...(input.tags ?? [])].join(' ').toLowerCase(),
     });
-    const dto = toMediaAssetDto(asset);
+    if (input.tags?.length) {
+      await this.repository.setAssetTags(organizationId, asset.id, input.tags);
+    }
+    const dto = toMediaAssetDto(
+      (await this.repository.findById(organizationId, asset.id)) ?? asset,
+    );
     await this.record(
       organizationId,
       actorId,
@@ -252,6 +265,42 @@ export class MediaService {
     );
     for (const entry of entries) resolved.set(entry.assetId, entry);
     return resolved;
+  }
+
+  async setTags(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    tags: string[],
+  ): Promise<MediaAssetDto> {
+    await this.findOrThrow(organizationId, id);
+    await this.repository.setAssetTags(organizationId, id, tags);
+    const after = await this.get(organizationId, id);
+    await this.record(organizationId, actorId, 'media/assets.tag', id, {
+      after: { tags: after.tags },
+    });
+    return after;
+  }
+
+  async recordUsage(
+    organizationId: string,
+    actorId: string,
+    input: {
+      assetId: string;
+      subjectType: string;
+      subjectId: string;
+    },
+  ) {
+    await this.findOrThrow(organizationId, input.assetId);
+    await this.repository.recordUsage({ organizationId, ...input });
+    await this.record(
+      organizationId,
+      actorId,
+      'media/assets.usage',
+      input.assetId,
+      { after: input },
+    );
+    return { ok: true as const };
   }
 
   async update(

@@ -1,5 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorCodes, DomainEventTypes } from '@agency-os/contracts';
+import {
+  DEFAULT_THEME,
+  DomainEventTypes,
+  ErrorCodes,
+  ORG_APPEARANCE_THEME_KEY,
+  themeSchema,
+  type ThemeSettings,
+  type UpdateOrgThemeInput,
+} from '@agency-os/contracts';
 import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
@@ -28,6 +36,33 @@ export class TenancyService {
       );
     }
     return org;
+  }
+
+  /** Agency-wide appearance — every staff and client member sees these colours after login. */
+  async getAppearanceTheme(organizationId: string): Promise<ThemeSettings> {
+    const row = await this.repo.getSetting(organizationId, ORG_APPEARANCE_THEME_KEY);
+    if (!row?.value) return themeFromBranding(await this.repo.findOrganization(organizationId));
+    const parsed = themeSchema.safeParse(row.value);
+    return parsed.success ? parsed.data : themeFromBranding(await this.repo.findOrganization(organizationId));
+  }
+
+  async updateAppearanceTheme(
+    organizationId: string,
+    actorId: string,
+    input: UpdateOrgThemeInput,
+  ): Promise<ThemeSettings> {
+    const theme = themeSchema.parse(input);
+    await this.repo.upsertSetting(organizationId, ORG_APPEARANCE_THEME_KEY, theme);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'org.theme.update',
+      entityType: 'organization',
+      entityId: organizationId,
+      after: theme,
+    });
+    return theme;
   }
 
   async listWorkspaces(organizationId: string) {
@@ -130,4 +165,17 @@ export class TenancyService {
     }
     return orgId;
   }
+}
+
+function themeFromBranding(
+  org: { branding: { primaryColor: string | null; secondaryColor: string | null; accentColor: string | null } | null } | null,
+): ThemeSettings {
+  const branding = org?.branding;
+  if (!branding?.primaryColor) return DEFAULT_THEME;
+  return {
+    ...DEFAULT_THEME,
+    primary: branding.primaryColor,
+    secondary: branding.secondaryColor ?? DEFAULT_THEME.secondary,
+    border: branding.accentColor ?? DEFAULT_THEME.border,
+  };
 }

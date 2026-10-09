@@ -162,4 +162,64 @@ export class FinanceRepository {
   async delete(organizationId: string, id: string): Promise<void> {
     await this.prisma.invoice.deleteMany({ where: { id, organizationId } });
   }
+
+  listContracts(
+    organizationId: string,
+    clientId: string | undefined,
+    limit: number,
+    allowedClientIds?: string[],
+  ) {
+    return this.prisma.contract.findMany({
+      where: {
+        organizationId,
+        ...(clientId ? { clientId } : {}),
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  findContract(organizationId: string, id: string) {
+    return this.prisma.contract.findFirst({ where: { id, organizationId } });
+  }
+
+  createContract(
+    organizationId: string,
+    row: {
+      clientId: string;
+      title: string;
+      type: string;
+      status: string;
+      startDate: Date | null;
+      endDate: Date | null;
+    },
+  ) {
+    return this.prisma.contract.create({
+      data: { organizationId, ...row },
+    });
+  }
+
+  async updateContract(
+    organizationId: string,
+    id: string,
+    data: {
+      title?: string;
+      type?: string;
+      status?: string;
+      startDate?: Date | null;
+      endDate?: Date | null;
+      signedAt?: Date | null;
+      storageKey?: string | null;
+      signedStorageKey?: string | null;
+      contentHash?: string | null;
+      signatureName?: string | null;
+      signatureMethod?: string | null;
+      signatureIp?: string | null;
+      signatureUserAgent?: string | null;
+    },
+  ) {
+    await this.prisma.contract.updateMany({ where: { id, organizationId }, data });
+    return this.prisma.contract.findFirstOrThrow({ where: { id, organizationId } });
+  }
 }

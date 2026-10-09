@@ -28,6 +28,11 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: 'Changes were requested on "{title}".',
     actionLabel: 'View content',
   },
+  [NotificationTypeKeys.APPROVAL_REQUESTED]: {
+    subject: 'Approval requested',
+    body: 'Your approval is needed on "{title}".',
+    actionLabel: 'Review',
+  },
 };
 
 const PLACEHOLDER = /\{(\w+)\}/g;

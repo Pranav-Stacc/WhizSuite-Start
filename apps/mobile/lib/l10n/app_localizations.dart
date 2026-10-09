@@ -136,6 +136,42 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get authLoginSubmit;
 
+  /// No description provided for @authOrEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'or use email'**
+  String get authOrEmail;
+
+  /// No description provided for @authGoogleButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get authGoogleButton;
+
+  /// No description provided for @authGoogleCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled.'**
+  String get authGoogleCancelled;
+
+  /// No description provided for @authGoogleNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No account for that Google email. Create a workspace first.'**
+  String get authGoogleNoAccount;
+
+  /// No description provided for @authGoogleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was rejected. Try again.'**
+  String get authGoogleInvalid;
+
+  /// No description provided for @authGoogleWorkspaceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an agency name and workspace URL before continuing with Google.'**
+  String get authGoogleWorkspaceRequired;
+
   /// No description provided for @authLoginInvalid.
   ///
   /// In en, this message translates to:
@@ -399,6 +435,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More'**
   String get navMore;
+
+  /// No description provided for @navMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get navMenu;
 
   /// No description provided for @navGroupWork.
   ///
@@ -2632,6 +2674,12 @@ abstract class AppLocalizations {
   /// **'Overview'**
   String get clientTabOverview;
 
+  /// No description provided for @clientTabManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get clientTabManage;
+
   /// No description provided for @clientTabBrand.
   ///
   /// In en, this message translates to:
@@ -2643,6 +2691,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Projects'**
   String get clientTabProjects;
+
+  /// No description provided for @clientManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get clientManageTitle;
+
+  /// No description provided for @clientManageBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Jump into every area for this client.'**
+  String get clientManageBody;
+
+  /// No description provided for @clientManageContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get clientManageContent;
+
+  /// No description provided for @clientManageContentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts, captions and planner'**
+  String get clientManageContentBody;
+
+  /// No description provided for @clientManageCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get clientManageCalendar;
+
+  /// No description provided for @clientManageCalendarBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule and deadlines'**
+  String get clientManageCalendarBody;
+
+  /// No description provided for @clientManageMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get clientManageMessages;
+
+  /// No description provided for @clientManageMessagesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback and conversations'**
+  String get clientManageMessagesBody;
+
+  /// No description provided for @clientManageAssets.
+  ///
+  /// In en, this message translates to:
+  /// **'Assets'**
+  String get clientManageAssets;
+
+  /// No description provided for @clientManageAssetsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Files and brand media'**
+  String get clientManageAssetsBody;
+
+  /// No description provided for @clientManageInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices'**
+  String get clientManageInvoices;
+
+  /// No description provided for @clientManageInvoicesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Billing and retainers'**
+  String get clientManageInvoicesBody;
+
+  /// No description provided for @clientManageIntegrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get clientManageIntegrations;
+
+  /// No description provided for @clientManageIntegrationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected accounts'**
+  String get clientManageIntegrationsBody;
+
+  /// No description provided for @clientManageCompose.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get clientManageCompose;
 
   /// No description provided for @clientProjectsEmpty.
   ///

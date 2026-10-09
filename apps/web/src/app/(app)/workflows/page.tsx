@@ -1,7 +1,7 @@
 import { Permissions, RoleKinds } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Plus, Workflow } from 'lucide-react';
-import { requirePermission } from '@/shared/auth/permissions';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
@@ -9,7 +9,9 @@ import { EmptyState } from '@/shared/ui/feedback';
 import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
+import { isOwnerRole } from '@/features/roles/config';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
+import { listMembers } from '@/features/team/services/members.service';
 import { WorkflowCard } from '@/features/workflows/components/workflow-card';
 import { WorkflowDialog } from '@/features/workflows/components/workflow-dialog';
 import { listWorkflows } from '@/features/workflows/services/workflows.service';
@@ -27,10 +29,19 @@ const GUIDE: GuideItem[] = [
 export default async function WorkflowsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requirePermission(Permissions.WORKFLOWS_MANAGE);
   const sp = await searchParams;
-  const [workflows, roles] = await Promise.all([listWorkflows(), listRoles().catch(() => [])]);
-  const workflowRoles = roles
-    .filter((role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem)
-    .map(toRoleSummary);
+  const [workflows, roles, members, canManageRoles] = await Promise.all([
+    listWorkflows(),
+    listRoles().catch(() => []),
+    loadIf(Permissions.MEMBERS_VIEW, listMembers, []),
+    can(Permissions.ROLES_MANAGE),
+  ]);
+  const roleSummaries = roles.map(toRoleSummary);
+  const workflowRoles = roleSummaries.filter(
+    (role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem,
+  );
+  const assignableRoles = canManageRoles
+    ? roleSummaries.filter((role) => !isOwnerRole(role))
+    : [];
   const editWorkflow = param(sp, 'edit') ? workflows.find((w) => w.id === param(sp, 'edit')) : undefined;
   const newButton = (
     <Button variant="primary">
@@ -38,6 +49,12 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
       {t('workflows.new')}
     </Button>
   );
+
+  const dialogProps = {
+    workflowRoles,
+    members,
+    assignableRoles,
+  };
 
   return (
     <div>
@@ -48,7 +65,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
         actions={
           <>
             <PageGuide items={GUIDE} />
-            <WorkflowDialog workflowRoles={workflowRoles} defaultOpen={param(sp, 'new') === '1'} trigger={newButton} />
+            <WorkflowDialog {...dialogProps} defaultOpen={param(sp, 'new') === '1'} trigger={newButton} />
           </>
         }
       />
@@ -67,7 +84,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
         </ul>
       )}
 
-      {editWorkflow ? <WorkflowDialog workflow={editWorkflow} workflowRoles={workflowRoles} defaultOpen /> : null}
+      {editWorkflow ? <WorkflowDialog {...dialogProps} workflow={editWorkflow} defaultOpen /> : null}
     </div>
   );
 }

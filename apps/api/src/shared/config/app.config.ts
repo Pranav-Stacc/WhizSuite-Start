@@ -35,7 +35,7 @@ export const appConfigSchema = z
     CORS_ORIGINS: z
       .string()
       .default(
-        'http://localhost:3000,https://whizsuite.com,https://www.whizsuite.com',
+        'http://localhost:3000,https://whizsuite.praanav.in,https://www.whizsuite.praanav.in',
       ),
     STORAGE_ENDPOINT: z.string().url(),
     STORAGE_ACCESS_KEY: z.string().default(''),
@@ -156,6 +156,17 @@ export const appConfigSchema = z
     EMAIL_FROM: z.string().default('Agency OS <noreply@agency-os.local>'),
     WEB_APP_URL: z.string().url().default('http://localhost:3000'),
     INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
+    /** How long a shareable portal access link stays redeemable. */
+    PORTAL_ACCESS_LINK_TTL_HOURS: z.coerce.number().int().positive().default(720),
+    /** Default temporary portal membership duration after redeem. */
+    PORTAL_ACCESS_TEMP_MEMBERSHIP_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(168),
+    /** Optional store URLs shown on the portal-access landing page (empty = hide). */
+    MOBILE_APP_STORE_URL: z.string().default(''),
+    MOBILE_PLAY_STORE_URL: z.string().default(''),
     IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
     AUTHZ_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
     OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(1000),
@@ -209,22 +220,48 @@ export const appConfigSchema = z
     /** PEM private key of the Firebase service account; `\n` escapes are accepted. */
     FCM_PRIVATE_KEY: z.string().default(''),
     /** Must match the notification channel the mobile app registers on Android. */
-    PUSH_ANDROID_CHANNEL_ID: z.string().min(1).default('agency_os_default'),
+    PUSH_ANDROID_CHANNEL_ID: z.string().min(1).default('whizsuite_default'),
     DEVICES_PER_USER_MAX: z.coerce.number().int().positive().default(10),
+    /** When true, POST /v1/auth/google accepts Google ID tokens. */
+    GOOGLE_AUTH_ENABLED: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    /**
+     * Comma-separated OAuth client IDs allowed as ID-token audiences
+     * (Web + Android/iOS clients from the Firebase / Google Cloud project).
+     */
+    GOOGLE_OAUTH_CLIENT_IDS: z
+      .string()
+      .default('')
+      .transform((v) =>
+        v
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean),
+      ),
   })
   .superRefine((config, ctx) => {
-    if (!config.PUSH_ENABLED) return;
-    for (const key of [
-      'FCM_PROJECT_ID',
-      'FCM_CLIENT_EMAIL',
-      'FCM_PRIVATE_KEY',
-    ] as const) {
-      if (!config[key])
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [key],
-          message: 'required when PUSH_ENABLED=true',
-        });
+    if (config.PUSH_ENABLED) {
+      for (const key of [
+        'FCM_PROJECT_ID',
+        'FCM_CLIENT_EMAIL',
+        'FCM_PRIVATE_KEY',
+      ] as const) {
+        if (!config[key])
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: 'required when PUSH_ENABLED=true',
+          });
+      }
+    }
+    if (config.GOOGLE_AUTH_ENABLED && config.GOOGLE_OAUTH_CLIENT_IDS.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['GOOGLE_OAUTH_CLIENT_IDS'],
+        message: 'required when GOOGLE_AUTH_ENABLED=true',
+      });
     }
   });
 

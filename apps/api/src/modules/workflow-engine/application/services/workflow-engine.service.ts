@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { ApprovalStepRule } from '@agency-os/contracts';
 import { notFound } from '../../../../shared/errors/problem-details.exception';
 import {
   WorkflowEngineRepository,
@@ -12,6 +13,7 @@ import type {
 } from '../../interface/http/dto/workflow.dto';
 
 const ENTITY_TYPE = 'workflowDefinition';
+const DEFAULT_RULE: ApprovalStepRule = 'ANY';
 
 type DefinitionRow = NonNullable<
   Awaited<ReturnType<WorkflowEngineRepository['findDefinition']>>
@@ -20,6 +22,22 @@ type DefinitionRow = NonNullable<
 export type WorkflowStageView = {
   name: string;
   assigneeRoleId: string | null;
+  approvalRule: ApprovalStepRule;
+  quorumCount?: number;
+  approverIds: string[];
+  roleIds: string[];
+  scopeType?: string;
+  scopeResourceId?: string | null;
+};
+
+type StageGuards = {
+  assigneeRoleId?: string | null;
+  approvalRule?: string;
+  quorumCount?: number;
+  approverIds?: string[];
+  roleIds?: string[];
+  scopeType?: string;
+  scopeResourceId?: string | null;
 };
 
 const stateKey = (name: string, idx: number) =>
@@ -30,30 +48,100 @@ const stateKey = (name: string, idx: number) =>
       .replace(/^_|_$/g, '') || 'stage'
   }_${idx}`;
 
-function stageGuards(assigneeRoleId?: string | null) {
-  return assigneeRoleId ? { assigneeRoleId } : undefined;
+function asIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value.filter((id): id is string => typeof id === 'string' && !!id),
+    ),
+  ];
 }
 
-function readAssigneeRoleId(guards: unknown): string | null {
+function normalizeStage(stage: WorkflowStageDto): WorkflowStageView {
+  const roleIds = asIds([
+    ...(stage.roleIds ?? []),
+    ...(stage.assigneeRoleId ? [stage.assigneeRoleId] : []),
+  ]);
+  const approvalRule = stage.approvalRule ?? DEFAULT_RULE;
+  return {
+    name: stage.name,
+    assigneeRoleId: stage.assigneeRoleId ?? roleIds[0] ?? null,
+    approvalRule,
+    quorumCount:
+      approvalRule === 'QUORUM' ? (stage.quorumCount ?? 1) : stage.quorumCount,
+    approverIds: asIds(stage.approverIds),
+    roleIds,
+    scopeType: stage.scopeType,
+    scopeResourceId: stage.scopeResourceId ?? null,
+  };
+}
+
+function stageGuards(stage: WorkflowStageView): StageGuards {
+  return {
+    assigneeRoleId: stage.assigneeRoleId,
+    approvalRule: stage.approvalRule,
+    quorumCount: stage.quorumCount,
+    approverIds: stage.approverIds,
+    roleIds: stage.roleIds,
+    scopeType: stage.scopeType,
+    scopeResourceId: stage.scopeResourceId ?? null,
+  };
+}
+
+function readStageGuards(guards: unknown): Omit<WorkflowStageView, 'name'> {
   if (!guards || typeof guards !== 'object' || Array.isArray(guards)) {
-    return null;
+    return {
+      assigneeRoleId: null,
+      approvalRule: DEFAULT_RULE,
+      approverIds: [],
+      roleIds: [],
+      scopeResourceId: null,
+    };
   }
-  const value = (guards as { assigneeRoleId?: unknown }).assigneeRoleId;
-  return typeof value === 'string' && value ? value : null;
+  const raw = guards as StageGuards;
+  const roleIds = asIds([
+    ...(raw.roleIds ?? []),
+    ...(typeof raw.assigneeRoleId === 'string' && raw.assigneeRoleId
+      ? [raw.assigneeRoleId]
+      : []),
+  ]);
+  const approvalRule =
+    raw.approvalRule === 'ALL' ||
+    raw.approvalRule === 'QUORUM' ||
+    raw.approvalRule === 'ANY'
+      ? raw.approvalRule
+      : DEFAULT_RULE;
+  return {
+    assigneeRoleId:
+      typeof raw.assigneeRoleId === 'string' && raw.assigneeRoleId
+        ? raw.assigneeRoleId
+        : (roleIds[0] ?? null),
+    approvalRule,
+    quorumCount:
+      typeof raw.quorumCount === 'number' && Number.isFinite(raw.quorumCount)
+        ? Math.max(1, Math.floor(raw.quorumCount))
+        : undefined,
+    approverIds: asIds(raw.approverIds),
+    roleIds,
+    scopeType: typeof raw.scopeType === 'string' ? raw.scopeType : undefined,
+    scopeResourceId:
+      typeof raw.scopeResourceId === 'string' ? raw.scopeResourceId : null,
+  };
 }
 
 /** A linear pipeline: each stage moves forward to the next one. */
 function linearVersion(stages: WorkflowStageDto[]): VersionInput {
-  const keys = stages.map((stage, idx) => stateKey(stage.name, idx));
+  const normalized = stages.map(normalizeStage);
+  const keys = normalized.map((stage, idx) => stateKey(stage.name, idx));
   return {
     publish: true,
-    states: stages.map((stage, idx) => ({
+    states: normalized.map((stage, idx) => ({
       key: keys[idx],
       name: stage.name,
       order: idx,
       isInitial: idx === 0,
-      isTerminal: idx === stages.length - 1,
-      guards: stageGuards(stage.assigneeRoleId),
+      isTerminal: idx === normalized.length - 1,
+      guards: stageGuards(stage),
     })),
     transitions: keys
       .slice(1)
@@ -66,7 +154,7 @@ function toStages(
 ): WorkflowStageView[] {
   return states.map((state) => ({
     name: state.name,
-    assigneeRoleId: readAssigneeRoleId(state.guards),
+    ...readStageGuards(state.guards),
   }));
 }
 
@@ -91,13 +179,22 @@ function toDto(row: DefinitionRow) {
   };
 }
 
-const sameStages = (a: WorkflowStageView[], b: WorkflowStageDto[]) =>
-  a.length === b.length &&
-  a.every(
-    (stage, i) =>
-      stage.name === b[i]?.name &&
-      (stage.assigneeRoleId ?? null) === (b[i]?.assigneeRoleId ?? null),
+function sameStage(a: WorkflowStageView, b: WorkflowStageDto): boolean {
+  const next = normalizeStage(b);
+  return (
+    a.name === next.name &&
+    (a.assigneeRoleId ?? null) === (next.assigneeRoleId ?? null) &&
+    a.approvalRule === next.approvalRule &&
+    (a.quorumCount ?? null) === (next.quorumCount ?? null) &&
+    a.approverIds.join() === next.approverIds.join() &&
+    a.roleIds.join() === next.roleIds.join() &&
+    (a.scopeType ?? null) === (next.scopeType ?? null) &&
+    (a.scopeResourceId ?? null) === (next.scopeResourceId ?? null)
   );
+}
+
+const sameStages = (a: WorkflowStageView[], b: WorkflowStageDto[]) =>
+  a.length === b.length && a.every((stage, i) => sameStage(stage, b[i]!));
 
 @Injectable()
 export class WorkflowEngineService {

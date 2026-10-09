@@ -48,6 +48,25 @@ export class LoginDto {
   password!: string;
 }
 
+export class GoogleAuthDto {
+  @ApiProperty({ description: 'Google ID token from GIS or google_sign_in' })
+  @IsString()
+  @MinLength(1)
+  idToken!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  organizationName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @Matches(/^[a-z0-9-]+$/)
+  organizationSlug?: string;
+}
+
 export class RefreshDto {
   @ApiProperty()
   @IsString()

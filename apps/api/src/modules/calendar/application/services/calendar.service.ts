@@ -44,7 +44,13 @@ export class CalendarService {
     input: CreateCalendarItemDto,
   ) {
     const item = await this.repository.create(organizationId, {
-      ...input,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      title: input.title,
+      allDay: input.allDay,
+      clientId: input.clientId,
+      projectId: input.projectId,
+      metadata: input.metadata,
       startsAt: new Date(input.startsAt),
       endsAt: input.endsAt ? new Date(input.endsAt) : undefined,
     });

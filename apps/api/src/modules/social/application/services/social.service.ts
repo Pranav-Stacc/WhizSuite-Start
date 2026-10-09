@@ -66,6 +66,8 @@ export class SocialService {
       {
         clientId: query.clientId,
         allowedClientIds: TenantContext.clientScope(),
+        allowedProjectIds: TenantContext.projectScope(),
+        allowedContentIds: TenantContext.contentScope(),
         status: query.status,
         from: query.from ? new Date(query.from) : undefined,
         to: query.to ? new Date(query.to) : undefined,
@@ -414,7 +416,11 @@ export class SocialService {
   }
 
   listCampaigns(organizationId: string, clientId?: string) {
-    return this.repository.listCampaigns(organizationId, clientId);
+    return this.repository.listCampaigns(
+      organizationId,
+      clientId,
+      TenantContext.clientScope(),
+    );
   }
 
   listAccounts(organizationId: string, clientId?: string) {

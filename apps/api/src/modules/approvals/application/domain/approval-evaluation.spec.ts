@@ -129,4 +129,43 @@ describe('evaluateApprovalAction', () => {
       statusOf(() => evaluateApprovalAction(closed, ALICE, 'APPROVED')),
     ).toBe(HttpStatus.CONFLICT);
   });
+
+  it('completes a QUORUM step once enough named approvers have approved', () => {
+    const quorum = step('s1', 1, {
+      rule: 'QUORUM',
+      approverSpec: {
+        approverIds: [ALICE, BOB, CAROL],
+        quorumCount: 2,
+      },
+    });
+    expect(
+      evaluateApprovalAction(request([quorum]), ALICE, 'APPROVED'),
+    ).toEqual({ stepId: 's1', stepStatus: 'PENDING' });
+
+    const afterAlice = request(
+      [quorum],
+      [{ stepId: 's1', actorId: ALICE, action: 'APPROVED' }],
+    );
+    expect(
+      evaluateApprovalAction(afterAlice, BOB, 'APPROVED').requestStatus,
+    ).toBe('APPROVED');
+  });
+
+  it('prefers resolvedUserIds over raw approverIds for the named pool', () => {
+    const resolved = step('s1', 1, {
+      rule: 'ALL',
+      approverSpec: {
+        approverIds: [CAROL],
+        resolvedUserIds: [ALICE, BOB],
+      },
+    });
+    expect(
+      statusOf(() =>
+        evaluateApprovalAction(request([resolved]), CAROL, 'APPROVED'),
+      ),
+    ).toBe(HttpStatus.FORBIDDEN);
+    expect(
+      evaluateApprovalAction(request([resolved]), ALICE, 'APPROVED').stepStatus,
+    ).toBe('PENDING');
+  });
 });

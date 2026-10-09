@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../shared/database/prisma.service';
 import { toInputJson } from '../../../../shared/database/prisma-json.util';
 
 export interface CalendarItemCreateRow {
+  id?: string;
   sourceType: string;
   sourceId: string;
   title: string;
@@ -10,6 +11,7 @@ export interface CalendarItemCreateRow {
   endsAt?: Date;
   allDay?: boolean;
   clientId?: string;
+  projectId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -25,11 +27,24 @@ export interface CalendarItemUpdateRow {
 export class CalendarRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit: number, clientIds?: string[]) {
+  list(
+    organizationId: string,
+    limit: number,
+    clientIds?: string[],
+    range?: { from?: Date; to?: Date },
+  ) {
     return this.prisma.calendarItem.findMany({
       where: {
         organizationId,
         ...(clientIds ? { clientId: { in: clientIds } } : {}),
+        ...(range?.from || range?.to
+          ? {
+              startsAt: {
+                ...(range.from ? { gte: range.from } : {}),
+                ...(range.to ? { lt: range.to } : {}),
+              },
+            }
+          : {}),
       },
       orderBy: { startsAt: 'asc' },
       take: limit,

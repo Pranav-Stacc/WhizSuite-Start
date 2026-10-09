@@ -12,10 +12,24 @@ import { workflowsRepository } from '../data/workflows.repository';
 function toWorkflowFields(input: CreateWorkflowInput) {
   return {
     name: input.name,
-    stages: input.stages.map((stage) => ({
-      name: stage.name,
-      assigneeRoleId: stage.assigneeRoleId ?? null,
-    })),
+    stages: input.stages.map((stage) => {
+      const roleIds = [
+        ...new Set([
+          ...(stage.roleIds ?? []),
+          ...(stage.assigneeRoleId ? [stage.assigneeRoleId] : []),
+        ]),
+      ];
+      return {
+        name: stage.name,
+        assigneeRoleId: stage.assigneeRoleId ?? roleIds[0] ?? null,
+        approvalRule: stage.approvalRule,
+        quorumCount: stage.quorumCount,
+        approverIds: stage.approverIds ?? [],
+        roleIds,
+        scopeType: stage.scopeType,
+        scopeResourceId: stage.scopeResourceId ?? null,
+      };
+    }),
     slaHours: input.slaHours,
     requiresClientApproval: input.requiresClientApproval,
   };

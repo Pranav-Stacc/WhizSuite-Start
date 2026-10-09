@@ -8,11 +8,18 @@ import { InvitationsRepository } from './infrastructure/repositories/invitations
 import {
   InvitationsPublicController,
   InvitationsResourceController,
+  PortalAccessLinksController,
+  PortalAccessPublicController,
 } from './interface/http/controllers/invitations-resource.controller';
 
 @Module({
   imports: [SharedModule, AccessModule, ClientsModule, IdentityModule],
-  controllers: [InvitationsResourceController, InvitationsPublicController],
+  controllers: [
+    InvitationsResourceController,
+    InvitationsPublicController,
+    PortalAccessLinksController,
+    PortalAccessPublicController,
+  ],
   providers: [InvitationsService, InvitationsRepository],
   exports: [InvitationsService],
 })

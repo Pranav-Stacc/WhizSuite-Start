@@ -1,18 +1,21 @@
 import { ContentStatuses, Permissions } from '@agency-os/contracts';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { requirePermission } from '@/shared/auth/permissions';
+import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
-import { initials } from '@/shared/lib/format';
+import { formatNumber, initials } from '@/shared/lib/format';
 import { SectionHeading } from '@/shared/ui/section-heading';
+import { PlatformBadge } from '@/shared/ui/platform';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import { getClient } from '@/features/clients/services/clients.service';
-import { clientSectionNumber } from '@/features/clients/workspace';
+import { clientSectionHref, clientSectionNumber } from '@/features/clients/workspace';
 import { AssetTray } from '@/features/content/components/planner/asset-tray';
 import { toGridTiles } from '@/features/content/components/planner/grid-tiles';
 import { PhoneGrid } from '@/features/content/components/planner/phone-grid';
 import { NewPostButton, PlannerDrawerProvider } from '@/features/content/components/planner/planner-drawer';
 import { loadPlanner } from '@/features/content/services/planner.service';
+import { listIntegrations } from '@/features/integrations/services/integrations.service';
 import { UploadDropzone } from '@/features/media/components/upload-dropzone';
 
 export const metadata = { title: t('clients.workspace.grid') };
@@ -23,16 +26,23 @@ export default async function ClientGridPage({ params }: { params: Promise<{ id:
   await requirePermission(Permissions.CONTENT_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
-  const planner = await loadPlanner(client.id);
+  const granted = await getPermissions();
+  const [planner, integrations] = await Promise.all([
+    loadPlanner(client.id),
+    granted.has(Permissions.INTEGRATIONS_MANAGE) || granted.has(Permissions.CLIENTS_VIEW)
+      ? listIntegrations()
+      : Promise.resolve([]),
+  ]);
 
   const usedAssetIds = new Set(planner.posts.flatMap((p) => p.media.map((m) => m.assetId)));
   const tray = planner.assets
     .filter((a) => a.status === READY)
     .map((a) => ({ id: a.id, name: a.name, mimeType: a.mimeType, url: a.url, used: usedAssetIds.has(a.id) }));
   const statusCounts = ContentStatuses.map((status) => ({ status, count: planner.posts.filter((p) => p.status === status).length })).filter((s) => s.count > 0);
+  const activePlatforms = integrations.filter((i) => i.clientId === client.id && i.connected);
 
   return (
-    <PlannerDrawerProvider {...planner.drawer}>
+    <PlannerDrawerProvider {...planner.drawer} uploadEnabled={isLiveMode}>
       <section>
         <SectionHeading number={clientSectionNumber('grid')} title={t('clients.workspace.grid')}>
           <NewPostButton className="nav-link">{t('grid.newPost')}</NewPostButton>
@@ -42,6 +52,30 @@ export default async function ClientGridPage({ params }: { params: Promise<{ id:
           <PhoneGrid clientId={client.id} clientName={client.name} clientInitials={initials(client.name)} tiles={toGridTiles(planner.posts)} />
 
           <div className="space-y-8">
+            <section aria-labelledby="grid-platforms">
+              <div className="mb-4 flex items-baseline justify-between gap-4">
+                <h3 id="grid-platforms" className="eyebrow">
+                  {t('clients.grid.platforms')}
+                </h3>
+                <Link href={clientSectionHref(client.id, 'integrations')} className="nav-link text-[11px]">
+                  {t('clients.channels.manage')}
+                </Link>
+              </div>
+              {activePlatforms.length === 0 ? (
+                <p className="text-[13px] text-muted">{t('clients.grid.platforms.empty')}</p>
+              ) : (
+                <ul className="flex flex-wrap gap-3">
+                  {activePlatforms.map((integration) => (
+                    <li key={integration.id} className="inline-flex items-center gap-2 border border-border px-3 py-2 text-[12px]">
+                      <PlatformBadge platform={integration.platform} size="sm" />
+                      <span className="font-medium">{integration.handle}</span>
+                      <span className="text-muted">{t('clients.followers', { count: formatNumber(integration.followers, true) })}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             <section aria-labelledby="grid-upload">
               <h3 id="grid-upload" className="eyebrow mb-4">
                 {t('grid.upload.title')}

@@ -30,6 +30,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLoginSubmit => 'Sign in';
 
   @override
+  String get authOrEmail => 'or use email';
+
+  @override
+  String get authGoogleButton => 'Continue with Google';
+
+  @override
+  String get authGoogleCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get authGoogleNoAccount =>
+      'No account for that Google email. Create a workspace first.';
+
+  @override
+  String get authGoogleInvalid => 'Google sign-in was rejected. Try again.';
+
+  @override
+  String get authGoogleWorkspaceRequired =>
+      'Enter an agency name and workspace URL before continuing with Google.';
+
+  @override
   String get authLoginInvalid => 'Incorrect email or password.';
 
   @override
@@ -171,6 +191,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navMore => 'More';
+
+  @override
+  String get navMenu => 'Menu';
 
   @override
   String get navGroupWork => 'Work';
@@ -1741,10 +1764,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientTabOverview => 'Overview';
 
   @override
+  String get clientTabManage => 'Manage';
+
+  @override
   String get clientTabBrand => 'Brand kit';
 
   @override
   String get clientTabProjects => 'Projects';
+
+  @override
+  String get clientManageTitle => 'Workspace';
+
+  @override
+  String get clientManageBody => 'Jump into every area for this client.';
+
+  @override
+  String get clientManageContent => 'Content';
+
+  @override
+  String get clientManageContentBody => 'Posts, captions and planner';
+
+  @override
+  String get clientManageCalendar => 'Calendar';
+
+  @override
+  String get clientManageCalendarBody => 'Schedule and deadlines';
+
+  @override
+  String get clientManageMessages => 'Messages';
+
+  @override
+  String get clientManageMessagesBody => 'Feedback and conversations';
+
+  @override
+  String get clientManageAssets => 'Assets';
+
+  @override
+  String get clientManageAssetsBody => 'Files and brand media';
+
+  @override
+  String get clientManageInvoices => 'Invoices';
+
+  @override
+  String get clientManageInvoicesBody => 'Billing and retainers';
+
+  @override
+  String get clientManageIntegrations => 'Integrations';
+
+  @override
+  String get clientManageIntegrationsBody => 'Connected accounts';
+
+  @override
+  String get clientManageCompose => 'New post';
 
   @override
   String get clientProjectsEmpty => 'No projects for this client yet.';

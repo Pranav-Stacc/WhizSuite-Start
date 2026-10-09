@@ -12,6 +12,7 @@ import { relativeTime } from '@/shared/lib/format';
 import { QUICK_CREATE } from '@/shared/navigation/quick-create';
 import { markAllReadAction, markReadAction } from '@/features/notifications/actions/notification.actions';
 import { signOutAction, switchPersonaAction } from '@/features/auth/actions/auth.actions';
+import { unregisterStoredWebPushDevice } from '@/features/notifications/components/web-push-registrar';
 import { Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Menu, Popover, Tooltip } from '@/shared/ui/overlays';
@@ -153,7 +154,15 @@ export function UserMenu({ name, email, role, orgName, demo, settingsHref }: { n
             <Menu.Separator />
           </>
         ) : null}
-        <Menu.Item onSelect={() => startTransition(() => void signOutAction())} className="text-danger data-[highlighted]:bg-danger/12 data-[highlighted]:text-danger">
+        <Menu.Item
+          onSelect={() =>
+            startTransition(async () => {
+              await unregisterStoredWebPushDevice();
+              await signOutAction();
+            })
+          }
+          className="text-danger data-[highlighted]:bg-danger/12 data-[highlighted]:text-danger"
+        >
           <LogOut />
           {t('shell.user.signOut')}
         </Menu.Item>

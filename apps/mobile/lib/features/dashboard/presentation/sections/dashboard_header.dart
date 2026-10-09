@@ -52,22 +52,22 @@ class DashboardGreeting extends ConsumerWidget {
       children: [
         Text(
           DateFormat.MMMMEEEEd(locale).format(DateTime.now()).toUpperCase(),
-          style: text.labelMedium?.copyWith(color: tokens.muted, letterSpacing: 0.8),
+          style: text.labelSmall?.copyWith(color: tokens.muted, letterSpacing: 0.8),
         ),
         SizedBox(height: tokens.xs),
         Semantics(
           header: true,
           child: Text(
             title ?? l10n.homeGreeting(greetingName(profile, session)),
-            style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w500, letterSpacing: -0.4),
+            style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.4),
           ),
         ),
-        SizedBox(height: tokens.xs),
-        Text(subtitle ?? l10n.homeSubtitle, style: text.bodyLarge?.copyWith(color: tokens.muted)),
+        SizedBox(height: 2),
+        Text(subtitle ?? l10n.homeSubtitle, style: text.bodyMedium?.copyWith(color: tokens.muted)),
         if (unread > 0) ...[
           SizedBox(height: tokens.sm),
           ActionChip(
-            avatar: Icon(Icons.notifications_active_outlined, size: 18, color: tokens.primary),
+            avatar: Icon(Icons.notifications_active_outlined, size: 16, color: tokens.primary),
             label: Text(l10n.notificationsUnread(unread)),
             tooltip: l10n.navNotifications,
             visualDensity: VisualDensity.compact,
@@ -101,20 +101,27 @@ class DashboardQuickActions extends ConsumerWidget {
     return Semantics(
       container: true,
       label: l10n.dashboardQuickActions,
-      child: Wrap(
-        spacing: tokens.sm,
-        runSpacing: tokens.sm,
-        children: [
-          for (final action in _quickActions)
-            PermissionGate(
-              anyOf: [action.permission],
-              child: OutlinedButton.icon(
-                onPressed: () => context.go(action.route),
-                icon: Icon(action.icon, size: 18),
-                label: Text(action.label(l10n)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final action in _quickActions) ...[
+              PermissionGate(
+                anyOf: [action.permission],
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.symmetric(horizontal: tokens.sm + tokens.xs),
+                  ),
+                  onPressed: () => context.go(action.route),
+                  icon: Icon(action.icon, size: 16),
+                  label: Text(action.label(l10n)),
+                ),
               ),
-            ),
-        ],
+              SizedBox(width: tokens.sm),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -132,7 +139,7 @@ class DashboardHeader extends StatelessWidget {
         if (constraints.maxWidth < overviewWideBreakpoint) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [const DashboardGreeting(), SizedBox(height: tokens.lg), const DashboardQuickActions()],
+            children: [const DashboardGreeting(), SizedBox(height: tokens.sm), const DashboardQuickActions()],
           );
         }
         return Row(

@@ -15,8 +15,15 @@ import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/application/access_controller.dart';
 import '../../access/presentation/permission_gate.dart';
+import '../../calendar/calendar_routes.dart';
+import '../../content/content_routes.dart';
 import '../../directory/application/directory_providers.dart';
+import '../../integrations/integrations_routes.dart';
+import '../../invoices/invoices_routes.dart';
+import '../../media/media_routes.dart';
+import '../../messages/messages_routes.dart';
 import '../../projects/projects_routes.dart';
 import '../application/clients_controller.dart';
 import '../domain/client.dart';
@@ -35,7 +42,7 @@ class ClientDetailScreen extends ConsumerWidget {
     final loaded = client.value;
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: PageScaffold(
         title: loaded?.name ?? l10n.clientsTitle,
         actions: [
@@ -55,7 +62,12 @@ class ClientDetailScreen extends ConsumerWidget {
         bottom: TabBar(
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          tabs: [Tab(text: l10n.clientTabOverview), Tab(text: l10n.clientTabBrand), Tab(text: l10n.clientTabProjects)],
+          tabs: [
+            Tab(text: l10n.clientTabOverview),
+            Tab(text: l10n.clientTabManage),
+            Tab(text: l10n.clientTabBrand),
+            Tab(text: l10n.clientTabProjects),
+          ],
         ),
         body: AsyncValueView<Client>(
           value: client,
@@ -65,6 +77,7 @@ class ClientDetailScreen extends ConsumerWidget {
             return TabBarView(
               children: [
                 _OverviewTab(client: client, onRefresh: refresh),
+                _ManageTab(client: client),
                 _BrandTab(client: client, onRefresh: refresh),
                 _ProjectsTab(clientId: client.id),
               ],
@@ -277,6 +290,121 @@ class _LinkText extends StatelessWidget {
         onTap: () => launchUrl(target, mode: LaunchMode.externalApplication),
         child: Text(label, style: style, overflow: TextOverflow.ellipsis),
       ),
+    );
+  }
+}
+
+class _ManageTab extends ConsumerWidget {
+  const _ManageTab({required this.client});
+
+  final Client client;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    final policy = ref.watch(accessPolicyProvider);
+    final links = <({String permission, IconData icon, String title, String body, String route})>[
+      if (policy.can(Permissions.contentView))
+        (
+          permission: Permissions.contentView,
+          icon: Icons.auto_awesome_mosaic_outlined,
+          title: l10n.clientManageContent,
+          body: l10n.clientManageContentBody,
+          route: ContentRoutes.root,
+        ),
+      if (policy.can(Permissions.contentCreate))
+        (
+          permission: Permissions.contentCreate,
+          icon: Icons.edit_note_outlined,
+          title: l10n.clientManageCompose,
+          body: l10n.clientManageContentBody,
+          route: ContentRoutes.compose(clientId: client.id),
+        ),
+      if (policy.can(Permissions.projectsView))
+        (
+          permission: Permissions.projectsView,
+          icon: Icons.calendar_month_outlined,
+          title: l10n.clientManageCalendar,
+          body: l10n.clientManageCalendarBody,
+          route: CalendarRoutes.root,
+        ),
+      if (policy.can(Permissions.feedbackView))
+        (
+          permission: Permissions.feedbackView,
+          icon: Icons.forum_outlined,
+          title: l10n.clientManageMessages,
+          body: l10n.clientManageMessagesBody,
+          route: MessagesRoutes.root,
+        ),
+      if (policy.can(Permissions.filesView))
+        (
+          permission: Permissions.filesView,
+          icon: Icons.perm_media_outlined,
+          title: l10n.clientManageAssets,
+          body: l10n.clientManageAssetsBody,
+          route: MediaRoutes.root,
+        ),
+      if (policy.can(Permissions.invoicesView))
+        (
+          permission: Permissions.invoicesView,
+          icon: Icons.receipt_long_outlined,
+          title: l10n.clientManageInvoices,
+          body: l10n.clientManageInvoicesBody,
+          route: InvoicesRoutes.root,
+        ),
+      if (policy.can(Permissions.integrationsManage))
+        (
+          permission: Permissions.integrationsManage,
+          icon: Icons.hub_outlined,
+          title: l10n.clientManageIntegrations,
+          body: l10n.clientManageIntegrationsBody,
+          route: IntegrationsRoutes.root,
+        ),
+    ];
+
+    return ReadableBody(
+      children: [
+        FadeSlideIn(
+          child: SectionCard(
+            title: l10n.clientManageTitle,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.clientManageBody, style: text.bodyMedium?.copyWith(color: tokens.muted)),
+                SizedBox(height: tokens.md),
+                if (links.isEmpty)
+                  Text(l10n.valueUnknown, style: text.bodyMedium?.copyWith(color: tokens.muted))
+                else
+                  for (final (i, link) in links.indexed) ...[
+                    if (i > 0) SizedBox(height: tokens.sm),
+                    SurfaceCard(
+                      padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.sm + tokens.xs),
+                      onTap: () => context.push(link.route),
+                      child: Row(
+                        children: [
+                          Icon(link.icon, color: tokens.secondary),
+                          SizedBox(width: tokens.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(link.title, style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                                Text(link.body, style: text.bodySmall?.copyWith(color: tokens.muted)),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: tokens.muted),
+                        ],
+                      ),
+                    ),
+                  ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

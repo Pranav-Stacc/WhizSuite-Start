@@ -40,7 +40,7 @@ class CalendarEntry {
     this.status,
   });
 
-  factory CalendarEntry.fromItem(CalendarItem item) => CalendarEntry(
+  factory CalendarEntry.fromItem(CalendarItem item, {bool editable = true}) => CalendarEntry(
         key: 'item:${item.id}',
         sourceType: item.sourceType,
         title: item.title,
@@ -49,7 +49,10 @@ class CalendarEntry {
         allDay: item.allDay,
         clientId: item.clientId,
         projectId: item.projectId,
-        item: item,
+        item: editable ? item : null,
+        taskId: item.sourceType == CalendarSourceTypes.task ? item.sourceId : null,
+        contentId: item.sourceType == CalendarSourceTypes.content ? item.sourceId : null,
+        status: null,
       );
 
   /// Null when the task has no due date.

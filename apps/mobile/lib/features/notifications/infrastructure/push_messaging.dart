@@ -52,6 +52,7 @@ class PushMessaging {
     final messaging = FirebaseMessaging.instance;
     final permission = await messaging.requestPermission();
     if (permission.authorizationStatus == AuthorizationStatus.denied) return;
+    await _local.requestPermission();
 
     final token = await messaging.getToken();
     if (token != null) await _registerToken(token, platform, locale);

@@ -10,6 +10,7 @@ import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { Field, Input } from '@/shared/ui/field';
 import { loginAction } from '../actions/auth.actions';
+import { GoogleSignInButton } from './google-sign-in-button';
 
 export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   const [formError, setFormError] = useState<string>();
@@ -25,22 +26,25 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   });
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-4">
-      <Field label={t('auth.login.email')} htmlFor="login-email" error={translateError(form.formState.errors.email?.message)}>
-        <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.email.placeholder')} aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
-      </Field>
-      <Field label={t('auth.login.password')} htmlFor="login-password" error={translateError(form.formState.errors.password?.message)}>
-        <Input id="login-password" type="password" autoComplete="current-password" aria-invalid={Boolean(form.formState.errors.password)} {...form.register('password')} />
-      </Field>
-      {formError ? (
-        <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger">
-          {formError}
-        </p>
-      ) : null}
-      <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending}>
-        {pending ? <Loader2 className="animate-spin" /> : null}
-        {t('auth.login.submit')}
-      </Button>
-    </form>
+    <div className="space-y-4">
+      <GoogleSignInButton mode="login" />
+      <form onSubmit={submit} noValidate className="space-y-4">
+        <Field label={t('auth.login.email')} htmlFor="login-email" error={translateError(form.formState.errors.email?.message)}>
+          <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.email.placeholder')} aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
+        </Field>
+        <Field label={t('auth.login.password')} htmlFor="login-password" error={translateError(form.formState.errors.password?.message)}>
+          <Input id="login-password" type="password" autoComplete="current-password" aria-invalid={Boolean(form.formState.errors.password)} {...form.register('password')} />
+        </Field>
+        {formError ? (
+          <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger">
+            {formError}
+          </p>
+        ) : null}
+        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending}>
+          {pending ? <Loader2 className="animate-spin" /> : null}
+          {t('auth.login.submit')}
+        </Button>
+      </form>
+    </div>
   );
 }

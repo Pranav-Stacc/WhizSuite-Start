@@ -383,6 +383,8 @@ export function assetFromApi(raw: Raw): Asset {
     tags: Array.isArray(raw.tags) ? (raw.tags as string[]) : [],
     uploadedBy: str(raw, 'createdById'),
     createdAt: iso(raw, 'createdAt'),
+    folderId: raw.folderId ? str(raw, 'folderId') : null,
+    projectId: raw.projectId ? str(raw, 'projectId') : null,
     url: str(raw, 'previewUrl') || undefined,
   };
 }
@@ -450,20 +452,42 @@ export function automationFromApi(raw: Raw): Automation {
   };
 }
 
+function asUuidList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value.filter((id): id is string => typeof id === 'string' && id.length > 0),
+    ),
+  ];
+}
+
 function workflowStagesFromApi(raw: Raw): Workflow['stages'] {
   if (!Array.isArray(raw.stages)) return [];
   const stages: Workflow['stages'] = [];
   for (const entry of raw.stages) {
     if (typeof entry === 'string') {
-      stages.push({ name: entry, assigneeRoleId: null });
+      stages.push({ name: entry, assigneeRoleId: null, approvalRule: 'ANY', approverIds: [], roleIds: [] });
       continue;
     }
     if (!entry || typeof entry !== 'object') continue;
     const row = entry as Raw;
     const name = str(row, 'name');
     if (!name) continue;
-    const assigneeRoleId = row.assigneeRoleId ? str(row, 'assigneeRoleId') : null;
-    stages.push({ name, assigneeRoleId: assigneeRoleId || null });
+    const roleIds = asUuidList(row.roleIds);
+    const assigneeRoleId = row.assigneeRoleId ? str(row, 'assigneeRoleId') : roleIds[0] ?? null;
+    const rule = str(row, 'approvalRule');
+    const approvalRule =
+      rule === 'ALL' || rule === 'QUORUM' || rule === 'ANY' ? rule : 'ANY';
+    stages.push({
+      name,
+      assigneeRoleId: assigneeRoleId || null,
+      approvalRule,
+      quorumCount: typeof row.quorumCount === 'number' ? row.quorumCount : undefined,
+      approverIds: asUuidList(row.approverIds),
+      roleIds: assigneeRoleId && !roleIds.includes(assigneeRoleId) ? [...roleIds, assigneeRoleId] : roleIds,
+      scopeType: row.scopeType ? str(row, 'scopeType') : undefined,
+      scopeResourceId: row.scopeResourceId ? str(row, 'scopeResourceId') : null,
+    });
   }
   return stages;
 }

@@ -7,6 +7,7 @@ import {
   ContentTypes,
   MembershipTypes,
   Platforms,
+  PortalAccessModes,
   Priorities,
   ProjectStatuses,
   TaskStatuses,
@@ -17,8 +18,12 @@ import {
   CONTENT_PILLAR_MAX_LENGTH,
   normalizeHashtags,
 } from '../content/content.js';
-import { RESOURCE_NAME_MIN_LENGTH } from '../platform/resources.js';
+import {
+  ApprovalStepRules,
+  RESOURCE_NAME_MIN_LENGTH,
+} from '../platform/resources.js';
 import { MEMBER_ROLES_MAX } from '../auth/access.js';
+import { AssignableScopeTypes } from '../auth/permissions.js';
 
 const optionalText = z
   .string()
@@ -41,6 +46,23 @@ export const PASSWORD_MIN_LENGTH = 12;
 export const ORGANIZATION_NAME_MIN_LENGTH = 2;
 /** Source of the workspace slug rule; shared as a string so non-JS clients can compile it. */
 export const ORGANIZATION_SLUG_PATTERN = '^[a-z0-9-]+$';
+
+/** Google ID token from GIS / google_sign_in; optional org fields create a workspace for new users. */
+export const googleAuthSchema = z.object({
+  idToken: z.string().min(1, 'validation.required'),
+  organizationName: z
+    .string()
+    .trim()
+    .min(ORGANIZATION_NAME_MIN_LENGTH, 'validation.min2')
+    .optional(),
+  organizationSlug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(new RegExp(ORGANIZATION_SLUG_PATTERN), 'validation.slug')
+    .optional(),
+});
+export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
 
 export const registerSchema = z.object({
   firstName: z.string().trim().min(1, 'validation.required'),
@@ -105,16 +127,34 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 const HASHTAG_SEPARATOR = /[\s,]+/;
 
+export const createContractFormSchema = z.object({
+  clientId: z.string().min(1, 'validation.required'),
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
+  type: z.enum(['NDA', 'MSA', 'SOW', 'OTHER']).default('OTHER'),
+  startDate: optionalDate,
+  endDate: optionalDate,
+});
+export type CreateContractFormInput = z.infer<typeof createContractFormSchema>;
+
 export const createContentSchema = z.object({
   title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   clientId: z.string().min(1, 'validation.required'),
   contentType: z.enum(ContentTypes).default('POST'),
   caption: optionalText,
-  /** Free text; split on whitespace/commas and normalised to `#tag` form. */
-  hashtags: z
-    .string()
-    .optional()
-    .transform((v) => normalizeHashtags((v ?? '').split(HASHTAG_SEPARATOR))),
+  /**
+   * Free text in the form; may already be a string[] after a prior Zod transform
+   * (RHF re-validates). Preprocess always normalises to a string first.
+   */
+  hashtags: z.preprocess(
+    (value) => {
+      if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string').join(' ');
+      return typeof value === 'string' ? value : '';
+    },
+    z
+      .string()
+      .optional()
+      .transform((v) => normalizeHashtags((v ?? '').split(HASHTAG_SEPARATOR))),
+  ),
   ctaUrl: z
     .string()
     .trim()
@@ -176,6 +216,64 @@ export const invitePortalUserSchema = z.object({
   email: z.string().trim().email('validation.email'),
 });
 export type InvitePortalUserInput = z.infer<typeof invitePortalUserSchema>;
+
+const PORTAL_LINK_TTL_HOURS_MAX = 24 * 90;
+const PORTAL_MEMBERSHIP_TTL_HOURS_MAX = 24 * 365;
+const PORTAL_MAX_USES_MAX = 10_000;
+
+const optionalPositiveInt = (max: number) =>
+  z.preprocess(
+    (value) => (value === '' || value === null || value === undefined ? undefined : value),
+    z.coerce.number().int().min(1).max(max).optional(),
+  );
+
+/** Staff creates a multi-use (or single-use) client portal share link. */
+export const createShootFormSchema = z.object({
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
+  startsAt: z.string().min(1, 'validation.required'),
+  endsAt: optionalDate,
+  allDay: z.coerce.boolean().default(true),
+  clientId: z.string().min(1, 'validation.required'),
+  projectId: optionalText,
+  createFolders: z.coerce.boolean().default(true),
+  taskTitles: z.string().optional(),
+});
+export type CreateShootFormInput = z.infer<typeof createShootFormSchema>;
+
+export const createMediaFolderFormSchema = z.object({
+  name: z.string().trim().min(1, 'validation.required'),
+  parentId: optionalText,
+  clientId: optionalText,
+  visibility: z.enum(['INTERNAL', 'CLIENT_VISIBLE']).default('INTERNAL'),
+});
+export type CreateMediaFolderFormInput = z.infer<typeof createMediaFolderFormSchema>;
+
+export const createPortalAccessLinkSchema = z.object({
+  accessMode: z.enum(PortalAccessModes).default('TEMPORARY'),
+  /** How long the link itself remains redeemable. */
+  linkExpiresInHours: optionalPositiveInt(PORTAL_LINK_TTL_HOURS_MAX),
+  /** For TEMPORARY: how long portal access lasts after redeem. */
+  membershipTtlHours: optionalPositiveInt(PORTAL_MEMBERSHIP_TTL_HOURS_MAX),
+  maxUses: optionalPositiveInt(PORTAL_MAX_USES_MAX),
+  allowedDomains: z.array(z.string().trim().min(1).max(253)).max(20).default([]),
+});
+export type CreatePortalAccessLinkInput = z.infer<typeof createPortalAccessLinkSchema>;
+
+/** Client opens a shareable portal link — password required only for PERMANENT (or upgrade). */
+export const redeemPortalAccessSchema = z.object({
+  token: z.string().min(1, 'validation.required'),
+  email: z.string().trim().email('validation.email'),
+  firstName: z.string().trim().min(1, 'validation.required').max(100),
+  lastName: optionalText,
+  password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.password').optional(),
+});
+export type RedeemPortalAccessInput = z.infer<typeof redeemPortalAccessSchema>;
+
+/** Logged-in temporary client converts to a permanent password login. */
+export const claimPortalAccessSchema = z.object({
+  password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.password'),
+});
+export type ClaimPortalAccessInput = z.infer<typeof claimPortalAccessSchema>;
 
 /** `firstName` is only required when the invited email has no account yet. */
 export const acceptInvitationSchema = z.object({
@@ -266,12 +364,64 @@ export function parseWorkflowStages(value: string): string[] {
     .filter(Boolean);
 }
 
-export const workflowStageSchema = z.object({
-  name: z.string().trim().min(1).max(MAX_WORKFLOW_STAGE_LENGTH),
-  /** Optional workflow role that owns / is the default assignee for this stage. */
-  assigneeRoleId: z.string().uuid().nullish(),
-});
+const MAX_STAGE_APPROVERS = 50;
+const MAX_QUORUM = 50;
+
+export const workflowStageSchema = z
+  .object({
+    name: z.string().trim().min(1).max(MAX_WORKFLOW_STAGE_LENGTH),
+    /** Legacy single workflow-role assignee; also merged into roleIds. */
+    assigneeRoleId: z.string().uuid().nullish(),
+    /** ANY | ALL | QUORUM — how many of the named pool must approve. */
+    approvalRule: z.enum(ApprovalStepRules).default('ANY'),
+    quorumCount: z.coerce.number().int().min(1).max(MAX_QUORUM).optional(),
+    /** Concrete people (user ids) who may approve this stage. */
+    approverIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
+    /** Roles whose holders form the approver pool (optionally scoped). */
+    roleIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
+    scopeType: z
+      .enum([
+        AssignableScopeTypes.ORGANIZATION,
+        AssignableScopeTypes.CLIENT,
+        AssignableScopeTypes.PROJECT,
+        AssignableScopeTypes.WORKSPACE,
+        AssignableScopeTypes.TEAM,
+        AssignableScopeTypes.DEPARTMENT,
+      ])
+      .optional(),
+    scopeResourceId: z.string().uuid().nullish(),
+  })
+  .superRefine((stage, ctx) => {
+    if (stage.approvalRule === 'QUORUM' && !stage.quorumCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'validation.required',
+        path: ['quorumCount'],
+      });
+    }
+  });
 export type WorkflowStageInput = z.infer<typeof workflowStageSchema>;
+
+export const approvalStepConfigSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200),
+    rule: z.enum(ApprovalStepRules).default('ANY'),
+    quorumCount: z.coerce.number().int().min(1).max(MAX_QUORUM).optional(),
+    approverIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
+    roleIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
+    scopeType: z.string().optional(),
+    scopeResourceId: z.string().uuid().nullish(),
+  })
+  .superRefine((step, ctx) => {
+    if (step.rule === 'QUORUM' && !step.quorumCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'validation.required',
+        path: ['quorumCount'],
+      });
+    }
+  });
+export type ApprovalStepConfigInput = z.infer<typeof approvalStepConfigSchema>;
 
 export const createWorkflowSchema = z.object({
   name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),

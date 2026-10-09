@@ -19,18 +19,26 @@ export interface UploadItem {
   error?: string;
 }
 
-async function uploadOne(file: File, clientId: string, onProgress: (fraction: number) => void): Promise<void> {
+async function uploadOne(
+  file: File,
+  clientId: string,
+  onProgress: (fraction: number) => void,
+  options?: { folderId?: string; projectId?: string },
+): Promise<string> {
   const ticket = await requestUploadAction({
     filename: file.name,
     mimeType: file.type || FALLBACK_MIME_TYPE,
     sizeBytes: file.size,
     clientId,
+    folderId: options?.folderId,
+    projectId: options?.projectId,
   });
   if (!ticket.ok) throw new Error(ticket.message);
   if (!ticket.data) throw new Error(t('toast.failed'));
   await uploadToStorage(ticket.data.uploadUrl, file, ticket.data.headers, onProgress);
   const done = await completeUploadAction(ticket.data.assetId);
   if (!done.ok) throw new Error(done.message);
+  return ticket.data.assetId;
 }
 
 function toItems(files: Iterable<File>): UploadItem[] {
@@ -46,15 +54,21 @@ export function useAssetUpload() {
   const patch = (key: string, next: Partial<UploadItem>) =>
     setItems((current) => current.map((item) => (item.key === key ? { ...item, ...next } : item)));
 
-  /** Uploads the given items for a client; returns how many failed. */
-  const run = async (queue: UploadItem[], clientId: string): Promise<number> => {
+  /** Uploads the given items for a client; returns failures and new asset ids. */
+  const run = async (
+    queue: UploadItem[],
+    clientId: string,
+    options?: { folderId?: string; projectId?: string },
+  ): Promise<{ failed: number; assetIds: string[] }> => {
     setBusy(true);
     let failed = 0;
+    const assetIds: string[] = [];
     for (const item of queue) {
       if (item.status === 'done') continue;
       patch(item.key, { status: 'uploading', progress: 0, error: undefined });
       try {
-        await uploadOne(item.file, clientId, (progress) => patch(item.key, { progress }));
+        const assetId = await uploadOne(item.file, clientId, (progress) => patch(item.key, { progress }), options);
+        assetIds.push(assetId);
         patch(item.key, { status: 'done', progress: 1 });
       } catch (error) {
         failed += 1;
@@ -65,7 +79,7 @@ export function useAssetUpload() {
     router.refresh();
     if (failed === 0) toast.success(t('media.upload.allDone', { count: queue.length }));
     else toast.error(t('media.upload.someFailed', { count: failed }));
-    return failed;
+    return { failed, assetIds };
   };
 
   return {
@@ -74,12 +88,12 @@ export function useAssetUpload() {
     pending: items.filter((item) => item.status !== 'done'),
     select: (files: FileList | null) => setItems(toItems(files ?? [])),
     reset: () => setItems([]),
-    start: (clientId: string) => run(items, clientId),
+    start: (clientId: string, options?: { folderId?: string; projectId?: string }) => run(items, clientId, options),
     /** Queues and immediately uploads, for drop zones bound to one client. */
-    uploadNow: (files: FileList | File[], clientId: string) => {
+    uploadNow: (files: FileList | File[], clientId: string, options?: { folderId?: string; projectId?: string }) => {
       const queue = toItems(files);
       setItems(queue);
-      return run(queue, clientId);
+      return run(queue, clientId, options);
     },
   };
 }

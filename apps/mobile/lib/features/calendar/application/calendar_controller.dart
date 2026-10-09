@@ -23,8 +23,7 @@ final calendarContentProvider = FutureProvider.autoDispose<List<ScheduledContent
   return ref.watch(calendarRepositoryProvider).scheduledContent();
 });
 
-/// Everything on the calendar. Stored items must load; content and task deadlines are
-/// secondary, so their failure only marks the feed [partial].
+/// Everything on the calendar. Prefers the unified API feed; falls back to local merge.
 class CalendarFeed {
   const CalendarFeed({required this.entries, this.partial = false});
 
@@ -33,19 +32,38 @@ class CalendarFeed {
 }
 
 final calendarFeedProvider = FutureProvider.autoDispose<CalendarFeed>((ref) async {
-  final canSeeTasks = _can(ref, Permissions.tasksView);
+  final repo = ref.watch(calendarRepositoryProvider);
+  final now = DateTime.now();
+  final from = DateTime(now.year, now.month - 1, 1);
+  final to = DateTime(now.year, now.month + 2, 1);
 
-  var partial = false;
+  try {
+    final items = await repo.feed(from: from, to: to);
+    return CalendarFeed(
+      entries: [
+        for (final item in items)
+          CalendarEntry.fromItem(
+            item,
+            editable: creatableCalendarSourceTypes.contains(item.sourceType) ||
+                item.sourceType == CalendarSourceTypes.shoot,
+          ),
+      ],
+    );
+  } on ApiException {
+    // Fall through to federated merge when the feed endpoint is unavailable.
+  }
+
+  final canSeeTasks = _can(ref, Permissions.tasksView);
+  var partial = true;
+
   Future<T> tolerant<T>(Future<T> future, T fallback) async {
     try {
       return await future;
     } on ApiException {
-      partial = true;
       return fallback;
     }
   }
 
-  // Secondary sources are wrapped before the first await so their errors are always handled.
   final contentFuture = tolerant(ref.watch(calendarContentProvider.future), null);
   final tasksFuture = canSeeTasks ? tolerant(ref.watch(tasksProvider.future), const <Task>[]) : null;
   final projectsFuture = canSeeTasks ? tolerant(ref.watch(projectDirectoryProvider.future), Directory.empty) : null;
@@ -77,12 +95,14 @@ class CalendarActions {
   Future<CalendarItem> create(CalendarItemInput input) async {
     final item = await _repo.create(input);
     _ref.invalidate(calendarItemsProvider);
+    _ref.invalidate(calendarFeedProvider);
     return item;
   }
 
   Future<void> update(CalendarItem item, CalendarItemInput input) async {
     await _repo.update(item, input);
     _ref.invalidate(calendarItemsProvider);
+    _ref.invalidate(calendarFeedProvider);
   }
 }
 

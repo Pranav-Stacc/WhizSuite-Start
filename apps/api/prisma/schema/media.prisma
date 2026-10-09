@@ -2,15 +2,23 @@ model MediaFolder {
   id             String   @id @default(uuid()) @db.Uuid
   organizationId String   @map("organization_id") @db.Uuid
   clientId       String?  @map("client_id") @db.Uuid
+  projectId      String?  @map("project_id") @db.Uuid
+  calendarItemId String?  @map("calendar_item_id") @db.Uuid
   parentId       String?  @map("parent_id") @db.Uuid
   name           String
   path           String
+  /// INTERNAL | CLIENT_VISIBLE — portal only sees CLIENT_VISIBLE folders/assets.
   visibility     String   @default("INTERNAL")
+  description    String?
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  assets MediaAsset[]
+  parent   MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children MediaFolder[] @relation("FolderTree")
+  assets   MediaAsset[]
 
   @@index([organizationId, path])
+  @@index([organizationId, clientId])
+  @@index([organizationId, calendarItemId])
   @@map("media_folders")
   @@schema("media")
 }
@@ -20,20 +28,29 @@ model MediaAsset {
   organizationId String    @map("organization_id") @db.Uuid
   folderId       String?   @map("folder_id") @db.Uuid
   clientId       String?   @map("client_id") @db.Uuid
+  projectId      String?   @map("project_id") @db.Uuid
+  calendarItemId String?   @map("calendar_item_id") @db.Uuid
   name           String
   mimeType       String    @map("mime_type")
   sizeBytes      BigInt    @map("size_bytes")
   currentVersion Int       @default(1) @map("current_version")
   status         String    @default("PROCESSING")
+  /// Free-text / structured search blob (filename + tags + custom metadata).
+  searchText     String    @default("") @map("search_text")
   createdById    String?   @map("created_by_id") @db.Uuid
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   deletedAt      DateTime? @map("deleted_at") @db.Timestamptz
 
-  folder   MediaFolder?      @relation(fields: [folderId], references: [id])
+  folder   MediaFolder?        @relation(fields: [folderId], references: [id])
   versions MediaAssetVersion[]
+  tags     MediaAssetTag[]
+  usages   MediaUsageRef[]
 
   @@index([organizationId, clientId])
+  @@index([organizationId, folderId])
+  @@index([organizationId, calendarItemId])
+  @@index([organizationId, searchText])
   @@map("media_assets")
   @@schema("media")
 }
@@ -86,5 +103,51 @@ model MediaShareLink {
 
   @@index([organizationId, assetId])
   @@map("media_share_links")
+  @@schema("media")
+}
+
+model MediaTag {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  slug           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  assets MediaAssetTag[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, name])
+  @@map("media_tags")
+  @@schema("media")
+}
+
+model MediaAssetTag {
+  organizationId String @map("organization_id") @db.Uuid
+  assetId        String @map("asset_id") @db.Uuid
+  tagId          String @map("tag_id") @db.Uuid
+
+  asset MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  tag   MediaTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([assetId, tagId])
+  @@index([organizationId, tagId])
+  @@map("media_asset_tags")
+  @@schema("media")
+}
+
+/// Where an asset was used (content, review, published post, etc.).
+model MediaUsageRef {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  assetId        String   @map("asset_id") @db.Uuid
+  subjectType    String   @map("subject_type")
+  subjectId      String   @map("subject_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  asset MediaAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, subjectType, subjectId])
+  @@index([organizationId, subjectType, subjectId])
+  @@map("media_usage_refs")
   @@schema("media")
 }

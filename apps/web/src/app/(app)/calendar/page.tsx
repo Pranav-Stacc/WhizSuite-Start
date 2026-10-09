@@ -1,19 +1,23 @@
-import { Permissions } from '@agency-os/contracts';
+import { Permissions, Platforms, type Platform } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Plus } from 'lucide-react';
-import { requirePermission } from '@/shared/auth/permissions';
+import { getPermissions, requirePermission } from '@/shared/auth/permissions';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
-import { ViewToggle, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
+import { FilterChips, ViewToggle, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
+import { PLATFORM_META } from '@/shared/ui/platform';
 import { Agenda, MonthGrid } from '@/features/calendar/components/calendar-views';
+import { PlanShootDialog } from '@/features/calendar/components/plan-shoot-dialog';
 import { groupByDay, listCalendarItems, monthGrid, type CalendarItem } from '@/features/calendar/services/calendar.service';
 import { monthKey, monthTitle, parseMonth, shiftMonth, weekdayLabels } from '@/features/calendar/utils/month';
 import { listClients } from '@/features/clients/services/clients.service';
+import { listProjects } from '@/features/projects/services/projects.service';
 
 export const metadata: Metadata = { title: t('calendar.title') };
 
@@ -32,17 +36,33 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const { year, month } = parseMonth(param(sp, 'm'));
   const view = param(sp, 'view') === 'agenda' ? 'agenda' : 'month';
   const clientId = param(sp, 'client');
+  const platform = Platforms.find((p) => p === param(sp, 'platform')) as Platform | undefined;
 
-  const [allItems, clients] = await Promise.all([listCalendarItems(), listClients()]);
+  const granted = await getPermissions();
+  const canPlanShoot = granted.has(Permissions.PROJECTS_CREATE) && isLiveMode;
   const days = monthGrid(year, month);
-  const gridStart = days[0].getTime();
-  const gridEnd = days[days.length - 1].getTime() + MS_PER_DAY;
+  const gridStart = days[0];
+  const gridEnd = new Date(days[days.length - 1].getTime() + MS_PER_DAY);
+  const rangeFrom = gridStart.toISOString();
+  const rangeTo = gridEnd.toISOString();
+
+  const [allItems, clients, projects] = await Promise.all([
+    listCalendarItems({ from: rangeFrom, to: rangeTo, clientId }),
+    listClients(),
+    canPlanShoot ? listProjects() : Promise.resolve([]),
+  ]);
+
   const inRange = (item: CalendarItem): boolean => {
     const d = new Date(item.at);
     if (view === 'agenda') return d.getFullYear() === year && d.getMonth() === month;
-    return d.getTime() >= gridStart && d.getTime() < gridEnd;
+    return d.getTime() >= gridStart.getTime() && d.getTime() < gridEnd.getTime();
   };
-  const items = allItems.filter((item) => inRange(item) && (!clientId || item.clientId === clientId));
+  const matchesPlatform = (item: CalendarItem): boolean => {
+    if (!platform) return true;
+    if (item.kind !== 'content') return true;
+    return item.platforms?.includes(platform) ?? false;
+  };
+  const items = allItems.filter((item) => inRange(item) && (!clientId || item.clientId === clientId) && matchesPlatform(item));
   const itemsByDay = groupByDay(items);
 
   const prev = shiftMonth({ year, month }, -1);
@@ -65,6 +85,19 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 { href: link({ view: 'agenda' }), label: t('calendar.view.agenda'), active: view === 'agenda', icon: <List /> },
               ]}
             />
+            {canPlanShoot ? (
+              <PlanShootDialog
+                clients={clients.map((c) => ({ id: c.id, name: c.name }))}
+                projects={projects.map((p) => ({ id: p.id, name: p.name, clientId: p.clientId }))}
+                defaultClientId={clientId}
+                trigger={
+                  <Button variant="secondary">
+                    <Plus />
+                    {t('calendar.shoot.open')}
+                  </Button>
+                }
+              />
+            ) : null}
             <Button variant="primary" asChild>
               <Link href={clientId ? `/content?new=1&client=${clientId}` : '/content?new=1'}>
                 <Plus />
@@ -92,7 +125,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </Button>
         </div>
         <h2 className="text-lg font-semibold tracking-tight">{monthTitle({ year, month })}</h2>
-        <ul className="hidden items-center gap-4 text-xs text-muted sm:flex">
+        <ul className="hidden flex-wrap items-center gap-3 text-xs text-muted lg:flex">
           <li className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-primary" />
             {t('calendar.legend.content')}
@@ -101,15 +134,34 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             <span className="size-2 rounded-full bg-info" />
             {t('calendar.legend.tasks')}
           </li>
+          <li className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-warning" />
+            {t('calendar.legend.shoots')}
+          </li>
+          <li className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-violet" />
+            {t('calendar.legend.approvals')}
+          </li>
         </ul>
-        <FilterSelect
-          name="client"
-          value={clientId}
-          label={t('calendar.filter.client')}
-          allLabel={t('calendar.filter.client')}
-          options={clients.map((c) => ({ value: c.id, label: c.name }))}
-          className="ml-auto"
-        />
+        <div className="ml-auto flex flex-wrap items-center gap-3">
+          <FilterSelect
+            name="client"
+            value={clientId}
+            label={t('calendar.filter.client')}
+            allLabel={t('calendar.filter.client')}
+            options={clients.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <FilterChips
+            items={[
+              { href: link({ platform: undefined }), label: t('calendar.filter.platformAll'), active: !platform },
+              ...Platforms.map((p) => ({
+                href: link({ platform: p }),
+                label: PLATFORM_META[p].label,
+                active: platform === p,
+              })),
+            ]}
+          />
+        </div>
       </div>
 
       {view === 'month' ? (

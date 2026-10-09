@@ -42,6 +42,25 @@ void main() {
       expect(destinationFor(AppRoutes.appearance)?.path, AppRoutes.settings);
       expect(destinationFor('/unknown'), isNull);
     });
+
+    test('staff primary tabs are Overview, Clients, Content, Calendar — not To-do', () {
+      const policy = AccessPolicy({
+        Permissions.orgView,
+        Permissions.clientsView,
+        Permissions.contentView,
+        Permissions.projectsView,
+        Permissions.tasksView,
+      });
+      final model = NavigationModel(_session(MembershipTypes.member), policy);
+      expect(model.primary.map((d) => d.path).toList(), [
+        AppRoutes.home,
+        '/clients',
+        '/content',
+        '/calendar',
+      ]);
+      expect(model.primary.map((d) => d.path), isNot(contains('/tasks')));
+      expect(model.sidebarGroups[NavGroup.work]?.map((d) => d.path), contains('/tasks'));
+    });
   });
 
   group('AccessPolicy', () {

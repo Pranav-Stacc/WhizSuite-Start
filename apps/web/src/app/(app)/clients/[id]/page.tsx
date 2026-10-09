@@ -1,6 +1,6 @@
 import { ClientStatuses, Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
-import { UserPlus } from 'lucide-react';
+import { Link2, UserPlus } from 'lucide-react';
 import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
@@ -10,13 +10,14 @@ import { SectionHeading } from '@/shared/ui/section-heading';
 import { StatusMenu } from '@/shared/ui/status-menu';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import { setClientStatusAction } from '@/features/clients/actions/client.actions';
-import { BrandTab, OverviewTab, WorkTab } from '@/features/clients/components/client-sections';
+import { OverviewTab, WorkTab } from '@/features/clients/components/client-sections';
 import { HealthPill } from '@/features/clients/components/health-pill';
 import { getClient } from '@/features/clients/services/clients.service';
 import { clientSectionNumber } from '@/features/clients/workspace';
 import { listContent } from '@/features/content/services/content.service';
 import { listIntegrations } from '@/features/integrations/services/integrations.service';
 import { listProjectsWithProgress } from '@/features/projects/services/projects.service';
+import { PortalAccessLinkDialog } from '@/features/team/components/portal-access-link-dialog';
 import { PortalInviteDialog } from '@/features/team/components/portal-invite-dialog';
 import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
@@ -61,17 +62,29 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
         <div className="flex flex-wrap items-center gap-2">
           <PageGuide items={GUIDE} />
           {canInvite ? (
-            <PortalInviteDialog
-              clientId={client.id}
-              clientName={client.name}
-              defaultEmail={client.contactEmail}
-              trigger={
-                <Button variant="secondary" size="sm">
-                  <UserPlus />
-                  {t('team.portalInvite.open')}
-                </Button>
-              }
-            />
+            <>
+              <PortalAccessLinkDialog
+                clientId={client.id}
+                clientName={client.name}
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <Link2 />
+                    {t('team.portalLink.open')}
+                  </Button>
+                }
+              />
+              <PortalInviteDialog
+                clientId={client.id}
+                clientName={client.name}
+                defaultEmail={client.contactEmail}
+                trigger={
+                  <Button variant="secondary" size="sm">
+                    <UserPlus />
+                    {t('team.portalInvite.open')}
+                  </Button>
+                }
+              />
+            </>
           ) : null}
           {canEdit ? (
             <StatusMenu
@@ -87,10 +100,6 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
       <section>
         <SectionHeading number={clientSectionNumber('overview')} title={t('clients.workspace.overview')} />
         <OverviewTab client={client} ownerName={members.get(client.ownerId)?.name} integrations={integrations.filter((i) => i.clientId === client.id)} />
-      </section>
-      <section>
-        <SectionHeading title={t('clients.tab.brand')} />
-        <BrandTab client={client} canEdit={canEdit} />
       </section>
       <section>
         <SectionHeading title={t('clients.tab.work')} />

@@ -2,15 +2,26 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   BASIS_POINTS_PER_PERCENT,
+  CONTRACT_LIST_LIMIT_DEFAULT,
+  ContractStatuses,
+  ContractTypes,
   ErrorCodes,
   InvoiceStatuses,
   canTransitionInvoice,
   computeInvoiceTotals,
+  type ContractDto,
+  type ContractSignatureMethod,
+  type ContractStatus,
+  type ContractType,
+  type CreateContractInput,
   type InvoiceCreateInput,
   type InvoiceDto,
   type InvoiceLineInput,
   type InvoiceStatus,
   type InvoiceUpdateInput,
+  type PresignContractUploadInput,
+  type SignContractInput,
+  type UpdateContractInput,
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import {
@@ -18,6 +29,7 @@ import {
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
+import { StorageService } from '../../../../shared/storage/storage.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { ClientsService } from '../../../clients/application/services/clients.service';
@@ -31,8 +43,10 @@ import {
 } from '../../infrastructure/repositories/finance.repository';
 
 const ENTITY_TYPE = 'invoice';
+const CONTRACT_ENTITY = 'contract';
 const EDITABLE_STATUS: InvoiceStatus = 'DRAFT';
 const DEFAULT_CREATE_STATUS: InvoiceStatus = 'DRAFT';
+const DEFAULT_CONTRACT_STATUS: ContractStatus = 'DRAFT';
 
 @Injectable()
 export class FinanceService {
@@ -40,8 +54,208 @@ export class FinanceService {
     private readonly repository: FinanceRepository,
     private readonly clients: ClientsService,
     private readonly audit: AuditService,
+    private readonly storage: StorageService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
+
+  async listContracts(organizationId: string, clientId?: string): Promise<ContractDto[]> {
+    const records = await this.repository.listContracts(
+      organizationId,
+      clientId,
+      CONTRACT_LIST_LIMIT_DEFAULT,
+      TenantContext.clientScope(),
+    );
+    return records.map(toContractDto);
+  }
+
+  async createContract(
+    organizationId: string,
+    actorId: string,
+    input: CreateContractInput,
+  ): Promise<ContractDto> {
+    await this.clients.get(organizationId, input.clientId);
+    const record = await this.repository.createContract(organizationId, {
+      clientId: input.clientId,
+      title: input.title,
+      type: input.type ?? 'OTHER',
+      status: DEFAULT_CONTRACT_STATUS,
+      startDate: input.startDate ? new Date(input.startDate) : null,
+      endDate: input.endDate ? new Date(input.endDate) : null,
+    });
+    const dto = toContractDto(record);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'contract.create',
+      entityType: CONTRACT_ENTITY,
+      entityId: dto.id,
+      after: { ...dto },
+    });
+    return dto;
+  }
+
+  async updateContract(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    input: UpdateContractInput,
+  ): Promise<ContractDto> {
+    const existing = await this.repository.findContract(organizationId, id);
+    if (!existing || !TenantContext.canAccessClient(existing.clientId)) {
+      throw notFound('Contract not found');
+    }
+    const before = toContractDto(existing);
+    const record = await this.repository.updateContract(organizationId, id, {
+      title: input.title,
+      type: input.type,
+      status: input.status,
+      startDate:
+        input.startDate === undefined
+          ? undefined
+          : input.startDate
+            ? new Date(input.startDate)
+            : null,
+      endDate:
+        input.endDate === undefined ? undefined : input.endDate ? new Date(input.endDate) : null,
+      signedAt:
+        input.signedAt === undefined
+          ? undefined
+          : input.signedAt
+            ? new Date(input.signedAt)
+            : input.status === 'SIGNED'
+              ? new Date()
+              : null,
+    });
+    const dto = toContractDto(record);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'contract.update',
+      entityType: CONTRACT_ENTITY,
+      entityId: dto.id,
+      before: { ...before },
+      after: { ...dto },
+    });
+    return dto;
+  }
+
+  async presignContractUpload(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    input: PresignContractUploadInput,
+  ) {
+    await this.requireContract(organizationId, id);
+    const upload = await this.storage.createPresignedUpload({
+      organizationId,
+      filename: `agreement-${id}-${input.filename.replace(/\.pdf$/i, '')}.pdf`,
+      mimeType: input.mimeType,
+      sizeBytes: input.sizeBytes,
+    });
+    await this.repository.updateContract(organizationId, id, {
+      storageKey: upload.storageKey,
+    });
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'contract.pdf_presign',
+      entityType: CONTRACT_ENTITY,
+      entityId: id,
+      after: { storageKey: upload.storageKey },
+    });
+    return {
+      uploadUrl: upload.uploadUrl,
+      storageKey: upload.storageKey,
+      headers: upload.headers,
+      expiresInSeconds: upload.expiresInSeconds,
+    };
+  }
+
+  async completeContractUpload(organizationId: string, actorId: string, id: string) {
+    const contract = await this.requireContract(organizationId, id);
+    if (!contract.storageKey) throw unprocessable('No upload in progress for this agreement');
+    const meta = await this.storage.getObjectMetadata(contract.storageKey);
+    if (!meta) throw unprocessable('Uploaded PDF was not found in storage');
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'contract.pdf_uploaded',
+      entityType: CONTRACT_ENTITY,
+      entityId: id,
+      after: { storageKey: contract.storageKey, sizeBytes: meta.sizeBytes },
+    });
+    return toContractDto(contract);
+  }
+
+  async signContract(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    input: SignContractInput,
+  ): Promise<ContractDto> {
+    const existing = await this.requireContract(organizationId, id);
+    if (!existing.storageKey) {
+      throw unprocessable('Upload the agreement PDF before collecting a signature');
+    }
+    if (existing.status === 'SIGNED' && existing.signedStorageKey) {
+      throw unprocessable('This agreement is already signed');
+    }
+    const signed = await this.storage.copyObjectImmutable({
+      sourceKey: existing.storageKey,
+      organizationId,
+      filename: `agreement-${id}-signed.pdf`,
+    });
+    const ctx = TenantContext.get();
+    const record = await this.repository.updateContract(organizationId, id, {
+      status: 'SIGNED',
+      signedAt: new Date(),
+      signatureName: input.signerName,
+      signatureMethod: input.method,
+      signedStorageKey: signed.storageKey,
+      contentHash: signed.contentHash,
+      signatureIp: ctx?.ipAddress ?? null,
+      signatureUserAgent: ctx?.userAgent ?? null,
+    });
+    const dto = toContractDto(record);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'contract.signed',
+      entityType: CONTRACT_ENTITY,
+      entityId: id,
+      after: {
+        ...dto,
+        contentHash: signed.contentHash,
+        signedStorageKey: signed.storageKey,
+        sizeBytes: signed.sizeBytes,
+      },
+    });
+    return dto;
+  }
+
+  async contractDownloadUrl(organizationId: string, id: string) {
+    const contract = await this.requireContract(organizationId, id);
+    const key = contract.signedStorageKey ?? contract.storageKey;
+    if (!key) throw notFound('Agreement PDF not found');
+    const suffix = contract.signedStorageKey ? '-signed' : '';
+    return this.storage.createPresignedDownload(key, {
+      filename: `${contract.title.replace(/[^\w.-]+/g, '_')}${suffix}.pdf`,
+      disposition: 'attachment',
+    });
+  }
+
+  private async requireContract(organizationId: string, id: string) {
+    const record = await this.repository.findContract(organizationId, id);
+    if (!record || !TenantContext.canAccessClient(record.clientId)) {
+      throw notFound('Contract not found');
+    }
+    return record;
+  }
 
   async list(organizationId: string): Promise<InvoiceDto[]> {
     const limit = this.config.get('INVOICE_LIST_LIMIT', { infer: true });
@@ -265,4 +479,57 @@ function duplicateNumber(number: string) {
     ErrorCodes.CONFLICT,
     `Invoice number ${number} is already in use`,
   );
+}
+
+function toContractDto(record: {
+  id: string;
+  organizationId: string;
+  clientId: string;
+  title: string;
+  type: string;
+  status: string;
+  startDate: Date | null;
+  endDate: Date | null;
+  signedAt: Date | null;
+  storageKey: string | null;
+  signedStorageKey?: string | null;
+  contentHash?: string | null;
+  signatureName?: string | null;
+  signatureMethod?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}): ContractDto {
+  return {
+    id: record.id,
+    organizationId: record.organizationId,
+    clientId: record.clientId,
+    title: record.title,
+    type: toContractType(record.type),
+    status: toContractStatus(record.status),
+    startDate: record.startDate?.toISOString().slice(0, 10) ?? null,
+    endDate: record.endDate?.toISOString().slice(0, 10) ?? null,
+    signedAt: record.signedAt?.toISOString() ?? null,
+    storageKey: record.storageKey,
+    signedStorageKey: record.signedStorageKey ?? null,
+    contentHash: record.contentHash ?? null,
+    signatureName: record.signatureName ?? null,
+    signatureMethod: toSignatureMethod(record.signatureMethod),
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
+
+function toSignatureMethod(value: string | null | undefined): ContractSignatureMethod | null {
+  if (value === 'TYPED' || value === 'DRAWN') return value;
+  return null;
+}
+
+function toContractType(value: string): ContractType {
+  const type = ContractTypes.find((candidate) => candidate === value);
+  return type ?? 'OTHER';
+}
+
+function toContractStatus(value: string): ContractStatus {
+  const status = ContractStatuses.find((candidate) => candidate === value);
+  return status ?? 'DRAFT';
 }

@@ -37,11 +37,12 @@ interface PlannerDrawerProviderProps {
   posts: ComposerPost[];
   /** Posts that may no longer be edited (published) open their detail page instead. */
   lockedPostIds: string[];
+  uploadEnabled?: boolean;
   children: ReactNode;
 }
 
 /** One post-details drawer per planner page; any tile, cell or row can open it. */
-export function PlannerDrawerProvider({ clientId, clients, assets, posts, lockedPostIds, children }: PlannerDrawerProviderProps) {
+export function PlannerDrawerProvider({ clientId, clients, assets, posts, lockedPostIds, uploadEnabled = true, children }: PlannerDrawerProviderProps) {
   const router = useRouter();
   const [target, setTarget] = useState<DrawerTarget | null>(null);
   const byId = useMemo(() => new Map(posts.map((p) => [p.id, p])), [posts]);
@@ -75,6 +76,7 @@ export function PlannerDrawerProvider({ clientId, clients, assets, posts, locked
         open={target !== null}
         onOpenChange={(open) => !open && setTarget(null)}
         stayOnSave
+        uploadEnabled={uploadEnabled}
       />
     </PlannerDrawerContext.Provider>
   );

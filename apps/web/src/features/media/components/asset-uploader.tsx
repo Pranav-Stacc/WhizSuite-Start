@@ -23,7 +23,7 @@ export function AssetUploader({ clients, trigger, defaultOpen = false, defaultCl
   const upload = useAssetUpload();
 
   const start = async () => {
-    const failed = await upload.start(clientId);
+    const { failed } = await upload.start(clientId);
     if (failed === 0) {
       upload.reset();
       setOpen(false);

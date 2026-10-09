@@ -17,6 +17,7 @@ import {
   problem,
 } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
 import {
@@ -91,7 +92,12 @@ export class WorkService {
 
   async list(organizationId: string): Promise<ProjectDto[]> {
     const limit = this.config.get('PROJECT_LIST_LIMIT', { infer: true });
-    const rows = await this.repository.listProjects(organizationId, limit);
+    const rows = await this.repository.listProjects(
+      organizationId,
+      limit,
+      TenantContext.clientScope(),
+      TenantContext.projectScope(),
+    );
     return rows.map(toProjectDto);
   }
 
@@ -201,6 +207,34 @@ export class WorkService {
     return this.withAssigneeUsers(organizationId, tasks);
   }
 
+  /** Calendar feed: open tasks due in `[from, to)`. */
+  listTasksDueInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+    clientIds?: string[],
+  ) {
+    return this.repository.listTasksDueInRange(
+      organizationId,
+      range,
+      clientIds,
+      this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+    );
+  }
+
+  /** Calendar feed: incomplete project milestones due in range. */
+  listMilestonesDueInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+    clientIds?: string[],
+  ) {
+    return this.repository.listMilestonesDueInRange(
+      organizationId,
+      range,
+      clientIds,
+      this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+    );
+  }
+
   async getTask(organizationId: string, taskId: string) {
     return this.withAssigneeUser(
       organizationId,
@@ -228,6 +262,7 @@ export class WorkService {
       estimateMinutes: dto.estimateMinutes,
       assigneeMembershipId,
       createdById: actorId,
+      calendarItemId: dto.calendarItemId,
     });
     const task = await this.withAssigneeUser(organizationId, created);
     await this.outbox.write({

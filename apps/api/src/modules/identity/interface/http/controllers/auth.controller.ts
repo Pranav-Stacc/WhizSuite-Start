@@ -1,7 +1,13 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../../../application/services/auth.service';
-import { LoginDto, LogoutDto, RefreshDto, RegisterDto } from '../dto/auth.dto';
+import {
+  GoogleAuthDto,
+  LoginDto,
+  LogoutDto,
+  RefreshDto,
+  RegisterDto,
+} from '../dto/auth.dto';
 
 @ApiTags('auth')
 @Controller('v1/auth')
@@ -16,6 +22,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
+  }
+
+  @Post('google')
+  google(@Body() dto: GoogleAuthDto) {
+    return this.auth.loginWithGoogle(dto);
   }
 
   @Post('refresh')

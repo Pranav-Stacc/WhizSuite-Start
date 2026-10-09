@@ -127,10 +127,9 @@ class MetricTile extends StatelessWidget {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
     final accent = tone == StatusTone.neutral ? tokens.secondary : tone.color(tokens);
-    // Dense padding keeps overview KPI grids readable without drowning the page in whitespace.
     return SurfaceCard(
       onTap: onTap,
-      padding: EdgeInsets.fromLTRB(tokens.md, tokens.md, tokens.md, tokens.sm + tokens.xs),
+      padding: EdgeInsets.fromLTRB(tokens.sm + tokens.xs, tokens.sm, tokens.sm + tokens.xs, tokens.sm),
       semanticLabel: '$label: $value',
       child: ExcludeSemantics(
         child: Column(
@@ -144,32 +143,39 @@ class MetricTile extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: text.labelMedium?.copyWith(color: tokens.muted),
+                    style: text.labelSmall?.copyWith(
+                      color: tokens.muted,
+                      letterSpacing: 0.4,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-                if (icon != null) Icon(icon, size: 18, color: accent),
+                if (icon != null) Icon(icon, size: 16, color: accent),
               ],
             ),
-            SizedBox(height: tokens.xs + 2),
+            SizedBox(height: tokens.xs),
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: AlignmentDirectional.centerStart,
               child: Text(
                 value,
-                style: text.headlineSmall?.copyWith(
+                style: text.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  letterSpacing: -0.4,
+                  letterSpacing: -0.3,
+                  height: 1.1,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
             if (caption != null) ...[
-              SizedBox(height: tokens.xs),
+              SizedBox(height: 2),
               Text(
                 caption!,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: text.bodySmall?.copyWith(color: tone == StatusTone.neutral ? tokens.muted : accent),
+                style: text.labelSmall?.copyWith(
+                  color: tone == StatusTone.neutral ? tokens.muted : accent,
+                ),
               ),
             ],
           ],

@@ -49,6 +49,7 @@ class NavigationModel {
 
   List<AppDestination> get primary => visible.where((d) => d.primary).take(maxPrimaryDestinations).toList();
 
+  /// Destinations for the sidebar / More menu, excluding bottom-bar pins.
   Map<NavGroup, List<AppDestination>> get secondaryGroups {
     final pinned = primary.toSet();
     final groups = <NavGroup, List<AppDestination>>{};
@@ -59,6 +60,8 @@ class NavigationModel {
     }
     return groups;
   }
+
+  Map<NavGroup, List<AppDestination>> get sidebarGroups => secondaryGroups;
 }
 
 /// The destination owning [location], matched by longest path prefix.

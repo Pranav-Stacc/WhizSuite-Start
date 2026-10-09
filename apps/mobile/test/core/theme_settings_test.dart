@@ -12,11 +12,13 @@ void main() {
       );
       expect(themePresetList.where((p) => p.isLight).length, greaterThanOrEqualTo(8));
       expect(themePresetList.where((p) => !p.isLight).length, greaterThanOrEqualTo(6));
-      expect(themePresetList.first.settings, defaultThemeSettings);
+      expect(themePresetList.first.settings, contractDefaultThemeSettings);
+      expect(defaultThemeSettings.isLight, isFalse);
+      expect(defaultThemeSettings.density, ThemeDensity.compact);
     });
 
     test('round-trips through JSON in the web cookie format', () {
-      final custom = defaultThemeSettings.withColor(ThemeColorKeys.primary, const Color(0xFF38BDF8)).copyWith(
+      final custom = contractDefaultThemeSettings.withColor(ThemeColorKeys.primary, const Color(0xFF38BDF8)).copyWith(
             radius: 12,
             density: ThemeDensity.compact,
           );
@@ -28,7 +30,7 @@ void main() {
     });
 
     test('rejects out-of-range radius and malformed colours', () {
-      final json = defaultThemeSettings.toJson();
+      final json = contractDefaultThemeSettings.toJson();
       expect(ThemeSettings.tryParse({...json, 'radius': themeRadiusMax + 1}), isNull);
       expect(ThemeSettings.tryParse({...json, ThemeColorKeys.bg: 'white'}), isNull);
     });
@@ -36,7 +38,7 @@ void main() {
     test('contrastOn matches the web threshold', () {
       expect(toHex(contrastOn(const Color(0xFFFFFFFF))), themeContrastDark);
       expect(toHex(contrastOn(const Color(0xFF111111))), themeContrastLight);
-      expect(defaultThemeSettings.isLight, isTrue);
+      expect(contractDefaultThemeSettings.isLight, isTrue);
     });
   });
 }

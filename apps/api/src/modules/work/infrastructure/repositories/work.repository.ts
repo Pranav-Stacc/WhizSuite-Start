@@ -49,6 +49,7 @@ export interface TaskCreateRow {
   estimateMinutes?: number;
   assigneeMembershipId?: string;
   createdById: string;
+  calendarItemId?: string;
 }
 
 export interface TaskChangeRow {
@@ -66,9 +67,19 @@ export interface TaskChangeRow {
 export class WorkRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  listProjects(organizationId: string, limit: number) {
+  listProjects(
+    organizationId: string,
+    limit: number,
+    allowedClientIds?: string[],
+    allowedProjectIds?: string[],
+  ) {
     return this.prisma.project.findMany({
-      where: { organizationId, deletedAt: null },
+      where: {
+        organizationId,
+        deletedAt: null,
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+        ...(allowedProjectIds ? { id: { in: allowedProjectIds } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
       take: limit,
       select: PROJECT_SELECT,
@@ -110,6 +121,64 @@ export class WorkRepository {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: { assignees: true },
+    });
+  }
+
+  /** Open tasks with a due date in range — for the unified calendar feed. */
+  listTasksDueInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+    clientIds: string[] | undefined,
+    limit: number,
+  ) {
+    return this.prisma.task.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        status: { not: 'DONE' },
+        dueDate: { gte: range.from, lt: range.to },
+        ...(clientIds
+          ? { project: { clientId: { in: clientIds }, deletedAt: null } }
+          : {}),
+      },
+      orderBy: { dueDate: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        dueDate: true,
+        projectId: true,
+        project: { select: { clientId: true } },
+      },
+    });
+  }
+
+  /** Project milestones with a due date in range. */
+  listMilestonesDueInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+    clientIds: string[] | undefined,
+    limit: number,
+  ) {
+    return this.prisma.projectMilestone.findMany({
+      where: {
+        organizationId,
+        completedAt: null,
+        dueDate: { gte: range.from, lt: range.to },
+        ...(clientIds
+          ? { project: { clientId: { in: clientIds }, deletedAt: null } }
+          : {}),
+      },
+      orderBy: { dueDate: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        dueDate: true,
+        projectId: true,
+        project: { select: { clientId: true, name: true } },
+      },
     });
   }
 

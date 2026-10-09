@@ -8,6 +8,13 @@ export interface TenantContextData {
   membershipType?: string;
   /** Brand a CLIENT membership is restricted to; absent for staff. */
   clientId?: string;
+  /**
+   * Staff role-assignment scopes. `undefined` = not resolved yet / org-wide.
+   * Empty array = explicitly no clients. Non-empty = restricted to those clients.
+   */
+  staffClientIds?: string[];
+  staffProjectIds?: string[];
+  staffContentIds?: string[];
   correlationId: string;
   ipAddress?: string;
   userAgent?: string;
@@ -51,18 +58,52 @@ export class TenantContext {
   }
 
   /**
-   * Client ids the current principal may access, or `undefined` when unrestricted (staff).
-   * A CLIENT membership without an assigned brand gets an empty scope and sees nothing.
+   * Client ids the current principal may access, or `undefined` when unrestricted.
+   * CLIENT memberships are pinned to their brand; staff may be narrowed by role scopes.
    */
   static clientScope(): string[] | undefined {
     const ctx = storage.getStore();
-    if (ctx?.membershipType !== CLIENT_MEMBERSHIP) return undefined;
-    return ctx.clientId ? [ctx.clientId] : [];
+    if (ctx?.membershipType === CLIENT_MEMBERSHIP) {
+      return ctx.clientId ? [ctx.clientId] : [];
+    }
+    if (ctx?.staffClientIds !== undefined) return ctx.staffClientIds;
+    return undefined;
+  }
+
+  /** Project ids from staff role scopes, or `undefined` when unrestricted / not set. */
+  static projectScope(): string[] | undefined {
+    const ctx = storage.getStore();
+    if (ctx?.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    return ctx?.staffProjectIds;
+  }
+
+  /** Content ids from staff role scopes, or `undefined` when unrestricted / not set. */
+  static contentScope(): string[] | undefined {
+    const ctx = storage.getStore();
+    if (ctx?.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    return ctx?.staffContentIds;
+  }
+
+  static bindDataScope(scope: {
+    clientIds?: string[];
+    projectIds?: string[];
+    contentIds?: string[];
+  }): void {
+    const ctx = storage.getStore();
+    if (!ctx) return;
+    if (scope.clientIds) ctx.staffClientIds = scope.clientIds;
+    if (scope.projectIds) ctx.staffProjectIds = scope.projectIds;
+    if (scope.contentIds) ctx.staffContentIds = scope.contentIds;
   }
 
   static canAccessClient(clientId: string | null | undefined): boolean {
     const scope = TenantContext.clientScope();
     return !scope || (!!clientId && scope.includes(clientId));
+  }
+
+  static canAccessProject(projectId: string | null | undefined): boolean {
+    const scope = TenantContext.projectScope();
+    return !scope || (!!projectId && scope.includes(projectId));
   }
 
   static getOrganizationId(): string | undefined {

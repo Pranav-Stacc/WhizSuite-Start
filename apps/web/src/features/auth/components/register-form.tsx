@@ -10,6 +10,7 @@ import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { Field, Input } from '@/shared/ui/field';
 import { registerAction } from '../actions/auth.actions';
+import { GoogleSignInButton } from './google-sign-in-button';
 
 const toSlug = (value: string): string =>
   value
@@ -25,6 +26,8 @@ export function RegisterForm() {
     defaultValues: { firstName: '', lastName: '', email: '', password: '', organizationName: '', organizationSlug: '' },
   });
   const errors = form.formState.errors;
+  const organizationName = form.watch('organizationName');
+  const organizationSlug = form.watch('organizationSlug');
 
   const orgField = form.register('organizationName');
 
@@ -40,42 +43,55 @@ export function RegisterForm() {
   });
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
-      <Field label={t('auth.register.firstName')} htmlFor="reg-first" error={translateError(errors.firstName?.message)}>
-        <Input id="reg-first" autoComplete="given-name" {...form.register('firstName')} />
-      </Field>
-      <Field label={t('auth.register.lastName')} htmlFor="reg-last">
-        <Input id="reg-last" autoComplete="family-name" {...form.register('lastName')} />
-      </Field>
-      <Field label={t('auth.login.email')} htmlFor="reg-email" className="sm:col-span-2" error={translateError(errors.email?.message)}>
-        <Input id="reg-email" type="email" autoComplete="email" {...form.register('email')} />
-      </Field>
-      <Field label={t('auth.register.org')} htmlFor="reg-org" error={translateError(errors.organizationName?.message)}>
-        <Input
-          id="reg-org"
-          autoComplete="organization"
-          {...orgField}
-          onChange={(e) => {
-            void orgField.onChange(e);
-            if (!form.formState.dirtyFields.organizationSlug) form.setValue('organizationSlug', toSlug(e.target.value), { shouldValidate: form.formState.isSubmitted });
-          }}
-        />
-      </Field>
-      <Field label={t('auth.register.slug')} htmlFor="reg-slug" hint={t('auth.register.slugHint')} error={translateError(errors.organizationSlug?.message)}>
-        <Input id="reg-slug" {...form.register('organizationSlug')} />
-      </Field>
-      <Field label={t('auth.register.password')} htmlFor="reg-password" className="sm:col-span-2" error={translateError(errors.password?.message)}>
-        <Input id="reg-password" type="password" autoComplete="new-password" {...form.register('password')} />
-      </Field>
-      {formError ? (
-        <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger sm:col-span-2">
-          {formError}
-        </p>
-      ) : null}
-      <Button type="submit" variant="primary" size="lg" className="w-full sm:col-span-2" disabled={pending}>
-        {pending ? <Loader2 className="animate-spin" /> : null}
-        {t('auth.register.submit')}
-      </Button>
-    </form>
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t('auth.register.org')} htmlFor="reg-org-google" error={translateError(errors.organizationName?.message)}>
+          <Input
+            id="reg-org-google"
+            autoComplete="organization"
+            {...orgField}
+            onChange={(e) => {
+              void orgField.onChange(e);
+              if (!form.formState.dirtyFields.organizationSlug) {
+                form.setValue('organizationSlug', toSlug(e.target.value), {
+                  shouldValidate: form.formState.isSubmitted,
+                });
+              }
+            }}
+          />
+        </Field>
+        <Field label={t('auth.register.slug')} htmlFor="reg-slug-google" hint={t('auth.register.slugHint')} error={translateError(errors.organizationSlug?.message)}>
+          <Input id="reg-slug-google" {...form.register('organizationSlug')} />
+        </Field>
+      </div>
+      <GoogleSignInButton
+        mode="register"
+        organizationName={organizationName?.trim() || undefined}
+        organizationSlug={organizationSlug?.trim() || undefined}
+      />
+      <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
+        <Field label={t('auth.register.firstName')} htmlFor="reg-first" error={translateError(errors.firstName?.message)}>
+          <Input id="reg-first" autoComplete="given-name" {...form.register('firstName')} />
+        </Field>
+        <Field label={t('auth.register.lastName')} htmlFor="reg-last">
+          <Input id="reg-last" autoComplete="family-name" {...form.register('lastName')} />
+        </Field>
+        <Field label={t('auth.login.email')} htmlFor="reg-email" className="sm:col-span-2" error={translateError(errors.email?.message)}>
+          <Input id="reg-email" type="email" autoComplete="email" {...form.register('email')} />
+        </Field>
+        <Field label={t('auth.register.password')} htmlFor="reg-password" className="sm:col-span-2" error={translateError(errors.password?.message)}>
+          <Input id="reg-password" type="password" autoComplete="new-password" {...form.register('password')} />
+        </Field>
+        {formError ? (
+          <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger sm:col-span-2">
+            {formError}
+          </p>
+        ) : null}
+        <Button type="submit" variant="primary" size="lg" className="w-full sm:col-span-2" disabled={pending}>
+          {pending ? <Loader2 className="animate-spin" /> : null}
+          {t('auth.register.submit')}
+        </Button>
+      </form>
+    </div>
   );
 }

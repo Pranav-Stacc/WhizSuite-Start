@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/connectivity/connectivity.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/page_scaffold.dart';
+import '../../core/widgets/shell_chrome.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/state_views.dart';
 import '../../features/access/application/access_controller.dart';
@@ -19,6 +20,8 @@ import '../../features/notifications/presentation/notification_links.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
+import 'app_sidebar.dart';
+import 'creative_bottom_nav.dart';
 import 'search_action.dart';
 
 /// Signed-in frame: permission-filtered navigation, offline banner, notification delivery,
@@ -26,7 +29,7 @@ import 'search_action.dart';
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({required this.location, required this.child, super.key});
 
-  /// Width at which the bottom bar becomes a side rail.
+  /// Width at which the bottom bar becomes a permanent sidebar.
   static const railBreakpoint = 840.0;
 
   final String location;
@@ -39,6 +42,7 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   static const _shellActions = [SearchAction(), NotificationBell()];
 
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final AppLifecycleListener _lifecycle;
   final _subscriptions = <StreamSubscription<Object?>>[];
   bool _deliveryStarted = false;
@@ -96,6 +100,14 @@ class _AppShellState extends ConsumerState<AppShell> {
     context.go(notificationLink(notification));
   }
 
+  void _openSidebar() => _scaffoldKey.currentState?.openDrawer();
+
+  void _navigate(String path) {
+    final navigator = _scaffoldKey.currentState;
+    if (navigator?.isDrawerOpen ?? false) navigator!.closeDrawer();
+    context.go(path);
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider).value;
@@ -104,37 +116,41 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     final navigation = NavigationModel(session, ref.watch(accessPolicyProvider));
     final tabs = [
-      for (final d in navigation.primary) _Tab(d.path, d.icon, d.selectedIcon, d.label),
-      if (navigation.secondaryGroups.isNotEmpty)
-        _Tab(AppRoutes.more, Icons.menu, Icons.menu_open, (l10n) => l10n.navMore),
+      for (final d in navigation.primary)
+        CreativeNavTab(path: d.path, icon: d.icon, selectedIcon: d.selectedIcon, label: d.label),
     ];
-    // Off-tab routes (notifications, settings pages) highlight "More" when it exists.
-    final selected = _selectedIndex(tabs) ?? (navigation.secondaryGroups.isNotEmpty ? tabs.length - 1 : null);
+    final selected = _selectedIndex(tabs);
     final body = ShellActions(
       actions: _shellActions,
       child: Column(children: [const OfflineBanner(), Expanded(child: _guarded(navigation, access))]),
     );
-    final l10n = AppLocalizations.of(context);
 
-    if (tabs.length < 2) return Scaffold(body: body);
+    final sidebar = AppSidebar(
+      session: session,
+      groups: navigation.sidebarGroups,
+      location: widget.location,
+      onNavigate: _navigate,
+      permanent: false,
+    );
+
+    if (tabs.length < 2) {
+      return ShellChrome(
+        openSidebar: _openSidebar,
+        child: Scaffold(key: _scaffoldKey, drawer: sidebar, body: body),
+      );
+    }
 
     final wide = MediaQuery.sizeOf(context).width >= AppShell.railBreakpoint;
     if (wide) {
       return Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              extended: true,
-              selectedIndex: selected,
-              onDestinationSelected: (i) => context.go(tabs[i].path),
-              destinations: [
-                for (final tab in tabs)
-                  NavigationRailDestination(
-                    icon: Icon(tab.icon),
-                    selectedIcon: Icon(tab.selectedIcon),
-                    label: Text(tab.label(l10n)),
-                  ),
-              ],
+            AppSidebar(
+              session: session,
+              groups: navigation.sidebarGroups,
+              location: widget.location,
+              onNavigate: _navigate,
+              permanent: true,
             ),
             const VerticalDivider(width: 1),
             Expanded(child: body),
@@ -142,15 +158,18 @@ class _AppShellState extends ConsumerState<AppShell> {
         ),
       );
     }
-    return Scaffold(
-      body: body,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selected ?? 0,
-        onDestinationSelected: (i) => context.go(tabs[i].path),
-        destinations: [
-          for (final tab in tabs)
-            NavigationDestination(icon: Icon(tab.icon), selectedIcon: Icon(tab.selectedIcon), label: tab.label(l10n)),
-        ],
+
+    return ShellChrome(
+      openSidebar: _openSidebar,
+      child: Scaffold(
+        key: _scaffoldKey,
+        drawer: sidebar,
+        body: body,
+        bottomNavigationBar: CreativeBottomNav(
+          tabs: tabs,
+          selectedIndex: selected,
+          onSelect: (i) => context.go(tabs[i].path),
+        ),
       ),
     );
   }
@@ -167,20 +186,11 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   /// Index of the tab owning the current location, or null when no tab owns it.
-  int? _selectedIndex(List<_Tab> tabs) {
+  int? _selectedIndex(List<CreativeNavTab> tabs) {
     for (var i = 0; i < tabs.length; i++) {
       final path = tabs[i].path;
       if (widget.location == path || widget.location.startsWith('$path/')) return i;
     }
     return null;
   }
-}
-
-class _Tab {
-  const _Tab(this.path, this.icon, this.selectedIcon, this.label);
-
-  final String path;
-  final IconData icon;
-  final IconData selectedIcon;
-  final String Function(AppLocalizations l10n) label;
 }

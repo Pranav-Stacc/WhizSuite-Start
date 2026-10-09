@@ -16,7 +16,7 @@ final approvalsModule = FeatureModule(
       anyOf: const [Permissions.approvalsView],
       audiences: everyAudience,
       group: NavGroup.content,
-      primary: true,
+      primary: false,
     ),
   ],
   routes: [

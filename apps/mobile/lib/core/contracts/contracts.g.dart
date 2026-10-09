@@ -117,6 +117,9 @@ abstract final class ErrorCodes {
   static const String tenantRequired = 'TENANT_REQUIRED';
   static const String tenantMismatch = 'TENANT_MISMATCH';
   static const String invalidCredentials = 'INVALID_CREDENTIALS';
+  static const String googleAuthDisabled = 'GOOGLE_AUTH_DISABLED';
+  static const String googleTokenInvalid = 'GOOGLE_TOKEN_INVALID';
+  static const String accountNotFound = 'ACCOUNT_NOT_FOUND';
   static const String sessionExpired = 'SESSION_EXPIRED';
   static const String tokenReuseDetected = 'TOKEN_REUSE_DETECTED';
   static const String invitationExpired = 'INVITATION_EXPIRED';
@@ -134,15 +137,16 @@ abstract final class ErrorCodes {
   static const String contentVersionConflict = 'CONTENT_VERSION_CONFLICT';
   static const String internalError = 'INTERNAL_ERROR';
 
-  static const List<String> values = <String>[validationFailed, unauthorized, forbidden, notFound, conflict, rateLimited, idempotencyReplay, tenantRequired, tenantMismatch, invalidCredentials, sessionExpired, tokenReuseDetected, invitationExpired, invitationRevoked, seatLimitExceeded, entitlementDenied, workflowGuardFailed, approvalStale, publishFailed, socialAccountDisconnected, mediaTypeNotAllowed, mediaTooLarge, mediaUploadIncomplete, mediaNotReady, contentVersionConflict, internalError];
+  static const List<String> values = <String>[validationFailed, unauthorized, forbidden, notFound, conflict, rateLimited, idempotencyReplay, tenantRequired, tenantMismatch, invalidCredentials, googleAuthDisabled, googleTokenInvalid, accountNotFound, sessionExpired, tokenReuseDetected, invitationExpired, invitationRevoked, seatLimitExceeded, entitlementDenied, workflowGuardFailed, approvalStale, publishFailed, socialAccountDisconnected, mediaTypeNotAllowed, mediaTooLarge, mediaUploadIncomplete, mediaNotReady, contentVersionConflict, internalError];
 }
 
 abstract final class NotificationTypeKeys {
   static const String taskAssigned = 'task.assigned';
   static const String contentApproved = 'content.approved';
   static const String contentChangesRequested = 'content.changes_requested';
+  static const String approvalRequested = 'approval.requested';
 
-  static const List<String> values = <String>[taskAssigned, contentApproved, contentChangesRequested];
+  static const List<String> values = <String>[taskAssigned, contentApproved, contentChangesRequested, approvalRequested];
 }
 
 abstract final class NotificationChannels {
@@ -399,8 +403,24 @@ abstract final class CalendarSourceTypes {
   static const String task = 'TASK';
   static const String meeting = 'MEETING';
   static const String deadline = 'DEADLINE';
+  static const String shoot = 'SHOOT';
+  static const String approval = 'APPROVAL';
+  static const String campaign = 'CAMPAIGN';
+  static const String invoice = 'INVOICE';
+  static const String milestone = 'MILESTONE';
 
-  static const List<String> values = <String>[manual, content, task, meeting, deadline];
+  static const List<String> values = <String>[
+    manual,
+    content,
+    task,
+    meeting,
+    deadline,
+    shoot,
+    approval,
+    campaign,
+    invoice,
+    milestone,
+  ];
 }
 
 abstract final class CustomFieldEntityTypes {
@@ -476,8 +496,9 @@ abstract final class FeedbackSubjectTypes {
 abstract final class ApprovalStepRules {
   static const String any = 'ANY';
   static const String all = 'ALL';
+  static const String quorum = 'QUORUM';
 
-  static const List<String> values = <String>[any, all];
+  static const List<String> values = <String>[any, all, quorum];
 }
 
 abstract final class ApiContentTypes {

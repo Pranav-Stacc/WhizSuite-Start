@@ -73,14 +73,23 @@ export class IdentityRepository {
 
   findMembershipById(membershipId: string) {
     return this.prisma.organizationMembership.findFirst({
-      where: { id: membershipId, status: 'ACTIVE' },
+      where: {
+        id: membershipId,
+        status: 'ACTIVE',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
     });
   }
 
   findActiveMembershipForUser(organizationId: string, userId: string) {
     return this.prisma.organizationMembership.findFirst({
-      where: { organizationId, userId, status: 'ACTIVE' },
-      select: { id: true },
+      where: {
+        organizationId,
+        userId,
+        status: 'ACTIVE',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      select: { id: true, expiresAt: true },
     });
   }
 
@@ -160,12 +169,89 @@ export class IdentityRepository {
 
   createUser(input: {
     email: string;
-    passwordHash: string;
+    passwordHash: string | null;
     firstName: string;
     lastName?: string;
+    emailVerified?: boolean;
+    avatarUrl?: string;
   }) {
     return this.prisma.user.create({
-      data: { ...input, emailVerified: false },
+      data: {
+        email: input.email,
+        passwordHash: input.passwordHash,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        emailVerified: input.emailVerified ?? false,
+        avatarUrl: input.avatarUrl,
+      },
+    });
+  }
+
+  findOauthAccount(provider: string, providerUserId: string) {
+    return this.prisma.oauthAccount.findUnique({
+      where: {
+        provider_providerUserId: { provider, providerUserId },
+      },
+      select: {
+        id: true,
+        userId: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+          },
+        },
+      },
+    });
+  }
+
+  linkOauthAccount(input: {
+    userId: string;
+    provider: string;
+    providerUserId: string;
+  }) {
+    return this.prisma.oauthAccount.create({
+      data: input,
+      select: { id: true, userId: true },
+    });
+  }
+
+  markEmailVerified(userId: string, avatarUrl?: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerified: true,
+        ...(avatarUrl ? { avatarUrl } : {}),
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
+  }
+
+  setPasswordHash(userId: string, passwordHash: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+      select: { id: true, email: true, firstName: true, lastName: true },
+    });
+  }
+
+  findMembershipWithExpiry(membershipId: string) {
+    return this.prisma.organizationMembership.findFirst({
+      where: { id: membershipId, status: 'ACTIVE' },
+      select: {
+        id: true,
+        organizationId: true,
+        userId: true,
+        type: true,
+        expiresAt: true,
+      },
     });
   }
 
@@ -267,11 +353,13 @@ export class IdentityRepository {
 
   async createOrganizationWithOwner(input: {
     email: string;
-    passwordHash: string;
+    passwordHash: string | null;
     firstName: string;
     lastName?: string;
     organizationName: string;
     organizationSlug: string;
+    emailVerified?: boolean;
+    avatarUrl?: string;
   }) {
     return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -280,7 +368,8 @@ export class IdentityRepository {
           passwordHash: input.passwordHash,
           firstName: input.firstName,
           lastName: input.lastName,
-          emailVerified: false,
+          emailVerified: input.emailVerified ?? false,
+          avatarUrl: input.avatarUrl,
         },
       });
 

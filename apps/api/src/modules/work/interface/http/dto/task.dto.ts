@@ -66,6 +66,11 @@ export class CreateTaskDto {
   @IsOptional()
   @IsUUID()
   assigneeUserId?: string;
+
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  calendarItemId?: string;
 }
 
 export class UpdateTaskDto {

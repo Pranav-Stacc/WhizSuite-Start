@@ -40,7 +40,40 @@ class AuthRepository {
   Future<AuthTokens> login({required String email, required String password}) =>
       _authenticate('v1/auth/login', {'email': email, 'password': password});
 
+  Future<AuthTokens> loginWithGoogle({
+    required String idToken,
+    String? organizationName,
+    String? organizationSlug,
+  }) =>
+      _authenticate('v1/auth/google', {
+        'idToken': idToken,
+        if (organizationName != null && organizationName.isNotEmpty) 'organizationName': organizationName,
+        if (organizationSlug != null && organizationSlug.isNotEmpty) 'organizationSlug': organizationSlug,
+      });
+
   Future<AuthTokens> register(RegistrationInput input) => _authenticate('v1/auth/register', input.toJson());
+
+  /// Redeems a shareable client portal access link (temporary or permanent).
+  Future<AuthTokens> redeemPortalAccess({
+    required String token,
+    required String email,
+    required String firstName,
+    String? lastName,
+    String? password,
+  }) =>
+      _authenticate('v1/portal-access/redeem', {
+        'token': token,
+        'email': email,
+        'firstName': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+        if (password != null && password.isNotEmpty) 'password': password,
+      });
+
+  Future<Json> previewPortalAccess(String token) =>
+      _api.getUnauthenticated<Json>('v1/portal-access/preview', query: {'token': token});
+
+  Future<void> claimPortalAccess({required String password}) =>
+      _api.post<Json>('v1/portal-access/claim', body: {'password': password});
 
   /// Revokes the refresh token server-side; local tokens are cleared even if the call fails.
   Future<void> logout() async {

@@ -1,0 +1,275 @@
+import { Injectable } from '@nestjs/common';
+import {
+  DefaultClientFolderTemplate,
+  DefaultShootFolderNames,
+  ErrorCodes,
+  type CreateMediaFolderInput,
+  type MediaFolderDto,
+  type UpdateMediaFolderInput,
+} from '@agency-os/contracts';
+import {
+  notFound,
+  problem,
+} from '../../../../shared/errors/problem-details.exception';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { AuditService } from '../../../audit/application/services/audit.service';
+import { MediaRepository } from '../../infrastructure/repositories/media.repository';
+import { toMediaFolderDto } from '../mappers/media-asset.mapper';
+
+const ENTITY = 'mediaFolder';
+
+function joinPath(parentPath: string | null, name: string): string {
+  const segment = name.trim().replaceAll('/', '-');
+  return parentPath ? `${parentPath}/${segment}` : `/${segment}`;
+}
+
+@Injectable()
+export class MediaFoldersService {
+  constructor(
+    private readonly repository: MediaRepository,
+    private readonly audit: AuditService,
+  ) {}
+
+  async list(
+    organizationId: string,
+    filters: {
+      clientId?: string;
+      projectId?: string;
+      calendarItemId?: string;
+      parentId?: string;
+      clientVisibleOnly?: boolean;
+    } = {},
+  ): Promise<MediaFolderDto[]> {
+    const folders = await this.repository.listFolders(organizationId, {
+      ...filters,
+      allowedClientIds: TenantContext.clientScope(),
+    });
+    return folders.map(toMediaFolderDto);
+  }
+
+  async get(organizationId: string, id: string): Promise<MediaFolderDto> {
+    const folder = await this.repository.findFolder(organizationId, id);
+    if (!folder || !TenantContext.canAccessClient(folder.clientId))
+      throw notFound();
+    return toMediaFolderDto(folder);
+  }
+
+  async create(
+    organizationId: string,
+    actorId: string,
+    input: CreateMediaFolderInput,
+  ): Promise<MediaFolderDto> {
+    const clientId = input.clientId ?? null;
+    if (clientId && !TenantContext.canAccessClient(clientId))
+      throw notFound('Client not found');
+
+    let parentPath: string | null = null;
+    if (input.parentId) {
+      const parent = await this.repository.findFolder(
+        organizationId,
+        input.parentId,
+      );
+      if (!parent) throw notFound('Parent folder not found');
+      parentPath = parent.path;
+    }
+
+    const path = joinPath(parentPath, input.name);
+    const existing = await this.repository.findFolderByPath(
+      organizationId,
+      path,
+    );
+    if (existing) {
+      throw problem(
+        409,
+        'Conflict',
+        ErrorCodes.CONFLICT,
+        'A folder already exists at this path',
+      );
+    }
+
+    const folder = await this.repository.createFolder(organizationId, {
+      name: input.name.trim(),
+      path,
+      parentId: input.parentId,
+      clientId,
+      projectId: input.projectId,
+      calendarItemId: input.calendarItemId,
+      visibility: input.visibility,
+      description: input.description,
+    });
+
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/folders.create',
+      entityType: ENTITY,
+      entityId: folder.id,
+      after: { name: folder.name, path: folder.path, visibility: folder.visibility },
+    });
+    return toMediaFolderDto(folder);
+  }
+
+  async update(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    input: UpdateMediaFolderInput,
+  ): Promise<MediaFolderDto> {
+    const before = await this.get(organizationId, id);
+    await this.repository.updateFolder(organizationId, id, input);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/folders.update',
+      entityType: ENTITY,
+      entityId: id,
+      before,
+      after: input,
+    });
+    return this.get(organizationId, id);
+  }
+
+  async remove(organizationId: string, actorId: string, id: string) {
+    await this.get(organizationId, id);
+    if (!(await this.repository.deleteFolder(organizationId, id)))
+      throw notFound();
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/folders.delete',
+      entityType: ENTITY,
+      entityId: id,
+    });
+  }
+
+  /** Ensures Brand Assets / Shoots / Deliverables / Agency roots for a client. */
+  async ensureClientFolderTree(
+    organizationId: string,
+    actorId: string,
+    clientId: string,
+  ): Promise<MediaFolderDto[]> {
+    if (!TenantContext.canAccessClient(clientId))
+      throw notFound('Client not found');
+    const created: MediaFolderDto[] = [];
+    for (const template of DefaultClientFolderTemplate) {
+      const path = joinPath(null, template.name);
+      const existing = await this.repository.findFolderByPath(
+        organizationId,
+        path,
+      );
+      if (existing && existing.clientId === clientId) {
+        created.push(toMediaFolderDto(existing));
+        continue;
+      }
+      // Paths are org-global in schema; scope client by storing clientId and unique path with client prefix.
+      const clientPath = `/clients/${clientId}${path}`;
+      const scoped = await this.repository.findFolderByPath(
+        organizationId,
+        clientPath,
+      );
+      if (scoped) {
+        created.push(toMediaFolderDto(scoped));
+        continue;
+      }
+      const folder = await this.repository.createFolder(organizationId, {
+        name: template.name,
+        path: clientPath,
+        clientId,
+        visibility: template.visibility,
+      });
+      created.push(toMediaFolderDto(folder));
+      await this.audit.record({
+        organizationId,
+        actorId,
+        actorType: 'user',
+        action: 'media/folders.ensure_client_tree',
+        entityType: ENTITY,
+        entityId: folder.id,
+        after: { clientId, name: folder.name },
+      });
+    }
+    return created;
+  }
+
+  /** Creates Shoots/{title}/Raw|Selects|Finals|Deliverables under the client Shoots root. */
+  async createShootFolderTree(
+    organizationId: string,
+    actorId: string,
+    input: {
+      clientId: string;
+      projectId?: string;
+      calendarItemId: string;
+      shootTitle: string;
+    },
+  ): Promise<MediaFolderDto[]> {
+    const roots = await this.ensureClientFolderTree(
+      organizationId,
+      actorId,
+      input.clientId,
+    );
+    const shootsRoot =
+      roots.find((f) => f.name === 'Shoots') ??
+      (
+        await this.list(organizationId, { clientId: input.clientId })
+      ).find((f) => f.name === 'Shoots');
+    if (!shootsRoot) throw notFound('Shoots root folder missing');
+
+    const shootPath = joinPath(shootsRoot.path, input.shootTitle);
+    let shootFolder = await this.repository.findFolderByPath(
+      organizationId,
+      shootPath,
+    );
+    if (!shootFolder) {
+      shootFolder = await this.repository.createFolder(organizationId, {
+        name: input.shootTitle.trim(),
+        path: shootPath,
+        parentId: shootsRoot.id,
+        clientId: input.clientId,
+        projectId: input.projectId,
+        calendarItemId: input.calendarItemId,
+        visibility: 'INTERNAL',
+        description: 'Shoot media root',
+      });
+    }
+
+    const folders = [toMediaFolderDto(shootFolder)];
+    for (const name of DefaultShootFolderNames) {
+      const path = joinPath(shootFolder.path, name);
+      const existing = await this.repository.findFolderByPath(
+        organizationId,
+        path,
+      );
+      if (existing) {
+        folders.push(toMediaFolderDto(existing));
+        continue;
+      }
+      const child = await this.repository.createFolder(organizationId, {
+        name,
+        path,
+        parentId: shootFolder.id,
+        clientId: input.clientId,
+        projectId: input.projectId,
+        calendarItemId: input.calendarItemId,
+        visibility: name === 'Deliverables' ? 'CLIENT_VISIBLE' : 'INTERNAL',
+      });
+      folders.push(toMediaFolderDto(child));
+    }
+
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/folders.create_shoot_tree',
+      entityType: ENTITY,
+      entityId: shootFolder.id,
+      after: {
+        calendarItemId: input.calendarItemId,
+        folders: folders.map((f) => f.path),
+      },
+    });
+    return folders;
+  }
+}

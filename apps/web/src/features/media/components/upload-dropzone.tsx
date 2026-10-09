@@ -13,21 +13,24 @@ interface UploadDropzoneProps {
   clientId: string;
   /** Uploads need live storage; demo workspaces show the zone disabled with an explanation. */
   enabled: boolean;
+  folderId?: string;
+  projectId?: string;
   className?: string;
 }
 
 /** Drop files (or tap to pick, e.g. from a phone camera roll) to upload straight into a client's library. */
-export function UploadDropzone({ clientId, enabled, className }: UploadDropzoneProps) {
+export function UploadDropzone({ clientId, enabled, folderId, projectId, className }: UploadDropzoneProps) {
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const upload = useAssetUpload();
   const disabled = !enabled || upload.busy;
+  const options = { folderId, projectId };
 
   const onDrop = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     setOver(false);
-    if (!disabled && e.dataTransfer.files.length) void upload.uploadNow(e.dataTransfer.files, clientId);
+    if (!disabled && e.dataTransfer.files.length) void upload.uploadNow(e.dataTransfer.files, clientId, options);
   };
 
   return (
@@ -58,7 +61,7 @@ export function UploadDropzone({ clientId, enabled, className }: UploadDropzoneP
           disabled={disabled}
           className="sr-only"
           onChange={(e) => {
-            if (e.target.files?.length) void upload.uploadNow(e.target.files, clientId);
+            if (e.target.files?.length) void upload.uploadNow(e.target.files, clientId, options);
             if (input.current) input.current.value = '';
           }}
         />

@@ -52,7 +52,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
         value: clients,
         onRefresh: () => ref.refresh(clientsProvider.future),
         minTileWidth: 320,
-        tileHeight: 196,
+        tileHeight: 168,
         searchHint: l10n.clientsSearch,
         matches: (client, query) =>
             client.name.toLowerCase().contains(query) || (client.industry?.toLowerCase().contains(query) ?? false),
@@ -61,44 +61,12 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (items.isNotEmpty) ...[
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final tiles = [
-                    MetricTile(
-                      label: l10n.clientStatAll,
-                      icon: Icons.business_outlined,
-                      value: '${items.length}',
-                      onTap: () => setState(() => _status = null),
-                    ),
-                    MetricTile(
-                      label: l10n.clientStatActive,
-                      icon: Icons.check_circle_outline,
-                      value: '${items.where((c) => c.status == ClientStatuses.active).length}',
-                      onTap: () => setState(() => _status = ClientStatuses.active),
-                    ),
-                    MetricTile(
-                      label: l10n.clientStatOnboarding,
-                      icon: Icons.rocket_launch_outlined,
-                      value: '${items.where((c) => c.status == ClientStatuses.onboarding).length}',
-                      onTap: () => setState(() => _status = ClientStatuses.onboarding),
-                    ),
-                    MetricTile(
-                      label: l10n.clientStatPaused,
-                      icon: Icons.pause_circle_outline,
-                      value: '${items.where((c) => c.status == ClientStatuses.paused).length}',
-                      onTap: () => setState(() => _status = ClientStatuses.paused),
-                    ),
-                  ];
-                  final columns = gridColumns(constraints.maxWidth, minTileWidth: 140, max: tiles.length);
-                  final width = (constraints.maxWidth - tokens.md * (columns - 1)) / columns;
-                  return Wrap(
-                    spacing: tokens.md,
-                    runSpacing: tokens.md,
-                    children: [for (final tile in tiles) SizedBox(width: width, child: tile)],
-                  );
-                },
+              _ClientStatStrip(
+                items: items,
+                selected: _status,
+                onSelected: (status) => setState(() => _status = status),
               ),
-              SizedBox(height: tokens.md),
+              SizedBox(height: tokens.sm),
             ],
             FilterBar<String>(
               options: ClientStatuses.values,
@@ -122,6 +90,90 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
           client: client,
           onTap: () => context.go(ClientsRoutes.detail(client.id)),
         ),
+      ),
+    );
+  }
+}
+
+/// Compact horizontal status chips — avoids a tall 2×2 KPI block on the list.
+class _ClientStatStrip extends StatelessWidget {
+  const _ClientStatStrip({required this.items, required this.selected, required this.onSelected});
+
+  final List<Client> items;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = context.tokens;
+    final stats = <({String? status, String label, IconData icon, int count})>[
+      (status: null, label: l10n.clientStatAll, icon: Icons.business_outlined, count: items.length),
+      (
+        status: ClientStatuses.active,
+        label: l10n.clientStatActive,
+        icon: Icons.check_circle_outline,
+        count: items.where((c) => c.status == ClientStatuses.active).length,
+      ),
+      (
+        status: ClientStatuses.onboarding,
+        label: l10n.clientStatOnboarding,
+        icon: Icons.rocket_launch_outlined,
+        count: items.where((c) => c.status == ClientStatuses.onboarding).length,
+      ),
+      (
+        status: ClientStatuses.paused,
+        label: l10n.clientStatPaused,
+        icon: Icons.pause_circle_outline,
+        count: items.where((c) => c.status == ClientStatuses.paused).length,
+      ),
+    ];
+
+    return SizedBox(
+      height: 72,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: stats.length,
+        separatorBuilder: (_, _) => SizedBox(width: tokens.sm),
+        itemBuilder: (context, index) {
+          final stat = stats[index];
+          final active = selected == stat.status;
+          return SizedBox(
+            width: 112,
+            child: SurfaceCard(
+              onTap: () => onSelected(stat.status),
+              padding: EdgeInsets.all(tokens.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Icon(stat.icon, size: 14, color: active ? tokens.primary : tokens.muted),
+                      SizedBox(width: tokens.xs),
+                      Expanded(
+                        child: Text(
+                          stat.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: active ? tokens.fg : tokens.muted,
+                                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: tokens.xs),
+                  Text(
+                    '${stat.count}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, height: 1),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

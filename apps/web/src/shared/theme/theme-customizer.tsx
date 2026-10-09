@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { Check, Palette, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui/button';
@@ -16,6 +17,7 @@ import {
   type ThemePreset,
   type ThemeSettings,
 } from '@agency-os/contracts';
+import { saveOrgThemeAction } from '@/features/settings/actions/theme.actions';
 import { THEME_COOKIE, THEME_COOKIE_MAX_AGE, colorScheme, serializeTheme, themeToVars } from './theme';
 
 const COLOR_FIELDS: Array<{ key: ThemeColorKey; label: MessageKey }> = [
@@ -80,10 +82,19 @@ function PresetGrid({
   );
 }
 
-/** Live theme editor. Changes apply instantly (CSS variables) and persist in a cookie read by the server. */
-export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; trigger?: 'icon' | 'button' }) {
+/** Live theme editor. Preview locally, then save for the whole organisation when permitted. */
+export function ThemeCustomizer({
+  initial,
+  trigger,
+  canSaveOrg = false,
+}: {
+  initial: ThemeSettings;
+  trigger?: 'icon' | 'button';
+  canSaveOrg?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState(initial);
+  const [pending, startTransition] = useTransition();
 
   const lightPresets = useMemo(() => THEME_PRESETS.filter((p) => p.mode === 'light'), []);
   const darkPresets = useMemo(() => THEME_PRESETS.filter((p) => p.mode === 'dark'), []);
@@ -173,16 +184,33 @@ export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; 
             </div>
           </section>
 
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setTheme(DEFAULT_THEME);
-              applyTheme(DEFAULT_THEME);
-            }}
-          >
-            <RotateCcw />
-            {t('theme.reset')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {canSaveOrg ? (
+              <Button
+                variant="primary"
+                disabled={pending}
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await saveOrgThemeAction(theme);
+                    if (result.ok) toast.success(result.message);
+                    else toast.error(result.message);
+                  })
+                }
+              >
+                {t('theme.saveOrg')}
+              </Button>
+            ) : null}
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setTheme(DEFAULT_THEME);
+                applyTheme(DEFAULT_THEME);
+              }}
+            >
+              <RotateCcw />
+              {t('theme.reset')}
+            </Button>
+          </div>
         </div>
       </Sheet>
     </>

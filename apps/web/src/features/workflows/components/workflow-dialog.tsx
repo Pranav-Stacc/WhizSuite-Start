@@ -2,10 +2,19 @@
 
 import type { ReactNode } from 'react';
 import { useMemo, useState, useTransition } from 'react';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Shield, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { MIN_WORKFLOW_STAGES, RoleKinds, type AccessRoleSummary } from '@agency-os/contracts';
+import {
+  ApprovalStepRules,
+  MIN_WORKFLOW_STAGES,
+  RoleKinds,
+  type AccessRoleSummary,
+  type ApprovalStepRule,
+} from '@agency-os/contracts';
+import { AssignRolesDialog } from '@/features/team/components/assign-roles-dialog';
+import type { Member } from '@/features/team/data/members.repository';
 import { t } from '@/shared/i18n/t';
+import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui/button';
 import { Field, Input, Select } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
@@ -15,24 +24,62 @@ import type { Workflow, WorkflowStage } from '../data/workflows.repository';
 
 interface WorkflowDialogProps {
   workflow?: Workflow;
-  /** Workflow-kind roles available as stage assignee pools. */
+  /** Roles available as stage assignee pools (workflow + custom access roles). */
   workflowRoles: AccessRoleSummary[];
+  /** Active team members that can be named as individual approvers. */
+  members?: Member[];
+  /** Roles grantable when editing a member's access from a stage. */
+  assignableRoles?: AccessRoleSummary[];
   trigger?: ReactNode;
   defaultOpen?: boolean;
 }
 
-type DraftStage = { name: string; assigneeRoleId: string };
+type DraftStage = {
+  name: string;
+  approvalRule: ApprovalStepRule;
+  quorumCount: string;
+  roleIds: string[];
+  approverIds: string[];
+};
 
-const emptyStage = (): DraftStage => ({ name: '', assigneeRoleId: '' });
+const emptyStage = (): DraftStage => ({
+  name: '',
+  approvalRule: 'ANY',
+  quorumCount: '2',
+  roleIds: [],
+  approverIds: [],
+});
 
 function toDraft(stages: WorkflowStage[]): DraftStage[] {
-  return stages.map((stage) => ({
-    name: stage.name,
-    assigneeRoleId: stage.assigneeRoleId ?? '',
-  }));
+  return stages.map((stage) => {
+    const roleIds = [
+      ...new Set([
+        ...(stage.roleIds ?? []),
+        ...(stage.assigneeRoleId ? [stage.assigneeRoleId] : []),
+      ]),
+    ];
+    return {
+      name: stage.name,
+      approvalRule: stage.approvalRule ?? 'ANY',
+      quorumCount: String(stage.quorumCount ?? 2),
+      roleIds,
+      approverIds: stage.approverIds ?? [],
+    };
+  });
 }
 
-export function WorkflowDialog({ workflow, workflowRoles, trigger, defaultOpen }: WorkflowDialogProps) {
+function toggleId(list: string[], id: string): string[] {
+  return list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id];
+}
+
+export function WorkflowDialog({
+  workflow,
+  workflowRoles,
+  members = [],
+  assignableRoles = [],
+  trigger,
+  defaultOpen,
+}: WorkflowDialogProps) {
   const editing = workflow !== undefined;
   const [open, setOpen] = useState(defaultOpen ?? false);
   const [name, setName] = useState(workflow?.name ?? '');
@@ -46,6 +93,14 @@ export function WorkflowDialog({ workflow, workflowRoles, trigger, defaultOpen }
   const roleOptions = useMemo(
     () => workflowRoles.filter((role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem),
     [workflowRoles],
+  );
+  const people = useMemo(
+    () => members.filter((member) => member.status === 'ACTIVE'),
+    [members],
+  );
+  const membersById = useMemo(
+    () => new Map(people.map((member) => [member.id, member])),
+    [people],
   );
 
   const reset = () => {
@@ -68,7 +123,14 @@ export function WorkflowDialog({ workflow, workflowRoles, trigger, defaultOpen }
         stages: stages
           .map((stage) => ({
             name: stage.name.trim(),
-            assigneeRoleId: stage.assigneeRoleId || null,
+            approvalRule: stage.approvalRule,
+            quorumCount:
+              stage.approvalRule === 'QUORUM'
+                ? Math.max(1, Number(stage.quorumCount) || 1)
+                : undefined,
+            roleIds: stage.roleIds,
+            assigneeRoleId: stage.roleIds[0] ?? null,
+            approverIds: stage.approverIds,
           }))
           .filter((stage) => stage.name.length > 0),
       };
@@ -99,7 +161,7 @@ export function WorkflowDialog({ workflow, workflowRoles, trigger, defaultOpen }
         open={open}
         onOpenChange={setOpen}
         title={editing ? t('workflows.edit') : t('workflows.create.title')}
-        width="max-w-lg"
+        width="max-w-2xl"
       >
         <div className="space-y-4">
           <p className="text-sm text-muted">{editing ? t('workflows.edit.desc') : t('workflows.create.desc')}</p>
@@ -120,43 +182,148 @@ export function WorkflowDialog({ workflow, workflowRoles, trigger, defaultOpen }
               </Button>
             </div>
             <p className="mb-2 text-xs text-muted">{t('workflows.field.stages.hint')}</p>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {stages.map((stage, index) => (
-                <li key={index} className="grid gap-2 rounded-xl border border-border-soft p-3 sm:grid-cols-[1fr_1fr_auto]">
-                  <Field label={t('workflows.stages.name')} htmlFor={`wf-stage-${index}`}>
-                    <Input
-                      id={`wf-stage-${index}`}
-                      value={stage.name}
-                      onChange={(e) => updateStage(index, { name: e.target.value })}
-                      placeholder={t('workflows.field.stages.placeholder')}
-                    />
-                  </Field>
-                  <Field label={t('workflows.stages.role')} htmlFor={`wf-role-${index}`}>
-                    <Select
-                      id={`wf-role-${index}`}
-                      value={stage.assigneeRoleId}
-                      onChange={(e) => updateStage(index, { assigneeRoleId: e.target.value })}
-                    >
-                      <option value="">{t('workflows.stages.role.none')}</option>
-                      {roleOptions.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {role.name}
-                          {role.kind === RoleKinds.WORKFLOW ? ` · ${t('roles.kind.workflow')}` : ''}
-                        </option>
-                      ))}
-                    </Select>
-                  </Field>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={stages.length <= MIN_WORKFLOW_STAGES}
-                      onClick={() => setStages((prev) => prev.filter((_, i) => i !== index))}
-                      aria-label={t('workflows.stages.remove')}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                <li key={index} className="space-y-3 rounded-xl border border-border-soft p-3">
+                  <div className="flex items-start gap-2">
+                    <Field label={t('workflows.stages.name')} htmlFor={`wf-stage-${index}`} className="min-w-0 flex-1">
+                      <Input
+                        id={`wf-stage-${index}`}
+                        value={stage.name}
+                        onChange={(e) => updateStage(index, { name: e.target.value })}
+                        placeholder={t('workflows.field.stages.placeholder')}
+                      />
+                    </Field>
+                    <div className="pt-6">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={stages.length <= MIN_WORKFLOW_STAGES}
+                        onClick={() => setStages((prev) => prev.filter((_, i) => i !== index))}
+                        aria-label={t('workflows.stages.remove')}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <Field label={t('workflows.stages.rule')} htmlFor={`wf-rule-${index}`}>
+                      <Select
+                        id={`wf-rule-${index}`}
+                        value={stage.approvalRule}
+                        onChange={(e) =>
+                          updateStage(index, {
+                            approvalRule: e.target.value as ApprovalStepRule,
+                          })
+                        }
+                      >
+                        {ApprovalStepRules.map((rule) => (
+                          <option key={rule} value={rule}>
+                            {t(`workflows.stages.rule.${rule}` as 'workflows.stages.rule.ANY')}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                    {stage.approvalRule === 'QUORUM' ? (
+                      <Field
+                        label={t('workflows.stages.quorum')}
+                        htmlFor={`wf-quorum-${index}`}
+                        hint={t('workflows.stages.quorum.hint')}
+                      >
+                        <Input
+                          id={`wf-quorum-${index}`}
+                          type="number"
+                          min={1}
+                          value={stage.quorumCount}
+                          onChange={(e) => updateStage(index, { quorumCount: e.target.value })}
+                        />
+                      </Field>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <p className="mb-1.5 text-sm font-medium">{t('workflows.stages.roles')}</p>
+                    <p className="mb-2 text-xs text-muted">{t('workflows.stages.roles.hint')}</p>
+                    <ul className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
+                      {roleOptions.length === 0 ? (
+                        <li className="px-2 py-1.5 text-xs text-muted">{t('workflows.stages.roles.empty')}</li>
+                      ) : (
+                        roleOptions.map((role) => (
+                          <li key={role.id}>
+                            <label
+                              className={cn(
+                                'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2',
+                                stage.roleIds.includes(role.id) && 'bg-primary/10',
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={stage.roleIds.includes(role.id)}
+                                onChange={() =>
+                                  updateStage(index, { roleIds: toggleId(stage.roleIds, role.id) })
+                                }
+                                className="size-3.5 accent-primary"
+                              />
+                              <span className="min-w-0 flex-1 truncate">
+                                {role.name}
+                                {role.kind === RoleKinds.WORKFLOW ? ` · ${t('roles.kind.workflow')}` : ''}
+                              </span>
+                            </label>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <p className="mb-1.5 text-sm font-medium">{t('workflows.stages.people')}</p>
+                    <p className="mb-2 text-xs text-muted">{t('workflows.stages.people.hint')}</p>
+                    <ul className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
+                      {people.length === 0 ? (
+                        <li className="px-2 py-1.5 text-xs text-muted">{t('workflows.stages.people.empty')}</li>
+                      ) : (
+                        people.map((member) => (
+                          <li key={member.id} className="flex items-center gap-1">
+                            <label
+                              className={cn(
+                                'flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2',
+                                stage.approverIds.includes(member.id) && 'bg-primary/10',
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={stage.approverIds.includes(member.id)}
+                                onChange={() =>
+                                  updateStage(index, {
+                                    approverIds: toggleId(stage.approverIds, member.id),
+                                  })
+                                }
+                                className="size-3.5 accent-primary"
+                              />
+                              <span className="min-w-0 flex-1 truncate">{member.name}</span>
+                            </label>
+                            {assignableRoles.length > 0 && stage.approverIds.includes(member.id) ? (
+                              <AssignRolesDialog
+                                member={membersById.get(member.id) ?? member}
+                                assignable={assignableRoles}
+                                trigger={
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label={t('workflows.stages.people.access', { name: member.name })}
+                                  >
+                                    <Shield className="size-3.5" />
+                                  </Button>
+                                }
+                              />
+                            ) : null}
+                          </li>
+                        ))
+                      )}
+                    </ul>
                   </div>
                 </li>
               ))}

@@ -9,6 +9,7 @@ import { ProblemDetailsException } from '../../../../shared/errors/problem-detai
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { IdentityRepository } from '../../infrastructure/repositories/identity.repository';
+import { GoogleIdTokenVerifier } from '../../infrastructure/auth/google-id-token.verifier';
 import { AuditService } from '../../../audit/application/services/audit.service';
 
 export interface RegisterInput {
@@ -23,6 +24,12 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+export interface GoogleAuthInput {
+  idToken: string;
+  organizationName?: string;
+  organizationSlug?: string;
 }
 
 interface TokenContext {
@@ -43,6 +50,7 @@ export class AuthService {
     private readonly config: ConfigService<AppConfig, true>,
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
+    private readonly googleTokens: GoogleIdTokenVerifier,
   ) {}
 
   async register(input: RegisterInput) {
@@ -140,6 +148,143 @@ export class AuthService {
       );
     }
 
+    return this.completeLogin(user);
+  }
+
+  /**
+   * Verifies a Google ID token, links or creates the local user, and issues JWT session tokens.
+   * New users without organizationName/slug must register a workspace first.
+   */
+  async loginWithGoogle(input: GoogleAuthInput) {
+    const identity = await this.googleTokens.verify(input.idToken);
+    const provider = this.googleTokens.provider();
+
+    const linked = await this.repo.findOauthAccount(
+      provider,
+      identity.providerUserId,
+    );
+    if (linked) {
+      return this.completeLogin(linked.user);
+    }
+
+    const existing = await this.repo.findUserByEmail(identity.email);
+    if (existing) {
+      await this.repo.linkOauthAccount({
+        userId: existing.id,
+        provider,
+        providerUserId: identity.providerUserId,
+      });
+      await this.repo.markEmailVerified(existing.id, identity.pictureUrl);
+      const membership = await this.repo.findPrimaryMembership(existing.id);
+      if (membership) {
+        await this.audit.record({
+          organizationId: membership.organizationId,
+          actorId: existing.id,
+          actorType: 'user',
+          action: 'auth.google_linked',
+          entityType: 'user',
+          entityId: existing.id,
+          after: { provider, email: existing.email },
+        });
+      }
+      return this.completeLogin(existing);
+    }
+
+    const wantsWorkspace =
+      Boolean(input.organizationName?.trim()) &&
+      Boolean(input.organizationSlug?.trim());
+    if (!wantsWorkspace) {
+      throw new ProblemDetailsException(
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: ErrorCodes.ACCOUNT_NOT_FOUND,
+          detail:
+            'No WhizSuite account for this Google email — create a workspace first',
+        },
+        404,
+      );
+    }
+
+    const firstName =
+      identity.firstName?.trim() ||
+      identity.email.split('@')[0] ||
+      'User';
+    const result = await this.repo.createOrganizationWithOwner({
+      email: identity.email,
+      passwordHash: null,
+      firstName,
+      lastName: identity.lastName,
+      organizationName: input.organizationName!.trim(),
+      organizationSlug: input.organizationSlug!.trim().toLowerCase(),
+      emailVerified: true,
+      avatarUrl: identity.pictureUrl,
+    });
+    await this.repo.linkOauthAccount({
+      userId: result.user.id,
+      provider,
+      providerUserId: identity.providerUserId,
+    });
+
+    await this.outbox.write({
+      type: DomainEventTypes.ORGANIZATION_CREATED,
+      version: 1,
+      organizationId: result.organization.id,
+      payload: {
+        organizationId: result.organization.id,
+        slug: result.organization.slug,
+      },
+      actor: { id: result.user.id, type: 'user' },
+    });
+    await this.outbox.write({
+      type: DomainEventTypes.USER_REGISTERED,
+      version: 1,
+      organizationId: result.organization.id,
+      payload: { userId: result.user.id, email: result.user.email },
+      actor: { id: result.user.id, type: 'user' },
+    });
+    await this.audit.record({
+      organizationId: result.organization.id,
+      actorId: result.user.id,
+      actorType: 'user',
+      action: 'auth.google_register',
+      entityType: 'user',
+      entityId: result.user.id,
+      after: { email: result.user.email, provider },
+    });
+
+    const tokens = await this.issueTokens(result.user.id, result.user.email, {
+      organizationId: result.organization.id,
+      membershipId: result.membership.id,
+      membershipType: result.membership.type,
+    });
+    await this.repo.updateLastLogin(result.user.id);
+    await this.outbox.write({
+      type: DomainEventTypes.USER_LOGIN_SUCCEEDED,
+      version: 1,
+      organizationId: result.organization.id,
+      payload: { userId: result.user.id },
+      actor: { id: result.user.id, type: 'user' },
+    });
+    return {
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+      },
+      organization: result.organization,
+      ...tokens,
+    };
+  }
+
+  private async completeLogin(user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  }) {
     const membership = await this.repo.findPrimaryMembership(user.id);
     const tokens = await this.issueTokens(
       user.id,
@@ -155,6 +300,15 @@ export class AuthService {
         organizationId: membership.organizationId,
         payload: { userId: user.id },
         actor: { id: user.id, type: 'user' },
+      });
+      await this.audit.record({
+        organizationId: membership.organizationId,
+        actorId: user.id,
+        actorType: 'user',
+        action: 'auth.login',
+        entityType: 'session',
+        entityId: user.id,
+        after: { email: user.email },
       });
     }
 
@@ -260,6 +414,116 @@ export class AuthService {
       entityType: 'user',
       entityId: user.id,
       after: { email },
+    });
+    return user;
+  }
+
+  /**
+   * Creates or authenticates a portal-access invitee.
+   * Temporary access may omit a password (passwordless guest until they claim).
+   * Permanent access / existing password accounts require a valid password.
+   */
+  async resolvePortalAccessUser(
+    organizationId: string,
+    input: {
+      email: string;
+      firstName: string;
+      lastName?: string;
+      password?: string;
+      requirePassword: boolean;
+    },
+  ) {
+    const email = input.email.toLowerCase();
+    const existing = await this.repo.findUserByEmail(email);
+    if (existing) {
+      if (existing.passwordHash) {
+        if (!input.password) {
+          throw new ProblemDetailsException(
+            {
+              type: 'about:blank',
+              title: 'Password Required',
+              status: 400,
+              code: ErrorCodes.VALIDATION_FAILED,
+              detail: 'This email already has an account — enter your password',
+            },
+            400,
+          );
+        }
+        const valid = await bcrypt.compare(
+          input.password,
+          existing.passwordHash,
+        );
+        if (!valid) {
+          throw new ProblemDetailsException(
+            {
+              type: 'about:blank',
+              title: 'Unauthorized',
+              status: 401,
+              code: ErrorCodes.INVALID_CREDENTIALS,
+            },
+            401,
+          );
+        }
+      } else if (input.password) {
+        const passwordHash = await bcrypt.hash(
+          input.password,
+          PASSWORD_HASH_ROUNDS,
+        );
+        return this.repo.setPasswordHash(existing.id, passwordHash);
+      }
+      return existing;
+    }
+
+    if (input.requirePassword && !input.password) {
+      throw new ProblemDetailsException(
+        {
+          type: 'about:blank',
+          title: 'Validation Failed',
+          status: 400,
+          code: ErrorCodes.VALIDATION_FAILED,
+          detail: 'password is required for permanent portal access',
+        },
+        400,
+      );
+    }
+
+    const passwordHash = input.password
+      ? await bcrypt.hash(input.password, PASSWORD_HASH_ROUNDS)
+      : null;
+    const user = await this.repo.createUser({
+      email,
+      passwordHash,
+      firstName: input.firstName,
+      lastName: input.lastName,
+    });
+    await this.audit.record({
+      organizationId,
+      actorId: user.id,
+      actorType: 'user',
+      action: 'user.register',
+      entityType: 'user',
+      entityId: user.id,
+      after: { email, portalAccess: true, passwordSet: Boolean(passwordHash) },
+    });
+    return user;
+  }
+
+  /** Sets a password on a passwordless (or upgrading) user for permanent login. */
+  async claimPermanentPassword(
+    userId: string,
+    organizationId: string,
+    password: string,
+  ) {
+    const passwordHash = await bcrypt.hash(password, PASSWORD_HASH_ROUNDS);
+    const user = await this.repo.setPasswordHash(userId, passwordHash);
+    await this.audit.record({
+      organizationId,
+      actorId: userId,
+      actorType: 'user',
+      action: 'user.password_set',
+      entityType: 'user',
+      entityId: userId,
+      after: { claimed: true },
     });
     return user;
   }

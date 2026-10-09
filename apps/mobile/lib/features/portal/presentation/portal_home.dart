@@ -56,9 +56,9 @@ class PortalHome extends ConsumerWidget {
         onRefresh: () => refreshPortal(ref),
         children: [
           FadeSlideIn(child: _PortalHeader(clientName: client?.name, memberName: name)),
-          if (hasKpis) ...[SizedBox(height: tokens.lg), const _PortalKpis()],
+          if (hasKpis) ...[SizedBox(height: tokens.md), const _PortalKpis()],
           if (sections.isNotEmpty) ...[
-            SizedBox(height: tokens.xl),
+            SizedBox(height: tokens.lg),
             OverviewColumns(staggerOffset: _sectionStagger, children: sections),
           ],
           if (bare) ...[

@@ -46,9 +46,9 @@ class StaffDashboard extends ConsumerWidget {
         onRefresh: () => refreshDashboard(ref),
         children: [
           const FadeSlideIn(child: DashboardHeader()),
-          if (hasKpis) ...[SizedBox(height: tokens.lg), const DashboardKpis()],
+          if (hasKpis) ...[SizedBox(height: tokens.md), const DashboardKpis()],
           if (sections.isNotEmpty) ...[
-            SizedBox(height: tokens.xl),
+            SizedBox(height: tokens.lg),
             OverviewColumns(staggerOffset: _sectionStagger, children: sections),
           ],
           if (bare) ...[

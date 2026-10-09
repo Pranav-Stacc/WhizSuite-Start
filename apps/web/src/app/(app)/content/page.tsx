@@ -2,6 +2,7 @@ import { ContentStatuses, Permissions, Platforms } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { KanbanSquare, List, PencilLine, Plus } from 'lucide-react';
 import { requirePermission } from '@/shared/auth/permissions';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
@@ -87,7 +88,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
                 { href: link({ view: 'list' }), label: t('tasks.view.list'), active: view === 'list', icon: <List /> },
               ]}
             />
-            <ContentComposer clients={composerClients} assets={toComposerAssets(assets)} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} trigger={newButton} />
+            <ContentComposer clients={composerClients} assets={toComposerAssets(assets)} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} uploadEnabled={isLiveMode} trigger={newButton} />
           </>
         }
       />

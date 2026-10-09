@@ -4,7 +4,14 @@ import { createRepository, type Entity } from '@/shared/data/repository';
 
 export interface WorkflowStage {
   name: string;
+  /** @deprecated Prefer roleIds; kept for older stage configs. */
   assigneeRoleId?: string | null;
+  approvalRule?: 'ANY' | 'ALL' | 'QUORUM';
+  quorumCount?: number;
+  approverIds?: string[];
+  roleIds?: string[];
+  scopeType?: string;
+  scopeResourceId?: string | null;
 }
 
 export interface Workflow extends Entity {

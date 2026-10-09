@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useMemo, useState, useTransition } from 'react';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,9 +24,11 @@ interface AssignRolesDialogProps {
   member: Pick<Member, 'id' | 'name' | 'roles'>;
   /** Every role that may be granted from the team screen (the owner role is excluded). */
   assignable: AccessRoleSummary[];
+  /** Optional custom open control (e.g. from a workflow stage editor). */
+  trigger?: ReactNode;
 }
 
-export function AssignRolesDialog({ member, assignable }: AssignRolesDialogProps) {
+export function AssignRolesDialog({ member, assignable, trigger }: AssignRolesDialogProps) {
   const assignableIds = useMemo(() => new Set(assignable.map((role) => role.id)), [assignable]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(
@@ -61,20 +64,26 @@ export function AssignRolesDialog({ member, assignable }: AssignRolesDialogProps
     });
   };
 
+  const openDialog = () => {
+    reset();
+    setOpen(true);
+  };
+
   return (
     <>
-      <Button
-        variant="soft"
-        size="sm"
-        aria-label={t('team.roles.assign.label', { name: member.name })}
-        onClick={() => {
-          reset();
-          setOpen(true);
-        }}
-      >
-        <ShieldCheck />
-        {t('team.roles.assign')}
-      </Button>
+      {trigger ? (
+        <span onClick={openDialog}>{trigger}</span>
+      ) : (
+        <Button
+          variant="soft"
+          size="sm"
+          aria-label={t('team.roles.assign.label', { name: member.name })}
+          onClick={openDialog}
+        >
+          <ShieldCheck />
+          {t('team.roles.assign')}
+        </Button>
+      )}
       <Sheet open={open} onOpenChange={setOpen} title={t('team.roles.heading', { name: member.name })} width="max-w-md">
         <div className="space-y-4">
           <p className="text-sm text-muted">{t('team.roles.desc')}</p>

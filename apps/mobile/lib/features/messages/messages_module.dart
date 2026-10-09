@@ -16,7 +16,7 @@ final messagesModule = FeatureModule(
       anyOf: const [Permissions.feedbackView],
       audiences: everyAudience,
       group: NavGroup.clients,
-      primary: true,
+      primary: false,
     ),
   ],
   routes: [

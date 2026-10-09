@@ -51,37 +51,62 @@ function text(
   return typeof value === 'string' && value ? value : undefined;
 }
 
-/** Maps a domain event to the person who should hear about it. */
-function deliveryFor(event: EventEnvelope): Delivery | undefined {
+function recipientIdsOf(payload: Record<string, unknown>): string[] {
+  const raw = payload.recipientIds;
+  if (!Array.isArray(raw)) return [];
+  return [
+    ...new Set(
+      raw.filter((id): id is string => typeof id === 'string' && id.length > 0),
+    ),
+  ];
+}
+
+/** Maps a domain event to the people who should hear about it. */
+function deliveriesFor(event: EventEnvelope): Delivery[] {
   const { payload } = event;
   switch (event.type) {
     case DomainEventTypes.TASK_ASSIGNED: {
       const recipientId = text(payload, 'assigneeUserId');
-      if (!recipientId) return undefined;
-      return {
-        recipientId,
-        typeKey: NotificationTypeKeys.TASK_ASSIGNED,
-        data: {
-          taskId: text(payload, 'taskId'),
-          title: text(payload, 'title'),
+      if (!recipientId) return [];
+      return [
+        {
+          recipientId,
+          typeKey: NotificationTypeKeys.TASK_ASSIGNED,
+          data: {
+            taskId: text(payload, 'taskId'),
+            title: text(payload, 'title'),
+          },
         },
-      };
+      ];
     }
     case DomainEventTypes.CONTENT_STATE_CHANGED: {
       const recipientId = text(payload, 'createdById');
       const typeKey = CONTENT_OUTCOME_TYPES[text(payload, 'toStatus') ?? ''];
-      if (!recipientId || !typeKey) return undefined;
-      return {
-        recipientId,
-        typeKey,
-        data: {
-          contentId: text(payload, 'contentId'),
-          title: text(payload, 'title'),
+      if (!recipientId || !typeKey) return [];
+      return [
+        {
+          recipientId,
+          typeKey,
+          data: {
+            contentId: text(payload, 'contentId'),
+            title: text(payload, 'title'),
+          },
         },
+      ];
+    }
+    case DomainEventTypes.APPROVAL_REQUESTED: {
+      const data: NotificationData = {
+        approvalRequestId: text(payload, 'approvalRequestId'),
+        title: text(payload, 'title'),
       };
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.APPROVAL_REQUESTED,
+        data,
+      }));
     }
     default:
-      return undefined;
+      return [];
   }
 }
 
@@ -116,6 +141,7 @@ export class NotificationsService implements OnModuleInit {
     for (const type of [
       DomainEventTypes.TASK_ASSIGNED,
       DomainEventTypes.CONTENT_STATE_CHANGED,
+      DomainEventTypes.APPROVAL_REQUESTED,
     ]) {
       this.eventBus.subscribe(type, (event) => this.handleDomainEvent(event));
     }
@@ -217,44 +243,51 @@ export class NotificationsService implements OnModuleInit {
    * already read so it never surfaces as unread in the bell.
    */
   private async handleDomainEvent(event: EventEnvelope): Promise<void> {
-    const delivery = deliveryFor(event);
-    if (!delivery || delivery.recipientId === event.actor.id) return;
+    const deliveries = deliveriesFor(event).filter(
+      (d) => d.recipientId !== event.actor.id,
+    );
+    if (deliveries.length === 0) return;
     const { organizationId } = event;
     if (await this.repository.existsForEvent(organizationId, event.id)) return;
 
-    const preference = await this.repository.findPreference(
-      organizationId,
-      delivery.recipientId,
-      delivery.typeKey,
-    );
-    const settings = this.preferenceDto(
-      delivery.typeKey,
-      preference?.channels,
-    ).channels;
     const available = new Set(
       this.adapters.filter((a) => a.isAvailable()).map((a) => a.channel),
     );
-    const channels = NotificationChannels.filter(
-      (c) => settings[c] && available.has(c),
-    );
-    if (channels.length === 0) return;
+    const deliveryIds: string[] = [];
 
-    const notification = await this.repository.createWithDeliveries(
-      {
+    for (const delivery of deliveries) {
+      const preference = await this.repository.findPreference(
         organizationId,
-        recipientId: delivery.recipientId,
-        typeKey: delivery.typeKey,
-        title: delivery.data.title ?? '',
-        body: '',
-        data: { ...delivery.data, eventId: event.id },
-        readAt: settings.inApp ? null : new Date(),
-      },
-      channels,
-    );
-    await this.enqueue(
-      organizationId,
-      notification.deliveries.map((d) => d.id),
-    );
+        delivery.recipientId,
+        delivery.typeKey,
+      );
+      const settings = this.preferenceDto(
+        delivery.typeKey,
+        preference?.channels,
+      ).channels;
+      const channels = NotificationChannels.filter(
+        (c) => settings[c] && available.has(c),
+      );
+      if (channels.length === 0) continue;
+
+      const notification = await this.repository.createWithDeliveries(
+        {
+          organizationId,
+          recipientId: delivery.recipientId,
+          typeKey: delivery.typeKey,
+          title: delivery.data.title ?? '',
+          body: '',
+          data: { ...delivery.data, eventId: event.id },
+          readAt: settings.inApp ? null : new Date(),
+        },
+        channels,
+      );
+      deliveryIds.push(...notification.deliveries.map((d) => d.id));
+    }
+
+    if (deliveryIds.length > 0) {
+      await this.enqueue(organizationId, deliveryIds);
+    }
   }
 
   private async enqueue(

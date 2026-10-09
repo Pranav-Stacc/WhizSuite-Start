@@ -29,6 +29,15 @@ export class ClientsService {
     return client;
   }
 
+  /** Org-scoped lookup for invitation/portal-access previews (no request tenant yet). */
+  async displayNameInOrganization(
+    organizationId: string,
+    clientId: string,
+  ): Promise<string | null> {
+    const client = await this.repo.findById(organizationId, clientId);
+    return client?.displayName ?? null;
+  }
+
   async create(
     organizationId: string,
     actorId: string,

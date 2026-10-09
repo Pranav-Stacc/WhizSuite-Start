@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/token_store.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_exception.dart';
+import '../../../core/theme/theme_controller.dart';
+import '../../../core/theme/theme_settings.dart';
 import '../data/auth_repository.dart';
 import '../domain/session.dart';
 
@@ -17,6 +21,7 @@ class SessionController extends AsyncNotifier<Session?> {
     final stored = await tokens.load();
     final session = Session.fromClaims(stored?.claims);
     if (stored != null && session == null) await tokens.clear();
+    if (session != null) unawaited(_hydrateOrgTheme());
     return session;
   }
 
@@ -24,8 +29,38 @@ class SessionController extends AsyncNotifier<Session?> {
         () => ref.read(authRepositoryProvider).login(email: email, password: password),
       );
 
+  Future<void> signInWithGoogle({
+    required String idToken,
+    String? organizationName,
+    String? organizationSlug,
+  }) =>
+      _authenticate(
+        () => ref.read(authRepositoryProvider).loginWithGoogle(
+              idToken: idToken,
+              organizationName: organizationName,
+              organizationSlug: organizationSlug,
+            ),
+      );
+
   Future<void> register(RegistrationInput input) =>
       _authenticate(() => ref.read(authRepositoryProvider).register(input));
+
+  Future<void> redeemPortalAccess({
+    required String token,
+    required String email,
+    required String firstName,
+    String? lastName,
+    String? password,
+  }) =>
+      _authenticate(
+        () => ref.read(authRepositoryProvider).redeemPortalAccess(
+              token: token,
+              email: email,
+              firstName: firstName,
+              lastName: lastName,
+              password: password,
+            ),
+      );
 
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).logout();
@@ -36,6 +71,23 @@ class SessionController extends AsyncNotifier<Session?> {
   Future<void> _authenticate(Future<AuthTokens> Function() call) async {
     final tokens = await call();
     state = AsyncData(Session.fromClaims(tokens.claims));
+    await _hydrateOrgTheme();
+  }
+
+  /// Loads `appearance.theme` for the org so new team and client logins match web.
+  Future<void> _hydrateOrgTheme() async {
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.get<Json>(api.org('theme'));
+      final raw = response['theme'];
+      if (raw is! Map) return;
+      final theme = ThemeSettings.tryParse(Map<String, Object?>.from(raw));
+      if (theme != null) {
+        ref.read(themeControllerProvider.notifier).hydrateFromOrganization(theme);
+      }
+    } on ApiException {
+      // Keep the device theme if the agency theme cannot be loaded.
+    }
   }
 }
 

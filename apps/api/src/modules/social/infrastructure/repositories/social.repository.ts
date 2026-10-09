@@ -38,8 +38,12 @@ const PUBLISH_JOB_CANCELLED = 'CANCELLED';
 
 export interface ContentListFilter {
   clientId?: string;
-  /** Restricts results to these clients (client-portal principals). */
+  /** Restricts results to these clients (client-portal principals / staff scopes). */
   allowedClientIds?: string[];
+  /** Staff PROJECT scopes — content linked to these projects. */
+  allowedProjectIds?: string[];
+  /** Staff CONTENT scopes — specific content item ids. */
+  allowedContentIds?: string[];
   status?: string;
   from?: Date;
   to?: Date;
@@ -95,6 +99,20 @@ export class SocialRepository {
             ...(filter.to ? { lt: filter.to } : {}),
           }
         : undefined;
+    const scopeOr =
+      filter.allowedContentIds && filter.allowedProjectIds
+        ? {
+            OR: [
+              { id: { in: filter.allowedContentIds } },
+              { projectId: { in: filter.allowedProjectIds } },
+            ],
+          }
+        : filter.allowedContentIds
+          ? { id: { in: filter.allowedContentIds } }
+          : filter.allowedProjectIds
+            ? { projectId: { in: filter.allowedProjectIds } }
+            : undefined;
+
     return this.prisma.contentItem.findMany({
       where: {
         organizationId,
@@ -103,6 +121,7 @@ export class SocialRepository {
         ...(filter.allowedClientIds
           ? { AND: [{ clientId: { in: filter.allowedClientIds } }] }
           : {}),
+        ...(scopeOr ? { AND: [scopeOr] } : {}),
         ...(filter.status ? { status: filter.status } : {}),
         ...(scheduledAt ? { scheduledAt } : {}),
       },
@@ -294,9 +313,17 @@ export class SocialRepository {
     await tx.entityStateHistory.create({ data });
   }
 
-  listCampaigns(organizationId: string, clientId?: string) {
+  listCampaigns(
+    organizationId: string,
+    clientId?: string,
+    allowedClientIds?: string[],
+  ) {
     return this.prisma.campaign.findMany({
-      where: { organizationId, ...(clientId ? { clientId } : {}) },
+      where: {
+        organizationId,
+        ...(clientId ? { clientId } : {}),
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+      },
       orderBy: { createdAt: 'desc' },
     });
   }

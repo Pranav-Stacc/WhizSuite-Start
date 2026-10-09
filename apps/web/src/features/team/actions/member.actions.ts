@@ -3,6 +3,7 @@
 import {
   UserRoles,
   assignMemberRolesSchema,
+  createPortalAccessLinkSchema,
   inviteMemberSchema,
   invitePortalUserSchema,
   type AccessRoleSummary,
@@ -15,7 +16,14 @@ import type { FormDialogResult } from '@/shared/forms/form-dialog';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { assignMemberRoles, changeMembershipType, deactivateMember, inviteMember, revokeInvitation } from '@/shared/api/live/mutations';
+import {
+  assignMemberRoles,
+  changeMembershipType,
+  createPortalAccessLink,
+  deactivateMember,
+  inviteMember,
+  revokeInvitation,
+} from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { demoSystemRole, isOwnerRole } from '@/features/roles/config';
@@ -92,6 +100,36 @@ export async function invitePortalUserAction(clientId: string, raw: unknown): Pr
     await recordAudit({ action: 'member.portal_invited', entityType: 'client', entityId: clientId, entityLabel: email, summary: 'Invited client to the portal' });
     await refreshData('team', 'portal');
     return succeed({ shareLink }, t('team.invited', { email }));
+  });
+}
+
+/** Creates a shareable portal link (browser or app) — temporary or permanent access. */
+export async function createPortalAccessLinkAction(
+  clientId: string,
+  raw: unknown,
+): Promise<ActionResult<FormDialogResult>> {
+  return guarded(async () => {
+    await authorize(Permissions.MEMBERS_INVITE);
+    const parsed = parseInput(createPortalAccessLinkSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    if (!isLiveMode) return fail(t('toast.failed'));
+    const created = await createPortalAccessLink({
+      clientId,
+      accessMode: parsed.data.accessMode,
+      linkExpiresInHours: parsed.data.linkExpiresInHours,
+      membershipTtlHours: parsed.data.membershipTtlHours,
+      maxUses: parsed.data.maxUses,
+      allowedDomains: parsed.data.allowedDomains,
+    });
+    await recordAudit({
+      action: 'portal_access_link.created',
+      entityType: 'client',
+      entityId: clientId,
+      entityLabel: created.accessMode,
+      summary: 'Created shareable client portal access link',
+    });
+    await refreshData('team', 'portal');
+    return succeed({ shareLink: created.shareUrl }, t('team.portalLink.created'));
   });
 }
 

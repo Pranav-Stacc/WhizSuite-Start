@@ -168,12 +168,154 @@ export class AccessRepository {
           });
           return project?.clientId === scopeResourceId;
         }
+        if (resource.type === 'content' || resource.type === 'task') {
+          const row =
+            resource.type === 'content'
+              ? await this.prisma.contentItem.findFirst({
+                  where: { id: resource.id, organizationId },
+                  select: { clientId: true },
+                })
+              : await this.prisma.task.findFirst({
+                  where: { id: resource.id, organizationId },
+                  select: { project: { select: { clientId: true } } },
+                });
+          const clientId =
+            resource.type === 'content'
+              ? (row as { clientId: string } | null)?.clientId
+              : (row as { project: { clientId: string } } | null)?.project.clientId;
+          return clientId === scopeResourceId;
+        }
+        if (resource.type === 'media' || resource.type === 'folder' || resource.type === 'asset') {
+          const asset = await this.prisma.mediaAsset.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { clientId: true },
+          });
+          if (asset) return asset.clientId === scopeResourceId;
+          const folder = await this.prisma.mediaFolder.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { clientId: true },
+          });
+          return folder?.clientId === scopeResourceId;
+        }
+        if (resource.type === 'invoice' || resource.type === 'contract') {
+          const finance =
+            resource.type === 'invoice'
+              ? await this.prisma.invoice.findFirst({
+                  where: { id: resource.id, organizationId },
+                  select: { clientId: true },
+                })
+              : await this.prisma.contract.findFirst({
+                  where: { id: resource.id, organizationId },
+                  select: { clientId: true },
+                });
+          return finance?.clientId === scopeResourceId;
+        }
         return false;
       case 'PROJECT':
-        return resource.type === 'project' && resource.id === scopeResourceId;
+        if (resource.type === 'project') return resource.id === scopeResourceId;
+        if (resource.type === 'task') {
+          const task = await this.prisma.task.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { projectId: true },
+          });
+          return task?.projectId === scopeResourceId;
+        }
+        if (resource.type === 'content') {
+          const content = await this.prisma.contentItem.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { projectId: true },
+          });
+          return content?.projectId === scopeResourceId;
+        }
+        if (resource.type === 'media' || resource.type === 'asset' || resource.type === 'folder') {
+          const asset = await this.prisma.mediaAsset.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { projectId: true },
+          });
+          if (asset?.projectId) return asset.projectId === scopeResourceId;
+          const folder = await this.prisma.mediaFolder.findFirst({
+            where: { id: resource.id, organizationId },
+            select: { projectId: true },
+          });
+          return folder?.projectId === scopeResourceId;
+        }
+        return false;
+      case 'CONTENT':
+        return resource.type === 'content' && resource.id === scopeResourceId;
+      case 'TASK':
+        return resource.type === 'task' && resource.id === scopeResourceId;
       default:
         return resource.id === scopeResourceId;
     }
+  }
+
+  /**
+   * Compiles role-assignment scopes into list filters for staff.
+   * Org-wide grants clear restrictions; otherwise union CLIENT/PROJECT/CONTENT resource ids.
+   */
+  async resolveDataScope(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<{
+    orgWide: boolean;
+    clientIds: string[];
+    projectIds: string[];
+    contentIds: string[];
+  }> {
+    const assignments = await this.prisma.roleAssignment.findMany({
+      where: { organizationId, membershipId },
+      include: { scopes: true },
+    });
+    let orgWide = assignments.length === 0;
+    const clientIds = new Set<string>();
+    const projectIds = new Set<string>();
+    const contentIds = new Set<string>();
+
+    for (const assignment of assignments) {
+      if (assignment.scopes.length === 0) {
+        orgWide = true;
+        continue;
+      }
+      for (const scope of assignment.scopes) {
+        if (scope.scopeType === 'ORGANIZATION' || !scope.resourceId) {
+          orgWide = true;
+          continue;
+        }
+        if (scope.scopeType === 'CLIENT') clientIds.add(scope.resourceId);
+        if (scope.scopeType === 'PROJECT') projectIds.add(scope.resourceId);
+        if (scope.scopeType === 'CONTENT') contentIds.add(scope.resourceId);
+      }
+    }
+
+    if (orgWide) {
+      return { orgWide: true, clientIds: [], projectIds: [], contentIds: [] };
+    }
+
+    if (projectIds.size > 0) {
+      const projects = await this.prisma.project.findMany({
+        where: { organizationId, id: { in: [...projectIds] } },
+        select: { clientId: true },
+      });
+      for (const project of projects) clientIds.add(project.clientId);
+    }
+
+    if (contentIds.size > 0) {
+      const items = await this.prisma.contentItem.findMany({
+        where: { organizationId, id: { in: [...contentIds] }, deletedAt: null },
+        select: { clientId: true, projectId: true },
+      });
+      for (const item of items) {
+        clientIds.add(item.clientId);
+        if (item.projectId) projectIds.add(item.projectId);
+      }
+    }
+
+    return {
+      orgWide: false,
+      clientIds: [...clientIds],
+      projectIds: [...projectIds],
+      contentIds: [...contentIds],
+    };
   }
 
   async seedPermissions(catalog: Array<{ key: string; category: string }>) {
@@ -405,10 +547,39 @@ export class AccessRepository {
   ) {
     const existing = await this.prisma.role.findFirst({
       where: { organizationId, name, isSystem: true },
-      select: { id: true },
+      select: {
+        id: true,
+        permissions: { select: { permission: { select: { key: true } } } },
+      },
     });
-    if (existing) return existing;
+    if (existing) {
+      await this.ensureSystemRolePermissions(existing.id, permissionKeys, existing.permissions);
+      return { id: existing.id };
+    }
     return this.createSystemRole(organizationId, name, [...permissionKeys]);
+  }
+
+  /** Keeps system roles in sync when contracts add permissions (e.g. Client portal). */
+  private async ensureSystemRolePermissions(
+    roleId: string,
+    permissionKeys: readonly string[],
+    current: { permission: { key: string } }[],
+  ) {
+    const held = new Set(current.map((row) => row.permission.key));
+    const missing = permissionKeys.filter((key) => !held.has(key));
+    if (missing.length === 0) return;
+    const permissions = await this.prisma.permission.findMany({
+      where: { key: { in: [...missing] } },
+    });
+    if (permissions.length === 0) return;
+    await this.prisma.rolePermission.createMany({
+      data: permissions.map((p) => ({
+        roleId,
+        permissionId: p.id,
+        effect: 'ALLOW',
+      })),
+      skipDuplicates: true,
+    });
   }
 
   async createSystemRole(

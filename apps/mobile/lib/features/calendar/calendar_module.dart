@@ -15,7 +15,7 @@ final calendarModule = FeatureModule(
       anyOf: const [Permissions.projectsView],
       audiences: staffOnly,
       group: NavGroup.work,
-      primary: false,
+      primary: true,
     ),
   ],
   routes: [

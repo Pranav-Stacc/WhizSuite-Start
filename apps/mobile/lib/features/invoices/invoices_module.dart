@@ -17,7 +17,7 @@ final invoicesModule = FeatureModule(
       anyOf: const [Permissions.invoicesView],
       audiences: everyAudience,
       group: NavGroup.money,
-      primary: true,
+      primary: false,
     ),
   ],
   routes: [

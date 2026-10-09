@@ -33,16 +33,16 @@ class DashboardKpis extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final policy = ref.watch(accessPolicyProvider);
-    return MetricGrid(
-      semanticLabel: l10n.dashboardKpiAria,
-      tiles: [
-        if (policy.can(Permissions.tasksView)) ...const [_MyTasksTile(), _DueTile()],
-        if (policy.can(Permissions.contentView)) const _InReviewTile(),
-        if (policy.can(Permissions.approvalsView)) const _ApprovalsTile(),
-        if (policy.can(Permissions.invoicesView)) const _OutstandingTile(),
-        if (policy.can(Permissions.clientsView)) const _ClientsTile(),
-      ],
-    );
+    // Cap to four high-signal tiles so phones stay a compact 2×2, matching the web overview strip.
+    final tiles = <Widget>[
+      if (policy.can(Permissions.invoicesView)) const _OutstandingTile(),
+      if (policy.can(Permissions.approvalsView)) const _ApprovalsTile(),
+      if (policy.can(Permissions.tasksView)) const _DueTile(),
+      if (policy.can(Permissions.clientsView)) const _ClientsTile(),
+      if (policy.can(Permissions.tasksView)) const _MyTasksTile(),
+      if (policy.can(Permissions.contentView)) const _InReviewTile(),
+    ].take(4).toList();
+    return MetricGrid(semanticLabel: l10n.dashboardKpiAria, tiles: tiles);
   }
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_tokens.dart';
+import 'shell_chrome.dart';
 
 /// App-bar actions every page shows (e.g. the notification bell), injected by the app shell
 /// so shared widgets never depend on feature code.
@@ -36,15 +37,20 @@ class PageScaffold extends StatelessWidget {
   final bool showShellActions;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          bottom: bottom,
-          actions: [...actions, if (showShellActions) ...ShellActions.of(context)],
-        ),
-        floatingActionButton: floatingActionButton,
-        body: body,
-      );
+  Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    final showMenu = !canPop && ShellChrome.maybeOf(context) != null;
+    return Scaffold(
+      appBar: AppBar(
+        leading: showMenu ? const SidebarMenuButton() : null,
+        title: Text(title),
+        bottom: bottom,
+        actions: [...actions, if (showShellActions) ...ShellActions.of(context)],
+      ),
+      floatingActionButton: floatingActionButton,
+      body: body,
+    );
+  }
 }
 
 /// Centered, width-capped scrolling body for detail and form-like screens.
@@ -61,7 +67,7 @@ class ReadableBody extends StatelessWidget {
     final tokens = context.tokens;
     final list = ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.xxl * 2),
+      padding: EdgeInsets.fromLTRB(tokens.md, tokens.md, tokens.md, tokens.xxl),
       children: [
         Center(
           child: ConstrainedBox(

@@ -1,16 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ApprovalStepRules,
+  AssignableScopeTypes,
   MAX_WORKFLOW_SLA_HOURS,
   MAX_WORKFLOW_STAGE_LENGTH,
   MAX_WORKFLOW_STAGES,
   MIN_WORKFLOW_STAGES,
+  type ApprovalStepRule,
 } from '@agency-os/contracts';
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -19,12 +24,24 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
 const NAME_MIN = 2;
 const NAME_MAX = 200;
 const DEFAULT_ENTITY_TYPE = 'content';
+const MAX_APPROVERS = 50;
+const MAX_QUORUM = 50;
+
+const SCOPE_TYPES = [
+  AssignableScopeTypes.ORGANIZATION,
+  AssignableScopeTypes.CLIENT,
+  AssignableScopeTypes.PROJECT,
+  AssignableScopeTypes.WORKSPACE,
+  AssignableScopeTypes.TEAM,
+  AssignableScopeTypes.DEPARTMENT,
+] as const;
 
 export class WorkflowStageDto {
   @ApiProperty()
@@ -38,11 +55,53 @@ export class WorkflowStageDto {
     format: 'uuid',
     nullable: true,
     description:
-      'Workflow role used as the default assignee pool for this stage.',
+      'Legacy single workflow-role assignee; merged into roleIds when set.',
   })
   @IsOptional()
   @IsUUID('4')
   assigneeRoleId?: string | null;
+
+  @ApiProperty({
+    required: false,
+    enum: ApprovalStepRules,
+    description: 'How many of the named pool must approve this stage.',
+  })
+  @IsOptional()
+  @IsIn(ApprovalStepRules)
+  approvalRule?: ApprovalStepRule;
+
+  @ApiProperty({ required: false, description: 'Required when approvalRule is QUORUM' })
+  @ValidateIf((stage: WorkflowStageDto) => stage.approvalRule === 'QUORUM')
+  @IsInt()
+  @Min(1)
+  @Max(MAX_QUORUM)
+  quorumCount?: number;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(MAX_APPROVERS)
+  @IsUUID('4', { each: true })
+  approverIds?: string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(MAX_APPROVERS)
+  @IsUUID('4', { each: true })
+  roleIds?: string[];
+
+  @ApiProperty({ required: false, enum: SCOPE_TYPES })
+  @IsOptional()
+  @IsIn(SCOPE_TYPES)
+  scopeType?: (typeof SCOPE_TYPES)[number];
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  scopeResourceId?: string | null;
 }
 
 export class CreateWorkflowDto {
@@ -60,7 +119,7 @@ export class CreateWorkflowDto {
   @ApiProperty({
     type: [WorkflowStageDto],
     description:
-      'Ordered stages; the first is initial, the last terminal. Optional assigneeRoleId ties a stage to a workflow role.',
+      'Ordered stages; the first is initial, the last terminal. Configure people, roles, and approval rule per stage.',
   })
   @IsArray()
   @ArrayMinSize(MIN_WORKFLOW_STAGES)

@@ -6,17 +6,22 @@ import {
   ArrayUnique,
   IsArray,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import {
   APPROVAL_STEPS_MAX,
   ApprovalActions,
   ApprovalStepRules,
+  AssignableScopeTypes,
   RESOURCE_KEY_MAX_LENGTH,
   RESOURCE_NAME_MAX_LENGTH,
   RESOURCE_TEXT_MAX_LENGTH,
@@ -24,23 +29,66 @@ import {
   type ApprovalStepRule,
 } from '@agency-os/contracts';
 
+const MAX_APPROVERS = 50;
+const MAX_QUORUM = 50;
+
+const SCOPE_TYPES = [
+  AssignableScopeTypes.ORGANIZATION,
+  AssignableScopeTypes.CLIENT,
+  AssignableScopeTypes.PROJECT,
+  AssignableScopeTypes.WORKSPACE,
+  AssignableScopeTypes.TEAM,
+  AssignableScopeTypes.DEPARTMENT,
+] as const;
+
 export class ApprovalStepDto {
   @ApiProperty()
   @IsString()
   @MinLength(1)
   @MaxLength(RESOURCE_NAME_MAX_LENGTH)
   name!: string;
+
   @ApiPropertyOptional({ enum: ApprovalStepRules })
   @IsOptional()
   @IsIn(ApprovalStepRules)
   rule?: ApprovalStepRule;
-  /** Users who may act on this step; empty means anyone holding the approve permission. */
+
+  @ApiPropertyOptional({
+    description: 'Required approvals when rule is QUORUM',
+  })
+  @ValidateIf((step: ApprovalStepDto) => step.rule === 'QUORUM')
+  @IsInt()
+  @Min(1)
+  @Max(MAX_QUORUM)
+  quorumCount?: number;
+
+  /** Concrete users who may act; empty + empty roles = anyone with approve permission. */
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
   @ArrayUnique()
+  @ArrayMaxSize(MAX_APPROVERS)
   @IsUUID('4', { each: true })
   approverIds?: string[];
+
+  /** Roles whose holders join the approver pool (optionally scoped). */
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(MAX_APPROVERS)
+  @IsUUID('4', { each: true })
+  roleIds?: string[];
+
+  @ApiPropertyOptional({ enum: SCOPE_TYPES })
+  @IsOptional()
+  @IsIn(SCOPE_TYPES)
+  scopeType?: (typeof SCOPE_TYPES)[number];
+
+  @ApiPropertyOptional({ nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  scopeResourceId?: string | null;
 }
 
 export class CreateApprovalDto {

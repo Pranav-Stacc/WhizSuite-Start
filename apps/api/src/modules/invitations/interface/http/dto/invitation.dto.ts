@@ -98,3 +98,93 @@ export class RedeemInvitationDto extends AcceptInvitationDto {
   @MaxLength(NAME_MAX_LENGTH)
   lastName?: string;
 }
+
+const PORTAL_ACCESS_MODES = ['TEMPORARY', 'PERMANENT'] as const;
+const PORTAL_LINK_TTL_MAX = 24 * 90;
+const PORTAL_MEMBERSHIP_TTL_MAX = 24 * 365;
+const PORTAL_MAX_USES_MAX = 10_000;
+const DOMAIN_MAX = 253;
+
+export class CreatePortalAccessLinkDto {
+  @ApiProperty({ description: 'Client whose portal this link unlocks' })
+  @IsUUID()
+  clientId!: string;
+
+  @ApiProperty({ enum: PORTAL_ACCESS_MODES, required: false })
+  @IsOptional()
+  @IsIn(PORTAL_ACCESS_MODES)
+  accessMode?: (typeof PORTAL_ACCESS_MODES)[number];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(PORTAL_LINK_TTL_MAX)
+  linkExpiresInHours?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(PORTAL_MEMBERSHIP_TTL_MAX)
+  membershipTtlHours?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(PORTAL_MAX_USES_MAX)
+  maxUses?: number;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(DOMAIN_MAX, { each: true })
+  allowedDomains?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  roleIds?: string[];
+}
+
+export class RedeemPortalAccessDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(TOKEN_MAX_LENGTH)
+  token!: string;
+
+  @ApiProperty()
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(NAME_MAX_LENGTH)
+  firstName!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(NAME_MAX_LENGTH)
+  lastName?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Required for permanent links or when the email already has a password',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(PASSWORD_MIN_LENGTH)
+  password?: string;
+}
+
+export class ClaimPortalAccessDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(PASSWORD_MIN_LENGTH)
+  password!: string;
+}

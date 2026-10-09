@@ -74,10 +74,12 @@ model CalendarItem {
   endsAt         DateTime? @map("ends_at") @db.Timestamptz
   allDay         Boolean  @default(false) @map("all_day")
   clientId       String?  @map("client_id") @db.Uuid
+  projectId      String?  @map("project_id") @db.Uuid
   metadata       Json?
 
   @@index([organizationId, startsAt])
   @@index([organizationId, clientId, startsAt])
+  @@index([organizationId, projectId, startsAt])
   @@map("calendar_items")
   @@schema("calendar")
 }

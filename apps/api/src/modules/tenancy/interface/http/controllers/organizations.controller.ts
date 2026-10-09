@@ -4,11 +4,12 @@ import {
   Get,
   Headers,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Permissions } from '@agency-os/contracts';
+import { Permissions, themeSchema, type ThemeSettings } from '@agency-os/contracts';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -16,6 +17,7 @@ import {
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
+import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { TenantContext } from '../../../../../shared/tenant/tenant.context';
 import { TenancyService } from '../../../application/services/tenancy.service';
 import { CreateWorkspaceDto } from '../dto/workspace.dto';
@@ -33,6 +35,25 @@ export class OrganizationsController {
     const orgId = orgHeader ?? TenantContext.getOrganizationId() ?? undefined;
     if (!orgId) return this.tenancy.requireOrgFromContext();
     return this.tenancy.getOrganization(orgId);
+  }
+
+  @Get(':organizationId/theme')
+  @RequirePermissions(Permissions.ORG_VIEW)
+  getTheme(@Param('organizationId') organizationId: string) {
+    return this.tenancy.getAppearanceTheme(requireOrganizationId(organizationId)).then((theme) => ({ theme }));
+  }
+
+  @Patch(':organizationId/theme')
+  @RequirePermissions(Permissions.ORG_BRANDING_MANAGE)
+  updateTheme(
+    @Param('organizationId') organizationId: string,
+    @Body() body: ThemeSettings,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const theme = themeSchema.parse(body);
+    return this.tenancy
+      .updateAppearanceTheme(requireOrganizationId(organizationId), user.userId, theme)
+      .then((saved) => ({ theme: saved }));
   }
 
   @Get(':organizationId')

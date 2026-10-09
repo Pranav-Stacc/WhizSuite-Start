@@ -7,6 +7,7 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { StatCard } from '@/shared/ui/stat-card';
 import { LogoTile } from '@/shared/ui/avatar';
+import { ClaimPermanentLogin } from '@/features/portal/components/claim-permanent-login';
 import { portalClient, portalSummary } from '@/features/portal/services/portal.service';
 
 export const metadata: Metadata = { title: t('portal.home.title') };
@@ -29,6 +30,10 @@ export default async function PortalHomePage() {
           <p className="mt-1 text-sm text-muted">{t('portal.home.subtitle', { name: session.name })}</p>
         </div>
       </section>
+
+      <div className="mb-6">
+        <ClaimPermanentLogin />
+      </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <StatCard label={t('portal.stat.approvals')} value={String(summary.approvals)} icon={<CheckCircle2 />} hint={t('portal.stat.approvals.hint')} />

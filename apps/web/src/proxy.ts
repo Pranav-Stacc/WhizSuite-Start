@@ -2,7 +2,16 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, decodeSession, encodeSession, sessionCookieOptions } from '@/shared/auth/session-codec';
 import { accessTokenNeedsRefresh, rotateTokens } from '@/shared/auth/token-refresh';
 
-const PUBLIC_PATHS = ['/', '/login', '/register', '/invite', '/auth/expired'];
+const PUBLIC_PATHS = [
+  '/',
+  '/login',
+  '/register',
+  '/invite',
+  '/auth/expired',
+  '/privacy',
+  '/terms',
+  '/portal-access',
+];
 
 function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
   const url = request.nextUrl.clone();

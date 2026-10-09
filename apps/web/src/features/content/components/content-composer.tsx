@@ -15,6 +15,7 @@ import { Field, Input, Select, Textarea } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
 import { PLATFORM_META, PlatformBadge } from '@/shared/ui/platform';
 import { createContentAction, deleteContentAction, updateContentAction } from '../actions/content.actions';
+import { ComposerUpload } from './composer-upload';
 import { SlidePicker, type ComposerAsset, type ComposerSlide } from './slide-picker';
 
 export type { ComposerAsset, ComposerSlide } from './slide-picker';
@@ -77,6 +78,8 @@ interface ContentComposerProps {
   onOpenChange?: (open: boolean) => void;
   /** Keep the user on the current view after saving instead of opening the post page. */
   stayOnSave?: boolean;
+  /** Live storage must be available for direct uploads from the composer. */
+  uploadEnabled?: boolean;
 }
 
 const DATE_TIME_SEPARATOR = 'T';
@@ -100,6 +103,7 @@ export function ContentComposer({
   open: controlledOpen,
   onOpenChange,
   stayOnSave = false,
+  uploadEnabled = true,
 }: ContentComposerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -233,7 +237,16 @@ export function ContentComposer({
           <Controller
             control={form.control}
             name="mediaAssetIds"
-            render={({ field }) => <SlidePicker value={field.value} onChange={field.onChange} known={knownSlides} library={clientAssets} />}
+            render={({ field }) => (
+              <div className="space-y-3">
+                <SlidePicker value={field.value} onChange={field.onChange} known={knownSlides} library={clientAssets} />
+                <ComposerUpload
+                  clientId={clientId}
+                  enabled={uploadEnabled}
+                  onUploaded={(ids) => field.onChange([...field.value, ...ids.filter((id) => !field.value.includes(id))])}
+                />
+              </div>
+            )}
           />
 
           <div className="grid gap-4 sm:grid-cols-2">

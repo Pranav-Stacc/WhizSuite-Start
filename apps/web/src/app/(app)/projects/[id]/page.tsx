@@ -2,8 +2,9 @@ import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock, Pencil, Plus, Wallet } from 'lucide-react';
-import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock, ImageIcon, Pencil, Plus, Wallet } from 'lucide-react';
+import { can, getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatDate, formatMoney, formatNumber } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -17,6 +18,9 @@ import { StatusBadge } from '@/shared/ui/status';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
 import { listClients } from '@/features/clients/services/clients.service';
 import { listContent } from '@/features/content/services/content.service';
+import { AssetCard } from '@/features/media/components/asset-card';
+import { UploadDropzone } from '@/features/media/components/upload-dropzone';
+import { listAssets } from '@/features/media/services/media.service';
 import { ProjectDialog } from '@/features/projects/components/project-dialog';
 import { getProject } from '@/features/projects/services/projects.service';
 import { TaskDialog } from '@/features/tasks/components/task-dialog';
@@ -43,12 +47,13 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const project = await getProject(id);
   if (!project) notFound();
 
-  const [allClients, tasks, entries, content, members] = await Promise.all([
+  const [allClients, tasks, entries, content, members, assets] = await Promise.all([
     loadIf(Permissions.CLIENTS_VIEW, listClients, []),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
     loadIf(Permissions.TIME_TRACK, listEntries, []),
     loadIf(Permissions.CONTENT_VIEW, listContent, []),
     loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
+    loadIf(Permissions.FILES_VIEW, listAssets, []),
   ]);
   const client = allClients.find((c) => c.id === project.clientId);
   const projectTasks = tasks.filter((x) => x.projectId === project.id);
@@ -56,7 +61,11 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const progress = projectTasks.length ? Math.round((doneCount / projectTasks.length) * 100) : 0;
   const loggedHours = entries.filter((e) => e.projectId === project.id).reduce((total, e) => total + e.minutes, 0) / MINUTES_PER_HOUR;
   const clientContent = content.filter((c) => c.clientId === project.clientId).slice(0, 5);
+  const projectAssets = assets.filter((a) => a.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const canManage = await can(Permissions.PROJECTS_EDIT);
+  const granted = await getPermissions();
+  const canUploadAssets = isLiveMode && granted.has(Permissions.FILES_UPLOAD);
+  const canDeleteAssets = granted.has(Permissions.FILES_DELETE);
   const due = dueInfo(project.endDate, project.status === 'COMPLETED');
   const memberOptions = [...members.values()].filter((m) => m.status !== 'INVITED').map((m) => ({ id: m.id, name: m.name }));
   const projectOption = [{ id: project.id, name: project.name, clientName: client?.name }];
@@ -186,6 +195,37 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
           </Card>
         </div>
       </section>
+
+      {granted.has(Permissions.FILES_VIEW) ? (
+        <Card>
+          <CardHeader
+            title={t('projects.assets.title')}
+            action={
+              client ? (
+                <Link href={`/clients/${client.id}/assets`} className="text-sm text-primary hover:underline">
+                  {t('projects.assets.library')}
+                </Link>
+              ) : null
+            }
+          />
+          <CardBody className="space-y-4">
+            {client && canUploadAssets ? (
+              <UploadDropzone clientId={client.id} projectId={project.id} enabled={canUploadAssets} />
+            ) : null}
+            {projectAssets.length === 0 ? (
+              <EmptyState icon={<ImageIcon />} title={t('projects.assets.empty')} />
+            ) : (
+              <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {projectAssets.map((asset) => (
+                  <li key={asset.id}>
+                    <AssetCard asset={asset} canDelete={canDeleteAssets} canDownload={isLiveMode} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
     </div>
   );
 }
