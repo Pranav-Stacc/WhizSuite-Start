@@ -81,12 +81,10 @@ export class RolesService {
     // Validate the post-update shape so ACCESS roles cannot lose all permissions.
     parseRoleInput({
       name: raw.name ?? before.name,
-      description:
-        raw.description !== undefined ? raw.description : undefined,
+      description: raw.description !== undefined ? raw.description : undefined,
       kind: raw.kind ?? before.kind,
       permissionKeys:
-        raw.permissionKeys ??
-        before.permissions.map((p) => p.permission.key),
+        raw.permissionKeys ?? before.permissions.map((p) => p.permission.key),
       defaultScopeTypes:
         raw.defaultScopeTypes ?? asScopeTypes(before.defaultScopeTypes),
     });

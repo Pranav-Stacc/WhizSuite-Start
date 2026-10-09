@@ -61,7 +61,7 @@ function defaultAssignmentScopes(
   const list =
     scopes && scopes.length > 0
       ? scopes
-      : [{ scopeType: AssignableScopeTypes.ORGANIZATION as AssignableScopeType }];
+      : [{ scopeType: AssignableScopeTypes.ORGANIZATION }];
   return list.map((scope) => ({
     organizationId,
     scopeType: scope.scopeType,
@@ -338,7 +338,7 @@ export class AccessRepository {
         name: input.name,
         description: input.description,
         kind: input.kind,
-        defaultScopeTypes: input.defaultScopeTypes as Prisma.InputJsonValue,
+        defaultScopeTypes: input.defaultScopeTypes,
         permissions: {
           create: permissions.map((p) => ({
             permissionId: p.id,
@@ -387,8 +387,7 @@ export class AccessRepository {
         ...(input.kind ? { kind: input.kind } : {}),
         ...(input.defaultScopeTypes
           ? {
-              defaultScopeTypes:
-                input.defaultScopeTypes as Prisma.InputJsonValue,
+              defaultScopeTypes: input.defaultScopeTypes,
             }
           : {}),
       },

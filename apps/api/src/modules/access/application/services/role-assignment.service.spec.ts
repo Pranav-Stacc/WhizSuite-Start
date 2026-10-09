@@ -42,7 +42,9 @@ function setup() {
     rolesByMembership: jest.fn(),
     replaceAssignments: jest.fn().mockResolvedValue(undefined),
   };
-  const authorization = { invalidateCache: jest.fn().mockResolvedValue(undefined) };
+  const authorization = {
+    invalidateCache: jest.fn().mockResolvedValue(undefined),
+  };
   const audit = { record: jest.fn().mockResolvedValue(undefined) };
   const service = new RoleAssignmentService(
     repository as unknown as AccessRepository,
@@ -57,11 +59,17 @@ describe('RoleAssignmentService', () => {
     const { service, repository } = setup();
     repository.findRoles.mockResolvedValue([ROLE_CUSTOM]);
 
-    await expect(
-      service.requireAssignableRoles(ORG, [ROLE_CUSTOM.id, 'missing']),
-    ).rejects.toMatchObject({
-      response: expect.objectContaining({ code: ErrorCodes.VALIDATION_FAILED }),
-    });
+    let thrown: unknown;
+    try {
+      await service.requireAssignableRoles(ORG, [ROLE_CUSTOM.id, 'missing']);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(ProblemDetailsException);
+    const body = (thrown as ProblemDetailsException).getResponse();
+    expect(body).toEqual(
+      expect.objectContaining({ code: ErrorCodes.VALIDATION_FAILED }),
+    );
     expect(repository.findRoles).toHaveBeenCalledWith(ORG, [
       ROLE_CUSTOM.id,
       'missing',

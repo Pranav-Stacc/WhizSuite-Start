@@ -44,8 +44,7 @@ export class RolesResourceController {
     @Param('organizationId') organizationId: string,
     @Query('kind') kind?: RoleKind,
   ) {
-    const filter =
-      kind && ROLE_KIND_KEYS.includes(kind) ? kind : undefined;
+    const filter = kind && ROLE_KIND_KEYS.includes(kind) ? kind : undefined;
     return this.roles.list(requireOrganizationId(organizationId), filter);
   }
 

@@ -37,7 +37,8 @@ export class WorkflowStageDto {
     required: false,
     format: 'uuid',
     nullable: true,
-    description: 'Workflow role used as the default assignee pool for this stage.',
+    description:
+      'Workflow role used as the default assignee pool for this stage.',
   })
   @IsOptional()
   @IsUUID('4')
