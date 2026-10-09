@@ -28,8 +28,10 @@ import { endSession, getSession, startSession, type Session } from '@/shared/aut
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { applyOrganizationTheme } from '@/shared/theme/org-theme';
+import { env } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { recordAudit } from '@/features/audit/services/audit.service';
+import { workspaceHref } from '@/shared/workspace/host';
 
 /** Writes the session and hydrates the agency theme so every member sees the same colours. */
 async function beginAuthenticatedSession(session: Session): Promise<void> {
@@ -37,6 +39,23 @@ async function beginAuthenticatedSession(session: Session): Promise<void> {
   if (session.accessToken && session.orgId) {
     await applyOrganizationTheme({ orgId: session.orgId, accessToken: session.accessToken });
   }
+}
+
+/** Prefer `{slug}.{APP_ROOT_DOMAIN}` so Main/CRM/Finance SSO cookies apply. */
+function redirectAfterAuth(session: Session): never {
+  const path = homeFor(session.role);
+  const root = env.APP_ROOT_DOMAIN?.trim();
+  if (root && session.orgSlug) {
+    redirect(
+      workspaceHref({
+        module: 'main',
+        orgSlug: session.orgSlug,
+        rootDomain: root,
+        path,
+      }),
+    );
+  }
+  redirect(path);
 }
 
 interface AuthResponse {
@@ -131,7 +150,7 @@ export async function loginAction(raw: unknown): Promise<ActionResult> {
 
     await beginAuthenticatedSession(session);
     await recordAudit({ action: 'auth.login', entityType: 'session', entityId: session.userId, entityLabel: session.email, summary: 'Signed in' });
-    redirect(homeFor(session.role));
+    redirectAfterAuth(session);
   });
 }
 
@@ -164,7 +183,7 @@ export async function googleAuthAction(raw: unknown): Promise<ActionResult> {
       entityLabel: session.email,
       summary: 'Signed in with Google',
     });
-    redirect(homeFor(session.role));
+    redirectAfterAuth(session);
   });
 }
 
@@ -204,7 +223,7 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
     }
 
     await beginAuthenticatedSession(session);
-    redirect(homeFor(session.role));
+    redirectAfterAuth(session);
   });
 }
 
@@ -227,7 +246,7 @@ export async function acceptInvitationAction(raw: unknown): Promise<ActionResult
 
     await beginAuthenticatedSession(session);
     await recordAudit({ action: 'auth.invitation_accepted', entityType: 'session', entityId: session.userId, entityLabel: session.email, summary: 'Accepted invitation' });
-    redirect(homeFor(session.role));
+    redirectAfterAuth(session);
   });
 }
 

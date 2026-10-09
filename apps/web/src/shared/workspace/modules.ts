@@ -60,7 +60,8 @@ export const MODULE_NAV_GROUPS: Record<WorkspaceModule, readonly string[]> = {
 
 /** Primary top-bar hrefs per module. */
 export const MODULE_PRIMARY_HREFS: Record<WorkspaceModule, readonly string[]> = {
-  main: ['/dashboard', '/clients', '/tasks', '/content', '/calendar', '/chat', '/media'],
+  // Tasks stay in the Work group / More menu — not the phone bottom dock.
+  main: ['/dashboard', '/clients', '/content', '/calendar', '/chat', '/media'],
   crm: ['/leads'],
   finance: ['/invoices', '/reports', '/time'],
 };
