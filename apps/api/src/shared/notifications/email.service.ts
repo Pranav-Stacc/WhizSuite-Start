@@ -3,6 +3,18 @@ import { ConfigService } from '@nestjs/config';
 import nodemailer from 'nodemailer';
 import type { AppConfig } from '../config/app.config';
 
+const HTML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch] ?? ch);
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -19,16 +31,15 @@ export class EmailService {
   async sendInvitation(input: {
     to: string;
     organizationName: string;
-    token: string;
-    invitedBy?: string;
+    acceptUrl: string;
   }): Promise<void> {
-    const acceptUrl = `http://localhost:3000/invitations/accept?token=${input.token}`;
+    const href = input.acceptUrl;
     await this.transporter.sendMail({
-      from: 'Agency OS <noreply@agency-os.local>',
+      from: this.config.get('EMAIL_FROM'),
       to: input.to,
       subject: `You're invited to join ${input.organizationName}`,
-      text: `You have been invited to join ${input.organizationName}. Accept: ${acceptUrl}`,
-      html: `<p>You have been invited to join <strong>${input.organizationName}</strong>.</p><p><a href="${acceptUrl}">Accept invitation</a></p>`,
+      text: `You have been invited to join ${input.organizationName}. Accept: ${href}`,
+      html: `<p>You have been invited to join <strong>${escapeHtml(input.organizationName)}</strong>.</p><p><a href="${escapeHtml(href)}">Accept invitation</a></p>`,
     });
     this.logger.log(`Invitation email sent to ${input.to}`);
   }

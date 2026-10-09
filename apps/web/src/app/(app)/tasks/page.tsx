@@ -83,7 +83,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   const columns = TaskStatuses.map((status) => {
     const inColumn = tasks.filter((task) => task.status === status);
-    const hours = inColumn.reduce((total, task) => total + task.estimateHours, 0);
+    const hours = inColumn.reduce((total, task) => total + (task.estimateHours ?? 0), 0);
     return {
       id: status,
       title: statusLabel('task', status),

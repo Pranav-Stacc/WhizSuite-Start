@@ -6,6 +6,6 @@ import { KnowledgeResourceController } from './interface/http/controllers/knowle
 @Module({
   controllers: [KnowledgeResourceController],
   providers: [KnowledgeService, KnowledgeRepository],
-  exports: [KnowledgeService, KnowledgeRepository],
+  exports: [KnowledgeService],
 })
 export class KnowledgeModule {}

@@ -42,6 +42,7 @@ export const clientsMessages = {
   'clients.workspace.overview': 'Overview',
   'clients.workspace.grid': 'Grid',
   'clients.workspace.calendar': 'Calendar',
+  'clients.workspace.messages': 'Messages',
   'clients.workspace.assets': 'Assets',
   'clients.workspace.invoices': 'Invoices',
   'clients.workspace.integrations': 'Integrations',

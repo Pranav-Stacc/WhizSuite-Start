@@ -1,5 +1,6 @@
 import 'server-only';
-import { LeadStages, leadsRepository, type Lead, type LeadStage } from '../data/leads.repository';
+import { LeadStages, type LeadStage } from '@agency-os/contracts';
+import { leadsRepository, type Lead } from '../data/leads.repository';
 
 export async function listLeads(): Promise<Lead[]> {
   return leadsRepository.list();

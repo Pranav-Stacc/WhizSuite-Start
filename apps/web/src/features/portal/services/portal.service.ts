@@ -5,7 +5,11 @@ import { getClient } from '@/features/clients/services/clients.service';
 import { listAssets } from '@/features/media/services/media.service';
 import { listInvoices, effectiveStatus } from '@/features/invoices/services/invoices.service';
 import { loadReport } from '@/features/reports/services/reports.service';
-import { threadRepository } from '../data/thread.repository';
+import { memberDirectory } from '@/features/team/services/members.service';
+import { fetchClientThread } from '@/shared/api/live/feedback';
+import { getSession } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
+import { threadRepository, type ThreadMessage } from '../data/thread.repository';
 
 const PORTAL_INVOICE_STATUSES: InvoiceStatus[] = ['SENT', 'PAID', 'OVERDUE'];
 
@@ -40,13 +44,32 @@ export async function portalFiles(clientId: string) {
   return assets.filter((a) => a.clientId === clientId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function portalMessages(clientId: string) {
-  const messages = await threadRepository.list();
-  return messages.filter((m) => m.clientId === clientId).sort((a, b) => a.at.localeCompare(b.at));
+export const PORTAL_CACHE_TAG = 'portal';
+
+/** Agency authors the client cannot look up are shown under the agency's name. */
+async function liveMessages(clientId: string): Promise<ThreadMessage[]> {
+  const [comments, directory, session] = await Promise.all([fetchClientThread(clientId, PORTAL_CACHE_TAG), memberDirectory(), getSession()]);
+  return comments.map((c) => {
+    const author = directory.get(c.authorId);
+    return {
+      id: c.id,
+      clientId,
+      fromClient: author?.isClient ?? false,
+      authorName: author?.name ?? session?.orgName ?? '',
+      body: c.body,
+      at: c.createdAt,
+    };
+  });
+}
+
+/** The agency ↔ client conversation, oldest first; shared by the portal and the client workspace. */
+export async function clientThread(clientId: string): Promise<ThreadMessage[]> {
+  const messages = isLiveMode ? await liveMessages(clientId) : (await threadRepository.list()).filter((m) => m.clientId === clientId);
+  return messages.sort((a, b) => a.at.localeCompare(b.at));
 }
 
 export async function portalSummary(clientId: string) {
-  const [approvals, invoices, messages] = await Promise.all([portalApprovals(clientId), portalInvoices(clientId), portalMessages(clientId)]);
+  const [approvals, invoices, messages] = await Promise.all([portalApprovals(clientId), portalInvoices(clientId), clientThread(clientId)]);
   const openInvoices = invoices.filter((inv) => effectiveStatus(inv) === 'SENT' || effectiveStatus(inv) === 'OVERDUE');
   return { approvals: approvals.length, openInvoices: openInvoices.length, messages: messages.length };
 }

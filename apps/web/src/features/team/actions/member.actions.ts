@@ -1,17 +1,20 @@
-'use server';
+﻿'use server';
 
-import { UserRoles, inviteMemberSchema } from '@agency-os/contracts';
+import { UserRoles, inviteMemberSchema, invitePortalUserSchema, type MembershipType } from '@agency-os/contracts';
 import { requireSession } from '@/shared/auth/session';
 import { ROLES_LEADERSHIP, ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
+import type { FormDialogResult } from '@/shared/forms/form-dialog';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { inviteMember } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
-import { ASSIGNABLE_ROLES, DEFAULT_INVITE_CAPACITY_HOURS, ROLE_FOR_MEMBERSHIP } from '../config';
+import { ASSIGNABLE_ROLES, DEFAULT_WEEKLY_CAPACITY_HOURS, ROLE_FOR_MEMBERSHIP } from '../config';
 import { membersRepository, type MemberRole } from '../data/members.repository';
+
+const CLIENT_MEMBERSHIP: MembershipType = 'CLIENT';
 
 async function authorize(allowed: readonly string[]) {
   const session = await requireSession();
@@ -19,7 +22,7 @@ async function authorize(allowed: readonly string[]) {
   return session;
 }
 
-export async function inviteMemberAction(raw: unknown): Promise<ActionResult> {
+export async function inviteMemberAction(raw: unknown): Promise<ActionResult<FormDialogResult>> {
   return guarded(async () => {
     await authorize(ROLES_LEADERSHIP);
     const parsed = parseInput(inviteMemberSchema, raw);
@@ -31,15 +34,16 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult> {
     if ((await membersRepository.list()).some((m) => m.email.toLowerCase() === normalized)) return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
 
     let member;
+    let shareLink: string | undefined;
     if (isLiveMode) {
-      await inviteMember(normalized, membershipType);
+      shareLink = (await inviteMember(normalized, membershipType)).acceptUrl;
       member = {
         id: normalized,
         name: normalized,
         email: normalized,
         role,
         title: note ?? '',
-        capacityHours: DEFAULT_INVITE_CAPACITY_HOURS,
+        capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
         skills: [],
         status: 'INVITED' as const,
         joinedAt: new Date().toISOString(),
@@ -50,7 +54,7 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult> {
         email: normalized,
         role,
         title: note ?? '',
-        capacityHours: DEFAULT_INVITE_CAPACITY_HOURS,
+        capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
         skills: [],
         status: 'INVITED',
         joinedAt: new Date().toISOString(),
@@ -58,7 +62,21 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult> {
     }
     await recordAudit({ action: 'member.invited', entityType: 'member', entityId: member.id, entityLabel: member.email, summary: 'Invited team member' });
     await refreshData('team');
-    return succeed(undefined, t('team.invited', { email: member.email }));
+    return succeed({ shareLink }, t('team.invited', { email: member.email }));
+  });
+}
+
+/** Gives a client contact access to that client's portal. */
+export async function invitePortalUserAction(clientId: string, raw: unknown): Promise<ActionResult<FormDialogResult>> {
+  return guarded(async () => {
+    await authorize(ROLES_LEADERSHIP);
+    const parsed = parseInput(invitePortalUserSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    const email = parsed.data.email.toLowerCase();
+    const shareLink = isLiveMode ? (await inviteMember(email, CLIENT_MEMBERSHIP, clientId)).acceptUrl : undefined;
+    await recordAudit({ action: 'member.portal_invited', entityType: 'client', entityId: clientId, entityLabel: email, summary: 'Invited client to the portal' });
+    await refreshData('team', 'portal');
+    return succeed({ shareLink }, t('team.invited', { email }));
   });
 }
 

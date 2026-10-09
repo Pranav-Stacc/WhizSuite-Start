@@ -24,6 +24,7 @@ import {
   CONTENT_PILLAR_MAX_LENGTH,
   CONTENT_TITLE_MAX_LENGTH,
   ContentCreatableStatuses,
+  ContentReviewOutcomes,
   ContentStatuses,
   HASHTAG_PATTERN,
   Platforms,
@@ -33,6 +34,7 @@ import {
   type ContentItemUpdateInput,
   type ContentListQuery,
   type ContentReorderInput,
+  type ContentReviewOutcome,
   type ContentStatus,
   type ContentTransitionInput,
   type Platform,
@@ -239,6 +241,12 @@ export class TransitionContentDto implements ContentTransitionInput {
   @ApiProperty({ enum: ContentStatuses })
   @IsIn(ContentStatuses)
   toStatus!: ContentStatus;
+}
+
+export class ReviewContentDto {
+  @ApiProperty({ enum: ContentReviewOutcomes })
+  @IsIn(ContentReviewOutcomes)
+  toStatus!: ContentReviewOutcome;
 }
 
 export class ListContentQueryDto implements ContentListQuery {

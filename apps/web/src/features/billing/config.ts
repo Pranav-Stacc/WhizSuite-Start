@@ -1,7 +1,7 @@
 export const BILLING_INTERVALS = ['MONTHLY', 'YEARLY'] as const;
 export type BillingInterval = (typeof BILLING_INTERVALS)[number];
 
-export const SUBSCRIPTION_STATUSES = ['TRIALING', 'ACTIVE'] as const;
+export const SUBSCRIPTION_STATUSES = ['TRIALING', 'ACTIVE', 'PAST_DUE', 'CANCELED'] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
 export const LIMIT_KEYS = ['seats', 'clients', 'channels', 'storageKb', 'automationRuns'] as const;

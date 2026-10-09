@@ -1,7 +1,9 @@
 'use server';
 
 import { createAutomationSchema } from '@agency-os/contracts';
+import { runAutomation } from '@/shared/api/live/mutations';
 import { requireSession } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -87,9 +89,14 @@ export async function runAutomationAction(id: string): Promise<ActionResult> {
     await authorize();
     const automation = await automationsRepository.get(id);
     if (!automation) return fail(t('toast.failed'));
-    const at = new Date().toISOString();
-    await automationRunsRepository.create({ automationId: id, at, ok: true, detail: t('automations.run.manual', { name: automation.name }) });
-    await automationsRepository.update(id, { runs: automation.runs + 1, lastRunAt: at });
+    const detail = t('automations.run.manual', { name: automation.name });
+    if (isLiveMode) {
+      await runAutomation(id, detail);
+    } else {
+      const at = new Date().toISOString();
+      await automationRunsRepository.create({ automationId: id, at, ok: true, detail });
+      await automationsRepository.update(id, { runs: automation.runs + 1, lastRunAt: at });
+    }
     await recordAudit({ action: 'automation.run', entityType: 'automation', entityId: id, entityLabel: automation.name, summary: 'Ran automation manually' });
     await refreshData('automations');
     return succeed(undefined, t('automations.run.done', { name: automation.name }));

@@ -1,18 +1,5 @@
 import type { InvoiceStatus } from '@agency-os/contracts';
 
-/** Allowed invoice status moves; anything else is rejected by the server and hidden in the UI. */
-export const INVOICE_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
-  DRAFT: ['SENT', 'VOID'],
-  SENT: ['PAID', 'VOID'],
-  OVERDUE: ['PAID', 'VOID'],
-  PAID: [],
-  VOID: [],
-};
-
-export function canTransition(from: InvoiceStatus, to: InvoiceStatus): boolean {
-  return INVOICE_TRANSITIONS[from].includes(to);
-}
-
 /** Only drafts may be edited or deleted; once sent, an invoice is a financial record. */
 export function isDraft(status: InvoiceStatus): boolean {
   return status === 'DRAFT';

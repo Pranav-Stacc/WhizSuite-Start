@@ -1,10 +1,8 @@
 import 'server-only';
+import type { LeadStage } from '@agency-os/contracts';
 import { leadsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
-
-export const LeadStages = ['NEW', 'CONTACTED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'] as const;
-export type LeadStage = (typeof LeadStages)[number];
 
 export interface Lead extends Entity {
   company: string;

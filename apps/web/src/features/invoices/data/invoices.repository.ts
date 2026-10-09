@@ -1,5 +1,5 @@
 import 'server-only';
-import type { InvoiceStatus } from '@agency-os/contracts';
+import { computeInvoiceTotals, type InvoiceStatus, type InvoiceTotals } from '@agency-os/contracts';
 import { invoicesLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow } from '@/shared/lib/format';
@@ -35,8 +35,6 @@ export const invoicesRepository = createRepository<Invoice>('invoices', () => [
   { id: 'inv7', number: 'INV-2026-0007', clientId: 'cl-urban', status: 'PAID', issueDate: daysFromNow(-10), dueDate: daysFromNow(5), paidAt: daysFromNow(-6), taxRate: 18, lines: retainer('cl-urban', 'Onboarding & brand audit', 60000) },
 ], invoicesLive);
 
-export function invoiceTotals(invoice: Pick<Invoice, 'lines' | 'taxRate'>): { subtotal: number; tax: number; total: number } {
-  const subtotal = invoice.lines.reduce((acc, line) => acc + line.quantity * line.unitMinor, 0);
-  const tax = Math.round((subtotal * invoice.taxRate) / 100);
-  return { subtotal, tax, total: subtotal + tax };
+export function invoiceTotals(invoice: Pick<Invoice, 'lines' | 'taxRate'>): InvoiceTotals {
+  return computeInvoiceTotals(invoice.lines, invoice.taxRate);
 }

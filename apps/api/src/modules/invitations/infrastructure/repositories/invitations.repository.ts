@@ -1,5 +1,35 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+
+export const INVITATION_STATUS = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+} as const;
+
+export interface InvitationScopePayload {
+  clientId?: string;
+}
+
+const PUBLIC_FIELDS = {
+  id: true,
+  email: true,
+  membershipType: true,
+  scopePayload: true,
+  status: true,
+  expiresAt: true,
+  acceptedAt: true,
+  createdAt: true,
+} satisfies Prisma.InvitationSelect;
+
+export function scopeOf(
+  payload: Prisma.JsonValue | null,
+): InvitationScopePayload {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload))
+    return {};
+  const clientId = (payload as Record<string, unknown>).clientId;
+  return typeof clientId === 'string' ? { clientId } : {};
+}
 
 @Injectable()
 export class InvitationsRepository {
@@ -9,6 +39,7 @@ export class InvitationsRepository {
     return this.prisma.invitation.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
+      select: PUBLIC_FIELDS,
     });
   }
 
@@ -18,57 +49,73 @@ export class InvitationsRepository {
     tokenHash: string;
     membershipType: string;
     roleIds: string[];
+    scope: InvitationScopePayload;
     invitedById: string;
     expiresAt: Date;
   }) {
-    return this.prisma.invitation.create({ data });
+    const { scope, ...rest } = data;
+    return this.prisma.invitation.create({
+      data: {
+        ...rest,
+        scopePayload: scope.clientId ? { clientId: scope.clientId } : undefined,
+      },
+      select: { ...PUBLIC_FIELDS, organizationId: true },
+    });
   }
 
   findByTokenHash(tokenHash: string) {
     return this.prisma.invitation.findFirst({ where: { tokenHash } });
   }
 
-  getOrganizationName(organizationId: string) {
-    return this.prisma.organization
-      .findUnique({ where: { id: organizationId }, select: { name: true } })
-      .then((org) => org?.name ?? 'Agency');
+  async getOrganizationName(
+    organizationId: string,
+  ): Promise<string | undefined> {
+    const org = await this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true },
+    });
+    return org?.name;
   }
 
-  async acceptInvitation(
-    invitation: { id: string; organizationId: string; email: string; membershipType: string; roleIds: string[] },
-    userId: string,
+  hasMembership(organizationId: string, userId: string): Promise<boolean> {
+    return this.prisma.organizationMembership
+      .count({ where: { organizationId, userId } })
+      .then((count) => count > 0);
+  }
+
+  acceptInvitation(
+    invitation: { id: string; organizationId: string; membershipType: string },
+    input: { userId: string; roleIds: string[]; clientId?: string },
   ) {
+    const { organizationId } = invitation;
+    const scope = input.clientId
+      ? { organizationId, scopeType: 'CLIENT', resourceId: input.clientId }
+      : { organizationId, scopeType: 'ORGANIZATION' };
+
     return this.prisma.$transaction(async (tx) => {
       const membership = await tx.organizationMembership.create({
         data: {
-          organizationId: invitation.organizationId,
-          userId,
+          organizationId,
+          userId: input.userId,
           type: invitation.membershipType,
           status: 'ACTIVE',
         },
       });
 
-      for (const roleId of invitation.roleIds) {
+      for (const roleId of input.roleIds) {
         await tx.roleAssignment.create({
           data: {
-            organizationId: invitation.organizationId,
+            organizationId,
             membershipId: membership.id,
             roleId,
-            scopes: {
-              create: [
-                {
-                  organizationId: invitation.organizationId,
-                  scopeType: 'ORGANIZATION',
-                },
-              ],
-            },
+            scopes: { create: [scope] },
           },
         });
       }
 
       await tx.invitation.update({
         where: { id: invitation.id },
-        data: { status: 'ACCEPTED', acceptedAt: new Date() },
+        data: { status: INVITATION_STATUS.ACCEPTED, acceptedAt: new Date() },
       });
 
       return membership;

@@ -1,6 +1,6 @@
 'use server';
 
-import { createLeadSchema, type CreateLeadInput } from '@agency-os/contracts';
+import { LeadStages, createLeadSchema, type CreateLeadInput, type LeadStage } from '@agency-os/contracts';
 import { requireSession } from '@/shared/auth/session';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
@@ -12,9 +12,7 @@ import { patchLead } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { onboardClient } from '@/features/clients/services/clients.service';
-import { LeadStages, leadsRepository, type Lead, type LeadStage } from '../data/leads.repository';
-
-const DEFAULT_SOURCE = 'Direct';
+import { leadsRepository, type Lead } from '../data/leads.repository';
 
 async function authorize() {
   const session = await requireSession();
@@ -29,7 +27,7 @@ function toLeadFields(input: CreateLeadInput): Omit<Lead, 'id' | 'stage' | 'crea
     email: input.contactEmail ?? '',
     industry: input.industry ?? '',
     website: input.website,
-    source: input.source ?? DEFAULT_SOURCE,
+    source: input.source ?? '',
     valueMinor: toMinorUnits(input.estimatedValue ?? 0),
     nextStep: input.nextStep ?? '',
     nextStepAt: input.nextStepAt ? dateKeyToIso(input.nextStepAt) : undefined,

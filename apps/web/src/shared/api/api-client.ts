@@ -32,6 +32,8 @@ export interface ApiRequest {
 }
 
 const RETRY_DELAY_MS = 200;
+/** Credential endpoints answer 401 for bad input, not for a dead session. */
+const CREDENTIAL_API_PREFIXES = ['v1/auth/', 'v1/invitations/'];
 
 function buildUrl(path: string, query?: ApiRequest['query']): string {
   const url = new URL(`${env.API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`);
@@ -50,6 +52,8 @@ export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promi
   const token = request.token ?? session?.accessToken;
   const organizationId = request.organizationId ?? session?.orgId;
   const method = request.method ?? 'GET';
+  const normalizedPath = path.replace(/^\//, '');
+  const sessionBound = Boolean(token ?? session) && !CREDENTIAL_API_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
   const attempts = (method === 'GET' ? (request.retries ?? 1) : 0) + 1;
 
   let lastError: unknown;
@@ -69,7 +73,7 @@ export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promi
           : { cache: 'no-store' as const }),
       });
 
-      if (response.status === 401 && token) redirect(SESSION_EXPIRED_PATH);
+      if (response.status === 401 && sessionBound) redirect(SESSION_EXPIRED_PATH);
       if (!response.ok) {
         const problem = (await response.json().catch(() => ({}))) as ProblemDetails;
         throw new ApiError(response.status, problem.code, problem.detail ?? problem.title ?? response.statusText);

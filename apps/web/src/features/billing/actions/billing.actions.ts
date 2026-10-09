@@ -10,7 +10,7 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { BILLING_INTERVALS, type BillingInterval } from '../config';
 import { plansRepository } from '../data/plans.repository';
 import { subscriptionRepository, SUBSCRIPTION_ID } from '../data/subscription.repository';
-import { chargePerPeriod, currentUsage, exceededLimits, getSubscription } from '../services/billing.service';
+import { chargePerPeriod, currentUsage, exceededLimits, getSubscription, planChangesEnabled } from '../services/billing.service';
 
 async function authorize() {
   const session = await requireSession();
@@ -25,12 +25,14 @@ function parseInterval(value: string): BillingInterval | undefined {
 export async function changePlanAction(planId: string, intervalRaw: string): Promise<ActionResult> {
   return guarded(async () => {
     await authorize();
+    if (!planChangesEnabled) return fail(t('billing.contactSales'));
     const interval = parseInterval(intervalRaw);
     const plan = await plansRepository.get(planId);
     if (!interval || !plan) return fail(t('toast.failed'));
     if (plan.monthlyMinor === undefined) return fail(t('billing.contactSales'));
 
     const before = await getSubscription();
+    if (!before) return fail(t('billing.contactSales'));
     if (before.planId === planId && before.interval === interval) return fail(t('billing.alreadyOnPlan'));
 
     const blocking = exceededLimits(await currentUsage(), plan);

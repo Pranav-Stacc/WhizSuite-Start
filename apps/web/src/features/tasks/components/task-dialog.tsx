@@ -46,7 +46,7 @@ export function TaskDialog({ projects, members, task, trigger, defaultOpen, defa
         status: task.status,
         priority: task.priority,
         dueDate: task.dueDate ? toDateKey(task.dueDate) : '',
-        estimateHours: task.estimateHours,
+        estimateHours: task.estimateHours ?? '',
         description: task.description,
       }
     : { title: '', projectId: defaultProjectId ?? '', assigneeId: defaultAssigneeId ?? '', status: 'TODO', priority: 'MEDIUM', dueDate: '', estimateHours: '', description: '' };

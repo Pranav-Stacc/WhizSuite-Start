@@ -1,8 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -19,7 +23,11 @@ import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { WorkService } from '../../../application/services/work.service';
-import { CreateTaskDto, UpdateTaskDto } from '../dto/task.dto';
+import {
+  CreateTaskDto,
+  TransitionTaskDto,
+  UpdateTaskDto,
+} from '../dto/task.dto';
 
 @ApiTags('tasks')
 @ApiBearerAuth()
@@ -34,7 +42,10 @@ export class TasksController {
     @Param('organizationId') organizationId: string,
     @Query('projectId') projectId?: string,
   ) {
-    return this.work.listTasks(requireOrganizationId(organizationId), projectId);
+    return this.work.listTasks(
+      requireOrganizationId(organizationId),
+      projectId,
+    );
   }
 
   @Get(':taskId')
@@ -80,15 +91,30 @@ export class TasksController {
   @RequirePermissions(Permissions.TASKS_TRANSITION)
   transition(
     @Param('organizationId') organizationId: string,
-    @Param('taskId') taskId: string,
-    @Body('toStatus') toStatus: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @Body() dto: TransitionTaskDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.work.transitionTask(
       requireOrganizationId(organizationId),
       user.userId,
       taskId,
-      toStatus,
+      dto.toStatus,
+    );
+  }
+
+  @Delete(':taskId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permissions.TASKS_DELETE)
+  remove(
+    @Param('organizationId') organizationId: string,
+    @Param('taskId', ParseUUIDPipe) taskId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.work.deleteTask(
+      requireOrganizationId(organizationId),
+      user.userId,
+      taskId,
     );
   }
 }

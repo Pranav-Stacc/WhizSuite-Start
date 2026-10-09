@@ -1,6 +1,5 @@
 import 'server-only';
 import { Platforms, type Platform } from '@agency-os/contracts';
-import { integrationsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { seeded } from '@/shared/lib/seeded';
 
@@ -42,5 +41,5 @@ export const integrationsRepository = createRepository<Integration>('integration
       };
     }),
   );
-}, integrationsLive);
+});
 

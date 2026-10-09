@@ -8,6 +8,10 @@ export type ApiContentType = (typeof ApiContentTypes)[number];
 export const ContentCreatableStatuses = ['DRAFT', 'IN_REVIEW'] as const satisfies readonly (typeof ContentStatuses)[number][];
 export type ContentCreatableStatus = (typeof ContentCreatableStatuses)[number];
 
+/** States a reviewer (e.g. a client) may move content into from `IN_REVIEW`. */
+export const ContentReviewOutcomes = ['APPROVED', 'CHANGES_REQUESTED', 'DRAFT'] as const satisfies readonly (typeof ContentStatuses)[number][];
+export type ContentReviewOutcome = (typeof ContentReviewOutcomes)[number];
+
 export const CONTENT_TITLE_MAX_LENGTH = 200;
 export const CONTENT_CAPTION_MAX_LENGTH = 5000;
 export const CONTENT_PILLAR_MAX_LENGTH = 100;

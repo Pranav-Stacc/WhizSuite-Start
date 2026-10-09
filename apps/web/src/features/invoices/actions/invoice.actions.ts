@@ -1,6 +1,6 @@
 'use server';
 
-import { InvoiceStatuses, createInvoiceSchema, type CreateInvoiceInput, type InvoiceStatus } from '@agency-os/contracts';
+import { InvoiceStatuses, canTransitionInvoice, createInvoiceSchema, type CreateInvoiceInput, type InvoiceStatus } from '@agency-os/contracts';
 import { requireSession } from '@/shared/auth/session';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
@@ -11,7 +11,7 @@ import { dateKeyToIso, toMinorUnits } from '@/shared/lib/format';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { getClient } from '@/features/clients/services/clients.service';
 import { invoicesRepository } from '../data/invoices.repository';
-import { canTransition, isDraft } from '../lifecycle';
+import { isDraft } from '../lifecycle';
 import { nextInvoiceNumber } from '../services/invoices.service';
 
 async function authorize() {
@@ -76,7 +76,7 @@ export async function setInvoiceStatusAction(id: string, status: string): Promis
     const before = await invoicesRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     const from: InvoiceStatus = before.status;
-    if (!canTransition(from, target)) return fail(t('invoices.transition.invalid'));
+    if (!canTransitionInvoice(from, target)) return fail(t('invoices.transition.invalid'));
 
     await invoicesRepository.update(id, { status: target, paidAt: target === 'PAID' ? new Date().toISOString() : before.paidAt });
     await recordAudit({

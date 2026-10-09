@@ -16,7 +16,7 @@ import { clientsById, listClients, monthlyRecurring } from '@/features/clients/s
 import { pendingApprovals, listContent } from '@/features/content/services/content.service';
 import { listInvoices, summarize } from '@/features/invoices/services/invoices.service';
 import { listLeads, summarizePipeline } from '@/features/leads/services/leads.service';
-import { monthLabels, revenueSeries } from '@/features/reports/services/reports.service';
+import { invoicedByMonth, lastChangePercent, monthLabels } from '@/features/reports/services/reports.service';
 import { listTasks, openHoursByAssignee, overdueTasks } from '@/features/tasks/services/tasks.service';
 import { listMembers } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
@@ -49,8 +49,8 @@ export async function OwnerDashboard({ session }: { session: Session }) {
   const pipeline = summarizePipeline(leads);
   const mrr = monthlyRecurring(clients);
   const activeClients = clients.filter((c) => c.status === 'ACTIVE');
-  const billedThisMonth = invoices.filter((i) => new Date(i.issueDate).getMonth() === new Date().getMonth()).reduce((a, i) => a + i.total, 0);
-  const revenue = revenueSeries('owner-revenue', mrr, REVENUE_MONTHS, billedThisMonth).map((v) => Math.round(v / MINOR_PER_MAJOR));
+  const invoiced = invoicedByMonth(invoices, REVENUE_MONTHS);
+  const revenue = invoiced.map((v) => Math.round(v / MINOR_PER_MAJOR));
 
   const hours = openHoursByAssignee(tasks);
   const workload = members
@@ -91,7 +91,7 @@ export async function OwnerDashboard({ session }: { session: Session }) {
       />
 
       <section aria-label="KPIs" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} delta={8} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} spark={revenue} href="/reports" />
+        <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} delta={lastChangePercent(invoiced)} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} spark={revenue} href="/reports" />
         <StatCard label={t('dashboard.kpi.outstanding')} value={formatMoney(receivables.outstanding, undefined, true)} icon={<HandCoins />} hint={t('dashboard.kpi.outstanding.hint', { overdue: formatMoney(receivables.overdue, undefined, true) })} href="/invoices" />
         <StatCard label={t('dashboard.kpi.pipeline')} value={formatMoney(pipeline.weighted, undefined, true)} icon={<Gauge />} hint={t('dashboard.kpi.pipeline.hint', { open: formatMoney(pipeline.open, undefined, true) })} href="/leads" />
         <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />

@@ -1,6 +1,6 @@
 import 'server-only';
 import type { AutomationAction, AutomationTrigger } from '@agency-os/contracts';
-import { automationsLive } from '@/shared/api/live/bindings';
+import { automationRunsLive, automationsLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
 import { daysFromNow, hoursAgo } from '@/shared/lib/format';
 
@@ -35,4 +35,4 @@ export const automationRunsRepository = createRepository<AutomationRun>('automat
   { id: 'ar2', automationId: 'au5', at: hoursAgo(1), ok: true, detail: 'Posted to #community: negative DM from @rakesh_m' },
   { id: 'ar3', automationId: 'au3', at: daysFromNow(-1, 8), ok: true, detail: '1 overdue task: “Fix off-brand colours in last batch”' },
   { id: 'ar4', automationId: 'au4', at: daysFromNow(-12, 10), ok: false, detail: 'SMTP temporarily unavailable — retried 3 times' },
-]);
+], automationRunsLive);

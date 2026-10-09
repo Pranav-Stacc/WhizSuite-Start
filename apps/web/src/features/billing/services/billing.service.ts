@@ -4,6 +4,8 @@ import { listClients } from '@/features/clients/services/clients.service';
 import { listIntegrations } from '@/features/integrations/services/integrations.service';
 import { listAssets } from '@/features/media/services/media.service';
 import { listMembers } from '@/features/team/services/members.service';
+import { isLiveMode } from '@/shared/config/env';
+import { fetchPlans, fetchSubscription } from '../data/billing.api';
 import { ANNUAL_DISCOUNT_PERCENT, LIMIT_KEYS, MONTHS_PER_YEAR, USAGE_FULL_RATIO, USAGE_WARN_RATIO, type BillingInterval, type LimitKey } from '../config';
 import { plansRepository, type Plan } from '../data/plans.repository';
 import { billingInvoicesRepository, subscriptionRepository, SUBSCRIPTION_ID, type BillingInvoice, type Subscription } from '../data/subscription.repository';
@@ -19,17 +21,20 @@ export interface UsageRow {
   level: UsageLevel;
 }
 
+/** Plan changes need a payment provider; until one is connected they only work against demo data. */
+export const planChangesEnabled = !isLiveMode;
+
 export async function listPlans(): Promise<Plan[]> {
-  return plansRepository.list();
+  return isLiveMode ? fetchPlans() : plansRepository.list();
 }
 
-export async function getSubscription(): Promise<Subscription> {
-  const subscription = await subscriptionRepository.get(SUBSCRIPTION_ID);
-  if (!subscription) throw new Error('Subscription missing');
-  return subscription;
+export async function getSubscription(): Promise<Subscription | undefined> {
+  return isLiveMode ? fetchSubscription() : subscriptionRepository.get(SUBSCRIPTION_ID);
 }
 
+/** Platform invoices issued to this workspace; none exist until a payment provider is connected. */
 export async function listBillingInvoices(): Promise<BillingInvoice[]> {
+  if (isLiveMode) return [];
   const rows = await billingInvoicesRepository.list();
   return rows.sort((a, b) => b.issuedAt.localeCompare(a.issuedAt));
 }
@@ -56,9 +61,9 @@ export function levelFor(ratio: number): UsageLevel {
   return ratio >= USAGE_WARN_RATIO ? 'warning' : 'ok';
 }
 
-export function usageRows(usage: Usage, plan: Plan): UsageRow[] {
+export function usageRows(usage: Usage, plan: Plan | undefined): UsageRow[] {
   return LIMIT_KEYS.map((key) => {
-    const limit = plan.limits[key];
+    const limit = plan?.limits[key];
     const ratio = limit ? usage[key] / limit : 0;
     return { key, used: usage[key], limit, ratio, level: limit ? levelFor(ratio) : 'ok' };
   });

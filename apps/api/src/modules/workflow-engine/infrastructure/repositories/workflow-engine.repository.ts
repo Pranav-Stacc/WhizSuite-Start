@@ -2,6 +2,36 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 import { toInputJson } from '../../../../shared/database/prisma-json.util';
 
+export const VERSION_STATUS = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+} as const;
+
+const DEFAULT_STATE_CATEGORY = 'ACTIVE';
+
+function textOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' && value ? value : fallback;
+}
+
+export interface WorkflowSettings {
+  name?: string;
+  slaHours?: number | null;
+  requiresClientApproval?: boolean;
+  active?: boolean;
+}
+
+export interface VersionInput {
+  states: Array<Record<string, unknown>>;
+  transitions: Array<Record<string, unknown>>;
+  publish?: boolean;
+}
+
+const latestVersionWithStates = {
+  orderBy: { version: 'desc' as const },
+  take: 1,
+  include: { states: { orderBy: { order: 'asc' as const } } },
+};
+
 @Injectable()
 export class WorkflowEngineRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -9,7 +39,15 @@ export class WorkflowEngineRepository {
   listDefinitions(organizationId: string) {
     return this.prisma.workflowDefinition.findMany({
       where: { organizationId },
-      include: { versions: { orderBy: { version: 'desc' }, take: 1 } },
+      orderBy: { createdAt: 'asc' },
+      include: { versions: latestVersionWithStates },
+    });
+  }
+
+  findDefinition(organizationId: string, id: string) {
+    return this.prisma.workflowDefinition.findFirst({
+      where: { id, organizationId },
+      include: { versions: latestVersionWithStates },
     });
   }
 
@@ -20,61 +58,85 @@ export class WorkflowEngineRepository {
     });
   }
 
-  createDefinition(organizationId: string, data: { entityType: string; name: string }) {
+  createDefinition(
+    organizationId: string,
+    data: WorkflowSettings & { entityType: string; name: string },
+  ) {
     return this.prisma.workflowDefinition.create({
-      data: { organizationId, entityType: data.entityType, name: data.name },
+      data: {
+        organizationId,
+        entityType: data.entityType,
+        name: data.name,
+        slaHours: data.slaHours ?? null,
+        requiresClientApproval: data.requiresClientApproval ?? false,
+        active: data.active ?? true,
+      },
     });
   }
 
-  async createVersion(
+  updateDefinition(organizationId: string, id: string, data: WorkflowSettings) {
+    return this.prisma.workflowDefinition.updateMany({
+      where: { id, organizationId },
+      data,
+    });
+  }
+
+  deleteDefinition(organizationId: string, id: string) {
+    return this.prisma.workflowDefinition.deleteMany({
+      where: { id, organizationId },
+    });
+  }
+
+  /** Creates the next version of a definition with its states and transitions in one transaction. */
+  createVersion(
     organizationId: string,
-    data: {
-      definitionId: string;
-      version: number;
-      states: Array<Record<string, unknown>>;
-      transitions: Array<Record<string, unknown>>;
-    },
+    definitionId: string,
+    data: VersionInput,
   ) {
     return this.prisma.$transaction(async (tx) => {
+      const latest = await tx.workflowVersion.findFirst({
+        where: { organizationId, definitionId },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
       const version = await tx.workflowVersion.create({
         data: {
           organizationId,
-          definitionId: data.definitionId,
-          version: data.version,
-          status: 'DRAFT',
+          definitionId,
+          version: (latest?.version ?? 0) + 1,
+          status: data.publish
+            ? VERSION_STATUS.PUBLISHED
+            : VERSION_STATUS.DRAFT,
+          publishedAt: data.publish ? new Date() : null,
         },
       });
 
-      for (const [idx, state] of data.states.entries()) {
-        await tx.workflowState.create({
-          data: {
-            organizationId,
-            versionId: version.id,
-            key: String(state.key ?? `state_${idx}`),
-            name: String(state.name ?? `State ${idx}`),
-            color: state.color as string | undefined,
-            category: String(state.category ?? 'ACTIVE'),
-            order: Number(state.order ?? idx),
-            isInitial: Boolean(state.isInitial),
-            isTerminal: Boolean(state.isTerminal),
-            guards: toInputJson(state.guards),
-          },
-        });
-      }
+      await tx.workflowState.createMany({
+        data: data.states.map((state, idx) => ({
+          organizationId,
+          versionId: version.id,
+          key: textOr(state.key, `state_${idx}`),
+          name: textOr(state.name, `State ${idx}`),
+          color: typeof state.color === 'string' ? state.color : undefined,
+          category: textOr(state.category, DEFAULT_STATE_CATEGORY),
+          order: Number(state.order ?? idx),
+          isInitial: Boolean(state.isInitial),
+          isTerminal: Boolean(state.isTerminal),
+          guards: toInputJson(state.guards),
+        })),
+      });
 
-      for (const transition of data.transitions) {
-        await tx.workflowTransition.create({
-          data: {
-            organizationId,
-            versionId: version.id,
-            fromStateKey: String(transition.fromStateKey),
-            toStateKey: String(transition.toStateKey),
-            label: transition.label as string | undefined,
-            guards: toInputJson(transition.guards),
-            actions: toInputJson(transition.actions),
-          },
-        });
-      }
+      await tx.workflowTransition.createMany({
+        data: data.transitions.map((transition) => ({
+          organizationId,
+          versionId: version.id,
+          fromStateKey: String(transition.fromStateKey),
+          toStateKey: String(transition.toStateKey),
+          label: transition.label as string | undefined,
+          guards: toInputJson(transition.guards),
+          actions: toInputJson(transition.actions),
+        })),
+      });
 
       return tx.workflowVersion.findFirst({
         where: { id: version.id },
@@ -86,7 +148,7 @@ export class WorkflowEngineRepository {
   publishVersion(organizationId: string, versionId: string) {
     return this.prisma.workflowVersion.updateMany({
       where: { id: versionId, organizationId },
-      data: { status: 'PUBLISHED', publishedAt: new Date() },
+      data: { status: VERSION_STATUS.PUBLISHED, publishedAt: new Date() },
     });
   }
 }

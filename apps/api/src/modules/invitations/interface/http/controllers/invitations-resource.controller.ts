@@ -1,13 +1,29 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
-import { CurrentUser, type AuthenticatedUser } from '../../../../../shared/auth/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { InvitationsService } from '../../../application/services/invitations.service';
-import { CreateInvitationDto } from '../dto/invitation.dto';
+import {
+  AcceptInvitationDto,
+  CreateInvitationDto,
+  InvitationTokenQuery,
+  RedeemInvitationDto,
+} from '../dto/invitation.dto';
 
 @ApiTags('invitations')
 @ApiBearerAuth()
@@ -29,18 +45,36 @@ export class InvitationsResourceController {
     @Body() dto: CreateInvitationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.invitations.invite(requireOrganizationId(organizationId), user.userId, dto);
+    return this.invitations.invite(
+      requireOrganizationId(organizationId),
+      user.userId,
+      dto,
+    );
   }
 }
 
 @ApiTags('invitations')
 @Controller('v1/invitations')
-@UseGuards(JwtAuthGuard)
 export class InvitationsPublicController {
   constructor(private readonly invitations: InvitationsService) {}
 
+  @Get('preview')
+  preview(@Query() query: InvitationTokenQuery) {
+    return this.invitations.preview(query.token);
+  }
+
+  @Post('redeem')
+  redeem(@Body() dto: RedeemInvitationDto) {
+    return this.invitations.redeem(dto);
+  }
+
   @Post('accept')
-  accept(@Body('token') token: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.invitations.accept(token, user.userId);
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  accept(
+    @Body() dto: AcceptInvitationDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.invitations.accept(dto.token, user);
   }
 }

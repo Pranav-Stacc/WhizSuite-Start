@@ -130,6 +130,7 @@ export const automationMessages = {
   'integrations.filter.available': 'Not connected',
   'integrations.kpi.connected': 'Connected channels',
   'integrations.kpi.connected.hint': 'of {total} possible',
+  'integrations.oauthRequired': 'Channels are connected through the platform’s sign-in flow, which is not enabled for this workspace yet.',
   'integrations.kpi.followers': 'Combined audience',
   'integrations.kpi.followers.hint': 'followers across channels',
   'integrations.kpi.clients': 'Clients with channels',

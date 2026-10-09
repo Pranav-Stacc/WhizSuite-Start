@@ -1,20 +1,21 @@
 import 'server-only';
 import {
+  ArticleCategories,
   AutomationActions,
   AutomationTriggers,
   ContentStatuses,
   ContentTypes,
+  LeadStages,
   Platforms,
   type ApiContentType,
   type ContentType,
   type Platform,
 } from '@agency-os/contracts';
 import type { AuditEntry } from '@/features/audit/data/audit.repository';
-import type { Automation } from '@/features/automations/data/automations.repository';
+import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
 import type { Post, PostMedia } from '@/features/content/data/content.repository';
 import type { InboxItem } from '@/features/inbox/data/inbox.repository';
-import type { Integration } from '@/features/integrations/data/integrations.repository';
 import type { Invoice, InvoiceLine } from '@/features/invoices/data/invoices.repository';
 import type { Article } from '@/features/knowledge/data/knowledge.repository';
 import type { Lead } from '@/features/leads/data/leads.repository';
@@ -26,12 +27,19 @@ import type { Notification } from '@/features/notifications/data/notifications.r
 import type { Project } from '@/features/projects/data/projects.repository';
 import type { Task } from '@/features/tasks/data/tasks.repository';
 import type { TimeEntry } from '@/features/time/data/time.repository';
+import type { Workflow } from '@/features/workflows/data/workflows.repository';
 import { MediaAssetStatuses, UserRoles } from '@agency-os/contracts';
 import { assetKindFromMimeType } from '@/features/media/utils/asset-kind';
+import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
+import { HEALTH_BASELINE } from '@/features/clients/config';
+import { NOTIFICATION_EVENTS, NOTIFICATIONS_HREF } from '@/features/notifications/config';
+import { t } from '@/shared/i18n/t';
 import { defaultWorkspaceId } from './workspace';
 import { hueFromId, iso, num, str } from './utils';
 
 type Raw = Record<string, unknown>;
+
+const MINUTES_PER_HOUR = 60;
 
 const EMPTY_BRAND: BrandKit = { primary: '#ffffff', secondary: '#d1d1d1', accent: '#8D9B98', voice: '', hashtags: [], pillars: [] };
 
@@ -80,14 +88,14 @@ export function clientFromApi(raw: Raw): Client {
   return {
     id,
     name: str(raw, 'displayName') || str(raw, 'name'),
-    industry: str(raw, 'industry', 'General'),
+    industry: str(raw, 'industry'),
     website: str(raw, 'website'),
-    tier: str(raw, 'tier', 'Standard'),
+    tier: str(raw, 'tier'),
     status: asStatus(raw.status, ['ACTIVE', 'ONBOARDING', 'PAUSED', 'CHURNED'] as const, 'ONBOARDING'),
     color: `hsl(${hueFromId(id)} 70% 45%)`,
     contactName: primaryContact ? str(primaryContact, 'name') : str(raw, 'contactName'),
     contactEmail: primaryContact ? str(primaryContact, 'email') : str(raw, 'contactEmail'),
-    health: retainerMinor > 0 ? 85 : 70,
+    health: HEALTH_BASELINE,
     retainerMinor,
     platforms: [],
     since: iso(raw, 'createdAt'),
@@ -121,7 +129,7 @@ export function projectFromApi(raw: Raw): Project {
     id: str(raw, 'id'),
     clientId: str(raw, 'clientId'),
     name: str(raw, 'name'),
-    type: str(raw, 'type', 'Retainer'),
+    type: str(raw, 'type'),
     status: (() => {
       const api = String(raw.status ?? 'ACTIVE');
       if (api === 'CANCELLED') return 'ON_HOLD';
@@ -144,8 +152,8 @@ export async function projectToApi(input: Partial<Project>): Promise<Raw> {
 }
 
 export function taskFromApi(raw: Raw): Task {
-  const assignees = Array.isArray(raw.assignees) ? raw.assignees : [];
-  const firstAssignee = assignees[0] as Raw | undefined;
+  const assigneeUserIds = Array.isArray(raw.assigneeUserIds) ? raw.assigneeUserIds : [];
+  const firstAssignee = assigneeUserIds.find((id): id is string => typeof id === 'string');
   return {
     id: str(raw, 'id'),
     projectId: str(raw, 'projectId'),
@@ -158,18 +166,35 @@ export function taskFromApi(raw: Raw): Task {
       return asStatus(api, ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'] as const, 'TODO');
     })(),
     priority: asStatus(raw.priority, ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const, 'MEDIUM'),
-    assigneeId: firstAssignee ? str(firstAssignee, 'membershipId') || str(firstAssignee, 'userId') : undefined,
+    assigneeId: firstAssignee,
     dueDate: raw.dueDate ? iso(raw, 'dueDate') : undefined,
-    estimateHours: Math.max(1, Math.round(num(raw, 'estimateMinutes', 120) / 60)),
+    estimateHours: typeof raw.estimateMinutes === 'number' ? raw.estimateMinutes / MINUTES_PER_HOUR : undefined,
     createdAt: iso(raw, 'createdAt'),
   };
 }
 
-export function taskToApi(input: Partial<Task>): Raw {
-  const body: Raw = { projectId: input.projectId, title: input.title ?? '' };
-  if (input.description) body.description = input.description;
+function taskFieldsToApi(input: Partial<Task>): Raw {
+  const body: Raw = {};
+  if (input.projectId) body.projectId = input.projectId;
+  if (input.title !== undefined) body.title = input.title;
+  if (input.description !== undefined) body.description = input.description;
   if (input.priority) body.priority = input.priority;
   if (input.dueDate) body.dueDate = input.dueDate;
+  if (input.estimateHours !== undefined) body.estimateMinutes = Math.round(input.estimateHours * MINUTES_PER_HOUR);
+  return body;
+}
+
+export function taskToApi(input: Partial<Task>): Raw {
+  const body = taskFieldsToApi(input);
+  if (input.status) body.status = input.status;
+  if (input.assigneeId) body.assigneeUserId = input.assigneeId;
+  return body;
+}
+
+/** Status changes go through the transition endpoint, so PATCH carries only editable fields. */
+export function taskPatchToApi(patch: Partial<Task>): Raw {
+  const body = taskFieldsToApi(patch);
+  if ('assigneeId' in patch) body.assigneeUserId = patch.assigneeId ?? null;
   return body;
 }
 
@@ -241,12 +266,13 @@ export function contentPatchToApi(patch: Partial<Post>): Raw {
 export function leadFromApi(raw: Raw): Lead {
   return {
     id: str(raw, 'id'),
-    company: str(raw, 'companyName') || str(raw, 'brandName') || 'Prospect',
+    company: str(raw, 'companyName'),
     contact: str(raw, 'contactName'),
     email: str(raw, 'contactEmail'),
-    industry: str(raw, 'industry', ''),
-    source: str(raw, 'source', 'Inbound'),
-    stage: asStatus(raw.stage, ['NEW', 'CONTACTED', 'PROPOSAL', 'NEGOTIATION', 'WON', 'LOST'] as const, 'NEW'),
+    industry: str(raw, 'industry'),
+    website: str(raw, 'website') || undefined,
+    source: str(raw, 'source'),
+    stage: asStatus(raw.stage, LeadStages, 'NEW'),
     valueMinor: num(raw, 'valueMinor'),
     ownerId: str(raw, 'ownerId'),
     nextStep: str(raw, 'nextStep'),
@@ -256,13 +282,21 @@ export function leadFromApi(raw: Raw): Lead {
   };
 }
 
+/** Text fields are sent as-is so an empty string clears them on update. */
 export function leadToApi(input: Partial<Lead>): Raw {
-  const body: Raw = { companyName: input.company, brandName: input.company };
-  if (input.industry) body.industry = input.industry;
-  if (input.source) body.source = input.source;
-  if (input.valueMinor) body.valueMinor = input.valueMinor;
-  if (input.contact) body.contactName = input.contact;
-  if (input.email) body.contactEmail = input.email;
+  const body: Raw = {};
+  if (input.company) body.companyName = input.company;
+  if (input.industry !== undefined) body.industry = input.industry;
+  if (input.website !== undefined) body.website = input.website;
+  if (input.source !== undefined) body.source = input.source;
+  if (input.valueMinor !== undefined) body.valueMinor = input.valueMinor;
+  if (input.contact !== undefined) body.contactName = input.contact;
+  if (input.email !== undefined) body.contactEmail = input.email;
+  if (input.nextStep !== undefined) body.nextStep = input.nextStep;
+  if ('nextStepAt' in input) body.nextStepAt = input.nextStepAt ?? '';
+  if (input.stage) body.stage = input.stage;
+  if (input.ownerId) body.ownerId = input.ownerId;
+  if (input.convertedClientId) body.convertedClientId = input.convertedClientId;
   return body;
 }
 
@@ -276,7 +310,7 @@ export function invoiceFromApi(raw: Raw): Invoice {
     issueDate: iso(raw, 'issueDate') || iso(raw, 'createdAt'),
     dueDate: iso(raw, 'dueDate'),
     paidAt: raw.paidAt ? iso(raw, 'paidAt') : undefined,
-    taxRate: num(raw, 'taxRate', 18),
+    taxRate: num(raw, 'taxRate'),
     lines,
   };
 }
@@ -284,8 +318,8 @@ export function invoiceFromApi(raw: Raw): Invoice {
 function invoiceLineFromApi(raw: Raw): InvoiceLine {
   return {
     description: str(raw, 'description'),
-    quantity: num(raw, 'quantity', 1),
-    unitMinor: num(raw, 'unitMinor') || num(raw, 'unitPriceMinor') || num(raw, 'amountMinor'),
+    quantity: num(raw, 'quantity'),
+    unitMinor: num(raw, 'unitMinor'),
   };
 }
 
@@ -301,14 +335,15 @@ export function invoiceToApi(input: Partial<Invoice>): Raw {
 }
 
 export function notificationFromApi(raw: Raw, userId: string): Notification {
+  const event = NOTIFICATION_EVENTS[str(raw, 'typeKey')];
   return {
     id: str(raw, 'id'),
     userId,
-    kind: asStatus(raw.kind, ['approval', 'task', 'mention', 'invoice', 'system', 'lead'] as const, 'system'),
-    title: str(raw, 'title'),
-    body: str(raw, 'body') || str(raw, 'message'),
-    href: str(raw, 'href', '/dashboard'),
-    read: Boolean(raw.read ?? raw.readAt),
+    kind: event?.kind ?? 'system',
+    title: event ? t(event.title) : str(raw, 'title'),
+    body: str(raw, 'body'),
+    href: event?.href ?? NOTIFICATIONS_HREF,
+    read: Boolean(raw.readAt),
     at: iso(raw, 'createdAt'),
   };
 }
@@ -331,18 +366,6 @@ export function auditFromApi(raw: Raw): AuditEntry {
     outcome: outcome === 'failure' || outcome === 'failed' ? 'failure' : 'success',
     ip: str(raw, 'ipAddress') || str(raw, 'ip', '—'),
     correlationId: str(raw, 'correlationId'),
-  };
-}
-
-export function integrationFromApi(raw: Raw): Integration {
-  return {
-    id: str(raw, 'id'),
-    clientId: str(raw, 'clientId'),
-    platform: asStatus(raw.platform, Platforms, 'instagram'),
-    handle: str(raw, 'handle') || str(raw, 'name'),
-    connected: str(raw, 'status') === 'CONNECTED' || raw.connected === true,
-    followers: num(raw, 'followers'),
-    lastSyncAt: raw.lastSyncAt ? iso(raw, 'lastSyncAt') : undefined,
   };
 }
 
@@ -374,8 +397,8 @@ export function inboxFromApi(raw: Raw): InboxItem {
     clientId: str(raw, 'clientId'),
     kind,
     platform: asStatus(raw.platform, Platforms, 'instagram'),
-    author: str(raw, 'authorName', 'Unknown'),
-    handle: str(raw, 'handle', '@user'),
+    author: str(raw, 'authorName') || str(raw, 'handle'),
+    handle: str(raw, 'handle'),
     body: str(raw, 'preview') || str(raw, 'lastMessage') || str(raw, 'body'),
     status,
     sentiment,
@@ -387,12 +410,20 @@ export function inboxFromApi(raw: Raw): InboxItem {
 export function articleFromApi(raw: Raw): Article {
   return {
     id: str(raw, 'id'),
-    title: str(raw, 'name') || str(raw, 'title'),
-    category: 'SOP',
-    body: str(raw, 'description') || str(raw, 'body', ''),
-    authorId: str(raw, 'createdById'),
+    title: str(raw, 'title'),
+    category: asStatus(raw.category, ArticleCategories, ArticleCategories[0]),
+    body: str(raw, 'body'),
+    authorId: str(raw, 'authorId'),
     updatedAt: iso(raw, 'updatedAt'),
   };
+}
+
+export function articleToApi(input: Partial<Article>): Raw {
+  const body: Raw = {};
+  if (input.title !== undefined) body.title = input.title;
+  if (input.category) body.category = input.category;
+  if (input.body !== undefined) body.body = input.body;
+  return body;
 }
 
 export function automationFromApi(raw: Raw): Automation {
@@ -401,11 +432,48 @@ export function automationFromApi(raw: Raw): Automation {
     name: str(raw, 'name'),
     trigger: asStatus(raw.trigger, AutomationTriggers, 'content.submitted'),
     action: asStatus(raw.action, AutomationActions, 'notify.team'),
-    enabled: str(raw, 'status') === 'PUBLISHED' || raw.enabled === true,
+    enabled: raw.enabled === true,
     runs: num(raw, 'runs'),
     failures: num(raw, 'failures'),
     lastRunAt: raw.lastRunAt ? iso(raw, 'lastRunAt') : undefined,
     createdAt: iso(raw, 'createdAt'),
+  };
+}
+
+export function workflowFromApi(raw: Raw): Workflow {
+  return {
+    id: str(raw, 'id'),
+    name: str(raw, 'name'),
+    stages: Array.isArray(raw.stages) ? raw.stages.filter((s): s is string => typeof s === 'string') : [],
+    requiresClientApproval: raw.requiresClientApproval === true,
+    slaHours: num(raw, 'slaHours'),
+    active: raw.active === true,
+  };
+}
+
+export function workflowToApi(input: Partial<Workflow>): Raw {
+  return {
+    name: input.name,
+    stages: input.stages,
+    slaHours: input.slaHours,
+    requiresClientApproval: input.requiresClientApproval,
+    active: input.active,
+  };
+}
+
+export function automationToApi(input: Partial<Automation>): Raw {
+  return { name: input.name, trigger: input.trigger, action: input.action, enabled: input.enabled };
+}
+
+const FAILED_RUN_STATUS = 'FAILED';
+
+export function automationRunFromApi(raw: Raw): AutomationRun {
+  return {
+    id: str(raw, 'id'),
+    automationId: str(raw, 'automationId'),
+    at: iso(raw, 'createdAt'),
+    ok: str(raw, 'status') !== FAILED_RUN_STATUS,
+    detail: str(raw, 'detail') || str(raw, 'automationName'),
   };
 }
 
@@ -418,7 +486,7 @@ export function memberFromApi(raw: Raw): Member {
     email: str(raw, 'email'),
     role: mapped,
     title: str(raw, 'title'),
-    capacityHours: 40,
+    capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
     skills: [],
     status: str(raw, 'status') === 'PENDING' ? 'INVITED' : 'ACTIVE',
     joinedAt: iso(raw, 'createdAt'),
@@ -428,15 +496,26 @@ export function memberFromApi(raw: Raw): Member {
 export function timeEntryFromApi(raw: Raw): TimeEntry {
   return {
     id: str(raw, 'id'),
-    userId: str(raw, 'membershipId'),
+    userId: str(raw, 'userId'),
     projectId: str(raw, 'projectId'),
     clientId: str(raw, 'clientId'),
     taskId: raw.taskId ? str(raw, 'taskId') : undefined,
     minutes: num(raw, 'minutes'),
     date: iso(raw, 'startedAt').slice(0, 10),
     note: str(raw, 'note'),
-    billable: raw.billable !== false,
+    billable: raw.billable === true,
   };
+}
+
+/** The API records the entry against the caller's own membership, so `userId` is not sent. */
+export function timeEntryToApi(input: Partial<TimeEntry>): Raw {
+  const body: Raw = { minutes: input.minutes, date: input.date };
+  if (input.projectId) body.projectId = input.projectId;
+  if (input.clientId) body.clientId = input.clientId;
+  if (input.taskId) body.taskId = input.taskId;
+  if (input.note) body.note = input.note;
+  if (input.billable !== undefined) body.billable = input.billable;
+  return body;
 }
 
 export function roleFromApi(raw: Raw): AgencyRole {

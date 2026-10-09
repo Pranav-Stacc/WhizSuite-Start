@@ -1,11 +1,16 @@
 import { z } from 'zod';
 import {
+  ARTICLE_LIST_LIMIT_DEFAULT,
   CONTENT_HASHTAGS_MAX_DEFAULT,
   CONTENT_LIST_LIMIT_DEFAULT,
   CONTENT_MEDIA_MAX_DEFAULT,
   CONTENT_REORDER_MAX_DEFAULT,
   FEEDBACK_COMMENT_LIST_LIMIT_DEFAULT,
   FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT,
+  INVOICE_LINES_MAX_DEFAULT,
+  INVOICE_LIST_LIMIT_DEFAULT,
+  LEAD_LIST_LIMIT_DEFAULT,
+  TIME_ENTRY_LIST_LIMIT_DEFAULT,
 } from '@agency-os/contracts';
 
 export const appConfigSchema = z.object({
@@ -35,7 +40,11 @@ export const appConfigSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
-  STORAGE_UPLOAD_MAX_BYTES: z.coerce.number().int().positive().default(104_857_600),
+  STORAGE_UPLOAD_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(104_857_600),
   STORAGE_ALLOWED_MIME_TYPES: z
     .string()
     .default('image/*,video/*,audio/*,application/pdf')
@@ -45,20 +54,92 @@ export const appConfigSchema = z.object({
         .map((t) => t.trim().toLowerCase())
         .filter(Boolean),
     ),
-  STORAGE_UPLOAD_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
-  STORAGE_DOWNLOAD_URL_TTL_SECONDS: z.coerce.number().int().positive().default(300),
-  STORAGE_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  STORAGE_UPLOAD_URL_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(900),
+  STORAGE_DOWNLOAD_URL_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(300),
+  STORAGE_REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
   STORAGE_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
   MEDIA_LIST_LIMIT: z.coerce.number().int().positive().default(200),
-  CONTENT_LIST_LIMIT: z.coerce.number().int().positive().default(CONTENT_LIST_LIMIT_DEFAULT),
-  CONTENT_MEDIA_MAX: z.coerce.number().int().positive().default(CONTENT_MEDIA_MAX_DEFAULT),
-  CONTENT_HASHTAGS_MAX: z.coerce.number().int().positive().default(CONTENT_HASHTAGS_MAX_DEFAULT),
-  CONTENT_REORDER_MAX: z.coerce.number().int().positive().default(CONTENT_REORDER_MAX_DEFAULT),
-  FEEDBACK_COMMENT_MAX_LENGTH: z.coerce.number().int().positive().default(FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT),
-  FEEDBACK_COMMENT_LIST_LIMIT: z.coerce.number().int().positive().default(FEEDBACK_COMMENT_LIST_LIMIT_DEFAULT),
+  AUTOMATION_LIST_LIMIT: z.coerce.number().int().positive().default(200),
+  AUTOMATION_RUN_LIST_LIMIT: z.coerce.number().int().positive().default(50),
+  METRIC_SNAPSHOT_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(10_000),
+  CONTENT_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(CONTENT_LIST_LIMIT_DEFAULT),
+  CONTENT_MEDIA_MAX: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(CONTENT_MEDIA_MAX_DEFAULT),
+  CONTENT_HASHTAGS_MAX: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(CONTENT_HASHTAGS_MAX_DEFAULT),
+  CONTENT_REORDER_MAX: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(CONTENT_REORDER_MAX_DEFAULT),
+  FEEDBACK_COMMENT_MAX_LENGTH: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT),
+  FEEDBACK_COMMENT_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(FEEDBACK_COMMENT_LIST_LIMIT_DEFAULT),
+  INVOICE_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(INVOICE_LIST_LIMIT_DEFAULT),
+  INVOICE_LINES_MAX: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(INVOICE_LINES_MAX_DEFAULT),
+  LEAD_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(LEAD_LIST_LIMIT_DEFAULT),
+  CRM_DEFAULT_PIPELINE_NAME: z.string().min(1).default('Sales'),
+  ARTICLE_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(ARTICLE_LIST_LIMIT_DEFAULT),
+  TIME_ENTRY_LIST_LIMIT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(TIME_ENTRY_LIST_LIMIT_DEFAULT),
   EMAIL_PROVIDER: z.string().default('mailpit'),
   SMTP_HOST: z.string().default('localhost'),
   SMTP_PORT: z.coerce.number().int().default(1025),
+  EMAIL_FROM: z.string().default('Agency OS <noreply@agency-os.local>'),
+  WEB_APP_URL: z.string().url().default('http://localhost:3000'),
+  INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
   IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
   AUTHZ_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
   OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(1000),

@@ -8,13 +8,30 @@ function commentsPath(org: string, subjectType: FeedbackSubjectType, subjectId: 
   return orgPath(org, `feedback/subjects/${subjectType}/${subjectId}/comments`);
 }
 
-export async function fetchContentComments(contentId: string, tag: string): Promise<FeedbackCommentDto[]> {
+async function fetchComments(subjectType: FeedbackSubjectType, subjectId: string, tag: string): Promise<FeedbackCommentDto[]> {
   const org = (await getSession())?.orgId ?? '';
-  const data = await apiFetch<unknown>(commentsPath(org, FeedbackSubjectTypes.CONTENT, contentId), { tags: [`org:${org}:${tag}`] });
+  const data = await apiFetch<unknown>(commentsPath(org, subjectType, subjectId), { tags: [`org:${org}:${tag}`] });
   return unwrapList(data) as unknown as FeedbackCommentDto[];
 }
 
-export async function postContentComment(contentId: string, body: string): Promise<void> {
+async function postComment(subjectType: FeedbackSubjectType, subjectId: string, body: string): Promise<FeedbackCommentDto> {
   const org = (await getSession())?.orgId ?? '';
-  await apiFetch(commentsPath(org, FeedbackSubjectTypes.CONTENT, contentId), { method: 'POST', body: { body } });
+  return apiFetch<FeedbackCommentDto>(commentsPath(org, subjectType, subjectId), { method: 'POST', body: { body } });
+}
+
+export function fetchContentComments(contentId: string, tag: string): Promise<FeedbackCommentDto[]> {
+  return fetchComments(FeedbackSubjectTypes.CONTENT, contentId, tag);
+}
+
+export async function postContentComment(contentId: string, body: string): Promise<void> {
+  await postComment(FeedbackSubjectTypes.CONTENT, contentId, body);
+}
+
+/** The client portal conversation between the agency and one client. */
+export function fetchClientThread(clientId: string, tag: string): Promise<FeedbackCommentDto[]> {
+  return fetchComments(FeedbackSubjectTypes.CLIENT, clientId, tag);
+}
+
+export function postClientThreadMessage(clientId: string, body: string): Promise<FeedbackCommentDto> {
+  return postComment(FeedbackSubjectTypes.CLIENT, clientId, body);
 }

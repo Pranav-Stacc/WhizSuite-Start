@@ -28,8 +28,16 @@ export class NotificationsService implements OnModuleInit {
     return this.repository.listForUser(organizationId, recipientId);
   }
 
-  markRead(organizationId: string, notificationId: string, recipientId: string) {
-    return this.repository.markRead(organizationId, notificationId, recipientId);
+  markRead(
+    organizationId: string,
+    notificationId: string,
+    recipientId: string,
+  ) {
+    return this.repository.markRead(
+      organizationId,
+      notificationId,
+      recipientId,
+    );
   }
 
   private async handleDomainEvent(event: EventEnvelope): Promise<void> {
@@ -38,8 +46,8 @@ export class NotificationsService implements OnModuleInit {
       organizationId: event.organizationId,
       recipientId: event.actor.id,
       typeKey: event.type,
-      title: event.type.replace('.v1', '').replace('.', ' '),
-      body: JSON.stringify(event.payload),
+      title: event.type,
+      body: '',
       data: event.payload,
     });
   }

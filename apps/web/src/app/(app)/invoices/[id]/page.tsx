@@ -13,7 +13,8 @@ import { PrintButton } from '@/shared/ui/print-button';
 import { getClient } from '@/features/clients/services/clients.service';
 import { deleteInvoiceAction, setInvoiceStatusAction } from '@/features/invoices/actions/invoice.actions';
 import { InvoiceDocument } from '@/features/invoices/components/invoice-document';
-import { canTransition, isDraft } from '@/features/invoices/lifecycle';
+import { canTransitionInvoice } from '@agency-os/contracts';
+import { isDraft } from '@/features/invoices/lifecycle';
 import { getInvoice } from '@/features/invoices/services/invoices.service';
 
 interface PageProps {
@@ -54,15 +55,15 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
               </Link>
             </Button>
           ) : null}
-          {canTransition(invoice.status, 'SENT') ? <ActionButton action={setInvoiceStatusAction.bind(null, invoice.id, 'SENT')} label={t('invoices.action.send')} icon={<Send />} variant="primary" /> : null}
-          {canTransition(invoice.status, 'PAID') ? <ActionButton action={setInvoiceStatusAction.bind(null, invoice.id, 'PAID')} label={t('invoices.action.markPaid')} icon={<CheckCircle2 />} variant="primary" /> : null}
+          {canTransitionInvoice(invoice.status, 'SENT') ? <ActionButton action={setInvoiceStatusAction.bind(null, invoice.id, 'SENT')} label={t('invoices.action.send')} icon={<Send />} variant="primary" /> : null}
+          {canTransitionInvoice(invoice.status, 'PAID') ? <ActionButton action={setInvoiceStatusAction.bind(null, invoice.id, 'PAID')} label={t('invoices.action.markPaid')} icon={<CheckCircle2 />} variant="primary" /> : null}
         </div>
       </div>
 
       <InvoiceDocument invoice={invoice} issuerName={session.orgName} client={{ name: client?.name ?? '—', contactName: client?.contactName, contactEmail: client?.contactEmail }} />
 
       <div className="mt-5 flex flex-wrap justify-end gap-2 print:hidden">
-        {canTransition(invoice.status, 'VOID') ? <ConfirmButton action={setInvoiceStatusAction.bind(null, invoice.id, 'VOID')} label={t('invoices.action.void')} icon={<Ban />} /> : null}
+        {canTransitionInvoice(invoice.status, 'VOID') ? <ConfirmButton action={setInvoiceStatusAction.bind(null, invoice.id, 'VOID')} label={t('invoices.action.void')} icon={<Ban />} /> : null}
         {isDraft(invoice.status) ? <ConfirmButton action={deleteInvoiceAction.bind(null, invoice.id)} label={t('invoices.action.delete')} redirectTo="/invoices" /> : null}
       </div>
     </div>

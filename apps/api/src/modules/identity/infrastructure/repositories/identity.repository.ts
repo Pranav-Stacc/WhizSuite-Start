@@ -38,6 +38,87 @@ export class IdentityRepository {
     });
   }
 
+  findMembershipById(membershipId: string) {
+    return this.prisma.organizationMembership.findFirst({
+      where: { id: membershipId, status: 'ACTIVE' },
+    });
+  }
+
+  findActiveMembershipForUser(organizationId: string, userId: string) {
+    return this.prisma.organizationMembership.findFirst({
+      where: { organizationId, userId, status: 'ACTIVE' },
+      select: { id: true },
+    });
+  }
+
+  findMembershipUsers(
+    organizationId: string,
+    membershipIds: readonly string[],
+  ) {
+    return this.prisma.organizationMembership.findMany({
+      where: { organizationId, id: { in: [...membershipIds] } },
+      select: { id: true, userId: true },
+    });
+  }
+
+  /** The client a CLIENT membership is scoped to, if any. */
+  async findClientScope(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<string | undefined> {
+    const scope = await this.prisma.roleAssignmentScope.findFirst({
+      where: {
+        organizationId,
+        scopeType: 'CLIENT',
+        resourceId: { not: null },
+        roleAssignment: { membershipId },
+      },
+      select: { resourceId: true },
+    });
+    return scope?.resourceId ?? undefined;
+  }
+
+  createUser(input: {
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName?: string;
+  }) {
+    return this.prisma.user.create({
+      data: { ...input, emailVerified: false },
+    });
+  }
+
+  /** Active memberships of an organisation joined with their user profiles. */
+  async listOrganizationMembers(organizationId: string) {
+    const memberships = await this.prisma.organizationMembership.findMany({
+      where: { organizationId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        userId: true,
+        type: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: memberships.map((m) => m.userId) } },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+      },
+    });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return memberships.flatMap((membership) => {
+      const user = byId.get(membership.userId);
+      return user ? [{ membership, user }] : [];
+    });
+  }
+
   updateLastLogin(userId: string) {
     return this.prisma.user.update({
       where: { id: userId },
@@ -165,7 +246,9 @@ export class IdentityRepository {
           membershipId: membership.id,
           roleId: ownerRole.id,
           scopes: {
-            create: [{ organizationId: organization.id, scopeType: 'ORGANIZATION' }],
+            create: [
+              { organizationId: organization.id, scopeType: 'ORGANIZATION' },
+            ],
           },
         },
       });

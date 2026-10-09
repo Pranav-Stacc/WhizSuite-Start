@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import {
   UserRoles,
+  acceptInvitationSchema,
   loginSchema,
   registerSchema,
   type MembershipType,
@@ -32,11 +33,15 @@ const MEMBERSHIP_TO_ROLE: Record<MembershipType, UserRole> = {
   CLIENT: UserRoles.CLIENT,
 };
 
-function roleFromToken(accessToken: string): UserRole {
+interface AccessClaims {
+  membershipType?: MembershipType;
+  clientId?: string;
+}
+
+function claimsOf(accessToken: string): AccessClaims {
   const payload = accessToken.split('.')[1];
-  if (!payload) return UserRoles.CREATOR;
-  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString()) as { membershipType?: MembershipType };
-  return claims.membershipType ? MEMBERSHIP_TO_ROLE[claims.membershipType] : UserRoles.CREATOR;
+  if (!payload) return {};
+  return JSON.parse(Buffer.from(payload, 'base64url').toString()) as AccessClaims;
 }
 
 function sessionFromPersona(persona: Persona): Session {
@@ -52,15 +57,23 @@ function sessionFromPersona(persona: Persona): Session {
   };
 }
 
-function sessionFromApi(response: AuthResponse, fallbackOrgName: string): Session {
-  const role = roleFromToken(response.accessToken);
+async function organizationName(response: AuthResponse, orgId: string): Promise<string> {
+  if (response.organization?.name) return response.organization.name;
+  const org = await apiFetch<{ name: string }>('v1/organizations/current', { token: response.accessToken, organizationId: orgId });
+  return org.name;
+}
+
+async function sessionFromApi(response: AuthResponse): Promise<Session> {
+  const claims = claimsOf(response.accessToken);
+  const orgId = response.organization?.id ?? response.organizationId ?? '';
   return {
     userId: response.user.id,
     name: [response.user.firstName, response.user.lastName].filter(Boolean).join(' '),
     email: response.user.email,
-    role,
-    orgId: response.organization?.id ?? response.organizationId ?? '',
-    orgName: response.organization?.name ?? fallbackOrgName,
+    role: claims.membershipType ? MEMBERSHIP_TO_ROLE[claims.membershipType] : UserRoles.CREATOR,
+    orgId,
+    orgName: await organizationName(response, orgId),
+    clientId: claims.clientId,
     accessToken: response.accessToken,
     refreshToken: response.refreshToken,
     demo: false,
@@ -77,7 +90,7 @@ export async function loginAction(raw: unknown): Promise<ActionResult> {
     if (isLiveMode) {
       try {
         const response = await apiFetch<AuthResponse>('v1/auth/login', { method: 'POST', body: { email, password } });
-        session = sessionFromApi(response, 'Workspace');
+        session = await sessionFromApi(response);
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) return fail(t('auth.login.invalid'));
         return fail(t('auth.login.unavailable'));
@@ -113,7 +126,7 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
     if (isLiveMode) {
       try {
         const response = await apiFetch<AuthResponse>('v1/auth/register', { method: 'POST', body: input });
-        session = sessionFromApi(response, input.organizationName);
+        session = await sessionFromApi(response);
       } catch (error) {
         if (error instanceof ApiError && error.status === 409) return fail(t('auth.register.exists'));
         return fail(t('auth.login.unavailable'));
@@ -124,6 +137,29 @@ export async function registerAction(raw: unknown): Promise<ActionResult> {
     }
 
     await startSession(session);
+    redirect(homeFor(session.role));
+  });
+}
+
+export async function acceptInvitationAction(raw: unknown): Promise<ActionResult> {
+  return guarded(async () => {
+    const parsed = parseInput(acceptInvitationSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    if (!isLiveMode) return fail(t('auth.invite.unavailable'));
+
+    let session: Session;
+    try {
+      const response = await apiFetch<AuthResponse>('v1/invitations/redeem', { method: 'POST', body: parsed.data });
+      session = await sessionFromApi(response);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) return fail(t('auth.invite.wrongPassword'), { password: 'auth.invite.wrongPassword' });
+      if (error instanceof ApiError && error.status === 409) return fail(t('auth.invite.alreadyMember'));
+      if (error instanceof ApiError && error.status === 400) return fail(t('auth.invite.invalid'));
+      return fail(t('auth.login.unavailable'));
+    }
+
+    await startSession(session);
+    await recordAudit({ action: 'auth.invitation_accepted', entityType: 'session', entityId: session.userId, entityLabel: session.email, summary: 'Accepted invitation' });
     redirect(homeFor(session.role));
   });
 }

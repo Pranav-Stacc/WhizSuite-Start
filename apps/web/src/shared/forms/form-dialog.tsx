@@ -32,13 +32,21 @@ export interface FieldDef {
   rows?: number;
 }
 
+export interface FormDialogResult {
+  href?: string;
+  /** A link the user may need to share manually (e.g. an invitation when email delivery is unavailable). */
+  shareLink?: string;
+}
+
+const SHARE_TOAST_DURATION_MS = 20_000;
+
 export interface FormDialogProps {
   schema: FormSchemaKey;
   title: string;
   description?: string;
   submitLabel?: string;
   fields: FieldDef[];
-  action: (values: Record<string, unknown>) => Promise<ActionResult<{ href?: string } | undefined>>;
+  action: (values: Record<string, unknown>) => Promise<ActionResult<FormDialogResult | undefined>>;
   trigger?: ReactNode;
   defaults?: Record<string, unknown>;
   size?: 'sm' | 'md' | 'lg';
@@ -90,7 +98,21 @@ export function FormDialog({ schema, title, description, submitLabel, fields, ac
     startTransition(async () => {
       const result = await action(values);
       if (result.ok) {
-        toast.success(result.message ?? successMessage ?? t('toast.created'));
+        const shareLink = result.data?.shareLink;
+        toast.success(
+          result.message ?? successMessage ?? t('toast.created'),
+          shareLink
+            ? {
+                duration: SHARE_TOAST_DURATION_MS,
+                action: {
+                  label: t('action.copyLink'),
+                  onClick: () => {
+                    void navigator.clipboard.writeText(shareLink).then(() => toast.success(t('toast.linkCopied')));
+                  },
+                },
+              }
+            : undefined,
+        );
         close(false);
         const href = result.data?.href;
         if (href) router.push(href);

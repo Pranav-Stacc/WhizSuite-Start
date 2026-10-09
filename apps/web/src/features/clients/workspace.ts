@@ -1,4 +1,4 @@
-export const CLIENT_WORKSPACE_SECTIONS = ['overview', 'grid', 'calendar', 'assets', 'invoices', 'integrations'] as const;
+export const CLIENT_WORKSPACE_SECTIONS = ['overview', 'grid', 'calendar', 'messages', 'assets', 'invoices', 'integrations'] as const;
 export type ClientSection = (typeof CLIENT_WORKSPACE_SECTIONS)[number];
 
 export function clientSectionHref(clientId: string, section: ClientSection): string {

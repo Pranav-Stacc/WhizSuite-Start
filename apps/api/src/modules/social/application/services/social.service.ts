@@ -9,6 +9,7 @@ import {
   type ContentItemUpdateInput,
   type ContentListQuery,
   type ContentReorderInput,
+  type ContentReviewOutcome,
   type ContentStatus,
   type EmbeddedMediaDto,
 } from '@agency-os/contracts';
@@ -36,6 +37,7 @@ const ENTITY_TYPE = 'contentItem';
 const STATE_HISTORY_ENTITY_TYPE = 'CONTENT';
 const DEFAULT_CREATE_STATUS: ContentStatus = 'DRAFT';
 const INITIAL_SNAPSHOT_VERSION = 1;
+const REVIEWABLE_STATUS: ContentStatus = 'IN_REVIEW';
 
 type AuditDetails = Pick<AuditRecordInput, 'before' | 'after' | 'metadata'>;
 
@@ -295,6 +297,20 @@ export class SocialService {
         metadata: { clientId, orderedIds },
       },
     );
+  }
+
+  /** Reviewer decision: only moves content that is awaiting review to an outcome state. */
+  async reviewContent(
+    organizationId: string,
+    actorId: string,
+    contentId: string,
+    toStatus: ContentReviewOutcome,
+  ): Promise<ContentItemDto> {
+    const current = await this.findOrThrow(organizationId, contentId);
+    if (current.status !== REVIEWABLE_STATUS) {
+      throw unprocessable('Content is not awaiting review');
+    }
+    return this.transitionContent(organizationId, actorId, contentId, toStatus);
   }
 
   async transitionContent(

@@ -7,6 +7,14 @@ export const DEFAULT_CLIENT_COLOR = '#FFFFFF';
 /** Starting health for a newly added client (no history to score yet). */
 export const INITIAL_HEALTH_SCORE = 80;
 
+/** Live health starts here and loses points for each real risk signal on the account. */
+export const HEALTH_BASELINE = 100;
+export const HEALTH_PENALTIES = {
+  overdueInvoice: 20,
+  changesRequested: 10,
+  noRetainer: 15,
+} as const;
+
 export type HealthBand = 'good' | 'fair' | 'risk';
 
 export function healthBand(score: number): HealthBand {

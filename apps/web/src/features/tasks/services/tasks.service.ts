@@ -17,7 +17,7 @@ export function openHoursByAssignee(tasks: Task[]): Map<string, number> {
   const hours = new Map<string, number>();
   for (const task of tasks) {
     if (task.status === 'DONE' || !task.assigneeId) continue;
-    hours.set(task.assigneeId, (hours.get(task.assigneeId) ?? 0) + task.estimateHours);
+    hours.set(task.assigneeId, (hours.get(task.assigneeId) ?? 0) + (task.estimateHours ?? 0));
   }
   return hours;
 }

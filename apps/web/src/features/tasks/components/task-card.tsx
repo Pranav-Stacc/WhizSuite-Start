@@ -23,10 +23,12 @@ export function TaskCardContent({ task, clientName, clientColor, assigneeName }:
       <div className="flex flex-wrap items-center gap-1.5">
         <StatusBadge kind="priority" value={task.priority} dot={false} />
         <DueBadge date={task.dueDate} done={task.status === 'DONE'} />
-        <span className="ml-auto inline-flex items-center gap-1 text-xs tabular-nums text-muted">
-          <Clock className="size-3" />
-          {task.estimateHours}h
-        </span>
+        {task.estimateHours !== undefined ? (
+          <span className="ml-auto inline-flex items-center gap-1 text-xs tabular-nums text-muted">
+            <Clock className="size-3" />
+            {task.estimateHours}h
+          </span>
+        ) : null}
         {assigneeName ? <Avatar name={assigneeName} size="xs" /> : null}
       </div>
     </div>

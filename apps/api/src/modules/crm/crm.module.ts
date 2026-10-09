@@ -6,6 +6,6 @@ import { CrmResourceController } from './interface/http/controllers/crm-resource
 @Module({
   controllers: [CrmResourceController],
   providers: [CrmService, CrmRepository],
-  exports: [CrmService, CrmRepository],
+  exports: [CrmService],
 })
 export class CrmModule {}

@@ -1,6 +1,9 @@
 import 'server-only';
-import { Platforms, type Platform } from '@agency-os/contracts';
+import { Platforms, type InvoiceStatus, type Platform } from '@agency-os/contracts';
+import type { InvoiceView } from '@/features/invoices/services/invoices.service';
+import { isLiveMode } from '@/shared/config/env';
 import { series } from '@/shared/lib/seeded';
+import { dailyMetrics, loadMetricData, reachByPlatform as liveReachByPlatform, totalsByClient } from './live-metrics';
 import { listIntegrations, type Integration } from '@/features/integrations/services/integrations.service';
 import { listContent } from '@/features/content/services/content.service';
 import type { Post } from '@/features/content/data/content.repository';
@@ -47,7 +50,7 @@ function addInto(target: number[], source: number[]): void {
   });
 }
 
-/** Deterministic demo analytics per connected account; replaced by provider data once integrations sync. */
+/** Deterministic demo-mode analytics per connected account; live mode reads recorded snapshots instead. */
 export function buildMetrics(integrations: Integration[], filter: ReportFilter): MetricSeries {
   const { days } = filter;
   const reach: number[] = Array.from({ length: days }, () => 0);
@@ -111,6 +114,13 @@ export interface ClientReach {
 
 /** Reach and engagement per client for the active filter, best first. */
 export async function clientLeaderboard(filter: ReportFilter, clientIds: string[]): Promise<ClientReach[]> {
+  if (isLiveMode) {
+    const totals = totalsByClient(await loadMetricData(filter.days), { platform: filter.platform });
+    return clientIds
+      .map((clientId) => ({ clientId, reach: totals.get(clientId)?.reach ?? 0, engagement: totals.get(clientId)?.engagement ?? 0 }))
+      .filter((row) => row.reach > 0)
+      .sort((a, b) => b.reach - a.reach);
+  }
   const integrations = await listIntegrations();
   return clientIds
     .map((clientId) => {
@@ -129,10 +139,23 @@ export function metricsToCsv(metrics: MetricSeries): string {
   return [CSV_HEADER.join(','), ...rows].join('\r\n');
 }
 
+function publishedInScope(posts: Post[], filter: ReportFilter): Post[] {
+  return posts.filter((p) => p.status === 'PUBLISHED' && (!filter.clientId || p.clientId === filter.clientId) && (!filter.platform || p.platforms.includes(filter.platform)));
+}
+
+/** Live report from recorded snapshots; per-post performance appears once snapshots are attributed to posts. */
+async function loadLiveReport(filter: ReportFilter): Promise<Report> {
+  const [data, posts] = await Promise.all([loadMetricData(filter.days), listContent()]);
+  const scope = { clientId: filter.clientId, platform: filter.platform };
+  const metrics = { labels: dayLabels(filter.days), ...dailyMetrics(data, filter.days, scope) };
+  return { metrics, totals: totals(metrics, publishedInScope(posts, filter).length), topPosts: [], byPlatform: liveReachByPlatform(data, scope) };
+}
+
 export async function loadReport(filter: ReportFilter): Promise<Report> {
+  if (isLiveMode) return loadLiveReport(filter);
   const [integrations, posts] = await Promise.all([listIntegrations(), listContent()]);
   const metrics = buildMetrics(integrations, filter);
-  const published = posts.filter((p) => p.status === 'PUBLISHED' && (!filter.clientId || p.clientId === filter.clientId) && (!filter.platform || p.platforms.includes(filter.platform)));
+  const published = publishedInScope(posts, filter);
   const topPosts = published
     .map((p) => {
       const [reach = 0] = series(`${p.id}-post`, 1, 6000 + (p.title.length % 7) * 2500, 3000);
@@ -142,10 +165,28 @@ export async function loadReport(filter: ReportFilter): Promise<Report> {
   return { metrics, totals: totals(metrics, published.length), topPosts, byPlatform: reachByPlatform(integrations, filter) };
 }
 
-/** Last `months` of revenue in minor units, ending with the real current-month figure. */
-export function revenueSeries(seed: string, recurringMinor: number, months: number, currentMinor: number): number[] {
-  const history = series(seed, months - 1, recurringMinor * 0.78, recurringMinor * 0.06, recurringMinor * 0.03);
-  return [...history, currentMinor];
+const UNBILLED_STATUSES: ReadonlySet<InvoiceStatus> = new Set(['DRAFT', 'VOID']);
+
+const monthIndex = (date: Date) => date.getFullYear() * 12 + date.getMonth();
+
+/** Invoiced amount (minor units) per calendar month for the last `months`, oldest first; drafts and voids excluded. */
+export function invoicedByMonth(invoices: Pick<InvoiceView, 'issueDate' | 'total' | 'status'>[], months: number): number[] {
+  const current = monthIndex(new Date());
+  const totals = Array.from({ length: months }, () => 0);
+  for (const invoice of invoices) {
+    if (UNBILLED_STATUSES.has(invoice.status)) continue;
+    const slot = months - 1 - (current - monthIndex(new Date(invoice.issueDate)));
+    if (slot >= 0 && slot < months) totals[slot] = (totals[slot] ?? 0) + invoice.total;
+  }
+  return totals;
+}
+
+/** Percentage change between the last two points, or undefined when there is no baseline. */
+export function lastChangePercent(values: number[]): number | undefined {
+  const previous = values.at(-2);
+  const latest = values.at(-1);
+  if (!previous || latest === undefined) return undefined;
+  return Math.round(((latest - previous) / previous) * 100);
 }
 
 export function monthLabels(months: number): string[] {

@@ -14,9 +14,6 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { getProject } from '@/features/projects/services/projects.service';
 import { tasksRepository, type Task } from '../data/tasks.repository';
-
-const DEFAULT_ESTIMATE_HOURS = 2;
-
 async function authorize() {
   const session = await requireSession();
   if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
@@ -47,7 +44,7 @@ export async function createTaskAction(raw: unknown): Promise<ActionResult> {
       priority: input.priority,
       assigneeId: input.assigneeId,
       dueDate: input.dueDate ? dateKeyToIso(input.dueDate) : undefined,
-      estimateHours: input.estimateHours || DEFAULT_ESTIMATE_HOURS,
+      estimateHours: input.estimateHours || undefined,
       createdAt: new Date().toISOString(),
     });
     await notifyAssignee(task, undefined, session.userId);
@@ -77,8 +74,9 @@ export async function updateTaskAction(id: string, raw: unknown): Promise<Action
       priority: input.priority,
       assigneeId: input.assigneeId,
       dueDate: input.dueDate ? dateKeyToIso(input.dueDate) : undefined,
-      estimateHours: input.estimateHours || before.estimateHours,
+      estimateHours: input.estimateHours || undefined,
     });
+    if (isLiveMode && before.status !== input.status) await transitionTask(id, input.status);
     if (after) await notifyAssignee(after, before.assigneeId, session.userId);
     await recordAudit({
       action: 'task.updated',

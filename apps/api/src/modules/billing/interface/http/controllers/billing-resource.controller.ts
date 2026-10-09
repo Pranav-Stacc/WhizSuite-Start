@@ -19,4 +19,11 @@ export class BillingResourceController {
   getSubscription(@Param('organizationId') organizationId: string) {
     return this.billing.getSubscription(requireOrganizationId(organizationId));
   }
+
+  @Get('plans')
+  @RequirePermissions(Permissions.ORG_BILLING_MANAGE)
+  listPlans(@Param('organizationId') organizationId: string) {
+    requireOrganizationId(organizationId);
+    return this.billing.listPlans();
+  }
 }

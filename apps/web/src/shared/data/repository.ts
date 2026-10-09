@@ -57,7 +57,8 @@ export function createRepository<T extends Entity>(
 ): Repository<T> {
   const rows = (): T[] => {
     const s = store();
-    if (!s.has(name)) s.set(name, seed());
+    // Demo seeds must never surface against a real organisation.
+    if (!s.has(name)) s.set(name, isLiveMode ? [] : seed());
     return s.get(name) as T[];
   };
 

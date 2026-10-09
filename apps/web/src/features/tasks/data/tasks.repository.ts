@@ -13,7 +13,7 @@ export interface Task extends Entity {
   priority: Priority;
   assigneeId?: string;
   dueDate?: string;
-  estimateHours: number;
+  estimateHours?: number;
   createdAt: string;
 }
 

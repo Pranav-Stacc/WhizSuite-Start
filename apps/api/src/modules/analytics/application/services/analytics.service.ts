@@ -1,33 +1,42 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorCodes } from '@agency-os/contracts';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { ConfigService } from '@nestjs/config';
+import type { AppConfig } from '../../../../shared/config/app.config';
 import { AnalyticsRepository } from '../../infrastructure/repositories/analytics.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import type {
+  CreateMetricSnapshotDto,
+  ListMetricSnapshotsQuery,
+} from '../../interface/http/dto/metric-snapshot.dto';
 
 @Injectable()
 export class AnalyticsService {
   constructor(
     private readonly repository: AnalyticsRepository,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
-  list(organizationId: string) {
-    return this.repository.list(organizationId);
+  async list(organizationId: string, query: ListMetricSnapshotsQuery) {
+    const rows = await this.repository.list(organizationId, {
+      from: query.from ? new Date(query.from) : undefined,
+      metricKeys: query.metrics,
+      limit: this.config.get('METRIC_SNAPSHOT_LIST_LIMIT', { infer: true }),
+    });
+    return rows.map((row) => ({ ...row, value: row.value.toNumber() }));
   }
 
-  async get(organizationId: string, id: string) {
-    const item = await this.repository.findById(organizationId, id);
-    if (!item) {
-      throw new ProblemDetailsException(
-        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
-        404,
-      );
-    }
-    return item;
-  }
-
-  async create(organizationId: string, actorId: string, data: Record<string, unknown>) {
-    const item = await this.repository.create(organizationId, data);
+  async create(
+    organizationId: string,
+    actorId: string,
+    input: CreateMetricSnapshotDto,
+  ) {
+    const item = await this.repository.create(organizationId, {
+      metricKey: input.metricKey,
+      channelId: input.channelId,
+      contentVariantId: input.contentVariantId,
+      value: input.value,
+      recordedAt: new Date(input.recordedAt),
+    });
     await this.audit.record({
       organizationId,
       actorId,
@@ -35,23 +44,13 @@ export class AnalyticsService {
       action: 'analytics/metrics.create',
       entityType: 'metricSnapshot',
       entityId: (item as { id: string }).id,
-      after: item as Record<string, unknown>,
+      after: {
+        metricKey: input.metricKey,
+        channelId: input.channelId,
+        value: input.value,
+        recordedAt: input.recordedAt,
+      },
     });
     return item;
-  }
-
-  async update(organizationId: string, actorId: string, id: string, data: Record<string, unknown>) {
-    await this.get(organizationId, id);
-    await this.repository.update(organizationId, id, data);
-    await this.audit.record({
-      organizationId,
-      actorId,
-      actorType: 'user',
-      action: 'analytics/metrics.update',
-      entityType: 'metricSnapshot',
-      entityId: id,
-      after: data,
-    });
-    return this.get(organizationId, id);
   }
 }

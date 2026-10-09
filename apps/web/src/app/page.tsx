@@ -6,8 +6,6 @@ import { getSession } from '@/shared/auth/session';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { Logo } from '@/shared/ui/logo';
-import { AreaChart } from '@/shared/ui/charts';
-import { Avatar } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 
 const FEATURES: Array<{ icon: LucideIcon; title: MessageKey; body: MessageKey }> = [
@@ -64,28 +62,6 @@ export default async function LandingPage() {
             <Button variant="outline" size="lg" asChild>
               <Link href="/login">{t('landing.cta.demo')}</Link>
             </Button>
-          </div>
-
-          <div aria-hidden className="glass glow mx-auto mt-16 max-w-5xl rounded-3xl p-4 text-left sm:p-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="card-surface p-5 md:col-span-2">
-                <p className="text-sm text-muted">{t('auth.mock.revenue')}</p>
-                <p className="mb-3 text-3xl font-semibold tabular-nums">₹14,60,000</p>
-                <AreaChart height={170} labels={['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']} series={[{ label: 'Revenue', data: [620, 710, 690, 880, 1010, 1190, 1460] }]} />
-              </div>
-              <div className="card-surface flex flex-col justify-between p-5">
-                <p className="text-sm text-muted">{t('auth.mock.approvedNow')}</p>
-                <div>
-                  <p className="font-medium">{t('auth.mock.post')}</p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Avatar name="Neha Kapoor" size="sm" />
-                    <Badge tone="success" dot>
-                      {t('auth.mock.approved')}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 

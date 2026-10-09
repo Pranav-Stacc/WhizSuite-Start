@@ -1,6 +1,9 @@
 import 'server-only';
 import type { Platform } from '@agency-os/contracts';
-import { DEFAULT_CLIENT_COLOR, INITIAL_HEALTH_SCORE } from '../config';
+import { isLiveMode } from '@/shared/config/env';
+import { listContent } from '@/features/content/services/content.service';
+import { listInvoices } from '@/features/invoices/services/invoices.service';
+import { DEFAULT_CLIENT_COLOR, HEALTH_BASELINE, HEALTH_PENALTIES, INITIAL_HEALTH_SCORE } from '../config';
 import { clientsRepository, type Client } from '../data/clients.repository';
 
 export interface NewClientInput {
@@ -34,8 +37,41 @@ export async function onboardClient(input: NewClientInput): Promise<Client> {
   });
 }
 
+interface RiskSignals {
+  overdueInvoices: number;
+  changesRequested: number;
+}
+
+/** Scores health from the account's live risk signals instead of a stored guess. */
+function scoreHealth(client: Client, signals: RiskSignals | undefined): number {
+  const penalty =
+    (signals?.overdueInvoices ?? 0) * HEALTH_PENALTIES.overdueInvoice +
+    (signals?.changesRequested ?? 0) * HEALTH_PENALTIES.changesRequested +
+    (client.retainerMinor > 0 ? 0 : HEALTH_PENALTIES.noRetainer);
+  return Math.max(0, HEALTH_BASELINE - penalty);
+}
+
+async function riskSignalsByClient(): Promise<Map<string, RiskSignals>> {
+  const [invoices, posts] = await Promise.all([listInvoices(), listContent()]);
+  const signals = new Map<string, RiskSignals>();
+  const bump = (clientId: string, key: keyof RiskSignals) => {
+    const entry = signals.get(clientId) ?? { overdueInvoices: 0, changesRequested: 0 };
+    entry[key] += 1;
+    signals.set(clientId, entry);
+  };
+  for (const invoice of invoices) if (invoice.status === 'OVERDUE') bump(invoice.clientId, 'overdueInvoices');
+  for (const post of posts) if (post.status === 'CHANGES_REQUESTED') bump(post.clientId, 'changesRequested');
+  return signals;
+}
+
+async function withLiveHealth(clients: Client[]): Promise<Client[]> {
+  if (!isLiveMode || clients.length === 0) return clients;
+  const signals = await riskSignalsByClient();
+  return clients.map((client) => ({ ...client, health: scoreHealth(client, signals.get(client.id)) }));
+}
+
 export async function listClients(): Promise<Client[]> {
-  return clientsRepository.list();
+  return withLiveHealth(await clientsRepository.list());
 }
 
 /** Keeps the client's channel list in step with its connected integrations. */
@@ -44,7 +80,8 @@ export async function setClientPlatforms(clientId: string, platforms: Platform[]
 }
 
 export async function getClient(id: string): Promise<Client | undefined> {
-  return clientsRepository.get(id);
+  const client = await clientsRepository.get(id);
+  return client ? (await withLiveHealth([client]))[0] : undefined;
 }
 
 export async function clientsById(): Promise<Map<string, Client>> {

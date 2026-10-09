@@ -82,6 +82,8 @@ export const common = {
   'validation.tooLong': 'This is too long',
   'toast.saved': 'Changes saved',
   'toast.created': 'Created successfully',
+  'toast.linkCopied': 'Link copied to clipboard',
+  'action.copyLink': 'Copy invite link',
   'toast.invalid': 'Please fix the highlighted fields.',
   'toast.failed': 'Something went wrong. Please try again.',
   'toast.moved': 'Moved',

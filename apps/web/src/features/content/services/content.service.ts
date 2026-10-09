@@ -1,7 +1,7 @@
 import 'server-only';
 import { isLiveMode } from '@/shared/config/env';
 import { fetchContentComments, postContentComment } from '@/shared/api/live/feedback';
-import { listMembers } from '@/features/team/services/members.service';
+import { memberDirectory } from '@/features/team/services/members.service';
 import { contentEventsRepository, contentRepository, type ContentEvent, type ContentEventKind, type Post } from '../data/content.repository';
 
 const CONTENT_CACHE_TAG = 'content';
@@ -30,7 +30,7 @@ async function liveEventsFor(contentId: string, names: Map<string, string>): Pro
 }
 
 async function memberNames(): Promise<Map<string, string>> {
-  return new Map((await listMembers()).map((m) => [m.id, m.name]));
+  return new Map([...(await memberDirectory())].map(([id, entry]) => [id, entry.name]));
 }
 
 const byTime = (a: ContentEvent, b: ContentEvent) => a.at.localeCompare(b.at);

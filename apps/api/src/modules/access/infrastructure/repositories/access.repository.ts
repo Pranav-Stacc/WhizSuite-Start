@@ -135,7 +135,9 @@ export class AccessRepository {
   }
 
   listPermissions() {
-    return this.prisma.permission.findMany({ orderBy: [{ category: 'asc' }, { key: 'asc' }] });
+    return this.prisma.permission.findMany({
+      orderBy: [{ category: 'asc' }, { key: 'asc' }],
+    });
   }
 
   async createRole(
@@ -151,7 +153,10 @@ export class AccessRepository {
         name: input.name,
         description: input.description,
         permissions: {
-          create: permissions.map((p) => ({ permissionId: p.id, effect: 'ALLOW' })),
+          create: permissions.map((p) => ({
+            permissionId: p.id,
+            effect: 'ALLOW',
+          })),
         },
       },
       include: { permissions: { include: { permission: true } } },
@@ -163,7 +168,9 @@ export class AccessRepository {
     roleId: string,
     input: { name?: string; description?: string; permissionKeys?: string[] },
   ) {
-    const role = await this.prisma.role.findFirst({ where: { id: roleId, organizationId } });
+    const role = await this.prisma.role.findFirst({
+      where: { id: roleId, organizationId },
+    });
     if (!role) return null;
     if (input.permissionKeys) {
       const permissions = await this.prisma.permission.findMany({
@@ -171,17 +178,39 @@ export class AccessRepository {
       });
       await this.prisma.rolePermission.deleteMany({ where: { roleId } });
       await this.prisma.rolePermission.createMany({
-        data: permissions.map((p) => ({ roleId, permissionId: p.id, effect: 'ALLOW' })),
+        data: permissions.map((p) => ({
+          roleId,
+          permissionId: p.id,
+          effect: 'ALLOW',
+        })),
       });
     }
     return this.prisma.role.update({
       where: { id: roleId },
       data: {
         ...(input.name ? { name: input.name } : {}),
-        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.description !== undefined
+          ? { description: input.description }
+          : {}),
       },
-      include: { permissions: { include: { permission: true } }, assignments: { select: { id: true } } },
+      include: {
+        permissions: { include: { permission: true } },
+        assignments: { select: { id: true } },
+      },
     });
+  }
+
+  async findOrCreateSystemRole(
+    organizationId: string,
+    name: string,
+    permissionKeys: readonly string[],
+  ) {
+    const existing = await this.prisma.role.findFirst({
+      where: { organizationId, name, isSystem: true },
+      select: { id: true },
+    });
+    if (existing) return existing;
+    return this.createSystemRole(organizationId, name, [...permissionKeys]);
   }
 
   async createSystemRole(

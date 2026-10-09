@@ -15,6 +15,7 @@ import { allEvents, listContent } from '@/features/content/services/content.serv
 import { TimerCard } from '@/features/time/components/timer-card';
 import { activeTimerFor, listEntries, minutesThisWeek } from '@/features/time/services/time.service';
 import { isOverdue, listTasks } from '@/features/tasks/services/tasks.service';
+import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
 import { membersById } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
 
@@ -44,7 +45,7 @@ export async function CreatorDashboard({ session }: { session: Session }) {
   const feedback = events.filter((e) => myPostIds.has(e.contentId) && ['comment', 'changes', 'approved', 'rejected'].includes(e.kind)).sort((a, b) => b.at.localeCompare(a.at));
   const drafts = myPosts.filter((p) => p.status === 'DRAFT' || p.status === 'CHANGES_REQUESTED');
   const weekMinutes = minutesThisWeek(entries, session.userId);
-  const capacity = me?.capacityHours ?? 40;
+  const capacity = me?.capacityHours ?? DEFAULT_WEEKLY_CAPACITY_HOURS;
   const weekHours = weekMinutes / MINUTES_PER_HOUR;
   const doneThisWeek = tasks.filter((x) => x.assigneeId === session.userId && x.status === 'DONE').length;
   const timerTask = timer ? tasks.find((x) => x.id === timer.taskId) : undefined;

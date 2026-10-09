@@ -42,4 +42,7 @@ export const portalMessages = {
   'portal.messages.compose': 'Message',
   'portal.messages.placeholder': 'Write a message to your agency team…',
   'portal.messages.sent': 'Message sent',
+  'portal.messages.empty': 'No messages yet.',
+  'portal.messages.agencyPlaceholder': 'Reply to {client}…',
+  'portal.messages.agencyDescription': 'Your conversation with this client. They see it in their portal.',
 } as const;

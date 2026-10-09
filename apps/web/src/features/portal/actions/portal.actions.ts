@@ -1,20 +1,22 @@
 'use server';
 
-import { ApprovalActions, UserRoles, messageSchema, type ApprovalAction, type ContentStatus } from '@agency-os/contracts';
+import { ApprovalActions, UserRoles, messageSchema, type ApprovalAction, type ContentReviewOutcome } from '@agency-os/contracts';
 import { requireSession, type Session } from '@/shared/auth/session';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { transitionContent } from '@/shared/api/live/mutations';
+import { postClientThreadMessage } from '@/shared/api/live/feedback';
+import { reviewContent } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
+import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
 import { recordContentEvent } from '@/features/content/services/content.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { threadRepository } from '../data/thread.repository';
 
-const DECISION_TARGET: Record<ApprovalAction, ContentStatus> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
+const DECISION_TARGET: Record<ApprovalAction, ContentReviewOutcome> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
 const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes', REJECTED: 'rejected' };
 
 async function requireClient(): Promise<Session & { clientId: string }> {
@@ -47,7 +49,7 @@ export async function clientDecideContentAction(id: string, decision: string, ra
     if (post.status !== 'IN_REVIEW') return fail(t('content.error.transition'));
 
     const nextStatus = DECISION_TARGET[action];
-    if (isLiveMode) await transitionContent(id, nextStatus);
+    if (isLiveMode) await reviewContent(id, nextStatus);
     else await contentRepository.update(id, { status: nextStatus, updatedAt: new Date().toISOString() });
     await logEvent(id, DECISION_EVENT[action], session, comment);
     await notifyAuthor(post, session, t(`content.notify.${action}`));
@@ -79,18 +81,41 @@ export async function clientCommentContentAction(id: string, raw: unknown): Prom
   });
 }
 
+export async function replyToClientAction(clientId: string, raw: unknown): Promise<ActionResult> {
+  return guarded(async () => {
+    const session = await requireSession();
+    if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
+    const parsed = parseInput(messageSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    const message = isLiveMode
+      ? await postClientThreadMessage(clientId, parsed.data.body)
+      : await threadRepository.create({ clientId, fromClient: false, authorName: session.name, body: parsed.data.body, at: new Date().toISOString() });
+    await recordAudit({
+      action: 'portal.message_replied',
+      entityType: 'thread',
+      entityId: message.id,
+      entityLabel: session.name,
+      summary: 'Agency replied in the client conversation',
+    });
+    await refreshData('portal');
+    return succeed(undefined, t('portal.messages.sent'));
+  });
+}
+
 export async function sendPortalMessageAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
     const session = await requireClient();
     const parsed = parseInput(messageSchema, raw);
     if (!parsed.ok) return parsed.result;
-    const message = await threadRepository.create({
-      clientId: session.clientId,
-      fromClient: true,
-      authorName: session.name,
-      body: parsed.data.body,
-      at: new Date().toISOString(),
-    });
+    const message = isLiveMode
+      ? await postClientThreadMessage(session.clientId, parsed.data.body)
+      : await threadRepository.create({
+          clientId: session.clientId,
+          fromClient: true,
+          authorName: session.name,
+          body: parsed.data.body,
+          at: new Date().toISOString(),
+        });
     await recordAudit({
       action: 'portal.message_sent',
       entityType: 'thread',

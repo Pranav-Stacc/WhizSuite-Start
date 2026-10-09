@@ -8,3 +8,7 @@ export * from './schemas/forms.js';
 export * from './media/media.js';
 export * from './content/content.js';
 export * from './feedback/feedback.js';
+export * from './finance/invoices.js';
+export * from './crm/leads.js';
+export * from './knowledge/articles.js';
+export * from './time/time-entries.js';

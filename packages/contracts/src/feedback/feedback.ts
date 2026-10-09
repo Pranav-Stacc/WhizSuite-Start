@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const FeedbackSubjectTypes = {
   CONTENT: 'CONTENT',
+  /** The agency ↔ client conversation shown in the client portal. */
+  CLIENT: 'CLIENT',
 } as const;
 export type FeedbackSubjectType = (typeof FeedbackSubjectTypes)[keyof typeof FeedbackSubjectTypes];
 export const FEEDBACK_SUBJECT_TYPE_VALUES = Object.values(FeedbackSubjectTypes);

@@ -27,6 +27,7 @@ import {
   CreateContentDto,
   ListContentQueryDto,
   ReorderContentDto,
+  ReviewContentDto,
   TransitionContentDto,
   UpdateContentDto,
 } from '../dto/content.dto';
@@ -119,6 +120,22 @@ export class SocialResourceController {
       requireOrganizationId(organizationId),
       user.userId,
       contentId,
+    );
+  }
+
+  @Post('content/:contentId/review')
+  @RequirePermissions(Permissions.APPROVALS_APPROVE)
+  review(
+    @Param('organizationId') organizationId: string,
+    @Param('contentId', ParseUUIDPipe) contentId: string,
+    @Body() dto: ReviewContentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.social.reviewContent(
+      requireOrganizationId(organizationId),
+      user.userId,
+      contentId,
+      dto.toStatus,
     );
   }
 

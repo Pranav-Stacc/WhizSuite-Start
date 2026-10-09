@@ -35,11 +35,13 @@ export const loginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
+export const PASSWORD_MIN_LENGTH = 12;
+
 export const registerSchema = z.object({
   firstName: z.string().trim().min(1, 'validation.required'),
   lastName: optionalText,
   email: z.string().trim().email('validation.email'),
-  password: z.string().min(12, 'validation.password'),
+  password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.password'),
   organizationName: z.string().trim().min(2, 'validation.min2'),
   organizationSlug: z
     .string()
@@ -163,6 +165,20 @@ export const inviteMemberSchema = z.object({
 });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 
+export const invitePortalUserSchema = z.object({
+  email: z.string().trim().email('validation.email'),
+});
+export type InvitePortalUserInput = z.infer<typeof invitePortalUserSchema>;
+
+/** `firstName` is only required when the invited email has no account yet. */
+export const acceptInvitationSchema = z.object({
+  token: z.string().min(1, 'validation.required'),
+  firstName: optionalText,
+  lastName: optionalText,
+  password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.password'),
+});
+export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
+
 export const logTimeSchema = z.object({
   projectId: z.string().min(1, 'validation.required'),
   minutes: z.coerce.number().int().min(1).max(1440),
@@ -230,6 +246,8 @@ export type DecisionInput = z.infer<typeof decisionSchema>;
 
 export const WORKFLOW_STAGE_SEPARATOR = ',';
 export const MIN_WORKFLOW_STAGES = 2;
+export const MAX_WORKFLOW_STAGES = 20;
+export const MAX_WORKFLOW_SLA_HOURS = 720;
 
 /** Splits a comma separated stage list into trimmed, non-empty stage names. */
 export function parseWorkflowStages(value: string): string[] {
@@ -241,11 +259,14 @@ export function parseWorkflowStages(value: string): string[] {
 
 export const createWorkflowSchema = z.object({
   name: z.string().trim().min(2, 'validation.min2'),
-  slaHours: z.coerce.number().int().min(1).max(720).default(48),
+  slaHours: z.coerce.number().int().min(1).max(MAX_WORKFLOW_SLA_HOURS).default(48),
   stages: z
     .string()
     .trim()
-    .refine((value) => parseWorkflowStages(value).length >= MIN_WORKFLOW_STAGES, 'validation.stages'),
+    .refine((value) => {
+      const count = parseWorkflowStages(value).length;
+      return count >= MIN_WORKFLOW_STAGES && count <= MAX_WORKFLOW_STAGES;
+    }, 'validation.stages'),
   requiresClientApproval: z.boolean().default(false),
 });
 export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;

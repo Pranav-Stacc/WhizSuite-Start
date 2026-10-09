@@ -1,9 +1,11 @@
 import { notFound } from 'next/navigation';
+import { UserPlus } from 'lucide-react';
 import { ClientStatuses } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
 import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
+import { Button } from '@/shared/ui/button';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { StatusMenu } from '@/shared/ui/status-menu';
@@ -16,6 +18,7 @@ import { clientSectionNumber } from '@/features/clients/workspace';
 import { listContent } from '@/features/content/services/content.service';
 import { listIntegrations } from '@/features/integrations/services/integrations.service';
 import { listProjectsWithProgress } from '@/features/projects/services/projects.service';
+import { PortalInviteDialog } from '@/features/team/components/portal-invite-dialog';
 import { membersById } from '@/features/team/services/members.service';
 
 const RECENT_CONTENT_LIMIT = 6;
@@ -50,6 +53,19 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <PageGuide items={GUIDE} />
+          {canManage ? (
+            <PortalInviteDialog
+              clientId={client.id}
+              clientName={client.name}
+              defaultEmail={client.contactEmail}
+              trigger={
+                <Button variant="secondary" size="sm">
+                  <UserPlus />
+                  {t('team.portalInvite.open')}
+                </Button>
+              }
+            />
+          ) : null}
           {canManage ? (
             <StatusMenu
               current={client.status}

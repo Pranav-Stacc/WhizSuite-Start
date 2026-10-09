@@ -2,6 +2,7 @@
 
 import { connectIntegrationSchema } from '@agency-os/contracts';
 import { requireSession } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -19,9 +20,13 @@ async function authorize() {
   return session;
 }
 
+/** Live channels are linked by the provider OAuth flow, never by typing a handle. */
+const oauthRequired = (): ActionResult => fail(t('integrations.oauthRequired'));
+
 export async function connectIntegrationAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
     await authorize();
+    if (isLiveMode) return oauthRequired();
     const parsed = parseInput(connectIntegrationSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await integrationsRepository.get(id);
@@ -44,6 +49,7 @@ export async function connectIntegrationAction(id: string, raw: unknown): Promis
 export async function disconnectIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
     await authorize();
+    if (isLiveMode) return oauthRequired();
     const before = await integrationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await integrationsRepository.update(id, { connected: false, followers: 0, lastSyncAt: undefined });
@@ -63,6 +69,7 @@ export async function disconnectIntegrationAction(id: string): Promise<ActionRes
 export async function syncIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
     await authorize();
+    if (isLiveMode) return oauthRequired();
     const before = await integrationsRepository.get(id);
     if (!before?.connected) return fail(t('toast.failed'));
     await integrationsRepository.update(id, { lastSyncAt: new Date().toISOString() });
