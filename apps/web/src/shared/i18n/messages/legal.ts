@@ -6,10 +6,10 @@ export const legalMessages = {
   'legal.privacy.meta': 'Privacy Policy',
   'legal.privacy.title': 'Privacy Policy',
   'legal.privacy.lead':
-    'How Agency OS collects, uses, and protects data for agencies and their clients.',
+    'How WhizSuite collects, uses, and protects data for agencies and their clients.',
   'legal.privacy.s1.title': '1. Who we are',
   'legal.privacy.s1.body':
-    'Agency OS (“we”, “us”) provides multi-tenant software for social media agencies. Each organisation’s workspace is isolated. This policy explains what we process when you use the product, website, and related services.',
+    'WhizSuite (“we”, “us”) provides multi-tenant software for social media agencies. Each organisation’s workspace is isolated. This policy explains what we process when you use the product, website, and related services.',
   'legal.privacy.s2.title': '2. Data we process',
   'legal.privacy.s2.body':
     'Account data (name, email, organisation details), workspace content you create (clients, projects, posts, files, invoices, messages), usage and audit events, device and session metadata needed for security, and billing information handled by our payment processor when you subscribe.',
@@ -41,13 +41,13 @@ export const legalMessages = {
   'legal.terms.meta': 'Terms of Service',
   'legal.terms.title': 'Terms of Service',
   'legal.terms.lead':
-    'The agreement between you and Agency OS for using the product and related services.',
+    'The agreement between you and WhizSuite for using the product and related services.',
   'legal.terms.s1.title': '1. Acceptance',
   'legal.terms.s1.body':
-    'By creating a workspace or using Agency OS you agree to these Terms and the Privacy Policy. If you use the product on behalf of an organisation, you represent that you can bind that organisation.',
+    'By creating a workspace or using WhizSuite you agree to these Terms and the Privacy Policy. If you use the product on behalf of an organisation, you represent that you can bind that organisation.',
   'legal.terms.s2.title': '2. The service',
   'legal.terms.s2.body':
-    'Agency OS is a multi-tenant platform for agency operations: projects, content, approvals, inbox, billing, reporting, and a client portal. Features may change as we improve the product. Beta features may be incomplete and offered as-is.',
+    'WhizSuite is a multi-tenant platform for agency operations: projects, content, approvals, inbox, billing, reporting, and a client portal. Features may change as we improve the product. Beta features may be incomplete and offered as-is.',
   'legal.terms.s3.title': '3. Accounts and access',
   'legal.terms.s3.body':
     'You must provide accurate registration details and keep credentials secure. Organisation owners control member invitations, roles, and permissions. You are responsible for activity under your workspace, including client portal users you invite.',

@@ -6,7 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ThemeSettings', () {
     test('parses every preset from the shared contract', () {
-      expect(themePresetList.map((p) => p.id), containsAll(['editorial', 'noir', 'mono', 'daylight']));
+      expect(
+        themePresetList.map((p) => p.id),
+        containsAll(['editorial', 'chalk', 'porcelain', 'mist', 'daylight', 'sage', 'sky', 'linen', 'noir', 'mono']),
+      );
+      expect(themePresetList.where((p) => p.isLight).length, greaterThanOrEqualTo(8));
+      expect(themePresetList.where((p) => !p.isLight).length, greaterThanOrEqualTo(6));
       expect(themePresetList.first.settings, defaultThemeSettings);
     });
 

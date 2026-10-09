@@ -99,7 +99,7 @@ export function CommandPalette({ permissions }: { permissions: Permission[] }) {
       }}
       label={t('shell.search.open')}
       shouldFilter={false}
-      overlayClassName="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+      overlayClassName="dialog-overlay fixed inset-0 z-50 data-[state=open]:animate-fade-in"
       contentClassName="fixed left-1/2 top-[14vh] z-50 w-[min(92vw,640px)] -translate-x-1/2 overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl animate-pop"
     >
       <div className="flex items-center gap-3 border-b border-border-soft px-4">

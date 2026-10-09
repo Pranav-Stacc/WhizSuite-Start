@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, Palette, RotateCcw } from 'lucide-react';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
@@ -13,6 +13,7 @@ import {
   THEME_RADIUS_MIN,
   ThemeDensities,
   type ThemeColorKey,
+  type ThemePreset,
   type ThemeSettings,
 } from '@agency-os/contracts';
 import { THEME_COOKIE, THEME_COOKIE_MAX_AGE, colorScheme, serializeTheme, themeToVars } from './theme';
@@ -38,15 +39,64 @@ function same(a: ThemeSettings, b: ThemeSettings): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function PresetGrid({
+  presets,
+  theme,
+  onSelect,
+}: {
+  presets: ThemePreset[];
+  theme: ThemeSettings;
+  onSelect: (preset: ThemePreset) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2.5">
+      {presets.map((preset) => {
+        const active = same(preset.theme, theme);
+        return (
+          <button
+            key={preset.id}
+            type="button"
+            onClick={() => onSelect(preset)}
+            aria-pressed={active}
+            className={cn(
+              'group relative overflow-hidden rounded-xl border p-2.5 text-left transition-all',
+              active ? 'border-primary ring-2 ring-primary/30' : 'border-border-soft hover:border-border',
+            )}
+            style={{ background: preset.theme.bg }}
+          >
+            <span className="mb-2 flex gap-1">
+              <span className="size-4 rounded-full" style={{ background: preset.theme.primary }} />
+              <span className="size-4 rounded-full" style={{ background: preset.theme.secondary }} />
+              <span className="size-4 rounded-full border" style={{ background: preset.theme.surface, borderColor: preset.theme.border }} />
+            </span>
+            <span className="block text-xs font-medium" style={{ color: preset.theme.fg }}>
+              {t(`theme.preset.${preset.id}` as MessageKey)}
+            </span>
+            {active ? <Check className="absolute right-2 top-2 size-3.5" style={{ color: preset.theme.primary }} /> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Live theme editor. Changes apply instantly (CSS variables) and persist in a cookie read by the server. */
 export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; trigger?: 'icon' | 'button' }) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState(initial);
 
+  const lightPresets = useMemo(() => THEME_PRESETS.filter((p) => p.mode === 'light'), []);
+  const darkPresets = useMemo(() => THEME_PRESETS.filter((p) => p.mode === 'dark'), []);
+
   const update = (patch: Partial<ThemeSettings>) => {
     const next = { ...theme, ...patch };
     setTheme(next);
     applyTheme(next);
+  };
+
+  const selectPreset = (preset: ThemePreset) => {
+    setTheme(preset.theme);
+    applyTheme(preset.theme);
   };
 
   return (
@@ -63,36 +113,15 @@ export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; 
             <h3 id="theme-presets" className="mb-3 text-sm font-semibold">
               {t('theme.presets')}
             </h3>
-            <div className="grid grid-cols-3 gap-2.5">
-              {THEME_PRESETS.map((preset) => {
-                const active = same(preset.theme, theme);
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => {
-                      setTheme(preset.theme);
-                      applyTheme(preset.theme);
-                    }}
-                    aria-pressed={active}
-                    className={cn(
-                      'group relative overflow-hidden rounded-xl border p-2.5 text-left transition-all',
-                      active ? 'border-primary ring-2 ring-primary/30' : 'border-border-soft hover:border-border',
-                    )}
-                    style={{ background: preset.theme.bg }}
-                  >
-                    <span className="mb-2 flex gap-1">
-                      <span className="size-4 rounded-full" style={{ background: preset.theme.primary }} />
-                      <span className="size-4 rounded-full" style={{ background: preset.theme.secondary }} />
-                      <span className="size-4 rounded-full border" style={{ background: preset.theme.surface, borderColor: preset.theme.border }} />
-                    </span>
-                    <span className="block text-xs font-medium" style={{ color: preset.theme.fg }}>
-                      {t(`theme.preset.${preset.id}` as MessageKey)}
-                    </span>
-                    {active ? <Check className="absolute right-2 top-2 size-3.5" style={{ color: preset.theme.primary }} /> : null}
-                  </button>
-                );
-              })}
+            <div className="space-y-4">
+              <div>
+                <p className="eyebrow mb-2">{t('theme.presets.light')}</p>
+                <PresetGrid presets={lightPresets} theme={theme} onSelect={selectPreset} />
+              </div>
+              <div>
+                <p className="eyebrow mb-2">{t('theme.presets.dark')}</p>
+                <PresetGrid presets={darkPresets} theme={theme} onSelect={selectPreset} />
+              </div>
             </div>
           </section>
 

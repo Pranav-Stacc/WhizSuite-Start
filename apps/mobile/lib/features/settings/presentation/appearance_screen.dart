@@ -123,13 +123,19 @@ class AppearanceScreen extends ConsumerWidget {
 
 String presetLabel(AppLocalizations l10n, String id) => switch (id) {
       'editorial' => l10n.themePresetEditorial,
+      'chalk' => l10n.themePresetChalk,
+      'porcelain' => l10n.themePresetPorcelain,
+      'mist' => l10n.themePresetMist,
+      'daylight' => l10n.themePresetDaylight,
+      'sage' => l10n.themePresetSage,
+      'sky' => l10n.themePresetSky,
+      'linen' => l10n.themePresetLinen,
       'noir' => l10n.themePresetNoir,
       'mono' => l10n.themePresetMono,
       'aurora' => l10n.themePresetAurora,
       'ocean' => l10n.themePresetOcean,
       'sunset' => l10n.themePresetSunset,
       'rose' => l10n.themePresetRose,
-      'daylight' => l10n.themePresetDaylight,
       _ => id,
     };
 
@@ -147,6 +153,24 @@ class _PresetGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final l10n = AppLocalizations.of(context);
+    final light = themePresetList.where((p) => p.isLight).toList();
+    final dark = themePresetList.where((p) => !p.isLight).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.themePresetsLight, style: Theme.of(context).textTheme.labelLarge),
+        SizedBox(height: tokens.sm),
+        _grid(context, light, l10n),
+        SizedBox(height: tokens.lg),
+        Text(l10n.themePresetsDark, style: Theme.of(context).textTheme.labelLarge),
+        SizedBox(height: tokens.sm),
+        _grid(context, dark, l10n),
+      ],
+    );
+  }
+
+  Widget _grid(BuildContext context, List<ThemePreset> presets, AppLocalizations l10n) {
+    final tokens = context.tokens;
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = (constraints.maxWidth / _minTileWidth).floor().clamp(2, 6);
@@ -158,7 +182,7 @@ class _PresetGrid extends StatelessWidget {
           crossAxisSpacing: tokens.sm,
           childAspectRatio: _tileAspect,
           children: [
-            for (final preset in themePresetList)
+            for (final preset in presets)
               _PresetTile(
                 label: presetLabel(l10n, preset.id),
                 preset: preset.settings,

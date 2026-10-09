@@ -898,11 +898,65 @@ abstract class AppLocalizations {
   /// **'Presets'**
   String get themePresets;
 
+  /// No description provided for @themePresetsLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themePresetsLight;
+
+  /// No description provided for @themePresetsDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themePresetsDark;
+
   /// No description provided for @themePresetEditorial.
   ///
   /// In en, this message translates to:
   /// **'Editorial'**
   String get themePresetEditorial;
+
+  /// No description provided for @themePresetChalk.
+  ///
+  /// In en, this message translates to:
+  /// **'Chalk'**
+  String get themePresetChalk;
+
+  /// No description provided for @themePresetPorcelain.
+  ///
+  /// In en, this message translates to:
+  /// **'Porcelain'**
+  String get themePresetPorcelain;
+
+  /// No description provided for @themePresetMist.
+  ///
+  /// In en, this message translates to:
+  /// **'Mist'**
+  String get themePresetMist;
+
+  /// No description provided for @themePresetDaylight.
+  ///
+  /// In en, this message translates to:
+  /// **'Daylight'**
+  String get themePresetDaylight;
+
+  /// No description provided for @themePresetSage.
+  ///
+  /// In en, this message translates to:
+  /// **'Sage'**
+  String get themePresetSage;
+
+  /// No description provided for @themePresetSky.
+  ///
+  /// In en, this message translates to:
+  /// **'Sky'**
+  String get themePresetSky;
+
+  /// No description provided for @themePresetLinen.
+  ///
+  /// In en, this message translates to:
+  /// **'Linen'**
+  String get themePresetLinen;
 
   /// No description provided for @themePresetNoir.
   ///
@@ -939,12 +993,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rose'**
   String get themePresetRose;
-
-  /// No description provided for @themePresetDaylight.
-  ///
-  /// In en, this message translates to:
-  /// **'Daylight'**
-  String get themePresetDaylight;
 
   /// No description provided for @themeColors.
   ///

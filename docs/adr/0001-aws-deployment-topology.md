@@ -33,6 +33,7 @@ Traffic is early-stage; cost matters more than horizontal scale.
   AWS Backup or `pg_dump` to S3) before real customer data.
 - Moving to RDS / ElastiCache / ECS later only changes `deploy/` and environment values; the app
   already reads every endpoint from configuration.
-- The API hostname uses `sslip.io` until a custom domain is configured; switching requires updating
-  `API_DOMAIN`, `COOKIE_DOMAIN` in `deploy/.env` and `API_BASE_URL` in Amplify.
+- Production hosts: web `https://whizsuite.com` (and `www`), API `https://api.whizsuite.com`.
+  Keep `CORS_ORIGINS`, `WEB_APP_URL`, `API_DOMAIN`, `COOKIE_DOMAIN` in `deploy/.env` and
+  `API_BASE_URL` in Amplify aligned with those hosts.
 - Amplify Hosting officially documents Next.js up to 15; Next.js streaming is not supported there.

@@ -82,15 +82,123 @@ const MONO_THEME: ThemeSettings = {
 
 export interface ThemePreset {
   id: string;
+  /** light | dark — used to group presets in appearance pickers. */
+  mode: 'light' | 'dark';
   theme: ThemeSettings;
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: 'editorial', theme: DEFAULT_THEME },
-  { id: 'noir', theme: NOIR_THEME },
-  { id: 'mono', theme: MONO_THEME },
+  { id: 'editorial', mode: 'light', theme: DEFAULT_THEME },
+  {
+    id: 'chalk',
+    mode: 'light',
+    theme: {
+      bg: '#F4F4F5',
+      surface: '#FFFFFF',
+      border: '#D4D4D8',
+      primary: '#18181B',
+      secondary: '#52525B',
+      fg: '#18181B',
+      muted: '#71717A',
+      radius: 4,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'porcelain',
+    mode: 'light',
+    theme: {
+      bg: '#F8FAFC',
+      surface: '#FFFFFF',
+      border: '#D0D7E2',
+      primary: '#0F172A',
+      secondary: '#334155',
+      fg: '#0F172A',
+      muted: '#64748B',
+      radius: 6,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'mist',
+    mode: 'light',
+    theme: {
+      bg: '#F0F4F8',
+      surface: '#FFFFFF',
+      border: '#C5D4E0',
+      primary: '#1E3A5F',
+      secondary: '#3D6B8F',
+      fg: '#152536',
+      muted: '#5E7388',
+      radius: 6,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'daylight',
+    mode: 'light',
+    theme: {
+      bg: '#F4F7F5',
+      surface: '#FFFFFF',
+      border: '#CFE0D6',
+      primary: '#0A9F4F',
+      secondary: '#0F7A5A',
+      fg: '#0B1513',
+      muted: '#5D6B67',
+      radius: 14,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'sage',
+    mode: 'light',
+    theme: {
+      bg: '#F3F5F1',
+      surface: '#FBFCF9',
+      border: '#CDD5C8',
+      primary: '#3F5A45',
+      secondary: '#6B8570',
+      fg: '#1C241E',
+      muted: '#6E7A70',
+      radius: 8,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'sky',
+    mode: 'light',
+    theme: {
+      bg: '#F3F8FC',
+      surface: '#FFFFFF',
+      border: '#C5D9EB',
+      primary: '#0369A1',
+      secondary: '#0E7490',
+      fg: '#0C1929',
+      muted: '#5B738A',
+      radius: 10,
+      density: 'comfortable',
+    },
+  },
+  {
+    id: 'linen',
+    mode: 'light',
+    theme: {
+      bg: '#F6F3EE',
+      surface: '#FFFDF9',
+      border: '#DDD5C8',
+      primary: '#2C2A26',
+      secondary: '#6B6560',
+      fg: '#1F1D1A',
+      muted: '#7A746C',
+      radius: 2,
+      density: 'comfortable',
+    },
+  },
+  { id: 'noir', mode: 'dark', theme: NOIR_THEME },
+  { id: 'mono', mode: 'dark', theme: MONO_THEME },
   {
     id: 'aurora',
+    mode: 'dark',
     theme: {
       ...MONO_THEME,
       bg: '#07050F',
@@ -104,6 +212,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
   {
     id: 'ocean',
+    mode: 'dark',
     theme: {
       ...MONO_THEME,
       bg: '#030B12',
@@ -117,6 +226,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
   {
     id: 'sunset',
+    mode: 'dark',
     theme: {
       ...MONO_THEME,
       bg: '#0D0705',
@@ -130,6 +240,7 @@ export const THEME_PRESETS: ThemePreset[] = [
   },
   {
     id: 'rose',
+    mode: 'dark',
     theme: {
       ...MONO_THEME,
       bg: '#0D0509',
@@ -139,19 +250,6 @@ export const THEME_PRESETS: ThemePreset[] = [
       secondary: '#FF9AC1',
       fg: '#FFF4F8',
       muted: '#B18C9C',
-    },
-  },
-  {
-    id: 'daylight',
-    theme: {
-      ...MONO_THEME,
-      bg: '#F4F7F5',
-      surface: '#FFFFFF',
-      border: '#CFE0D6',
-      primary: '#0A9F4F',
-      secondary: '#0F7A5A',
-      fg: '#0B1513',
-      muted: '#5D6B67',
     },
   },
 ];

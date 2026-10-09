@@ -6,8 +6,8 @@ import { X } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 import { t } from '@/shared/i18n/t';
 
-const overlayClass =
-  'fixed inset-0 z-50 bg-[color-mix(in_oklab,var(--fg)_28%,transparent)] data-[state=open]:animate-fade-in';
+/** Neutral black scrim — avoids color-mix(fg, transparent) which shifts the page to a muddy tint. */
+const overlayClass = 'dialog-overlay fixed inset-0 z-50 data-[state=open]:animate-fade-in';
 
 const MODAL_SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' } as const;
 

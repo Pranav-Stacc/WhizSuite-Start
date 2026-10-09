@@ -6,7 +6,7 @@ const webEnv = {
   API_BASE_URL: apiBase,
   SESSION_COOKIE_SECURE: 'false',
   SESSION_SECRET: process.env.SESSION_SECRET ?? 'dev-only-session-secret-change-me',
-  NEXT_PUBLIC_APP_NAME: 'Agency OS',
+  NEXT_PUBLIC_APP_NAME: 'WhizSuite',
 };
 
 export default defineConfig({

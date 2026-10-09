@@ -470,7 +470,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themePresets => 'Presets';
 
   @override
+  String get themePresetsLight => 'Light';
+
+  @override
+  String get themePresetsDark => 'Dark';
+
+  @override
   String get themePresetEditorial => 'Editorial';
+
+  @override
+  String get themePresetChalk => 'Chalk';
+
+  @override
+  String get themePresetPorcelain => 'Porcelain';
+
+  @override
+  String get themePresetMist => 'Mist';
+
+  @override
+  String get themePresetDaylight => 'Daylight';
+
+  @override
+  String get themePresetSage => 'Sage';
+
+  @override
+  String get themePresetSky => 'Sky';
+
+  @override
+  String get themePresetLinen => 'Linen';
 
   @override
   String get themePresetNoir => 'Noir';
@@ -489,9 +516,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themePresetRose => 'Rose';
-
-  @override
-  String get themePresetDaylight => 'Daylight';
 
   @override
   String get themeColors => 'Colours';

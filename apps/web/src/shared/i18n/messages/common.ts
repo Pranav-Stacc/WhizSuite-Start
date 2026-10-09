@@ -1,5 +1,5 @@
 export const common = {
-  'app.name': 'Agency OS',
+  'app.name': 'WhizSuite',
   'app.tagline': 'The operating system for social media agencies',
   'common.save': 'Save changes',
   'common.cancel': 'Cancel',

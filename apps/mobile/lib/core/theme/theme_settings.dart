@@ -121,17 +121,25 @@ class ThemeSettings {
 }
 
 class ThemePreset {
-  const ThemePreset(this.id, this.settings);
+  const ThemePreset(this.id, this.mode, this.settings);
 
   final String id;
+  /// `light` | `dark` — mirrors contracts `ThemePreset.mode`.
+  final String mode;
   final ThemeSettings settings;
+
+  bool get isLight => mode == 'light';
 }
 
 final ThemeSettings defaultThemeSettings = ThemeSettings.tryParse(defaultTheme)!;
 
 final List<ThemePreset> themePresetList = [
   for (final raw in themePresets.cast<Map<String, Object>>())
-    ThemePreset(raw['id']! as String, ThemeSettings.tryParse(raw['theme']! as Map<String, Object>)!),
+    ThemePreset(
+      raw['id']! as String,
+      raw['mode']! as String,
+      ThemeSettings.tryParse(raw['theme']! as Map<String, Object>)!,
+    ),
 ];
 
 Color? parseHexColor(Object? value) {

@@ -4,18 +4,18 @@
   Design tokens. Every colour below is user-customisable at runtime:
   the <html> element receives an inline style from the saved theme cookie,
   so there is no flash and no client-side re-render needed.
-  Defaults mirror DEFAULT_THEME (editorial) in packages/contracts/src/theme/theme.ts.
+  Defaults mirror DEFAULT_THEME (monochrome) in packages/contracts/src/theme/theme.ts.
 */
 :root {
-  --bg: #f7f6f3;
-  --surface: #ffffff;
-  --border: #d8d5ce;
-  --primary: #111111;
-  --secondary: #5c5a55;
-  --fg: #111111;
-  --muted: #8a877f;
-  --primary-contrast: #ffffff;
-  --radius: 2px;
+  --bg: #040109;
+  --surface: #0b0b0b;
+  --border: #2a2a2a;
+  --primary: #ffffff;
+  --secondary: #d1d1d1;
+  --fg: #ffffff;
+  --muted: #8d9b98;
+  --primary-contrast: #04110a;
+  --radius: 14px;
   --density: 1;
 }
 
@@ -258,6 +258,10 @@
     background-size: 44px 44px;
     mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
+  }
+  /* Dialog/sheet backdrop: pure black alpha so the page keeps its theme hue. */
+  .dialog-overlay {
+    background-color: rgb(0 0 0 / 0.42);
   }
 
   /* Public marketing: hard Noir plane — no primary blur wash (that reads as a white haze on dark themes). */

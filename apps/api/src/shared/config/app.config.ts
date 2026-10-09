@@ -32,7 +32,9 @@ export const appConfigSchema = z
       .default('false')
       .transform((v) => v === 'true'),
     COOKIE_DOMAIN: z.string().default('localhost'),
-    CORS_ORIGINS: z.string().default('http://localhost:3000'),
+    CORS_ORIGINS: z
+      .string()
+      .default('http://localhost:3000,https://whizsuite.com,https://www.whizsuite.com'),
     STORAGE_ENDPOINT: z.string().url(),
     STORAGE_ACCESS_KEY: z.string().default(''),
     STORAGE_SECRET_KEY: z.string().default(''),
