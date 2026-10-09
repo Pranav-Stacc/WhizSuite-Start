@@ -30,6 +30,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Link href="/privacy" className="nav-link">
               {t('legal.privacy.nav')}
             </Link>
+            <Link href="/data-deletion" className="nav-link">
+              {t('legal.dataDeletion.nav')}
+            </Link>
             <Link href="/terms" className="nav-link">
               {t('legal.terms.nav')}
             </Link>

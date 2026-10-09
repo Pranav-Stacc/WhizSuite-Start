@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, decodeSession, encodeSession, sessionCookieOptions } from '@/shared/auth/session-codec';
 import { accessTokenNeedsRefresh, rotateTokens } from '@/shared/auth/token-refresh';
 
-const PUBLIC_PATHS = [
+const PUBLIC_PATHS = new Set([
   '/',
   '/login',
   '/register',
@@ -10,8 +10,14 @@ const PUBLIC_PATHS = [
   '/auth/expired',
   '/privacy',
   '/terms',
+  '/data-deletion',
   '/portal-access',
-];
+]);
+
+function normalizePath(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) return pathname.slice(0, -1);
+  return pathname;
+}
 
 function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
   const url = request.nextUrl.clone();
@@ -28,8 +34,8 @@ function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
  * Permission checks happen server-side in pages and layouts (requireSession / requirePermission).
  */
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (PUBLIC_PATHS.includes(pathname)) return NextResponse.next();
+  const pathname = normalizePath(request.nextUrl.pathname);
+  if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
   const raw = request.cookies.get(SESSION_COOKIE)?.value;
   const session = raw ? decodeSession(raw) : null;

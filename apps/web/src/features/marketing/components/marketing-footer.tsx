@@ -23,6 +23,9 @@ export function MarketingFooter() {
           <Link href="/terms" className="nav-link">
             {t('legal.terms.nav')}
           </Link>
+          <Link href="/data-deletion" className="nav-link">
+            {t('legal.dataDeletion.nav')}
+          </Link>
         </nav>
       </div>
       <div className="border-t border-border-soft">
