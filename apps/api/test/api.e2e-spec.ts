@@ -178,7 +178,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(200);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/clients/${clientId}/brand-kit`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/clients/${clientId}/brand-kit`,
+      )
       .set(auth())
       .send({ colors: { primary: '#000000' } })
       .expect(200);
@@ -217,7 +219,9 @@ describe('Agency OS API (e2e)', () => {
     taskId = task.body.id;
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/tasks/${taskId}/transition`)
+      .post(
+        `/api/v1/organizations/${organizationId}/tasks/${taskId}/transition`,
+      )
       .set(auth())
       .send({ toStatus: 'IN_PROGRESS' })
       .expect(201);
@@ -237,12 +241,16 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .get(`/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}`)
+      .get(
+        `/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}`,
+      )
       .set(auth())
       .expect(200);
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}/publish`)
+      .post(
+        `/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}/publish`,
+      )
       .set(auth())
       .expect(201);
   });
@@ -262,7 +270,9 @@ describe('Agency OS API (e2e)', () => {
     contentId = content.body.id;
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/content/${contentId}/transition`)
+      .post(
+        `/api/v1/organizations/${organizationId}/content/${contentId}/transition`,
+      )
       .set(auth())
       .send({ toStatus: 'IN_REVIEW' })
       .expect(201);
@@ -287,12 +297,21 @@ describe('Agency OS API (e2e)', () => {
         subjectType: 'CONTENT',
         subjectId: contentId,
         subjectVersion: '1',
-        steps: [{ name: 'Client Review', order: 1, rule: 'ANY', approverSpec: { type: 'owner' } }],
+        steps: [
+          {
+            name: 'Client Review',
+            order: 1,
+            rule: 'ANY',
+            approverSpec: { type: 'owner' },
+          },
+        ],
       })
       .expect(201);
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/approvals/${approval.body.id}/act`)
+      .post(
+        `/api/v1/organizations/${organizationId}/approvals/${approval.body.id}/act`,
+      )
       .set(auth())
       .send({ action: 'APPROVED', comment: 'Looks good' })
       .expect(201);
@@ -320,7 +339,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .get(`/api/v1/organizations/${organizationId}/invoices/${invoice.body.id}`)
+      .get(
+        `/api/v1/organizations/${organizationId}/invoices/${invoice.body.id}`,
+      )
       .set(auth())
       .expect(200);
 
@@ -342,7 +363,9 @@ describe('Agency OS API (e2e)', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/api/v1/organizations/${organizationId}/time/entries/${entry.body.id}`)
+        .patch(
+          `/api/v1/organizations/${organizationId}/time/entries/${entry.body.id}`,
+        )
         .set(auth())
         .send({ minutes: 90 })
         .expect(200);
@@ -360,7 +383,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/feedback/threads/${thread.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/feedback/threads/${thread.body.id}`,
+      )
       .set(auth())
       .send({ status: 'OPEN' })
       .expect(200);
@@ -372,7 +397,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/inbox/conversations/${conv.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/inbox/conversations/${conv.body.id}`,
+      )
       .set(auth())
       .send({ status: 'OPEN' })
       .expect(200);
@@ -389,7 +416,9 @@ describe('Agency OS API (e2e)', () => {
     automationId = automation.body.id;
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/automations/${automationId}/publish`)
+      .post(
+        `/api/v1/organizations/${organizationId}/automations/${automationId}/publish`,
+      )
       .set(auth())
       .send({
         trigger: { type: 'approval.completed' },
@@ -398,7 +427,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/automations/${automationId}/run`)
+      .post(
+        `/api/v1/organizations/${organizationId}/automations/${automationId}/run`,
+      )
       .set(auth())
       .send({ source: 'e2e' })
       .expect(201);
@@ -415,7 +446,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/reports/${report.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/reports/${report.body.id}`,
+      )
       .set(auth())
       .send({ title: 'January Report' })
       .expect(200);
@@ -432,7 +465,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/custom-fields/${field.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/custom-fields/${field.body.id}`,
+      )
       .set(auth())
       .send({ label: 'Tier' })
       .expect(200);
@@ -448,7 +483,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/templates/${template.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/templates/${template.body.id}`,
+      )
       .set(auth())
       .send({ name: 'Updated Template' })
       .expect(200);
@@ -496,19 +533,25 @@ describe('Agency OS API (e2e)', () => {
 
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
-    const provider = await prisma.integrationProvider.findFirst({ where: { key: 'meta' } });
+    const provider = await prisma.integrationProvider.findFirst({
+      where: { key: 'meta' },
+    });
     integrationProviderId = provider?.id ?? '';
     await prisma.$disconnect();
 
     if (integrationProviderId) {
       const conn = await request(app.getHttpServer())
-        .post(`/api/v1/organizations/${organizationId}/integrations/connections`)
+        .post(
+          `/api/v1/organizations/${organizationId}/integrations/connections`,
+        )
         .set(auth())
         .send({ providerId: integrationProviderId, clientId })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/api/v1/organizations/${organizationId}/integrations/connections/${conn.body.id}`)
+        .patch(
+          `/api/v1/organizations/${organizationId}/integrations/connections/${conn.body.id}`,
+        )
         .set(auth())
         .send({ status: 'CONNECTED' })
         .expect(200);
@@ -521,7 +564,9 @@ describe('Agency OS API (e2e)', () => {
       .expect(201);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/knowledge/spaces/${space.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/knowledge/spaces/${space.body.id}`,
+      )
       .set(auth())
       .send({ name: 'Agency Playbooks' })
       .expect(200);

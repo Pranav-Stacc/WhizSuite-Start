@@ -1,15 +1,33 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   DomainEventTypes,
+  NotificationChannels,
   NotificationTypeKeys,
   type EventEnvelope,
   type NotificationData,
+  type NotificationDto,
   type NotificationPreferenceDto,
+  type NotificationPreferenceUpdateInput,
   type NotificationTypeKey,
 } from '@agency-os/contracts';
+import type { Queue } from 'bullmq';
+import type { AppConfig } from '../../../../shared/config/app.config';
 import { DomainEventBus } from '../../../../shared/events/domain-event.bus';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { NotificationsRepository } from '../../infrastructure/repositories/notifications.repository';
+import {
+  NOTIFICATION_DELIVERY_JOB,
+  NOTIFICATION_DELIVERY_QUEUE,
+  type NotificationDeliveryJob,
+} from '../../jobs/notification-delivery.queue';
+import {
+  NOTIFICATION_CHANNEL_ADAPTERS,
+  type NotificationChannelAdapter,
+} from '../ports/notification-channel.port';
+import { resolveChannels } from './notification-channels';
+import type { StoredNotification } from './outbound-notification';
 
 interface Delivery {
   recipientId: string;
@@ -17,7 +35,6 @@ interface Delivery {
   data: NotificationData;
 }
 
-const IN_APP_CHANNEL = 'inApp';
 const NOTIFICATION_TYPE_KEYS: readonly NotificationTypeKey[] =
   Object.values(NotificationTypeKeys);
 
@@ -32,13 +49,6 @@ function text(
 ): string | undefined {
   const value = payload[key];
   return typeof value === 'string' && value ? value : undefined;
-}
-
-/** A missing preference or channel means the default: enabled. */
-function inAppEnabled(channels: unknown): boolean {
-  if (!channels || typeof channels !== 'object' || Array.isArray(channels))
-    return true;
-  return (channels as Record<string, unknown>)[IN_APP_CHANNEL] !== false;
 }
 
 /** Maps a domain event to the person who should hear about it. */
@@ -75,12 +85,31 @@ function deliveryFor(event: EventEnvelope): Delivery | undefined {
   }
 }
 
+function toDto(row: StoredNotification): NotificationDto {
+  return {
+    id: row.id,
+    typeKey: row.typeKey as NotificationTypeKey,
+    title: row.title,
+    body: row.body,
+    data: row.data ?? null,
+    readAt: row.readAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
 @Injectable()
 export class NotificationsService implements OnModuleInit {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     private readonly repository: NotificationsRepository,
     private readonly eventBus: DomainEventBus,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<AppConfig, true>,
+    @InjectQueue(NOTIFICATION_DELIVERY_QUEUE)
+    private readonly queue: Queue<NotificationDeliveryJob>,
+    @Inject(NOTIFICATION_CHANNEL_ADAPTERS)
+    private readonly adapters: NotificationChannelAdapter[],
   ) {}
 
   onModuleInit(): void {
@@ -92,8 +121,17 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
-  list(organizationId: string, recipientId: string) {
-    return this.repository.listForUser(organizationId, recipientId);
+  async list(
+    organizationId: string,
+    recipientId: string,
+  ): Promise<NotificationDto[]> {
+    const limit = this.config.get('NOTIFICATION_LIST_LIMIT', { infer: true });
+    const rows = await this.repository.listForUser(
+      organizationId,
+      recipientId,
+      limit,
+    );
+    return rows.map(toDto);
   }
 
   markRead(
@@ -121,21 +159,35 @@ export class NotificationsService implements OnModuleInit {
         (p) => [p.typeKey, p.channels],
       ),
     );
-    return NOTIFICATION_TYPE_KEYS.map((typeKey) => ({
-      typeKey,
-      enabled: inAppEnabled(stored.get(typeKey)),
-    }));
+    return NOTIFICATION_TYPE_KEYS.map((typeKey) =>
+      this.preferenceDto(typeKey, stored.get(typeKey)),
+    );
   }
 
   async setPreference(
     organizationId: string,
     userId: string,
     typeKey: NotificationTypeKey,
-    enabled: boolean,
+    input: NotificationPreferenceUpdateInput,
   ): Promise<NotificationPreferenceDto> {
-    await this.repository.upsertPreference(organizationId, userId, typeKey, {
-      [IN_APP_CHANNEL]: enabled,
-    });
+    const current = await this.repository.findPreference(
+      organizationId,
+      userId,
+      typeKey,
+    );
+    const before = this.preferenceDto(typeKey, current?.channels);
+    const channels = {
+      ...before.channels,
+      ...input.channels,
+      ...(input.enabled === undefined ? {} : { inApp: input.enabled }),
+    };
+    await this.repository.upsertPreference(
+      organizationId,
+      userId,
+      typeKey,
+      channels,
+    );
+    const after = this.preferenceDto(typeKey, channels);
     await this.audit.record({
       organizationId,
       actorId: userId,
@@ -143,29 +195,100 @@ export class NotificationsService implements OnModuleInit {
       action: 'notification.preference_update',
       entityType: 'notification_preference',
       entityId: userId,
-      after: { typeKey, enabled },
+      before: { typeKey, ...before.channels },
+      after: { typeKey, ...after.channels },
     });
-    return { typeKey, enabled };
+    return after;
   }
 
+  private preferenceDto(
+    typeKey: NotificationTypeKey,
+    stored: unknown,
+  ): NotificationPreferenceDto {
+    const channels = resolveChannels(
+      stored,
+      this.config.get('NOTIFICATION_DEFAULT_CHANNELS', { infer: true }),
+    );
+    return { typeKey, enabled: channels.inApp, channels };
+  }
+
+  /**
+   * The notification row is the delivery record for every channel; when in-app is off it is stored
+   * already read so it never surfaces as unread in the bell.
+   */
   private async handleDomainEvent(event: EventEnvelope): Promise<void> {
     const delivery = deliveryFor(event);
     if (!delivery || delivery.recipientId === event.actor.id) return;
     const { organizationId } = event;
+    if (await this.repository.existsForEvent(organizationId, event.id)) return;
+
     const preference = await this.repository.findPreference(
       organizationId,
       delivery.recipientId,
       delivery.typeKey,
     );
-    if (!inAppEnabled(preference?.channels)) return;
-    if (await this.repository.existsForEvent(organizationId, event.id)) return;
-    await this.repository.create({
+    const settings = this.preferenceDto(
+      delivery.typeKey,
+      preference?.channels,
+    ).channels;
+    const available = new Set(
+      this.adapters.filter((a) => a.isAvailable()).map((a) => a.channel),
+    );
+    const channels = NotificationChannels.filter(
+      (c) => settings[c] && available.has(c),
+    );
+    if (channels.length === 0) return;
+
+    const notification = await this.repository.createWithDeliveries(
+      {
+        organizationId,
+        recipientId: delivery.recipientId,
+        typeKey: delivery.typeKey,
+        title: delivery.data.title ?? '',
+        body: '',
+        data: { ...delivery.data, eventId: event.id },
+        readAt: settings.inApp ? null : new Date(),
+      },
+      channels,
+    );
+    await this.enqueue(
       organizationId,
-      recipientId: delivery.recipientId,
-      typeKey: delivery.typeKey,
-      title: delivery.data.title ?? '',
-      body: '',
-      data: { ...delivery.data, eventId: event.id },
+      notification.deliveries.map((d) => d.id),
+    );
+  }
+
+  private async enqueue(
+    organizationId: string,
+    deliveryIds: string[],
+  ): Promise<void> {
+    const attempts = this.config.get('NOTIFICATION_DELIVERY_ATTEMPTS', {
+      infer: true,
     });
+    const delay = this.config.get('NOTIFICATION_DELIVERY_BACKOFF_MS', {
+      infer: true,
+    });
+    const keepFailed = this.config.get('NOTIFICATION_DELIVERY_KEEP_FAILED', {
+      infer: true,
+    });
+    try {
+      await this.queue.addBulk(
+        deliveryIds.map((deliveryId) => ({
+          name: NOTIFICATION_DELIVERY_JOB,
+          data: { deliveryId, organizationId },
+          opts: {
+            jobId: deliveryId,
+            attempts,
+            backoff: { type: 'exponential', delay },
+            removeOnComplete: true,
+            removeOnFail: { count: keepFailed },
+          },
+        })),
+      );
+    } catch (error) {
+      this.logger.error(
+        { err: error, organizationId, deliveryIds },
+        'Failed to enqueue notification deliveries',
+      );
+    }
   }
 }

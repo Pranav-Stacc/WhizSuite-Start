@@ -4,6 +4,7 @@ import { CacheModule } from './cache/cache.module';
 import { DatabaseModule } from './database/database.module';
 import { EventsModule } from './events/events.module';
 import { NotificationsSharedModule } from './notifications/notifications-shared.module';
+import { QueueModule } from './queue/queue.module';
 import { StorageModule } from './storage/storage.module';
 
 @Module({
@@ -14,6 +15,7 @@ import { StorageModule } from './storage/storage.module';
     EventsModule,
     StorageModule,
     NotificationsSharedModule,
+    QueueModule,
   ],
   exports: [
     AppConfigModule,
@@ -22,6 +24,7 @@ import { StorageModule } from './storage/storage.module';
     EventsModule,
     StorageModule,
     NotificationsSharedModule,
+    QueueModule,
   ],
 })
 export class SharedModule {}

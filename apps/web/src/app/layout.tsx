@@ -3,7 +3,8 @@ import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
 import { t } from '@/shared/i18n/t';
 import { getTheme } from '@/shared/theme/theme.server';
-import { DEFAULT_THEME, themeToStyle } from '@/shared/theme/theme';
+import { DEFAULT_THEME } from '@agency-os/contracts';
+import { themeToStyle } from '@/shared/theme/theme';
 import { Toaster } from '@/shared/ui/toaster';
 import './globals.css';
 

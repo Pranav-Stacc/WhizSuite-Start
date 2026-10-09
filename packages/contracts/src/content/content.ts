@@ -12,6 +12,22 @@ export type ContentCreatableStatus = (typeof ContentCreatableStatuses)[number];
 export const ContentReviewOutcomes = ['APPROVED', 'CHANGES_REQUESTED', 'DRAFT'] as const satisfies readonly (typeof ContentStatuses)[number][];
 export type ContentReviewOutcome = (typeof ContentReviewOutcomes)[number];
 
+type ContentStatusValue = (typeof ContentStatuses)[number];
+
+/** The content pipeline: approval can only be reached through review, and published content is final. */
+export const CONTENT_TRANSITIONS: Record<ContentStatusValue, readonly ContentStatusValue[]> = {
+  DRAFT: ['IN_REVIEW'],
+  IN_REVIEW: ['APPROVED', 'CHANGES_REQUESTED', 'DRAFT'],
+  CHANGES_REQUESTED: ['DRAFT', 'IN_REVIEW'],
+  APPROVED: ['SCHEDULED', 'PUBLISHED', 'DRAFT'],
+  SCHEDULED: ['APPROVED', 'PUBLISHED', 'DRAFT'],
+  PUBLISHED: [],
+};
+
+export function canTransitionContent(from: ContentStatusValue, to: ContentStatusValue): boolean {
+  return CONTENT_TRANSITIONS[from].includes(to);
+}
+
 export const CONTENT_TITLE_MAX_LENGTH = 200;
 export const CONTENT_CAPTION_MAX_LENGTH = 5000;
 export const CONTENT_PILLAR_MAX_LENGTH = 100;

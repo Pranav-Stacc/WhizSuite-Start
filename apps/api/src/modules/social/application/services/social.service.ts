@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  canTransitionContent,
   DomainEventTypes,
   ErrorCodes,
   normalizeHashtags,
@@ -14,8 +15,13 @@ import {
   type EmbeddedMediaDto,
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
-import { problem } from '../../../../shared/errors/problem-details.exception';
+import {
+  notFound,
+  problem,
+  unprocessable,
+} from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import {
   AuditService,
   type AuditRecordInput,
@@ -59,6 +65,7 @@ export class SocialService {
       organizationId,
       {
         clientId: query.clientId,
+        allowedClientIds: TenantContext.clientScope(),
         status: query.status,
         from: query.from ? new Date(query.from) : undefined,
         to: query.to ? new Date(query.to) : undefined,
@@ -320,6 +327,11 @@ export class SocialService {
     toStatus: ContentStatus,
   ): Promise<ContentItemDto> {
     const before = await this.findOrThrow(organizationId, contentId);
+    if (!canTransitionContent(before.status as ContentStatus, toStatus)) {
+      throw unprocessable(
+        `Content cannot move from ${before.status} to ${toStatus}`,
+      );
+    }
     const after = await this.repository.transaction(async (tx) => {
       const updated = await this.repository.updateContentIfVersion(
         tx,
@@ -414,7 +426,8 @@ export class SocialService {
     id: string,
   ): Promise<ContentItemRecord> {
     const record = await this.repository.findContent(organizationId, id);
-    if (!record) throw notFound();
+    if (!record || !TenantContext.canAccessClient(record.clientId))
+      throw notFound();
     return record;
   }
 
@@ -531,28 +544,10 @@ function changedFieldNames(input: ContentItemUpdateInput): string[] {
     .map(([key]) => key);
 }
 
-function notFound(detail?: string) {
-  return problem(
-    HttpStatus.NOT_FOUND,
-    'Not Found',
-    ErrorCodes.NOT_FOUND,
-    detail,
-  );
-}
-
 function badRequest(detail: string) {
   return problem(
     HttpStatus.BAD_REQUEST,
     'Bad Request',
-    ErrorCodes.VALIDATION_FAILED,
-    detail,
-  );
-}
-
-function unprocessable(detail: string) {
-  return problem(
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'Unprocessable Entity',
     ErrorCodes.VALIDATION_FAILED,
     detail,
   );

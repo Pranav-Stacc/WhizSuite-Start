@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { OutboxService } from '../../../shared/events/outbox.service';
 import { DomainEventTypes } from '@agency-os/contracts';
@@ -42,7 +47,10 @@ export class PublishWorkerService implements OnModuleInit, OnModuleDestroy {
         // Platform adapter would publish here — NOTIFY_PUBLISH fallback for MVP
         await this.prisma.contentVariant.update({
           where: { id: job.variantId },
-          data: { publishStatus: 'PUBLISHED', permalink: `manual://${job.variantId}` },
+          data: {
+            publishStatus: 'PUBLISHED',
+            permalink: `manual://${job.variantId}`,
+          },
         });
 
         await this.prisma.publishJob.update({
@@ -67,7 +75,11 @@ export class PublishWorkerService implements OnModuleInit, OnModuleDestroy {
           type: DomainEventTypes.SOCIAL_POST_FAILED,
           version: 1,
           organizationId: job.organizationId,
-          payload: { variantId: job.variantId, jobId: job.id, error: String(err) },
+          payload: {
+            variantId: job.variantId,
+            jobId: job.id,
+            error: String(err),
+          },
           actor: { id: '00000000-0000-0000-0000-000000000000', type: 'system' },
         });
       }

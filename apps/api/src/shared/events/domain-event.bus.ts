@@ -16,7 +16,9 @@ export class DomainEventBus {
 
   async publish(event: EventEnvelope): Promise<void> {
     const handlers = this.handlers.get(event.type) ?? [];
-    this.logger.debug(`Publishing ${event.type} to ${handlers.length} handlers`);
+    this.logger.debug(
+      `Publishing ${event.type} to ${handlers.length} handlers`,
+    );
     for (const handler of handlers) {
       await handler(event);
     }

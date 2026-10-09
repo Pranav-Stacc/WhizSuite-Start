@@ -1,0 +1,41 @@
+import 'dart:convert';
+
+import 'package:flutter/painting.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../storage/preferences.dart';
+import 'theme_settings.dart';
+
+/// The device's appearance settings; persisted locally like the web `ao_theme` cookie.
+class ThemeController extends Notifier<ThemeSettings> {
+  static const _storageKey = 'appearance.theme';
+
+  @override
+  ThemeSettings build() {
+    final raw = ref.watch(sharedPreferencesProvider).getString(_storageKey);
+    if (raw == null) return defaultThemeSettings;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, Object?> ? ThemeSettings.tryParse(decoded) ?? defaultThemeSettings : defaultThemeSettings;
+    } on FormatException {
+      return defaultThemeSettings;
+    }
+  }
+
+  void applyPreset(ThemePreset preset) => _save(preset.settings);
+
+  void setColor(String key, Color color) => _save(state.withColor(key, color));
+
+  void setRadius(double radius) => _save(state.copyWith(radius: radius));
+
+  void setDensity(ThemeDensity density) => _save(state.copyWith(density: density));
+
+  void reset() => _save(defaultThemeSettings);
+
+  void _save(ThemeSettings next) {
+    state = next;
+    ref.read(sharedPreferencesProvider).setString(_storageKey, jsonEncode(next.toJson()));
+  }
+}
+
+final themeControllerProvider = NotifierProvider<ThemeController, ThemeSettings>(ThemeController.new);

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorCodes } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import {
+  notFound,
+  unprocessable,
+} from '../../../../shared/errors/problem-details.exception';
 import {
   AUTOMATION_STATUS,
   AutomationRepository,
@@ -11,6 +13,7 @@ import {
 import { AuditService } from '../../../audit/application/services/audit.service';
 import type {
   CreateAutomationDto,
+  PublishAutomationDto,
   UpdateAutomationDto,
 } from '../../interface/http/dto/automation.dto';
 
@@ -203,13 +206,18 @@ export class AutomationService {
     organizationId: string,
     actorId: string,
     id: string,
-    definition: AutomationDefinition,
+    input: PublishAutomationDto,
   ) {
-    await this.find(organizationId, id);
+    const current = await this.get(organizationId, id);
+    const trigger = input.trigger ?? current.trigger;
+    const action = input.action ?? current.action;
+    if (!trigger || !action) {
+      throw unprocessable('A trigger and an action are required to publish');
+    }
     const version = await this.repository.createVersion(
       organizationId,
       id,
-      definition,
+      definitionFor(trigger, action),
     );
     await this.repository.update(organizationId, id, {
       status: AUTOMATION_STATUS.ACTIVE,
@@ -261,17 +269,7 @@ export class AutomationService {
     id: string,
   ): Promise<AutomationRow> {
     const row = await this.repository.findById(organizationId, id);
-    if (!row) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Not Found',
-          status: 404,
-          code: ErrorCodes.NOT_FOUND,
-        },
-        404,
-      );
-    }
+    if (!row) throw notFound();
     return row;
   }
 }

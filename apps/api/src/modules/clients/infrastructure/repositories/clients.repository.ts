@@ -6,12 +6,17 @@ import { toInputJson } from '../../../../shared/database/prisma-json.util';
 export class ClientsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, workspaceId?: string) {
+  list(
+    organizationId: string,
+    workspaceId?: string,
+    allowedClientIds?: string[],
+  ) {
     return this.prisma.client.findMany({
       where: {
         organizationId,
         deletedAt: null,
         ...(workspaceId ? { workspaceId } : {}),
+        ...(allowedClientIds ? { id: { in: allowedClientIds } } : {}),
       },
       orderBy: { displayName: 'asc' },
       include: { brandKit: true, retainers: { where: { status: 'ACTIVE' } } },
@@ -78,7 +83,11 @@ export class ClientsRepository {
         ...(data.website !== undefined ? { website: data.website } : {}),
         ...(data.status ? { status: data.status } : {}),
       },
-      include: { brandKit: true, retainers: { where: { status: 'ACTIVE' } }, contacts: true },
+      include: {
+        brandKit: true,
+        retainers: { where: { status: 'ACTIVE' } },
+        contacts: true,
+      },
     });
   }
 

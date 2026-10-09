@@ -13,7 +13,12 @@ import {
   type InvoiceUpdateInput,
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
-import { problem } from '../../../../shared/errors/problem-details.exception';
+import {
+  notFound,
+  problem,
+  unprocessable,
+} from '../../../../shared/errors/problem-details.exception';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { ClientsService } from '../../../clients/application/services/clients.service';
 import {
@@ -40,7 +45,11 @@ export class FinanceService {
 
   async list(organizationId: string): Promise<InvoiceDto[]> {
     const limit = this.config.get('INVOICE_LIST_LIMIT', { infer: true });
-    const records = await this.repository.list(organizationId, limit);
+    const records = await this.repository.list(
+      organizationId,
+      limit,
+      TenantContext.clientScope(),
+    );
     return records.map(toInvoiceDto);
   }
 
@@ -175,13 +184,8 @@ export class FinanceService {
     id: string,
   ): Promise<InvoiceRecord> {
     const record = await this.repository.findById(organizationId, id);
-    if (!record) {
-      throw problem(
-        HttpStatus.NOT_FOUND,
-        'Not Found',
-        ErrorCodes.NOT_FOUND,
-        'Invoice not found',
-      );
+    if (!record || !TenantContext.canAccessClient(record.clientId)) {
+      throw notFound('Invoice not found');
     }
     return record;
   }
@@ -260,14 +264,5 @@ function duplicateNumber(number: string) {
     'Conflict',
     ErrorCodes.CONFLICT,
     `Invoice number ${number} is already in use`,
-  );
-}
-
-function unprocessable(detail: string) {
-  return problem(
-    HttpStatus.UNPROCESSABLE_ENTITY,
-    'Unprocessable Entity',
-    ErrorCodes.VALIDATION_FAILED,
-    detail,
   );
 }

@@ -1,5 +1,10 @@
-export const realtimePortToken = Symbol('realtimePort');
+import type { RealtimeEvent } from '@agency-os/contracts';
 
-export interface RealtimePort {
-  readonly moduleName: 'realtime';
+/** Server-side push of realtime events; implemented by the Socket.IO gateway. */
+export interface RealtimeEmitter {
+  emitToRoom(room: string, event: RealtimeEvent, payload: unknown): void;
 }
+
+export const userRoom = (userId: string): string => `user:${userId}`;
+export const orgRoom = (organizationId: string): string =>
+  `org:${organizationId}`;

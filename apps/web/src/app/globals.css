@@ -4,7 +4,7 @@
   Design tokens. Every colour below is user-customisable at runtime:
   the <html> element receives an inline style from the saved theme cookie,
   so there is no flash and no client-side re-render needed.
-  Defaults mirror DEFAULT_THEME (editorial) in shared/theme/theme.ts.
+  Defaults mirror DEFAULT_THEME (editorial) in packages/contracts/src/theme/theme.ts.
 */
 :root {
   --bg: #f7f6f3;
@@ -32,12 +32,12 @@
   --color-foreground: var(--fg);
   --color-muted: var(--muted);
   --color-primary-contrast: var(--primary-contrast);
-  --color-success: #4f8a65;
-  --color-warning: #c08a3e;
-  --color-danger: #bf5148;
-  --color-info: #5a7fae;
-  --color-violet: #8a7ab4;
-  --color-pink: #be7896;
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-danger: var(--status-danger);
+  --color-info: var(--status-info);
+  --color-violet: var(--status-violet);
+  --color-pink: var(--status-pink);
 
   --radius-sm: calc(var(--radius) * 0.5);
   --radius-md: calc(var(--radius) * 0.75);

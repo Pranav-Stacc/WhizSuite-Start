@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorCodes } from '@agency-os/contracts';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { notFound } from '../../../../shared/errors/problem-details.exception';
 import {
   WorkflowEngineRepository,
   type VersionInput,
@@ -16,18 +15,6 @@ const ENTITY_TYPE = 'workflowDefinition';
 type DefinitionRow = NonNullable<
   Awaited<ReturnType<WorkflowEngineRepository['findDefinition']>>
 >;
-
-function notFound(): ProblemDetailsException {
-  return new ProblemDetailsException(
-    {
-      type: 'about:blank',
-      title: 'Not Found',
-      status: 404,
-      code: ErrorCodes.NOT_FOUND,
-    },
-    404,
-  );
-}
 
 const stateKey = (name: string, idx: number) =>
   `${

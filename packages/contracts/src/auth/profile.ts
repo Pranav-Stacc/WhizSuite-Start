@@ -14,8 +14,3 @@ export interface ProfileUpdateInput {
   lastName?: string | null;
   jobTitle?: string | null;
 }
-
-export interface NotificationPreferenceDto {
-  typeKey: string;
-  enabled: boolean;
-}

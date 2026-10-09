@@ -6,6 +6,6 @@ import { ApprovalsResourceController } from './interface/http/controllers/approv
 @Module({
   controllers: [ApprovalsResourceController],
   providers: [ApprovalsService, ApprovalsRepository],
-  exports: [ApprovalsService, ApprovalsRepository],
+  exports: [ApprovalsService],
 })
 export class ApprovalsModule {}

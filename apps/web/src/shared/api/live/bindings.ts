@@ -31,6 +31,7 @@ import {
   contentPatchToApi,
   contentToApi,
   inboxFromApi,
+  inboxPatchToApi,
   invoiceFromApi,
   invoiceToApi,
   leadFromApi,
@@ -87,7 +88,10 @@ export const contentLive: LiveBinding<Post> = {
 export const leadsLive = binding<Lead>('leads', 'leads', leadFromApi, leadToApi);
 export const invoicesLive = binding<Invoice>('invoices', 'invoices', invoiceFromApi, invoiceToApi);
 export const mediaLive = binding<Asset>('media/assets', 'media', assetFromApi);
-export const inboxLive = binding<InboxItem>('inbox/conversations', 'inbox', inboxFromApi);
+export const inboxLive: LiveBinding<InboxItem> = {
+  ...binding<InboxItem>('inbox/conversations', 'inbox', inboxFromApi),
+  toApiPatch: inboxPatchToApi,
+};
 export const knowledgeLive = binding<Article>('knowledge/articles', 'knowledge', articleFromApi, articleToApi);
 export const automationsLive = binding<Automation>('automations', 'automations', automationFromApi, automationToApi);
 export const automationRunsLive: LiveBinding<AutomationRun> = {

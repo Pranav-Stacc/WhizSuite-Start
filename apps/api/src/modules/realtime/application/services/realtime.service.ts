@@ -1,11 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { RealtimeRepository } from '../../infrastructure/repositories/realtime.repository';
+import type { RealtimeEvent } from '@agency-os/contracts';
+import { RealtimeGateway } from '../../interface/ws/realtime.gateway';
+import {
+  orgRoom,
+  userRoom,
+  type RealtimeEmitter,
+} from '../ports/realtime.port';
 
+/** Public port of the realtime domain: other modules publish through this, never the gateway. */
 @Injectable()
 export class RealtimeService {
-  constructor(private readonly repository: RealtimeRepository) {}
+  private readonly emitter: RealtimeEmitter;
 
-  getHealth() {
-    return { module: 'realtime', status: 'ok' };
+  constructor(gateway: RealtimeGateway) {
+    this.emitter = gateway;
+  }
+
+  /** Rooms are tenant-qualified so a user in two organizations only hears the active one. */
+  publishToUser(
+    organizationId: string,
+    userId: string,
+    event: RealtimeEvent,
+    payload: unknown,
+  ): void {
+    this.emitter.emitToRoom(
+      `${orgRoom(organizationId)}:${userRoom(userId)}`,
+      event,
+      payload,
+    );
+  }
+
+  publishToOrganization(
+    organizationId: string,
+    event: RealtimeEvent,
+    payload: unknown,
+  ): void {
+    this.emitter.emitToRoom(orgRoom(organizationId), event, payload);
   }
 }

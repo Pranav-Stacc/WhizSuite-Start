@@ -11,11 +11,10 @@ export class TenantMiddleware implements NestMiddleware {
     res.setHeader('x-correlation-id', correlationId);
 
     const orgHeader = req.headers['x-organization-id'] as string | undefined;
-    const orgFromParams = req.params['orgId'] as string | undefined;
 
     TenantContext.run(
       {
-        organizationId: orgHeader ?? orgFromParams ?? '',
+        organizationId: orgHeader ?? '',
         correlationId,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],

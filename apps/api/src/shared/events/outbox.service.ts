@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import type { Actor, EventEnvelope } from '@agency-os/contracts';
 import { PrismaService } from '../database/prisma.service';
@@ -46,7 +47,7 @@ export class OutboxService {
         organizationId: envelope.organizationId,
         type: envelope.type,
         version: envelope.version,
-        payload: envelope.payload as object,
+        payload: envelope.payload as Prisma.InputJsonObject,
         correlationId: envelope.correlationId,
         causationId: envelope.causationId,
         actorId: envelope.actor.id,

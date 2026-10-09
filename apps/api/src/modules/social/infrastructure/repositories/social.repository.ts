@@ -38,6 +38,8 @@ const PUBLISH_JOB_CANCELLED = 'CANCELLED';
 
 export interface ContentListFilter {
   clientId?: string;
+  /** Restricts results to these clients (client-portal principals). */
+  allowedClientIds?: string[];
   status?: string;
   from?: Date;
   to?: Date;
@@ -98,6 +100,9 @@ export class SocialRepository {
         organizationId,
         deletedAt: null,
         ...(filter.clientId ? { clientId: filter.clientId } : {}),
+        ...(filter.allowedClientIds
+          ? { AND: [{ clientId: { in: filter.allowedClientIds } }] }
+          : {}),
         ...(filter.status ? { status: filter.status } : {}),
         ...(scheduledAt ? { scheduledAt } : {}),
       },

@@ -1,37 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
-import { toInputJson } from '../../../../shared/database/prisma-json.util';
+
+export interface ApprovalStepRow {
+  name: string;
+  rule: string;
+  approverIds: string[];
+}
+
+export interface ApprovalCreateRow {
+  subjectType: string;
+  subjectId: string;
+  subjectVersion: string;
+  requestedById: string;
+  steps: ApprovalStepRow[];
+}
+
+export interface ApprovalActionRow {
+  requestId: string;
+  stepId: string;
+  actorId: string;
+  action: string;
+  comment?: string;
+}
+
+/** Outcome of one action: the step's new status, and the request's when it changes. */
+export interface ApprovalTransition {
+  stepId: string;
+  stepStatus: string;
+  requestStatus?: string;
+}
+
+const WITH_STEPS = {
+  steps: { orderBy: { order: 'asc' as const } },
+  actions: { orderBy: { createdAt: 'asc' as const } },
+};
 
 @Injectable()
 export class ApprovalsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string) {
+  list(organizationId: string, limit: number) {
     return this.prisma.approvalRequest.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
-      include: { steps: true, actions: true },
+      include: WITH_STEPS,
+      take: limit,
     });
   }
 
   findById(organizationId: string, id: string) {
     return this.prisma.approvalRequest.findFirst({
       where: { id, organizationId },
-      include: { steps: true, actions: true },
+      include: WITH_STEPS,
     });
   }
 
-  createRequest(
-    organizationId: string,
-    data: {
-      subjectType: string;
-      subjectId: string;
-      subjectVersion: string;
-      requestedById: string;
-      steps: Array<{ name: string; order: number; rule: string; approverSpec: Record<string, unknown> }>;
-    },
-  ) {
+  create(organizationId: string, data: ApprovalCreateRow) {
     return this.prisma.approvalRequest.create({
       data: {
         organizationId,
@@ -41,44 +65,42 @@ export class ApprovalsRepository {
         requestedById: data.requestedById,
         status: 'PENDING',
         steps: {
-          create: data.steps.map((s) => ({
+          create: data.steps.map((step, index) => ({
             organizationId,
-            order: s.order,
-            name: s.name,
-            rule: s.rule,
-            approverSpec: s.approverSpec as Prisma.InputJsonObject,
+            order: index + 1,
+            name: step.name,
+            rule: step.rule,
+            approverSpec: { approverIds: step.approverIds },
             status: 'PENDING',
           })),
         },
       },
-      include: { steps: true },
+      include: WITH_STEPS,
     });
   }
 
-  recordAction(data: {
-    organizationId: string;
-    requestId: string;
-    actorId: string;
-    actorType: string;
-    action: string;
-    comment?: string;
-  }) {
-    return this.prisma.approvalAction.create({
-      data: {
-        organizationId: data.organizationId,
-        requestId: data.requestId,
-        actorId: data.actorId,
-        actorType: data.actorType,
-        action: data.action,
-        comment: data.comment,
-      },
-    });
-  }
-
-  updateRequestStatus(organizationId: string, id: string, status: string) {
-    return this.prisma.approvalRequest.updateMany({
-      where: { id, organizationId },
-      data: { status },
-    });
+  /** Records the action and applies the resulting step/request statuses atomically. */
+  async act(
+    organizationId: string,
+    row: ApprovalActionRow,
+    transition: ApprovalTransition,
+  ): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.approvalAction.create({
+        data: { organizationId, actorType: 'user', ...row },
+      }),
+      this.prisma.approvalStep.updateMany({
+        where: { id: transition.stepId, organizationId },
+        data: { status: transition.stepStatus },
+      }),
+      ...(transition.requestStatus
+        ? [
+            this.prisma.approvalRequest.updateMany({
+              where: { id: row.requestId, organizationId },
+              data: { status: transition.requestStatus },
+            }),
+          ]
+        : []),
+    ]);
   }
 }

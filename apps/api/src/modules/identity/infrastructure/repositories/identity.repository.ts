@@ -239,6 +239,15 @@ export class IdentityRepository {
     });
   }
 
+  /** Atomically revokes an active session; false when it was already revoked (e.g. a concurrent refresh). */
+  async claimSession(id: string): Promise<boolean> {
+    const { count } = await this.prisma.session.updateMany({
+      where: { id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return count === 1;
+  }
+
   revokeFamilySessions(familyId: string) {
     return this.prisma.session.updateMany({
       where: { familyId, revokedAt: null },

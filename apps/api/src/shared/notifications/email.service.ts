@@ -43,4 +43,20 @@ export class EmailService {
     });
     this.logger.log(`Invitation email sent to ${input.to}`);
   }
+
+  async sendNotification(input: {
+    to: string;
+    subject: string;
+    body: string;
+    actionUrl: string;
+    actionLabel: string;
+  }): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.config.get('EMAIL_FROM'),
+      to: input.to,
+      subject: input.subject,
+      text: `${input.body}\n\n${input.actionLabel}: ${input.actionUrl}`,
+      html: `<p>${escapeHtml(input.body)}</p><p><a href="${escapeHtml(input.actionUrl)}">${escapeHtml(input.actionLabel)}</a></p>`,
+    });
+  }
 }

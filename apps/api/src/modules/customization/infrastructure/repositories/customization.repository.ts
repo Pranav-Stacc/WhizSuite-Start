@@ -1,11 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import { toInputJson } from '../../../../shared/database/prisma-json.util';
+
+export interface CustomFieldCreateRow {
+  entityType: string;
+  key: string;
+  label: string;
+  type: string;
+  options?: string[];
+  isRequired?: boolean;
+  isFilterable?: boolean;
+  clientVisible?: boolean;
+}
+
+export type CustomFieldUpdateRow = Partial<
+  Omit<CustomFieldCreateRow, 'entityType' | 'key' | 'type'>
+>;
 
 @Injectable()
 export class CustomizationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit = 50) {
+  list(organizationId: string, limit: number) {
     return this.prisma.customFieldDefinition.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
@@ -19,16 +35,16 @@ export class CustomizationRepository {
     });
   }
 
-  create(organizationId: string, data: Record<string, unknown>) {
+  create(organizationId: string, row: CustomFieldCreateRow) {
     return this.prisma.customFieldDefinition.create({
-      data: { ...data, organizationId } as never,
+      data: { ...row, organizationId, options: toInputJson(row.options) },
     });
   }
 
-  update(organizationId: string, id: string, data: Record<string, unknown>) {
+  update(organizationId: string, id: string, row: CustomFieldUpdateRow) {
     return this.prisma.customFieldDefinition.updateMany({
       where: { id, organizationId },
-      data: data as never,
+      data: { ...row, options: toInputJson(row.options) },
     });
   }
 }

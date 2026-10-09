@@ -1,56 +1,72 @@
 import { Injectable } from '@nestjs/common';
-import { ErrorCodes } from '@agency-os/contracts';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
-import { CustomizationRepository } from '../../infrastructure/repositories/customization.repository';
+import { ConfigService } from '@nestjs/config';
+import type { AppConfig } from '../../../../shared/config/app.config';
+import { notFound } from '../../../../shared/errors/problem-details.exception';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import { CustomizationRepository } from '../../infrastructure/repositories/customization.repository';
+import type {
+  CreateCustomFieldDto,
+  UpdateCustomFieldDto,
+} from '../../interface/http/dto/custom-field.dto';
+
+const ENTITY_TYPE = 'customFieldDefinition';
 
 @Injectable()
 export class CustomizationService {
   constructor(
     private readonly repository: CustomizationRepository,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
   list(organizationId: string) {
-    return this.repository.list(organizationId);
+    return this.repository.list(
+      organizationId,
+      this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+    );
   }
 
   async get(organizationId: string, id: string) {
     const item = await this.repository.findById(organizationId, id);
-    if (!item) {
-      throw new ProblemDetailsException(
-        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
-        404,
-      );
-    }
+    if (!item) throw notFound();
     return item;
   }
 
-  async create(organizationId: string, actorId: string, data: Record<string, unknown>) {
-    const item = await this.repository.create(organizationId, data);
+  async create(
+    organizationId: string,
+    actorId: string,
+    input: CreateCustomFieldDto,
+  ) {
+    const item = await this.repository.create(organizationId, input);
     await this.audit.record({
       organizationId,
       actorId,
       actorType: 'user',
       action: 'custom-fields.create',
-      entityType: 'customFieldDefinition',
-      entityId: (item as { id: string }).id,
-      after: item as Record<string, unknown>,
+      entityType: ENTITY_TYPE,
+      entityId: item.id,
+      after: { ...input },
     });
     return item;
   }
 
-  async update(organizationId: string, actorId: string, id: string, data: Record<string, unknown>) {
-    await this.get(organizationId, id);
-    await this.repository.update(organizationId, id, data);
+  async update(
+    organizationId: string,
+    actorId: string,
+    id: string,
+    input: UpdateCustomFieldDto,
+  ) {
+    const before = await this.get(organizationId, id);
+    await this.repository.update(organizationId, id, input);
     await this.audit.record({
       organizationId,
       actorId,
       actorType: 'user',
       action: 'custom-fields.update',
-      entityType: 'customFieldDefinition',
+      entityType: ENTITY_TYPE,
       entityId: id,
-      after: data,
+      before: { label: before.label, isRequired: before.isRequired },
+      after: { ...input },
     });
     return this.get(organizationId, id);
   }

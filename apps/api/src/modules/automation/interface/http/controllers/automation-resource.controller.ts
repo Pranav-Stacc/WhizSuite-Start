@@ -24,6 +24,7 @@ import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { AutomationService } from '../../../application/services/automation.service';
 import {
   CreateAutomationDto,
+  PublishAutomationDto,
   RunAutomationDto,
   UpdateAutomationDto,
 } from '../dto/automation.dto';
@@ -106,12 +107,7 @@ export class AutomationResourceController {
   publish(
     @Param('organizationId') organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body()
-    body: {
-      trigger: Record<string, unknown>;
-      conditions?: Record<string, unknown>;
-      actions: Record<string, unknown>;
-    },
+    @Body() body: PublishAutomationDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.publish(

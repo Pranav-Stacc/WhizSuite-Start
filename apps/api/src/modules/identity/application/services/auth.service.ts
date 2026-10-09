@@ -312,8 +312,13 @@ export class AuthService {
     };
   }
 
-  private async issueTokens(userId: string, email: string, ctx: TokenContext) {
-    const familyId = randomUUID();
+  /** Rotation passes the previous session's `familyId` so a replayed token can revoke the whole chain. */
+  private async issueTokens(
+    userId: string,
+    email: string,
+    ctx: TokenContext,
+    familyId: string = randomUUID(),
+  ) {
     const accessPayload = {
       sub: userId,
       email,
@@ -362,7 +367,7 @@ export class AuthService {
     }
 
     const session = await this.repo.findSessionById(sessionId);
-    if (!session || session.revokedAt || session.expiresAt < new Date()) {
+    if (!session || session.expiresAt < new Date()) {
       throw new ProblemDetailsException(
         {
           type: 'about:blank',
@@ -375,8 +380,26 @@ export class AuthService {
     }
 
     const valid = await bcrypt.compare(refreshToken, session.refreshTokenHash);
-    if (!valid) {
+    // A genuine token for an already-rotated session (or one claimed concurrently) means it was replayed.
+    if (
+      !valid ||
+      session.revokedAt ||
+      !(await this.repo.claimSession(session.id))
+    ) {
       await this.repo.revokeFamilySessions(session.familyId);
+      const membership = await this.repo.findPrimaryMembership(session.userId);
+      if (membership) {
+        await this.audit.record({
+          organizationId: membership.organizationId,
+          actorId: session.userId,
+          actorType: 'user',
+          action: 'auth.refresh',
+          entityType: 'session',
+          entityId: session.id,
+          outcome: 'FAILURE',
+          reason: ErrorCodes.TOKEN_REUSE_DETECTED,
+        });
+      }
       throw new ProblemDetailsException(
         {
           type: 'about:blank',
@@ -407,9 +430,18 @@ export class AuthService {
       userRecord.id,
       userRecord.email,
       await this.membershipContext(membership),
+      session.familyId,
     );
-
-    await this.repo.revokeSession(session.id);
+    if (membership) {
+      await this.audit.record({
+        organizationId: membership.organizationId,
+        actorId: userRecord.id,
+        actorType: 'user',
+        action: 'auth.refresh',
+        entityType: 'session',
+        entityId: session.id,
+      });
+    }
 
     return {
       user: {

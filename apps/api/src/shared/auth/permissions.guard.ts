@@ -1,8 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { Permission } from '@agency-os/contracts';
 import { ErrorCodes } from '@agency-os/contracts';
@@ -21,7 +17,9 @@ export class PermissionsGuard implements CanActivate {
     );
     if (!required?.length) return true;
 
-    const request = context.switchToHttp().getRequest<{ user?: AuthenticatedUser & { permissions?: Permission[] } }>();
+    const request = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUser & { permissions?: Permission[] };
+    }>();
     const user = request.user;
     if (!user?.permissions) {
       throw new ProblemDetailsException(

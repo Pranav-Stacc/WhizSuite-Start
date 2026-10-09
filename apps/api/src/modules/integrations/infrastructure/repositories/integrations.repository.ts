@@ -1,11 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import { toInputJson } from '../../../../shared/database/prisma-json.util';
+
+export interface ConnectionCreateRow {
+  providerId: string;
+  clientId?: string;
+  status: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ConnectionUpdateRow {
+  status?: string;
+  metadata?: Record<string, unknown>;
+}
 
 @Injectable()
 export class IntegrationsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit = 50) {
+  list(organizationId: string, limit: number) {
     return this.prisma.integrationConnection.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
@@ -19,16 +32,22 @@ export class IntegrationsRepository {
     });
   }
 
-  create(organizationId: string, data: Record<string, unknown>) {
+  providerExists(providerId: string): Promise<boolean> {
+    return this.prisma.integrationProvider
+      .count({ where: { id: providerId } })
+      .then((count) => count > 0);
+  }
+
+  create(organizationId: string, row: ConnectionCreateRow) {
     return this.prisma.integrationConnection.create({
-      data: { ...data, organizationId } as never,
+      data: { ...row, organizationId, metadata: toInputJson(row.metadata) },
     });
   }
 
-  update(organizationId: string, id: string, data: Record<string, unknown>) {
+  update(organizationId: string, id: string, row: ConnectionUpdateRow) {
     return this.prisma.integrationConnection.updateMany({
       where: { id, organizationId },
-      data: data as never,
+      data: { ...row, metadata: toInputJson(row.metadata) },
     });
   }
 }

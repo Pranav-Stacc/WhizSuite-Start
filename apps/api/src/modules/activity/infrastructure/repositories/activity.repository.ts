@@ -1,11 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import { toInputJson } from '../../../../shared/database/prisma-json.util';
+
+export interface ActivityCreateRow {
+  actorId: string;
+  verb: string;
+  entityType: string;
+  entityId: string;
+  summary: string;
+  visibility?: string;
+  metadata?: Record<string, unknown>;
+}
 
 @Injectable()
 export class ActivityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit = 50) {
+  list(organizationId: string, limit: number) {
     return this.prisma.activityEvent.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
@@ -13,22 +24,9 @@ export class ActivityRepository {
     });
   }
 
-  findById(organizationId: string, id: string) {
-    return this.prisma.activityEvent.findFirst({
-      where: { id, organizationId },
-    });
-  }
-
-  create(organizationId: string, data: Record<string, unknown>) {
+  create(organizationId: string, row: ActivityCreateRow) {
     return this.prisma.activityEvent.create({
-      data: { ...data, organizationId } as never,
-    });
-  }
-
-  update(organizationId: string, id: string, data: Record<string, unknown>) {
-    return this.prisma.activityEvent.updateMany({
-      where: { id, organizationId },
-      data: data as never,
+      data: { organizationId, ...row, metadata: toInputJson(row.metadata) },
     });
   }
 }

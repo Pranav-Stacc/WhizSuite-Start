@@ -61,9 +61,7 @@ jobs:
         run: pnpm turbo run build
         env:
           SESSION_SECRET: ci-build-only-session-secret
-      # Non-blocking until the existing API lint backlog is cleared.
       - name: Lint API
-        continue-on-error: true
         run: pnpm --filter @agency-os/api exec eslint "{src,test}/**/*.ts"
 
   deploy-api:

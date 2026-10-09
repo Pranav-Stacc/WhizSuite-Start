@@ -8,17 +8,14 @@ import { Button } from '@/shared/ui/button';
 import { Sheet, Tooltip } from '@/shared/ui/overlays';
 import {
   DEFAULT_THEME,
-  THEME_COOKIE,
-  THEME_COOKIE_MAX_AGE,
   THEME_PRESETS,
   THEME_RADIUS_MAX,
   THEME_RADIUS_MIN,
-  luminance,
-  serializeTheme,
-  themeToVars,
+  ThemeDensities,
   type ThemeColorKey,
   type ThemeSettings,
-} from './theme';
+} from '@agency-os/contracts';
+import { THEME_COOKIE, THEME_COOKIE_MAX_AGE, colorScheme, serializeTheme, themeToVars } from './theme';
 
 const COLOR_FIELDS: Array<{ key: ThemeColorKey; label: MessageKey }> = [
   { key: 'primary', label: 'theme.color.primary' },
@@ -33,7 +30,7 @@ const COLOR_FIELDS: Array<{ key: ThemeColorKey; label: MessageKey }> = [
 function applyTheme(theme: ThemeSettings): void {
   const root = document.documentElement;
   for (const [name, value] of Object.entries(themeToVars(theme))) root.style.setProperty(name, value);
-  root.style.colorScheme = luminance(theme.bg) > 0.35 ? 'light' : 'dark';
+  root.style.colorScheme = colorScheme(theme);
   document.cookie = `${THEME_COOKIE}=${serializeTheme(theme)}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax`;
 }
 
@@ -132,7 +129,7 @@ export function ThemeCustomizer({ initial, trigger }: { initial: ThemeSettings; 
             <div>
               <p className="mb-2 text-sm">{t('theme.density')}</p>
               <div className="inline-flex rounded-lg border border-border-soft bg-surface-2 p-0.5">
-                {(['comfortable', 'compact'] as const).map((density) => (
+                {ThemeDensities.map((density) => (
                   <button
                     key={density}
                     type="button"

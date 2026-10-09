@@ -1,9 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { DomainEventTypes, ErrorCodes } from '@agency-os/contracts';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { ConfigService } from '@nestjs/config';
+import { DomainEventTypes } from '@agency-os/contracts';
+import type { AppConfig } from '../../../../shared/config/app.config';
+import { notFound } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
-import { ApprovalsRepository } from '../../infrastructure/repositories/approvals.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import { ApprovalsRepository } from '../../infrastructure/repositories/approvals.repository';
+import type {
+  ActApprovalDto,
+  CreateApprovalDto,
+} from '../../interface/http/dto/approval.dto';
+import { evaluateApprovalAction } from '../domain/approval-evaluation';
+
+const ENTITY_TYPE = 'approvalRequest';
+const DEFAULT_STEP_RULE = 'ANY';
+const APPROVED = 'APPROVED';
 
 @Injectable()
 export class ApprovalsService {
@@ -11,36 +22,37 @@ export class ApprovalsService {
     private readonly repository: ApprovalsRepository,
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
+    private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
   list(organizationId: string) {
-    return this.repository.list(organizationId);
+    return this.repository.list(
+      organizationId,
+      this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+    );
   }
 
   async get(organizationId: string, id: string) {
     const item = await this.repository.findById(organizationId, id);
-    if (!item) {
-      throw new ProblemDetailsException(
-        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
-        404,
-      );
-    }
+    if (!item) throw notFound('Approval not found');
     return item;
   }
 
   async request(
     organizationId: string,
     actorId: string,
-    input: {
-      subjectType: string;
-      subjectId: string;
-      subjectVersion: string;
-      steps: Array<{ name: string; order: number; rule: string; approverSpec: Record<string, unknown> }>;
-    },
+    input: CreateApprovalDto,
   ) {
-    const request = await this.repository.createRequest(organizationId, {
-      ...input,
+    const request = await this.repository.create(organizationId, {
+      subjectType: input.subjectType,
+      subjectId: input.subjectId,
+      subjectVersion: input.subjectVersion,
       requestedById: actorId,
+      steps: input.steps.map((step) => ({
+        name: step.name,
+        rule: step.rule ?? DEFAULT_STEP_RULE,
+        approverIds: step.approverIds ?? [],
+      })),
     });
     await this.outbox.write({
       type: DomainEventTypes.APPROVAL_REQUESTED,
@@ -49,6 +61,19 @@ export class ApprovalsService {
       payload: { approvalRequestId: request.id },
       actor: { id: actorId, type: 'user' },
     });
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'approvals.request',
+      entityType: ENTITY_TYPE,
+      entityId: request.id,
+      after: {
+        subjectType: request.subjectType,
+        subjectId: request.subjectId,
+        steps: request.steps.length,
+      },
+    });
     return request;
   }
 
@@ -56,30 +81,22 @@ export class ApprovalsService {
     organizationId: string,
     actorId: string,
     requestId: string,
-    action: 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED',
-    comment?: string,
+    input: ActApprovalDto,
   ) {
-    const request = await this.get(organizationId, requestId);
-    await this.repository.recordAction({
+    const before = await this.get(organizationId, requestId);
+    const transition = evaluateApprovalAction(before, actorId, input.action);
+    await this.repository.act(
       organizationId,
-      requestId,
-      actorId,
-      actorType: 'user',
-      action,
-      comment,
-    });
-
-    const allApproved = action === 'APPROVED';
-    const newStatus =
-      action === 'APPROVED'
-        ? 'APPROVED'
-        : action === 'REJECTED'
-          ? 'REJECTED'
-          : 'CHANGES_REQUESTED';
-
-    await this.repository.updateRequestStatus(organizationId, requestId, newStatus);
-
-    if (allApproved) {
+      {
+        requestId,
+        stepId: transition.stepId,
+        actorId,
+        action: input.action,
+        comment: input.comment,
+      },
+      transition,
+    );
+    if (transition.requestStatus === APPROVED) {
       await this.outbox.write({
         type: DomainEventTypes.APPROVAL_COMPLETED,
         version: 1,
@@ -88,7 +105,20 @@ export class ApprovalsService {
         actor: { id: actorId, type: 'user' },
       });
     }
-
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'approvals.act',
+      entityType: ENTITY_TYPE,
+      entityId: requestId,
+      before: { status: before.status },
+      after: {
+        status: transition.requestStatus ?? before.status,
+        stepStatus: transition.stepStatus,
+      },
+      metadata: { action: input.action, stepId: transition.stepId },
+    });
     return this.get(organizationId, requestId);
   }
 }

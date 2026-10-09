@@ -7,11 +7,13 @@ export interface AuthenticatedUser {
   membershipId?: string;
   organizationId?: string;
   membershipType?: string;
+  /** Set only for CLIENT memberships: the single brand this user may see. */
+  clientId?: string;
 }
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthenticatedUser | undefined => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    return request.user as AuthenticatedUser | undefined;
+    return request.user;
   },
 );

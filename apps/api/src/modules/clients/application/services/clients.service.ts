@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DomainEventTypes, ErrorCodes } from '@agency-os/contracts';
-import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import { DomainEventTypes } from '@agency-os/contracts';
+import { notFound } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { ClientsRepository } from '../../infrastructure/repositories/clients.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
 
@@ -14,22 +15,17 @@ export class ClientsService {
   ) {}
 
   async list(organizationId: string, workspaceId?: string) {
-    return this.repo.list(organizationId, workspaceId);
+    return this.repo.list(
+      organizationId,
+      workspaceId,
+      TenantContext.clientScope(),
+    );
   }
 
   async get(organizationId: string, clientId: string) {
+    if (!TenantContext.canAccessClient(clientId)) throw notFound();
     const client = await this.repo.findById(organizationId, clientId);
-    if (!client) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Not Found',
-          status: 404,
-          code: ErrorCodes.NOT_FOUND,
-        },
-        404,
-      );
-    }
+    if (!client) throw notFound();
     return client;
   }
 
@@ -59,7 +55,7 @@ export class ClientsService {
       action: 'client.create',
       entityType: 'client',
       entityId: client.id,
-      after: client as unknown as Record<string, unknown>,
+      after: client,
     });
     return client;
   }
@@ -84,7 +80,7 @@ export class ClientsService {
       action: 'client.update',
       entityType: 'client',
       entityId: clientId,
-      after: client as unknown as Record<string, unknown>,
+      after: client,
     });
     return client;
   }
@@ -109,7 +105,7 @@ export class ClientsService {
       action: 'brand_kit.update',
       entityType: 'brand_kit',
       entityId: kit.id,
-      after: kit as unknown as Record<string, unknown>,
+      after: kit,
     });
     return kit;
   }

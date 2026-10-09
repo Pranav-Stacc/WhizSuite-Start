@@ -76,9 +76,16 @@ export interface PaymentRow {
 export class FinanceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit: number): Promise<InvoiceRecord[]> {
+  list(
+    organizationId: string,
+    limit: number,
+    allowedClientIds?: string[],
+  ): Promise<InvoiceRecord[]> {
     return this.prisma.invoice.findMany({
-      where: { organizationId },
+      where: {
+        organizationId,
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+      },
       select: INVOICE_SELECT,
       orderBy: { createdAt: 'desc' },
       take: limit,

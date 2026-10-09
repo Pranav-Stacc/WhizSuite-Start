@@ -3,6 +3,7 @@ import { ErrorCodes, FeedbackSubjectTypes } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
 import type { AuditService } from '../../../audit/application/services/audit.service';
+import type { SocialService } from '../../../social/application/services/social.service';
 import type { FeedbackRepository } from '../../infrastructure/repositories/feedback.repository';
 import { FeedbackService } from './feedback.service';
 
@@ -37,12 +38,14 @@ function setup() {
   };
   const audit = { record: jest.fn() };
   const config = { get: (key: keyof AppConfig) => configValues[key] };
+  const social = { getContent: jest.fn() };
   const service = new FeedbackService(
     repository as unknown as FeedbackRepository,
     audit as unknown as AuditService,
     config as unknown as ConfigService<AppConfig, true>,
+    social as unknown as SocialService,
   );
-  return { service, repository, audit };
+  return { service, repository, audit, social };
 }
 
 describe('FeedbackService subject comments', () => {

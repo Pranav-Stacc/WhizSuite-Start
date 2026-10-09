@@ -1,8 +1,10 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TerminusModule } from '@nestjs/terminus';
 import { LoggerModule } from 'nestjs-pino';
+import type { AppConfig } from './shared/config/app.config';
 import { SharedModule } from './shared/shared.module';
 import { TenantMiddleware } from './shared/tenant/tenant.middleware';
 import { HealthController } from './health.controller';
@@ -48,12 +50,15 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
         redact: ['req.headers.authorization', 'req.headers.cookie'],
       },
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60_000,
-        limit: 120,
-      },
-    ]),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<AppConfig, true>) => [
+        {
+          ttl: config.get('THROTTLE_TTL_MS', { infer: true }),
+          limit: config.get('THROTTLE_LIMIT', { infer: true }),
+        },
+      ],
+    }),
     TerminusModule,
     SharedModule,
     AuditModule,

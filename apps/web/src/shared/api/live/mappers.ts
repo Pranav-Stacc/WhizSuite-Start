@@ -408,14 +408,22 @@ export function inboxFromApi(raw: Raw): InboxItem {
     clientId: str(raw, 'clientId'),
     kind,
     platform: asStatus(raw.platform, Platforms, 'instagram'),
-    author: str(raw, 'authorName') || str(raw, 'handle'),
-    handle: str(raw, 'handle'),
-    body: str(raw, 'preview') || str(raw, 'lastMessage') || str(raw, 'body'),
+    author: str(raw, 'authorHandle'),
+    handle: str(raw, 'authorHandle'),
+    body: str(raw, 'preview'),
     status,
     sentiment,
     assigneeId: raw.assigneeId ? str(raw, 'assigneeId') : undefined,
     receivedAt: iso(raw, 'updatedAt') || iso(raw, 'createdAt'),
   };
+}
+
+/** Only status and assignment are editable; replies go through `replyToConversation`. */
+export function inboxPatchToApi(patch: Partial<InboxItem>): Raw {
+  const body: Raw = {};
+  if (patch.status) body.status = patch.status.toUpperCase();
+  if ('assigneeId' in patch) body.assigneeId = patch.assigneeId ?? null;
+  return body;
 }
 
 export function articleFromApi(raw: Raw): Article {

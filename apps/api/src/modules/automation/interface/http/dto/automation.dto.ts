@@ -63,6 +63,19 @@ export class UpdateAutomationDto {
   enabled?: boolean;
 }
 
+/** Omitted fields keep the automation's current trigger/action. */
+export class PublishAutomationDto {
+  @ApiProperty({ required: false, enum: AutomationTriggers })
+  @IsOptional()
+  @IsIn(AutomationTriggers)
+  trigger?: AutomationTrigger;
+
+  @ApiProperty({ required: false, enum: AutomationActions })
+  @IsOptional()
+  @IsIn(AutomationActions)
+  action?: AutomationAction;
+}
+
 export class RunAutomationDto {
   @ApiProperty({ required: false })
   @IsOptional()

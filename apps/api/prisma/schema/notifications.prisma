@@ -44,6 +44,24 @@ model NotificationDelivery {
   @@schema("notifications")
 }
 
+/// A push-capable device. Tokens are globally unique; re-registering moves the token to the new user/org.
+model Device {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  token          String   @unique
+  platform       String
+  appVersion     String?  @map("app_version")
+  locale         String?
+  lastSeenAt     DateTime @default(now()) @map("last_seen_at") @db.Timestamptz
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([organizationId, userId])
+  @@map("device_tokens")
+  @@schema("notifications")
+}
+
 model NotificationPreference {
   id             String @id @default(uuid()) @db.Uuid
   organizationId String @map("organization_id") @db.Uuid

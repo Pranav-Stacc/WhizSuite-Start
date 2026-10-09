@@ -1,0 +1,74 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/auth/token_store.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/network/api_exception.dart';
+
+class RegistrationInput {
+  const RegistrationInput({
+    required this.email,
+    required this.password,
+    required this.firstName,
+    required this.organizationName,
+    required this.organizationSlug,
+    this.lastName,
+  });
+
+  final String email;
+  final String password;
+  final String firstName;
+  final String? lastName;
+  final String organizationName;
+  final String organizationSlug;
+
+  Json toJson() => {
+        'email': email,
+        'password': password,
+        'firstName': firstName,
+        if (lastName != null && lastName!.isNotEmpty) 'lastName': lastName,
+        'organizationName': organizationName,
+        'organizationSlug': organizationSlug,
+      };
+}
+
+class AuthRepository {
+  const AuthRepository(this._api, this._tokens);
+
+  final ApiClient _api;
+  final TokenStore _tokens;
+
+  Future<AuthTokens> login({required String email, required String password}) =>
+      _authenticate('v1/auth/login', {'email': email, 'password': password});
+
+  Future<AuthTokens> register(RegistrationInput input) => _authenticate('v1/auth/register', input.toJson());
+
+  /// Revokes the refresh token server-side; local tokens are cleared even if the call fails.
+  Future<void> logout() async {
+    final refreshToken = _tokens.current?.refreshToken;
+    try {
+      if (refreshToken != null) {
+        await _api.post<Json>('v1/auth/logout', body: {'refreshToken': refreshToken}, authenticated: false);
+      }
+    } on ApiException {
+      // The session is ended locally regardless; the server token expires on its own.
+    } finally {
+      await _tokens.clear();
+    }
+  }
+
+  Future<AuthTokens> _authenticate(String path, Json body) async {
+    final response = await _api.post<Json>(path, body: body, authenticated: false);
+    final access = response['accessToken'];
+    final refresh = response['refreshToken'];
+    if (access is! String || refresh is! String) {
+      throw const ApiException(kind: ApiFailureKind.unknown);
+    }
+    final tokens = AuthTokens(accessToken: access, refreshToken: refresh);
+    await _tokens.save(tokens);
+    return tokens;
+  }
+}
+
+final authRepositoryProvider = Provider<AuthRepository>(
+  (ref) => AuthRepository(ref.watch(apiClientProvider), ref.watch(tokenStoreProvider)),
+);

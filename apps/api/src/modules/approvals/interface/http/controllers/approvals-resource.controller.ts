@@ -1,12 +1,24 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
-import { CurrentUser, type AuthenticatedUser } from '../../../../../shared/auth/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { ApprovalsService } from '../../../application/services/approvals.service';
+import { ActApprovalDto, CreateApprovalDto } from '../dto/approval.dto';
 
 @ApiTags('approvals')
 @ApiBearerAuth()
@@ -25,22 +37,25 @@ export class ApprovalsResourceController {
   @RequirePermissions(Permissions.APPROVALS_VIEW)
   get(
     @Param('organizationId') organizationId: string,
-    @Param('approvalId') approvalId: string,
+    @Param('approvalId', ParseUUIDPipe) approvalId: string,
   ) {
-    return this.approvals.get(requireOrganizationId(organizationId), approvalId);
+    return this.approvals.get(
+      requireOrganizationId(organizationId),
+      approvalId,
+    );
   }
 
   @Post()
   @RequirePermissions(Permissions.APPROVALS_CREATE)
   request(
     @Param('organizationId') organizationId: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: CreateApprovalDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.approvals.request(
       requireOrganizationId(organizationId),
       user.userId,
-      body as never,
+      body,
     );
   }
 
@@ -48,17 +63,15 @@ export class ApprovalsResourceController {
   @RequirePermissions(Permissions.APPROVALS_APPROVE)
   act(
     @Param('organizationId') organizationId: string,
-    @Param('approvalId') approvalId: string,
-    @Body('action') action: 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED',
-    @Body('comment') comment?: string,
-    @CurrentUser() user?: AuthenticatedUser,
+    @Param('approvalId', ParseUUIDPipe) approvalId: string,
+    @Body() body: ActApprovalDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.approvals.act(
       requireOrganizationId(organizationId),
-      user!.userId,
+      user.userId,
       approvalId,
-      action,
-      comment,
+      body,
     );
   }
 }

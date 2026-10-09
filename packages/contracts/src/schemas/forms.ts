@@ -36,18 +36,21 @@ export const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export const PASSWORD_MIN_LENGTH = 12;
+export const ORGANIZATION_NAME_MIN_LENGTH = 2;
+/** Source of the workspace slug rule; shared as a string so non-JS clients can compile it. */
+export const ORGANIZATION_SLUG_PATTERN = '^[a-z0-9-]+$';
 
 export const registerSchema = z.object({
   firstName: z.string().trim().min(1, 'validation.required'),
   lastName: optionalText,
   email: z.string().trim().email('validation.email'),
   password: z.string().min(PASSWORD_MIN_LENGTH, 'validation.password'),
-  organizationName: z.string().trim().min(2, 'validation.min2'),
+  organizationName: z.string().trim().min(ORGANIZATION_NAME_MIN_LENGTH, 'validation.min2'),
   organizationSlug: z
     .string()
     .trim()
     .toLowerCase()
-    .regex(/^[a-z0-9-]+$/, 'validation.slug'),
+    .regex(new RegExp(ORGANIZATION_SLUG_PATTERN), 'validation.slug'),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

@@ -1,7 +1,9 @@
 'use server';
 
 import { messageSchema } from '@agency-os/contracts';
+import { replyToConversation } from '@/shared/api/live/mutations';
 import { requireSession } from '@/shared/auth/session';
+import { isLiveMode } from '@/shared/config/env';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -23,7 +25,8 @@ export async function replyToInboxItemAction(id: string, raw: unknown): Promise<
     if (!parsed.ok) return parsed.result;
     const before = await inboxRepository.get(id);
     if (!before) return fail(t('toast.failed'));
-    await inboxRepository.update(id, { reply: parsed.data.body, status: 'replied', assigneeId: before.assigneeId ?? session.userId });
+    if (isLiveMode) await replyToConversation(id, parsed.data.body);
+    else await inboxRepository.update(id, { reply: parsed.data.body, status: 'replied', assigneeId: before.assigneeId ?? session.userId });
     await recordAudit({
       action: 'inbox.replied',
       entityType: 'inbox_item',

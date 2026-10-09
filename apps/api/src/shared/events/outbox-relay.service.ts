@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../config/app.config';
 import { PrismaService } from '../database/prisma.service';
@@ -17,11 +22,13 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    if (!this.config.get('OUTBOX_RELAY_ENABLED')) {
+    if (!this.config.get('OUTBOX_RELAY_ENABLED', { infer: true })) {
       this.logger.log('Outbox relay disabled');
       return;
     }
-    const interval = this.config.get('OUTBOX_POLL_INTERVAL_MS');
+    const interval = this.config.get('OUTBOX_POLL_INTERVAL_MS', {
+      infer: true,
+    });
     this.timer = setInterval(() => void this.poll(), interval);
     this.logger.log(`Outbox relay started (interval=${interval}ms)`);
   }
@@ -34,7 +41,7 @@ export class OutboxRelayService implements OnModuleInit, OnModuleDestroy {
     if (this.running) return;
     this.running = true;
     try {
-      const batchSize = this.config.get('OUTBOX_BATCH_SIZE');
+      const batchSize = this.config.get('OUTBOX_BATCH_SIZE', { infer: true });
       const events = await this.prisma.outboxEvent.findMany({
         where: { status: 'PENDING' },
         orderBy: { createdAt: 'asc' },

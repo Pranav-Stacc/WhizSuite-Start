@@ -2,17 +2,24 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
+  FeedbackSubjectTypes,
   type FeedbackCommentDto,
   type FeedbackSubjectType,
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import {
+  notFound,
   problem,
-  ProblemDetailsException,
 } from '../../../../shared/errors/problem-details.exception';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { SocialService } from '../../../social/application/services/social.service';
 import { FeedbackRepository } from '../../infrastructure/repositories/feedback.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { toFeedbackCommentDto } from '../mappers/feedback-comment.mapper';
+import type {
+  CreateFeedbackThreadDto,
+  UpdateFeedbackThreadDto,
+} from '../../interface/http/dto/feedback-thread.dto';
 
 export interface FeedbackSubjectRef {
   subjectType: FeedbackSubjectType;
@@ -25,42 +32,60 @@ export class FeedbackService {
     private readonly repository: FeedbackRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly social: SocialService,
   ) {}
 
+  /** Client-portal principals may only discuss their own brand or that brand's content. */
+  private async assertSubjectAccess(
+    organizationId: string,
+    subject: FeedbackSubjectRef,
+  ): Promise<void> {
+    if (!TenantContext.clientScope()) return;
+    if (subject.subjectType === FeedbackSubjectTypes.CLIENT) {
+      if (!TenantContext.canAccessClient(subject.subjectId)) throw notFound();
+      return;
+    }
+    if (subject.subjectType === FeedbackSubjectTypes.CONTENT) {
+      await this.social.getContent(organizationId, subject.subjectId);
+      return;
+    }
+    throw notFound();
+  }
+
   list(organizationId: string) {
-    return this.repository.list(organizationId);
+    return this.repository.list(
+      organizationId,
+      this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+    );
   }
 
   async get(organizationId: string, id: string) {
     const item = await this.repository.findById(organizationId, id);
-    if (!item) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Not Found',
-          status: 404,
-          code: ErrorCodes.NOT_FOUND,
-        },
-        404,
-      );
-    }
+    if (!item) throw notFound();
     return item;
   }
 
   async create(
     organizationId: string,
     actorId: string,
-    data: Record<string, unknown>,
+    input: CreateFeedbackThreadDto,
   ) {
-    const item = await this.repository.create(organizationId, data);
+    const item = await this.repository.create(organizationId, {
+      ...input,
+      createdById: actorId,
+    });
     await this.audit.record({
       organizationId,
       actorId,
       actorType: 'user',
       action: 'feedback/threads.create',
       entityType: 'feedbackThread',
-      entityId: (item as { id: string }).id,
-      after: item as Record<string, unknown>,
+      entityId: item.id,
+      after: {
+        subjectType: item.subjectType,
+        subjectId: item.subjectId,
+        status: item.status,
+      },
     });
     return item;
   }
@@ -69,10 +94,10 @@ export class FeedbackService {
     organizationId: string,
     actorId: string,
     id: string,
-    data: Record<string, unknown>,
+    input: UpdateFeedbackThreadDto,
   ) {
-    await this.get(organizationId, id);
-    await this.repository.update(organizationId, id, data);
+    const before = await this.get(organizationId, id);
+    await this.repository.update(organizationId, id, input);
     await this.audit.record({
       organizationId,
       actorId,
@@ -80,7 +105,8 @@ export class FeedbackService {
       action: 'feedback/threads.update',
       entityType: 'feedbackThread',
       entityId: id,
-      after: data,
+      before: { status: before.status, visibility: before.visibility },
+      after: { ...input },
     });
     return this.get(organizationId, id);
   }
@@ -90,6 +116,7 @@ export class FeedbackService {
     organizationId: string,
     subject: FeedbackSubjectRef,
   ): Promise<FeedbackCommentDto[]> {
+    await this.assertSubjectAccess(organizationId, subject);
     const latest = await this.repository.listLatestSubjectComments(
       organizationId,
       subject,
@@ -104,8 +131,11 @@ export class FeedbackService {
     subject: FeedbackSubjectRef,
     rawBody: string,
   ): Promise<FeedbackCommentDto> {
+    await this.assertSubjectAccess(organizationId, subject);
     const body = rawBody.trim();
-    const maxLength = this.config.get('FEEDBACK_COMMENT_MAX_LENGTH', { infer: true });
+    const maxLength = this.config.get('FEEDBACK_COMMENT_MAX_LENGTH', {
+      infer: true,
+    });
     if (body.length === 0 || body.length > maxLength) {
       throw problem(
         HttpStatus.BAD_REQUEST,

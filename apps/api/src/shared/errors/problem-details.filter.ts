@@ -6,10 +6,43 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ErrorCodes } from '@agency-os/contracts';
+import { ErrorCodes, type ErrorCode } from '@agency-os/contracts';
+import { Prisma } from '@prisma/client';
 import type { Request, Response } from 'express';
 import { TenantContext } from '../tenant/tenant.context';
 import { ProblemDetailsException } from './problem-details.exception';
+
+const STATUS_CODES: Partial<Record<number, ErrorCode>> = {
+  [HttpStatus.BAD_REQUEST]: ErrorCodes.VALIDATION_FAILED,
+  [HttpStatus.UNAUTHORIZED]: ErrorCodes.UNAUTHORIZED,
+  [HttpStatus.FORBIDDEN]: ErrorCodes.FORBIDDEN,
+  [HttpStatus.NOT_FOUND]: ErrorCodes.NOT_FOUND,
+  [HttpStatus.CONFLICT]: ErrorCodes.CONFLICT,
+  [HttpStatus.UNPROCESSABLE_ENTITY]: ErrorCodes.VALIDATION_FAILED,
+  [HttpStatus.TOO_MANY_REQUESTS]: ErrorCodes.RATE_LIMITED,
+};
+
+/** Prisma known-request error codes that describe a client mistake rather than a server fault. */
+const PRISMA_ERRORS: Record<
+  string,
+  { status: HttpStatus; code: ErrorCode; detail: string }
+> = {
+  P2002: {
+    status: HttpStatus.CONFLICT,
+    code: ErrorCodes.CONFLICT,
+    detail: 'A record with these values already exists',
+  },
+  P2003: {
+    status: HttpStatus.UNPROCESSABLE_ENTITY,
+    code: ErrorCodes.VALIDATION_FAILED,
+    detail: 'A referenced record does not exist',
+  },
+  P2025: {
+    status: HttpStatus.NOT_FOUND,
+    code: ErrorCodes.NOT_FOUND,
+    detail: 'Record not found',
+  },
+};
 
 @Catch()
 export class ProblemDetailsFilter implements ExceptionFilter {
@@ -19,14 +52,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+    const meta = {
+      instance: request.url,
+      correlationId: TenantContext.getCorrelationId(),
+    };
 
     if (exception instanceof ProblemDetailsException) {
-      const problem = {
-        ...exception.problem,
-        instance: request.url,
-        correlationId: TenantContext.getCorrelationId(),
-      };
-      response.status(exception.getStatus()).json(problem);
+      response
+        .status(exception.getStatus())
+        .json({ ...exception.problem, ...meta });
       return;
     }
 
@@ -42,11 +76,25 @@ export class ProblemDetailsFilter implements ExceptionFilter {
             ? body
             : ((body as { message?: string | string[] }).message ??
               exception.message),
-        instance: request.url,
-        code: ErrorCodes.INTERNAL_ERROR,
-        correlationId: TenantContext.getCorrelationId(),
+        code: STATUS_CODES[status] ?? ErrorCodes.INTERNAL_ERROR,
+        ...meta,
       });
       return;
+    }
+
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const mapped = PRISMA_ERRORS[exception.code];
+      if (mapped) {
+        response.status(mapped.status).json({
+          type: 'about:blank',
+          title: HttpStatus[mapped.status],
+          status: mapped.status,
+          code: mapped.code,
+          detail: mapped.detail,
+          ...meta,
+        });
+        return;
+      }
     }
 
     this.logger.error(exception);
@@ -55,8 +103,7 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       title: 'Internal Server Error',
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       code: ErrorCodes.INTERNAL_ERROR,
-      instance: request.url,
-      correlationId: TenantContext.getCorrelationId(),
+      ...meta,
     });
   }
 }

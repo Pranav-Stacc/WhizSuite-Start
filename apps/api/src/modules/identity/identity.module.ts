@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AccessModule } from '../access/access.module';
 import { AuthService } from './application/services/auth.service';
+import { IdentityService } from './application/services/identity.service';
 import { MembersService } from './application/services/members.service';
 import { ProfileService } from './application/services/profile.service';
 import { IdentityRepository } from './infrastructure/repositories/identity.repository';
@@ -20,11 +21,12 @@ import { ProfileController } from './interface/http/controllers/profile.controll
   controllers: [AuthController, MembersController, ProfileController],
   providers: [
     AuthService,
+    IdentityService,
     MembersService,
     ProfileService,
     IdentityRepository,
     JwtStrategy,
   ],
-  exports: [AuthService, IdentityRepository],
+  exports: [AuthService, IdentityService, IdentityRepository],
 })
 export class IdentityModule {}

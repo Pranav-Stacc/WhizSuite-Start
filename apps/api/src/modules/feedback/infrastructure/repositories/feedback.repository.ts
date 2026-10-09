@@ -18,6 +18,19 @@ export interface FeedbackSubject {
   subjectId: string;
 }
 
+export interface FeedbackThreadCreateRow {
+  subjectType: string;
+  subjectId: string;
+  subjectVersion: string;
+  visibility?: string;
+  createdById: string;
+}
+
+export interface FeedbackThreadUpdateRow {
+  status?: string;
+  visibility?: string;
+}
+
 export interface SubjectCommentResult {
   comment: FeedbackCommentRecord;
   /** Set only when this call opened a new thread for the subject. */
@@ -28,7 +41,7 @@ export interface SubjectCommentResult {
 export class FeedbackRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit = 50) {
+  list(organizationId: string, limit: number) {
     return this.prisma.feedbackThread.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
@@ -42,16 +55,16 @@ export class FeedbackRepository {
     });
   }
 
-  create(organizationId: string, data: Record<string, unknown>) {
+  create(organizationId: string, row: FeedbackThreadCreateRow) {
     return this.prisma.feedbackThread.create({
-      data: { ...data, organizationId } as never,
+      data: { ...row, organizationId },
     });
   }
 
-  update(organizationId: string, id: string, data: Record<string, unknown>) {
+  update(organizationId: string, id: string, row: FeedbackThreadUpdateRow) {
     return this.prisma.feedbackThread.updateMany({
       where: { id, organizationId },
-      data: data as never,
+      data: row,
     });
   }
 
