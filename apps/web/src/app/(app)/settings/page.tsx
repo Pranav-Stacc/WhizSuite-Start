@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import { LogOut, Settings, Shield, User } from 'lucide-react';
+import { HardDrive, LogOut, Settings, Shield, User } from 'lucide-react';
+import { Permissions } from '@agency-os/contracts';
+import { getPermissions } from '@/shared/auth/permissions';
 import { requireSession } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { getTheme } from '@/shared/theme/theme.server';
@@ -15,11 +17,14 @@ import type { NotificationTypeKey } from '@agency-os/contracts';
 import { getNotificationPreferences, getProfile } from '@/features/settings/services/settings.service';
 import { PreferenceRow } from '@/features/settings/components/preference-row';
 import { ProfileForm } from '@/features/settings/components/profile-form';
+import { DataSourcesPanel } from '@/features/media/components/data-sources-panel';
+import { StorageUsageCard } from '@/features/media/components/storage-usage-card';
+import { listDataSources, getStorageUsage } from '@/features/media/services/storage.service';
 
 export const metadata: Metadata = { title: t('settings.title') };
 
 const BASE = '/settings';
-const TABS = ['profile', 'appearance', 'notifications', 'security'] as const;
+const TABS = ['profile', 'appearance', 'notifications', 'storage', 'security'] as const;
 type SettingsTab = (typeof TABS)[number];
 
 const GUIDE: GuideItem[] = [
@@ -36,12 +41,16 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const session = await requireSession();
   const sp = await searchParams;
   const tab = parseTab(param(sp, 'tab'));
-  const [profile, notificationPrefs, theme] = await Promise.all([
+  const granted = await getPermissions();
+  const [profile, notificationPrefs, theme, storageUsage, dataSources] = await Promise.all([
     getProfile(session),
     tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
     getTheme(),
+    tab === 'storage' ? getStorageUsage() : Promise.resolve(null),
+    tab === 'storage' ? listDataSources() : Promise.resolve([]),
   ]);
   const displayName = profile.name;
+  const driveFlash = param(sp, 'drive');
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -49,10 +58,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <TabLinks
         items={TABS.map((value) => ({
-          href: withQuery(BASE, sp, { tab: value === 'profile' ? undefined : value }),
+          href: withQuery(BASE, sp, { tab: value === 'profile' ? undefined : value, drive: undefined }),
           label: t(`settings.tab.${value}`),
           active: tab === value,
-          icon: value === 'profile' ? <User /> : value === 'security' ? <Shield /> : <Settings />,
+          icon:
+            value === 'profile' ? (
+              <User />
+            ) : value === 'security' ? (
+              <Shield />
+            ) : value === 'storage' ? (
+              <HardDrive />
+            ) : (
+              <Settings />
+            ),
         }))}
       />
 
@@ -65,7 +83,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <p className="text-lg font-semibold">{displayName}</p>
               <p className="text-sm text-muted">{profile.title || t('team.noTitle')}</p>
               <p className="mt-1 text-sm text-muted">{session.email}</p>
-              <p className="text-xs text-muted">{session.orgName} · {t(`shell.role.${session.role}`)}</p>
+              <p className="text-xs text-muted">
+                {session.orgName} · {t(`shell.role.${session.role}`)}
+              </p>
             </div>
           </CardBody>
         </Card>
@@ -89,6 +109,31 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             ))}
           </CardBody>
         </Card>
+      ) : null}
+
+      {tab === 'storage' && storageUsage ? (
+        <div className="space-y-6">
+          {driveFlash === 'connected' ? (
+            <p role="status" className="rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm text-success">
+              {t('media.storage.drive.connected')}
+            </p>
+          ) : null}
+          {driveFlash === 'error' ? (
+            <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {t('media.storage.drive.error')}
+            </p>
+          ) : null}
+          <StorageUsageCard usage={storageUsage} />
+          <div>
+            <h2 className="mb-3 text-sm font-semibold">{t('media.sources.title')}</h2>
+            <p className="mb-4 text-[13px] text-muted">{t('media.sources.description')}</p>
+            <DataSourcesPanel
+              sources={dataSources}
+              canManage={granted.has(Permissions.INTEGRATIONS_MANAGE)}
+              canTransfer={granted.has(Permissions.FILES_UPLOAD)}
+            />
+          </div>
+        </div>
       ) : null}
 
       {tab === 'security' ? (

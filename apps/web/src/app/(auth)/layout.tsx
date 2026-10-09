@@ -39,8 +39,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </nav>
         </aside>
 
-        <main id="main" className="flex items-center justify-center bg-surface/40 p-6 sm:p-10">
-          <div className="w-full max-w-md animate-fade-up">{children}</div>
+        <main id="main" className="flex items-center justify-center bg-surface/40 px-4 py-8 sm:p-10">
+          <div className="w-full max-w-md animate-fade-up">
+            <Link href="/" className="mb-8 inline-block lg:hidden">
+              <Logo />
+            </Link>
+            {children}
+          </div>
         </main>
       </div>
     </MarketingShell>

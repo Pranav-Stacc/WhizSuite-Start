@@ -1,21 +1,23 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { ChatMessageDto, ChatRoomDto } from '@agency-os/contracts';
-import { MessageSquare, Users } from 'lucide-react';
+import { Building2, MessageSquare, Users } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
+import { relativeTime } from '@/shared/lib/format';
+import { cn } from '@/shared/lib/cn';
 import { Badge } from '@/shared/ui/badge';
 import { EmptyState } from '@/shared/ui/feedback';
-import { SendMessageForm } from './send-message-form';
+import { ChatRoomThread } from './chat-room-thread';
+import type { MentionCandidate } from './send-message-form';
 
-function roomTitle(room: ChatRoomDto): string {
-  if (room.name) return room.name;
-  if (room.type === 'DM') return t('chat.dm');
-  return t('chat.untitled');
+function roomTitle(room: ChatRoomDto, titles: Map<string, string>): string {
+  return titles.get(room.id) ?? room.name ?? (room.type === 'DM' ? t('chat.dm') : t('chat.untitled'));
 }
 
-function roomMeta(room: ChatRoomDto): string {
-  if (room.type === 'CLIENT') return t('chat.type.client');
-  if (room.type === 'GROUP') return t('chat.type.group');
-  return t('chat.type.dm');
+function RoomTypeIcon({ type }: { type: ChatRoomDto['type'] }) {
+  if (type === 'CLIENT') return <Building2 className="size-3.5" />;
+  if (type === 'GROUP') return <Users className="size-3.5" />;
+  return <MessageSquare className="size-3.5" />;
 }
 
 export function ChatWorkspace({
@@ -23,40 +25,76 @@ export function ChatWorkspace({
   selected,
   messages,
   membersById,
+  roomTitles,
+  viewerId,
+  mentionCandidates,
+  headerActions,
+  compact = false,
 }: {
   rooms: ChatRoomDto[];
   selected: ChatRoomDto | null;
   messages: ChatMessageDto[];
   membersById: Map<string, string>;
+  roomTitles?: Map<string, string>;
+  viewerId: string;
+  mentionCandidates?: MentionCandidate[];
+  headerActions?: ReactNode;
+  compact?: boolean;
 }) {
+  const titles = roomTitles ?? new Map<string, string>();
+
   return (
-    <div className="grid min-h-[70vh] overflow-hidden rounded-2xl border border-border-soft bg-surface lg:grid-cols-[320px_1fr]">
+    <div
+      className={cn(
+        'grid overflow-hidden rounded-2xl border border-border-soft bg-surface',
+        compact ? 'min-h-[28rem]' : 'min-h-[min(70vh,36rem)] sm:min-h-[70vh]',
+        'lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]',
+      )}
+    >
       <aside className="border-b border-border-soft lg:border-b-0 lg:border-r">
-        <div className="flex items-center justify-between border-b border-border-soft px-4 py-3">
-          <h2 className="text-sm font-semibold">{t('chat.rooms')}</h2>
-          <Badge tone="neutral">{rooms.length}</Badge>
+        <div className="flex items-center justify-between gap-2 border-b border-border-soft px-3 py-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="text-sm font-semibold">{t('chat.rooms')}</h2>
+            <Badge tone="neutral">{rooms.length}</Badge>
+          </div>
+          {headerActions}
         </div>
-        <ul className="max-h-[40vh] overflow-y-auto lg:max-h-[calc(70vh-3rem)]">
+        <ul className={cn('overflow-y-auto', compact ? 'max-h-64' : 'max-h-[36vh] sm:max-h-[40vh] lg:max-h-[calc(70vh-3.25rem)]')}>
           {rooms.map((room) => {
             const active = selected?.id === room.id;
+            const unread = room.unreadCount > 0;
             return (
               <li key={room.id}>
                 <Link
                   href={`/chat?room=${room.id}`}
-                  className={`block px-4 py-3 transition hover:bg-muted/60 ${
-                    active ? 'bg-muted' : ''
-                  }`}
+                  className={cn(
+                    'block px-4 py-3 transition hover:bg-muted/60',
+                    active && 'bg-muted',
+                  )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{roomTitle(room)}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {room.lastMessagePreview ?? roomMeta(room)}
+                      <div className="mb-0.5 flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted">
+                        <RoomTypeIcon type={room.type} />
+                        {room.type === 'CLIENT'
+                          ? t('chat.type.client')
+                          : room.type === 'GROUP'
+                            ? t('chat.type.group')
+                            : t('chat.type.dm')}
+                      </div>
+                      <p className={cn('truncate text-sm', unread ? 'font-semibold' : 'font-medium')}>
+                        {roomTitle(room, titles)}
+                      </p>
+                      <p className={cn('truncate text-xs', unread ? 'text-foreground' : 'text-muted')}>
+                        {room.lastMessagePreview ?? '—'}
                       </p>
                     </div>
-                    {room.unreadCount > 0 ? (
-                      <Badge tone="info">{room.unreadCount}</Badge>
-                    ) : null}
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      {room.lastMessageAt ? (
+                        <span className="text-[10px] text-muted">{relativeTime(room.lastMessageAt)}</span>
+                      ) : null}
+                      {unread ? <Badge tone="info">{room.unreadCount}</Badge> : null}
+                    </div>
                   </div>
                 </Link>
               </li>
@@ -79,69 +117,25 @@ export function ChatWorkspace({
           <>
             <header className="flex items-center gap-3 border-b border-border-soft px-4 py-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                <Users className="h-4 w-4" />
+                <RoomTypeIcon type={selected.type} />
               </div>
               <div className="min-w-0">
-                <h3 className="truncate font-semibold">{roomTitle(selected)}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {roomMeta(selected)} · {selected.memberCount} {t('chat.members')}
+                <h3 className="truncate font-semibold">{roomTitle(selected, titles)}</h3>
+                <p className="text-xs text-muted">
+                  {selected.memberCount} {t('chat.members')}
+                  {selected.description ? ` · ${selected.description}` : ''}
                 </p>
               </div>
             </header>
 
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-              {messages.map((message) => {
-                const author =
-                  (message.senderId && membersById.get(message.senderId)) ||
-                  t('chat.unknown');
-                return (
-                  <article key={message.id} className="max-w-[85%]">
-                    <div className="mb-1 flex items-baseline gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">{author}</span>
-                      <time dateTime={message.createdAt}>
-                        {new Date(message.createdAt).toLocaleString()}
-                      </time>
-                    </div>
-                    <div className="rounded-2xl bg-muted px-3 py-2 text-sm">
-                      {message.deletedAt ? (
-                        <span className="italic text-muted-foreground">{t('chat.deleted')}</span>
-                      ) : (
-                        message.body
-                      )}
-                      {message.mentions.length > 0 ? (
-                        <ul className="mt-2 flex flex-wrap gap-1">
-                          {message.mentions.map((m) => (
-                            <li key={m.id}>
-                              <Badge tone="neutral">
-                                @{m.displayText}
-                              </Badge>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
-                      {message.attachments.length > 0 ? (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {t('chat.attachments', { count: String(message.attachments.length) })}
-                        </p>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-              {messages.length === 0 ? (
-                <EmptyState
-                  icon={<MessageSquare />}
-                  title={t('chat.empty.messages.title')}
-                  body={t('chat.empty.messages.body')}
-                />
-              ) : null}
-            </div>
-
-            {selected.viewerCanPost ? (
-              <div className="border-t border-border-soft p-4">
-                <SendMessageForm roomId={selected.id} />
-              </div>
-            ) : null}
+            <ChatRoomThread
+              roomId={selected.id}
+              messages={messages}
+              viewerId={viewerId}
+              membersById={Object.fromEntries(membersById)}
+              mentionCandidates={mentionCandidates}
+              canPost={selected.viewerCanPost}
+            />
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center p-8">

@@ -7,7 +7,7 @@ void main() {
   final now = DateTime(2026, 10, 9);
 
   group('PortalSummary.of', () {
-    test('counts approvals, open invoices, open threads and active projects', () {
+    test('counts approvals, open invoices, unread rooms and active projects', () {
       final summary = PortalSummary.of(
         content: [
           const PortalContent(id: '1', title: 'A', status: ContentStatuses.inReview),
@@ -43,19 +43,19 @@ void main() {
           PortalProject(id: 'p1', name: 'Active', status: ProjectStatuses.active),
           PortalProject(id: 'p2', name: 'Done', status: ProjectStatuses.completed),
         ],
-        threads: [
-          PortalThread(
-            id: 't1',
-            subjectType: FeedbackSubjectTypes.client,
-            subjectId: 'c1',
-            status: FeedbackThreadStatuses.open,
-            updatedAt: DateTime(2026, 10, 8),
+        rooms: [
+          PortalRoom(
+            id: 'r1',
+            type: ChatRoomTypes.client,
+            name: 'Agency chat',
+            unreadCount: 2,
+            lastMessageAt: DateTime(2026, 10, 8),
           ),
-          const PortalThread(
-            id: 't2',
-            subjectType: FeedbackSubjectTypes.client,
-            subjectId: 'c1',
-            status: FeedbackThreadStatuses.resolved,
+          const PortalRoom(
+            id: 'r2',
+            type: ChatRoomTypes.client,
+            name: 'Read room',
+            unreadCount: 0,
           ),
         ],
         now: now,
@@ -64,10 +64,12 @@ void main() {
       expect(summary.approvals, 1);
       expect(summary.openInvoices, 2);
       expect(summary.openInvoiceRows.first.number, 'INV-3');
+      expect(summary.unreadRooms, 1);
       expect(summary.openThreads, 1);
       expect(summary.activeProjects, 1);
       expect(summary.recentContent.map((c) => c.id), ['3']);
       expect(summary.approvalRows.single.id, '1');
+      expect(summary.roomRows.single.id, 'r1');
     });
 
     test('treats past-due sent invoices as open/overdue', () {

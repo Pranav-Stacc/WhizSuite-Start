@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
@@ -16,11 +17,14 @@ import '../../auth/application/session_controller.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../application/media_controller.dart';
+import '../application/storage_providers.dart';
 import '../application/upload_queue.dart';
+import '../data/storage_repository.dart';
 import '../domain/media_asset.dart';
 import '../media_routes.dart';
 import 'media_labels.dart';
 import 'media_tile.dart';
+import 'storage_usage_card.dart';
 import 'upload_sheet.dart';
 
 class MediaScreen extends ConsumerStatefulWidget {
@@ -36,9 +40,48 @@ class MediaScreen extends ConsumerStatefulWidget {
 class _MediaScreenState extends ConsumerState<MediaScreen> {
   String? _kind;
   String? _clientId;
+  final _selected = <String>{};
+  var _selecting = false;
+  var _exporting = false;
 
   bool _passes(MediaAsset asset, {bool ignoreKind = false}) =>
       (ignoreKind || _kind == null || asset.kind == _kind) && (_clientId == null || asset.clientId == _clientId);
+
+  void _toggleSelect(String id) {
+    setState(() {
+      if (_selected.contains(id)) {
+        _selected.remove(id);
+      } else {
+        _selected.add(id);
+      }
+      if (_selected.isEmpty) _selecting = false;
+    });
+  }
+
+  Future<void> _zipSelected() async {
+    if (_selected.isEmpty || _exporting) return;
+    final l10n = AppLocalizations.of(context);
+    setState(() => _exporting = true);
+    try {
+      final repo = ref.read(storageRepositoryProvider);
+      var job = await repo.createZipExport(_selected.toList());
+      if (job.isRunning) job = await repo.waitForJob(job.id);
+      if (job.isReady && job.downloadUrl != null) {
+        final uri = Uri.tryParse(job.downloadUrl!);
+        if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+        setState(() {
+          _selected.clear();
+          _selecting = false;
+        });
+      } else if (mounted) {
+        showToast(context, job.error ?? l10n.storageZipFailed);
+      }
+    } catch (_) {
+      if (mounted) showToast(context, l10n.storageZipFailed);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
 
   Future<void> _upload() async {
     final l10n = AppLocalizations.of(context);
@@ -57,9 +100,26 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
     final all = assets.value ?? const <MediaAsset>[];
     int kindCount(String? kind) => all.where((a) => _passes(a, ignoreKind: true) && (kind == null || a.kind == kind)).length;
 
+    final usage = ref.watch(storageUsageProvider);
+
     return PageScaffold(
       title: l10n.mediaTitle,
       actions: [
+        PermissionGate(
+          anyOf: const [Permissions.filesView],
+          child: IconButton(
+            tooltip: _selecting ? l10n.storageClearSelection : l10n.storageZipSelect,
+            onPressed: () => setState(() {
+              if (_selecting) {
+                _selecting = false;
+                _selected.clear();
+              } else {
+                _selecting = true;
+              }
+            }),
+            icon: Icon(_selecting ? Icons.close : Icons.checklist),
+          ),
+        ),
         if (uploading > 0)
           IconButton(
             tooltip: l10n.mediaUploadInProgress(uploading),
@@ -75,7 +135,10 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
           label: Text(l10n.mediaUpload),
         ),
       ),
-      body: ResourceList<MediaAsset>(
+      body: Column(
+        children: [
+          Expanded(
+            child: ResourceList<MediaAsset>(
         value: assets,
         minTileWidth: MediaScreen.minTileWidth,
         tileHeight: MediaScreen.tileHeight,
@@ -86,6 +149,13 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
         header: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            switch (usage) {
+              AsyncValue(value: final value?) => Padding(
+                  padding: EdgeInsets.only(bottom: tokens.md),
+                  child: StorageUsageCard(usage: value),
+                ),
+              _ => const SizedBox.shrink(),
+            },
             if (all.isNotEmpty) ...[
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -159,9 +229,41 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
           child: MediaTile(
             asset: asset,
             clientName: clients.nameOf(asset.clientId),
-            onTap: () => context.go(MediaRoutes.detail(asset.id)),
+            selected: _selecting ? _selected.contains(asset.id) : null,
+            onTap: () {
+              if (_selecting) {
+                _toggleSelect(asset.id);
+              } else {
+                context.go(MediaRoutes.detail(asset.id));
+              }
+            },
           ),
         ),
+            ),
+          ),
+          if (_selecting && _selected.isNotEmpty)
+            SafeArea(
+              top: false,
+              child: Material(
+                elevation: 4,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: tokens.lg, vertical: tokens.sm),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(l10n.storageSelectedCount(_selected.length))),
+                      FilledButton.icon(
+                        onPressed: _exporting ? null : _zipSelected,
+                        icon: _exporting
+                            ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.download_outlined),
+                        label: Text(l10n.storageZipDownload),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

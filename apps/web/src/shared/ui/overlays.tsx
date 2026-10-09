@@ -57,17 +57,23 @@ interface SheetProps {
   children: ReactNode;
   width?: string;
   footer?: ReactNode;
+  /** Mobile nav uses left; detail drawers stay right. */
+  side?: 'left' | 'right';
 }
 
-/** Right-hand drawer for detail views that should not lose page context. */
-export function Sheet({ open, onOpenChange, title, description, children, width = 'max-w-lg', footer }: SheetProps) {
+/** Edge drawer — left for navigation, right for detail views that keep page context. */
+export function Sheet({ open, onOpenChange, title, description, children, width = 'max-w-lg', footer, side = 'right' }: SheetProps) {
+  const fromLeft = side === 'left';
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className={overlayClass} />
         <Dialog.Content
           className={cn(
-            'fixed inset-y-0 right-0 z-50 flex w-full flex-col border-l border-border-strong bg-surface data-[state=open]:animate-slide-in-right',
+            'fixed inset-y-0 z-50 flex w-full flex-col bg-surface',
+            fromLeft
+              ? 'left-0 border-r border-border-strong data-[state=open]:animate-slide-in-left'
+              : 'right-0 border-l border-border-strong data-[state=open]:animate-slide-in-right',
             width,
           )}
         >

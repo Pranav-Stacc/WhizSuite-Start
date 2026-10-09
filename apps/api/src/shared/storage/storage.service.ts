@@ -185,6 +185,38 @@ export class StorageService {
     };
   }
 
+  /** Streams object bytes for zip/export jobs. */
+  async getObjectBytes(storageKey: string): Promise<Buffer> {
+    const object = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: storageKey }),
+    );
+    const bytes = await object.Body?.transformToByteArray();
+    if (!bytes?.length) {
+      throw new Error(`Object ${storageKey} is empty`);
+    }
+    return Buffer.from(bytes);
+  }
+
+  async putObject(input: {
+    organizationId: string;
+    filename: string;
+    mimeType: string;
+    body: Buffer;
+  }): Promise<{ storageKey: string; sizeBytes: number }> {
+    await this.ensureBucket();
+    const storageKey = this.buildObjectKey(input.organizationId, input.filename);
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+        Body: input.body,
+        ContentType: input.mimeType,
+        ContentLength: input.body.byteLength,
+      }),
+    );
+    return { storageKey, sizeBytes: input.body.byteLength };
+  }
+
   async deleteObjects(storageKeys: string[]): Promise<void> {
     for (
       let start = 0;

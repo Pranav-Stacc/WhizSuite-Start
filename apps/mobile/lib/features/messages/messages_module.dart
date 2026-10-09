@@ -13,7 +13,7 @@ final messagesModule = FeatureModule(
       icon: Icons.forum_outlined,
       selectedIcon: Icons.forum,
       label: (l10n) => l10n.navMessages,
-      anyOf: const [Permissions.feedbackView],
+      anyOf: const [Permissions.chatView],
       audiences: everyAudience,
       group: NavGroup.clients,
       primary: false,

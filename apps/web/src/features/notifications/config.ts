@@ -30,7 +30,7 @@ export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
     href: (data) => (data.roomId ? `/chat?room=${data.roomId}` : '/chat'),
   },
   [NotificationTypeKeys.CHAT_MENTION]: {
-    kind: 'system',
+    kind: 'mention',
     title: 'notifications.event.chatMention',
     href: (data) => (data.roomId ? `/chat?room=${data.roomId}` : '/chat'),
   },

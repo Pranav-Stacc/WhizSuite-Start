@@ -77,11 +77,25 @@ export class BillingService {
     key: string,
     current: number,
   ): Promise<boolean> {
+    const max = await this.limitMax(organizationId, key);
+    if (max === null) return true;
+    return current < max;
+  }
+
+  /** Plan cap for an entitlement key, or null when unlimited / unset. */
+  async limitMax(organizationId: string, key: string): Promise<number | null> {
     const entitlements = await this.repository.getEntitlements(organizationId);
     const entry = entitlements.find((e) => e.key === key);
-    if (!entry) return true;
-    const limit = entry.value as { max?: number };
-    if (limit.max === undefined) return true;
-    return current < limit.max;
+    if (!entry) return null;
+    return parseEntitlementMax(entry.value);
   }
+}
+
+function parseEntitlementMax(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (value && typeof value === 'object' && 'max' in value) {
+    const max = (value as { max: unknown }).max;
+    if (typeof max === 'number' && Number.isFinite(max)) return max;
+  }
+  return null;
 }

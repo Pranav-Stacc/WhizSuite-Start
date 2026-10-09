@@ -40,10 +40,10 @@ export function PortalMobileMenu({ badges }: { badges: PortalBadges }) {
 
   return (
     <>
-      <Button variant="ghost" size="icon" className="md:hidden" aria-label={t('shell.menu')} onClick={() => setOpen(true)}>
+      <Button variant="ghost" size="icon" className="shrink-0 md:hidden" aria-label={t('shell.menu')} onClick={() => setOpen(true)}>
         <MenuIcon />
       </Button>
-      <Sheet open={open} onOpenChange={setOpen} title={t('portal.nav')} width="max-w-sm">
+      <Sheet open={open} onOpenChange={setOpen} title={t('portal.nav')} width="max-w-sm" side="left">
         <nav className="grid gap-2" aria-label={t('portal.nav')}>
           {NAV.map((item) => {
             const Icon = item.icon;
@@ -74,7 +74,7 @@ export function PortalMobileMenu({ badges }: { badges: PortalBadges }) {
 export function PortalDesktopNav({ badges }: { badges: PortalBadges }) {
   const pathname = usePathname();
   return (
-    <nav aria-label={t('portal.nav')} className="ml-auto hidden items-center gap-1 md:flex">
+    <nav aria-label={t('portal.nav')} className="ml-auto hidden max-w-[min(100%,42rem)] items-center gap-0.5 overflow-x-auto md:flex lg:gap-1">
       {NAV.map((item) => {
         const Icon = item.icon;
         const badge = item.badgeKey ? badges[item.badgeKey] : 0;
@@ -85,12 +85,13 @@ export function PortalDesktopNav({ badges }: { badges: PortalBadges }) {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition',
+              'inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-2 text-[13px] font-medium transition lg:px-3',
               active ? 'bg-primary/12 text-primary' : 'text-muted hover:bg-surface-2 hover:text-foreground',
             )}
           >
             <Icon className="size-4" />
-            {t(item.label)}
+            <span className="hidden lg:inline">{t(item.label)}</span>
+            <span className="sr-only lg:hidden">{t(item.label)}</span>
             {badge > 0 ? <span className="rounded-full bg-primary/16 px-1.5 text-[10px] font-semibold text-primary">{badge}</span> : null}
           </Link>
         );

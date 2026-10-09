@@ -48,7 +48,7 @@ Examples:
 - Client users have a simplified preference screen.
 
 ## 15.5 Features
-- **@mentions** across comments, feedback, discussions, inbox notes.
+- **@mentions** across comments, feedback, discussions, and chat.
 - **Grouping/batching:** "5 new comments on Post #27" within a configurable window (debounce via Redis key per `(user, group_key)`).
 - Read/unread, mark all read, archive; unread counts cached in Redis.
 - Deep links to the exact entity (and annotation/timestamp).

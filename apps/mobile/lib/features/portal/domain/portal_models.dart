@@ -101,28 +101,31 @@ class PortalProject {
   bool get isActive => status == ProjectStatuses.active || status == ProjectStatuses.planning;
 }
 
-class PortalThread {
-  const PortalThread({
+class PortalRoom {
+  const PortalRoom({
     required this.id,
-    required this.subjectType,
-    required this.subjectId,
-    required this.status,
-    this.updatedAt,
+    required this.type,
+    this.name,
+    this.lastMessagePreview,
+    this.lastMessageAt,
+    this.unreadCount = 0,
   });
 
-  factory PortalThread.fromJson(Json json) => PortalThread(
+  factory PortalRoom.fromJson(Json json) => PortalRoom(
         id: json.str('id'),
-        subjectType: json.str('subjectType', FeedbackSubjectTypes.client),
-        subjectId: json.str('subjectId'),
-        status: json.str('status', FeedbackThreadStatuses.open),
-        updatedAt: json.date('updatedAt') ?? json.date('createdAt'),
+        type: json.str('type', ChatRoomTypes.client),
+        name: json.strOrNull('name'),
+        lastMessagePreview: json.strOrNull('lastMessagePreview'),
+        lastMessageAt: json.date('lastMessageAt') ?? json.date('updatedAt'),
+        unreadCount: json.integer('unreadCount'),
       );
 
   final String id;
-  final String subjectType;
-  final String subjectId;
-  final String status;
-  final DateTime? updatedAt;
+  final String type;
+  final String? name;
+  final String? lastMessagePreview;
+  final DateTime? lastMessageAt;
+  final int unreadCount;
 
-  bool get isOpen => status == FeedbackThreadStatuses.open;
+  bool get hasUnread => unreadCount > 0;
 }

@@ -35,7 +35,7 @@ Record expenses per client/project (software, freelancers, stock assets, shoot c
 
 ## 14.5 Time Tracking
 - Start/stop timer (one active per user), manual entries, weekly timesheets.
-- Linked to task / content / project / client / inbox conversation; billable vs non-billable; activity category (configurable).
+- Linked to task / content / project / client / chat room; billable vs non-billable; activity category (configurable).
 - Timesheet submission & approval (`time.approve`); lock periods.
 - Internal **cost rate** per member (or per designation) and **bill rate** per client/service — both configurable, effective-dated.
 - Idle reminders and missing-timesheet reminders (automation).

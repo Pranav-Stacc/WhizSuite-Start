@@ -29,6 +29,6 @@ import { ProfileController } from './interface/http/controllers/profile.controll
     GoogleIdTokenVerifier,
     JwtStrategy,
   ],
-  exports: [AuthService, IdentityService, IdentityRepository],
+  exports: [AuthService, IdentityService, IdentityRepository, MembersService],
 })
 export class IdentityModule {}

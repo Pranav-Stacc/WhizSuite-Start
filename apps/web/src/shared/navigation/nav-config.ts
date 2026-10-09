@@ -24,6 +24,7 @@ import {
   UsersRound,
   Workflow,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 import { Permissions, type Permission } from '@agency-os/contracts';
 import type { MessageKey } from '@/shared/i18n/t';
@@ -98,6 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
     desc: 'nav.group.automate.desc',
     icon: Zap,
     items: [
+      { href: '/agent', label: 'nav.agent', desc: 'nav.agent.desc', icon: Sparkles, permission: Permissions.AI_CHAT },
       { href: '/automations', label: 'nav.automations', desc: 'nav.automations.desc', icon: Zap, permission: Permissions.AUTOMATIONS_MANAGE },
       { href: '/workflows', label: 'nav.workflows', desc: 'nav.workflows.desc', icon: Workflow, permission: Permissions.WORKFLOWS_MANAGE },
       { href: '/integrations', label: 'nav.integrations', desc: 'nav.integrations.desc', icon: Plug, permission: Permissions.INTEGRATIONS_MANAGE },
@@ -130,9 +132,6 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Default primary bar when no module context is provided (legacy). Prefer `primaryNav(granted, module)`. */
-export const PRIMARY_NAV_HREFS = MODULE_PRIMARY_HREFS.main;
-
 export function isAllowed(item: { permission?: Permission }, granted: ReadonlySet<Permission>): boolean {
   return item.permission === undefined || granted.has(item.permission);
 }
@@ -144,13 +143,6 @@ export function primaryNav(granted: ReadonlySet<Permission>, module: WorkspaceMo
     const item = byHref.get(href);
     return item && isAllowed(item, granted) ? [item] : [];
   });
-}
-
-export function secondaryGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
-  const primary = new Set<string>(MODULE_PRIMARY_HREFS[module]);
-  return allowedGroups(granted, module)
-    .map((group) => ({ ...group, items: group.items.filter((item) => !primary.has(item.href)) }))
-    .filter((group) => group.items.length > 0);
 }
 
 export function allowedGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
@@ -173,7 +165,7 @@ export function allowedGroups(granted: ReadonlySet<Permission>, module: Workspac
           items: group.items.filter((item) => item.href === '/leads' && isAllowed(item, granted)),
         };
       }
-      // Main Clients group: accounts + inbox (not pipeline).
+      // Main Clients group: accounts + chat (not pipeline).
       if (module === 'main' && group.id === 'clients') {
         return {
           ...group,

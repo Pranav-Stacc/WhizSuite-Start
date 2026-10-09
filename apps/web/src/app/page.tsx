@@ -52,10 +52,10 @@ export default async function LandingPage() {
 
       <main id="main">
         {/* Hero: brand + one line + CTA + product plane */}
-        <section className="relative mx-auto grid max-w-6xl gap-12 px-6 pb-20 pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-end lg:gap-16 lg:pb-28 lg:pt-20">
+        <section className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-10 sm:gap-12 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-end lg:gap-16 lg:pb-28 lg:pt-20">
           <div className="marketing-rise max-w-xl">
-            <p className="wordmark mb-8 text-[13px] tracking-[0.32em] text-foreground">{t('landing.brand')}</p>
-            <h1 className="display text-balance text-4xl text-foreground sm:text-5xl lg:text-[3.35rem]">
+            <p className="wordmark mb-6 text-[12px] tracking-[0.32em] text-foreground sm:mb-8 sm:text-[13px]">{t('landing.brand')}</p>
+            <h1 className="display text-balance text-[2rem] leading-tight text-foreground sm:text-5xl lg:text-[3.35rem]">
               {t('landing.title')}
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-muted">{t('landing.subtitle')}</p>
@@ -80,7 +80,7 @@ export default async function LandingPage() {
         <div className="marketing-rule mx-auto max-w-6xl" aria-hidden />
 
         {/* Modules */}
-        <section id="modules" className="marketing-stage mx-auto max-w-6xl px-6 py-20 lg:py-28">
+        <section id="modules" className="marketing-stage mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
           <div className="max-w-2xl">
             <p className="eyebrow">{t('landing.modules.eyebrow')}</p>
             <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.modules.title')}</h2>
@@ -101,7 +101,7 @@ export default async function LandingPage() {
 
         {/* Workflow */}
         <section id="workflow" className="marketing-stage border-t border-border-soft bg-surface/30">
-          <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
             <div className="max-w-2xl">
               <p className="eyebrow">{t('landing.workflow.eyebrow')}</p>
               <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.workflow.title')}</h2>
@@ -122,7 +122,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Portal */}
-        <section id="portal" className="marketing-stage mx-auto max-w-6xl px-6 py-20 lg:py-28">
+        <section id="portal" className="marketing-stage mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
           <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div>
               <p className="eyebrow">{t('landing.portal.eyebrow')}</p>
@@ -141,7 +141,7 @@ export default async function LandingPage() {
 
         {/* Security */}
         <section id="security" className="marketing-stage border-t border-border-soft">
-          <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:py-28">
             <div className="max-w-2xl">
               <p className="eyebrow">{t('landing.security.eyebrow')}</p>
               <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.security.title')}</h2>
@@ -160,7 +160,7 @@ export default async function LandingPage() {
 
         {/* Final CTA */}
         <section className="marketing-stage border-t border-border-soft">
-          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-24 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-16 sm:px-6 sm:py-24 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
               <h2 className="display text-3xl text-foreground sm:text-4xl">{t('landing.final.title')}</h2>
               <p className="mt-4 text-muted">{t('landing.final.body')}</p>

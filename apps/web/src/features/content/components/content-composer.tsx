@@ -281,7 +281,7 @@ export function ContentComposer({
                 const [date, time] = splitDateTime(field.value);
                 const update = (nextDate: string, nextTime: string) => field.onChange(nextDate ? `${nextDate}${DATE_TIME_SEPARATOR}${nextTime || DEFAULT_TIME}` : '');
                 return (
-                  <div className="grid grid-cols-[1fr_7rem] gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_7rem]">
                     <Field label={t('content.field.date')} htmlFor="cc-date">
                       <Input id="cc-date" type="date" value={date} onChange={(e) => update(e.target.value, time)} />
                     </Field>

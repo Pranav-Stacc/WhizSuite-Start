@@ -18,9 +18,9 @@ const NAV = [
 export function ProductFrame() {
   return (
     <div className="marketing-frame relative overflow-hidden border border-border-strong bg-surface" aria-hidden>
-      <div className="flex items-center justify-between border-b border-border-soft px-4 py-3">
-        <div className="flex items-center gap-3">
-          <span className="wordmark text-[10px] tracking-[0.28em]">{t('app.name')}</span>
+      <div className="flex items-center justify-between border-b border-border-soft px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="wordmark truncate text-[10px] tracking-[0.28em]">{t('app.name')}</span>
           <span className="hidden h-3 w-px bg-border-strong sm:block" />
           <span className="eyebrow hidden sm:inline">{t('landing.frame.workspace')}</span>
         </div>
@@ -31,7 +31,23 @@ export function ProductFrame() {
         </div>
       </div>
 
-      <div className="grid min-h-[280px] sm:min-h-[340px] lg:min-h-[420px] lg:grid-cols-[148px_1fr]">
+      {/* Mobile / tablet: horizontal sidebar strip */}
+      <div className="no-scrollbar flex gap-1 overflow-x-auto border-b border-border-soft px-2 py-2 lg:hidden">
+        {NAV.map((key, i) => (
+          <span
+            key={key}
+            className={
+              i === 0
+                ? 'shrink-0 border border-foreground/35 bg-foreground/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-foreground'
+                : 'shrink-0 border border-transparent px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-muted'
+            }
+          >
+            {t(key)}
+          </span>
+        ))}
+      </div>
+
+      <div className="grid min-h-[260px] sm:min-h-[340px] lg:min-h-[420px] lg:grid-cols-[148px_1fr]">
         <aside className="hidden border-r border-border-soft p-4 lg:block">
           <p className="eyebrow mb-4">{t('landing.frame.nav')}</p>
           <ul className="space-y-2">
@@ -50,18 +66,18 @@ export function ProductFrame() {
           </ul>
         </aside>
 
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <div className="grid gap-px border-b border-border-soft bg-border-soft sm:grid-cols-3">
             {METRICS.map((metric) => (
-              <div key={metric.label} className="bg-surface p-4">
+              <div key={metric.label} className="bg-surface p-3 sm:p-4">
                 <p className="eyebrow">{t(metric.label)}</p>
-                <p className="mt-2 font-mono text-2xl tracking-tight text-foreground">{t(metric.value)}</p>
+                <p className="mt-2 font-mono text-xl tracking-tight text-foreground sm:text-2xl">{t(metric.value)}</p>
               </div>
             ))}
           </div>
 
           <div className="grid flex-1 gap-px bg-border-soft sm:grid-cols-2">
-            <div className="bg-surface p-4">
+            <div className="bg-surface p-3 sm:p-4">
               <p className="eyebrow mb-3">{t('landing.frame.pipeline')}</p>
               <ul className="space-y-2">
                 {[0.92, 0.68, 0.44, 0.28].map((w, i) => (
@@ -72,7 +88,7 @@ export function ProductFrame() {
                 ))}
               </ul>
             </div>
-            <div className="bg-surface p-4">
+            <div className="bg-surface p-3 sm:p-4">
               <p className="eyebrow mb-3">{t('landing.frame.calendar')}</p>
               <div className="grid grid-cols-7 gap-1.5">
                 {Array.from({ length: 21 }, (_, i) => (

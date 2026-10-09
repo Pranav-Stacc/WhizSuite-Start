@@ -26,6 +26,7 @@ import {
   type MediaAssetRecord,
 } from '../mappers/media-asset.mapper';
 import { isMimeTypeAllowed } from '../utils/mime-type';
+import { MediaStorageService } from './media-storage.service';
 
 const ENTITY_TYPE = 'mediaAsset';
 const PREVIEWABLE_MIME_PREFIXES = ['image/', 'video/'];
@@ -44,6 +45,7 @@ export class MediaService {
     private readonly repository: MediaRepository,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly mediaStorage: MediaStorageService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
@@ -106,6 +108,14 @@ export class MediaService {
         'Bad Request',
         ErrorCodes.MEDIA_TOO_LARGE,
         `File exceeds the ${maxBytes} byte limit`,
+      );
+    }
+    if (!(await this.mediaStorage.canAccept(organizationId, input.sizeBytes))) {
+      throw problem(
+        402,
+        'Payment Required',
+        ErrorCodes.MEDIA_STORAGE_LIMIT_EXCEEDED,
+        'Organization storage plan limit would be exceeded',
       );
     }
 

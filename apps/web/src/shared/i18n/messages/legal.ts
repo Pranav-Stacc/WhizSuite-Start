@@ -47,7 +47,7 @@ export const legalMessages = {
     'By creating a workspace or using WhizSuite you agree to these Terms and the Privacy Policy. If you use the product on behalf of an organisation, you represent that you can bind that organisation.',
   'legal.terms.s2.title': '2. The service',
   'legal.terms.s2.body':
-    'WhizSuite is a multi-tenant platform for agency operations: projects, content, approvals, inbox, billing, reporting, and a client portal. Features may change as we improve the product. Beta features may be incomplete and offered as-is.',
+    'WhizSuite is a multi-tenant platform for agency operations: projects, content, approvals, chat, billing, reporting, and a client portal. Features may change as we improve the product. Beta features may be incomplete and offered as-is.',
   'legal.terms.s3.title': '3. Accounts and access',
   'legal.terms.s3.body':
     'You must provide accurate registration details and keep credentials secure. Organisation owners control member invitations, roles, and permissions. You are responsible for activity under your workspace, including client portal users you invite.',

@@ -7,7 +7,13 @@ export const AUTOMATION_STATUS = {
   PAUSED: 'PAUSED',
   ARCHIVED: 'ARCHIVED',
 } as const;
-export const RUN_STATUS = { COMPLETED: 'COMPLETED', FAILED: 'FAILED' } as const;
+export const RUN_STATUS = {
+  QUEUED: 'QUEUED',
+  RUNNING: 'RUNNING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED',
+  COMPLETED: 'COMPLETED',
+} as const;
 
 const latestVersion = {
   orderBy: { version: 'desc' as const },
@@ -173,19 +179,50 @@ export class AutomationRepository {
     });
   }
 
+  findRunById(organizationId: string, runId: string) {
+    return this.prisma.automationRun.findFirst({
+      where: { id: runId, organizationId },
+      include: {
+        version: {
+          select: {
+            id: true,
+            trigger: true,
+            actions: true,
+            automationId: true,
+          },
+        },
+      },
+    });
+  }
+
+  updateRun(
+    organizationId: string,
+    runId: string,
+    data: {
+      status?: string;
+      startedAt?: Date;
+      completedAt?: Date;
+      context?: Prisma.InputJsonObject;
+    },
+  ) {
+    return this.prisma.automationRun.updateMany({
+      where: { id: runId, organizationId },
+      data,
+    });
+  }
+
   createRun(
     organizationId: string,
     versionId: string,
     context?: Prisma.InputJsonObject,
+    status: string = RUN_STATUS.QUEUED,
   ) {
     return this.prisma.automationRun.create({
       data: {
         organizationId,
         versionId,
-        status: RUN_STATUS.COMPLETED,
+        status,
         context: context ?? {},
-        startedAt: new Date(),
-        completedAt: new Date(),
       },
     });
   }

@@ -73,6 +73,7 @@ export const common = {
   'common.confirmAgain': 'Click again to confirm',
   'common.noResults': 'No results match your filters.',
   'common.clearFilters': 'Clear filters',
+  'common.clear': 'Clear',
   'validation.required': 'This field is required',
   'validation.email': 'Enter a valid email address',
   'validation.password': 'Use at least 12 characters',

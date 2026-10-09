@@ -56,6 +56,10 @@ export const Permissions = {
   TIME_TRACK: 'time.track',
   AUDIT_VIEW: 'audit.view',
   INTEGRATIONS_MANAGE: 'integrations.manage',
+  AI_VIEW: 'ai.view',
+  AI_CHAT: 'ai.chat',
+  AI_MANAGE: 'ai.manage',
+  AI_AGENTS_MANAGE: 'ai.agents.manage',
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];

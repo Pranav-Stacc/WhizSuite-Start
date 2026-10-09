@@ -32,6 +32,7 @@ import { RolesService } from './application/services/roles.service';
     AccessRepository,
     DefaultRolesService,
     RoleAssignmentService,
+    RolesService,
   ],
 })
 export class AccessModule {}

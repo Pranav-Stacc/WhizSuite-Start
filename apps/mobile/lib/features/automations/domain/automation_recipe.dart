@@ -16,5 +16,5 @@ const automationRecipes = [
   AutomationRecipe(id: 'overdueAlert', trigger: AutomationTriggers.taskOverdue, action: AutomationActions.notifyTeam),
   AutomationRecipe(id: 'dunning', trigger: AutomationTriggers.invoiceOverdue, action: AutomationActions.sendEmail),
   AutomationRecipe(id: 'welcome', trigger: AutomationTriggers.leadWon, action: AutomationActions.createTask),
-  AutomationRecipe(id: 'escalate', trigger: AutomationTriggers.inboxNegative, action: AutomationActions.postWebhook),
+  AutomationRecipe(id: 'escalate', trigger: AutomationTriggers.chatMessageMentioned, action: AutomationActions.postWebhook),
 ];

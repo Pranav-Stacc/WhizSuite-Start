@@ -4022,5 +4022,73 @@
         "type": "int"
       }
     }
-  }
+  },
+  "storageTitle": "Storage used",
+  "storageUsedOf": "{used} of {limit}",
+  "@storageUsedOf": {
+    "placeholders": {
+      "used": { "type": "String" },
+      "limit": { "type": "String" }
+    }
+  },
+  "storageUsedUnlimited": "{used} used",
+  "@storageUsedUnlimited": {
+    "placeholders": {
+      "used": { "type": "String" }
+    }
+  },
+  "storageFileCount": "{count, plural, =1{1 file} other{{count} files}}",
+  "@storageFileCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "storageSettingsTitle": "Storage",
+  "storageSettingsBody": "Usage, data sources, and Google Drive",
+  "storageSourcesTitle": "Data sources",
+  "storageSourcesBody": "Connect external libraries and manage where agency files live.",
+  "storageSourcePlatformBody": "Secure platform storage used across media, clients, and the portal.",
+  "storageSourceDriveBody": "Connect Google Drive to import files or transfer copies out.",
+  "storageStatusConnected": "Connected",
+  "storageStatusAvailable": "Ready",
+  "storageStatusPending": "Connecting",
+  "storageStatusError": "Error",
+  "storageStatusDisabled": "Not configured",
+  "storageDriveConnect": "Connect Google Drive",
+  "storageDriveDisconnect": "Disconnect",
+  "storageDriveTransferAll": "Transfer all to Drive",
+  "storageDriveNotConfigured": "Ask your platform admin to set Google Drive OAuth credentials.",
+  "storageDriveConnectFailed": "Could not start Google Drive connect.",
+  "storageDriveDisconnectFailed": "Could not disconnect Google Drive.",
+  "storageDriveDisconnected": "Google Drive disconnected.",
+  "storageDriveTransferFailed": "Could not start the Drive transfer.",
+  "storageDriveTransferStarted": "Drive transfer started.",
+  "storageZipSelect": "Select files",
+  "storageZipDownload": "Download ZIP",
+  "storageZipFailed": "Could not build the ZIP.",
+  "storageSelectedCount": "{count} selected",
+  "@storageSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "storageClearSelection": "Clear selection",
+  "messagesDeleted": "Message deleted",
+  "messagesGroupConversation": "Group chat",
+  "messagesGroupNameLabel": "Group name",
+  "agentTitle": "AI Agent",
+  "agentNewSession": "New session",
+  "agentMultiAgent": "Multi-agent mode",
+  "agentUntitledSession": "Untitled session",
+  "agentToolsCount": "{count} tools available",
+  "@agentToolsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "agentConfirm": "Confirm",
+  "agentEmptyTitle": "Ask the agent to work for you",
+  "agentEmptyBody": "Create a session to draft content, manage tasks, summarize data, and more — under your permissions.",
+  "agentComposerHint": "Ask the agent…",
+  "agentSendFailed": "Could not send your message."
 }

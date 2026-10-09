@@ -57,11 +57,18 @@ export async function sendChatMessage(
     startOffset?: number;
     endOffset?: number;
   }>,
+  attachments?: Array<{ kind: string; assetId?: string; url?: string; fileName?: string }>,
+  replyToId?: string,
 ): Promise<ChatMessageDto> {
   const org = await orgId();
   return apiFetch<ChatMessageDto>(`${orgPath(org, 'chat/rooms')}/${roomId}/messages`, {
     method: 'POST',
-    body: { body, mentions },
+    body: {
+      body,
+      ...(mentions?.length ? { mentions } : {}),
+      ...(attachments?.length ? { attachments } : {}),
+      ...(replyToId ? { replyToId } : {}),
+    },
   });
 }
 

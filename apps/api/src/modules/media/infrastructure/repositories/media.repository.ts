@@ -428,4 +428,60 @@ export class MediaRepository {
       update: {},
     });
   }
+
+  /** Aggregated READY storage for quota metering (soft-deleted excluded). */
+  async sumReadyStorage(organizationId: string): Promise<{
+    usedBytes: number;
+    assetCount: number;
+  }> {
+    const [agg, assetCount] = await Promise.all([
+      this.prisma.mediaAsset.aggregate({
+        where: {
+          organizationId,
+          deletedAt: null,
+          status: 'READY',
+        },
+        _sum: { sizeBytes: true },
+      }),
+      this.prisma.mediaAsset.count({
+        where: {
+          organizationId,
+          deletedAt: null,
+          status: 'READY',
+        },
+      }),
+    ]);
+    return {
+      usedBytes: Number(agg._sum.sizeBytes ?? 0),
+      assetCount,
+    };
+  }
+
+  findReadyByIds(
+    organizationId: string,
+    ids: string[],
+  ): Promise<MediaAssetRecord[]> {
+    return this.prisma.mediaAsset.findMany({
+      where: {
+        id: { in: ids },
+        organizationId,
+        deletedAt: null,
+        status: 'READY',
+      },
+      select: ASSET_SELECT,
+    });
+  }
+
+  listReady(organizationId: string, limit: number): Promise<MediaAssetRecord[]> {
+    return this.prisma.mediaAsset.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+        status: 'READY',
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      select: ASSET_SELECT,
+    });
+  }
 }

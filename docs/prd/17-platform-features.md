@@ -49,7 +49,7 @@ Create task/content/project, invite user, search client, schedule meeting, uploa
 ## 17.7 Realtime
 - WebSocket gateway (NestJS + Socket.IO) with **Redis adapter** for horizontal scale; can be extracted into a dedicated realtime service later.
 - Auth on connect (session cookie/JWT), authorization per room subscription (`org:{id}`, `project:{id}`, `content:{id}`, `file_version:{id}`, `user:{id}`).
-- Events pushed: `task.updated`, `content.state_changed`, `comment.created`, `feedback.comment_added`, `approval.created`, `approval.completed`, `file.uploaded`, `notification.created`, `presence.*`, `inbox.message_received`.
+- Events pushed: `task.updated`, `content.state_changed`, `comment.created`, `feedback.comment_added`, `approval.created`, `approval.completed`, `file.uploaded`, `notification.created`, `presence.*`, `chat.message.created`, `chat.room.updated`.
 - Payloads are minimal (IDs + changed fields); clients refetch via server data layer where needed.
 - Presence (who's viewing/editing) with TTL in Redis.
 

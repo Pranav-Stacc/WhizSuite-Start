@@ -1,20 +1,18 @@
 'use server';
 
-import { ApprovalActions, Permissions, UserRoles, messageSchema, type ApprovalAction, type ContentReviewOutcome } from '@agency-os/contracts';
-import { ForbiddenError, authorize } from '@/shared/auth/permissions';
+import { ApprovalActions, UserRoles, messageSchema, type ApprovalAction, type ContentReviewOutcome } from '@agency-os/contracts';
+import { ForbiddenError } from '@/shared/auth/permissions';
 import { requireSession, type Session } from '@/shared/auth/session';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { postClientThreadMessage } from '@/shared/api/live/feedback';
 import { reviewContent } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
 import { recordContentEvent } from '@/features/content/services/content.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
-import { threadRepository } from '../data/thread.repository';
 
 const DECISION_TARGET: Record<ApprovalAction, ContentReviewOutcome> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
 const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes', REJECTED: 'rejected' };
@@ -81,49 +79,3 @@ export async function clientCommentContentAction(id: string, raw: unknown): Prom
   });
 }
 
-export async function replyToClientAction(clientId: string, raw: unknown): Promise<ActionResult> {
-  return guarded(async () => {
-    const session = await authorize(Permissions.FEEDBACK_CREATE);
-    if (session.role === UserRoles.CLIENT) throw new ForbiddenError();
-    const parsed = parseInput(messageSchema, raw);
-    if (!parsed.ok) return parsed.result;
-    const message = isLiveMode
-      ? await postClientThreadMessage(clientId, parsed.data.body)
-      : await threadRepository.create({ clientId, fromClient: false, authorName: session.name, body: parsed.data.body, at: new Date().toISOString() });
-    await recordAudit({
-      action: 'portal.message_replied',
-      entityType: 'thread',
-      entityId: message.id,
-      entityLabel: session.name,
-      summary: 'Agency replied in the client conversation',
-    });
-    await refreshData('portal');
-    return succeed(undefined, t('portal.messages.sent'));
-  });
-}
-
-export async function sendPortalMessageAction(raw: unknown): Promise<ActionResult> {
-  return guarded(async () => {
-    const session = await requireClient();
-    const parsed = parseInput(messageSchema, raw);
-    if (!parsed.ok) return parsed.result;
-    const message = isLiveMode
-      ? await postClientThreadMessage(session.clientId, parsed.data.body)
-      : await threadRepository.create({
-          clientId: session.clientId,
-          fromClient: true,
-          authorName: session.name,
-          body: parsed.data.body,
-          at: new Date().toISOString(),
-        });
-    await recordAudit({
-      action: 'portal.message_sent',
-      entityType: 'thread',
-      entityId: message.id,
-      entityLabel: session.name,
-      summary: 'Client sent a portal message',
-    });
-    await refreshData('portal');
-    return succeed(undefined, t('portal.messages.sent'));
-  });
-}

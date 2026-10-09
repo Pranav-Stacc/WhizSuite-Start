@@ -11,6 +11,7 @@ import {
   type AutomationDefinition,
 } from '../../infrastructure/repositories/automation.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import { AutomationExecutionQueue } from '../../jobs/automation-execution.queue';
 import type {
   CreateAutomationDto,
   PublishAutomationDto,
@@ -59,6 +60,7 @@ export class AutomationService {
     private readonly repository: AutomationRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly executionQueue: AutomationExecutionQueue,
   ) {}
 
   async list(organizationId: string) {
@@ -247,10 +249,20 @@ export class AutomationService {
         trigger: { type: 'manual' },
         actions: { type: 'noop' },
       }));
-    const run = await this.repository.createRun(organizationId, version.id, {
-      automationId: automation.id,
-      triggeredBy: actorId,
-      ...(detail ? { detail } : {}),
+    const run = await this.repository.createRun(
+      organizationId,
+      version.id,
+      {
+        automationId: automation.id,
+        triggeredBy: actorId,
+        ...(detail ? { detail } : {}),
+      },
+      'QUEUED',
+    );
+    await this.executionQueue.enqueue({
+      organizationId,
+      runId: run.id,
+      actorId,
     });
     await this.audit.record({
       organizationId,

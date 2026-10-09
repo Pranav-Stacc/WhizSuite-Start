@@ -1,31 +1,61 @@
 'use server';
 
-import { Permissions } from '@agency-os/contracts';
+import {
+  Permissions,
+  createChatDmSchema,
+  createChatGroupSchema,
+  type ChatMentionType,
+} from '@agency-os/contracts';
 import { revalidatePath } from 'next/cache';
 import { authorize } from '@/shared/auth/permissions';
+import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
+import { parseInput } from '@/shared/data/action-utils';
+import { t } from '@/shared/i18n/t';
 import { openClientRoom, openDm, openGroup, sendMessage } from '../services/chat.service';
 
-export async function sendChatMessageAction(roomId: string, body: string) {
+export interface ChatMentionPayload {
+  type: ChatMentionType;
+  targetId: string;
+  displayText: string;
+  startOffset?: number;
+  endOffset?: number;
+}
+
+export async function sendChatMessageAction(
+  roomId: string,
+  body: string,
+  mentions: ChatMentionPayload[] = [],
+  replyToId?: string,
+) {
   await authorize(Permissions.CHAT_SEND);
   const trimmed = body.trim();
   if (!trimmed) return { ok: false as const, error: 'empty' };
-  const message = await sendMessage(roomId, trimmed);
+  const message = await sendMessage(roomId, trimmed, mentions, replyToId);
   revalidatePath('/chat');
+  revalidatePath('/portal/messages');
   return { ok: true as const, message };
 }
 
-export async function createDmAction(userId: string) {
+export async function createDmFormAction(
+  values: Record<string, unknown>,
+): Promise<ActionResult<{ href?: string }>> {
   await authorize(Permissions.CHAT_CREATE_ROOM);
-  const room = await openDm(userId);
+  const parsed = parseInput(createChatDmSchema, values);
+  if (!parsed.ok) return parsed.result;
+  const room = await openDm(parsed.data.userId);
   revalidatePath('/chat');
-  return { ok: true as const, roomId: room.id };
+  return succeed({ href: `/chat?room=${room.id}` }, t('chat.new.created'));
 }
 
-export async function createGroupAction(name: string, memberUserIds: string[]) {
+export async function createGroupFormAction(
+  values: Record<string, unknown>,
+): Promise<ActionResult<{ href?: string }>> {
   await authorize(Permissions.CHAT_CREATE_ROOM);
-  const room = await openGroup(name.trim(), memberUserIds);
+  const parsed = parseInput(createChatGroupSchema, values);
+  if (!parsed.ok) return parsed.result;
+  const room = await openGroup(parsed.data.name, parsed.data.memberUserIds ?? []);
   revalidatePath('/chat');
-  return { ok: true as const, roomId: room.id };
+  return succeed({ href: `/chat?room=${room.id}` }, t('chat.new.created'));
 }
 
 export async function openClientChatAction(clientId: string, name: string) {
@@ -33,4 +63,23 @@ export async function openClientChatAction(clientId: string, name: string) {
   const room = await openClientRoom(clientId, name);
   revalidatePath('/chat');
   return { ok: true as const, roomId: room.id };
+}
+
+export async function sendClientChatMessageAction(
+  clientId: string,
+  clientName: string,
+  raw: unknown,
+): Promise<ActionResult> {
+  await authorize(Permissions.CHAT_SEND);
+  const body =
+    typeof raw === 'object' && raw && 'body' in raw && typeof (raw as { body: unknown }).body === 'string'
+      ? (raw as { body: string }).body.trim()
+      : '';
+  if (!body) return fail(t('validation.required'));
+  const room = await openClientRoom(clientId, clientName);
+  await sendMessage(room.id, body);
+  revalidatePath('/chat');
+  revalidatePath(`/clients/${clientId}/messages`);
+  revalidatePath('/portal/messages');
+  return succeed(undefined, t('portal.messages.sent'));
 }

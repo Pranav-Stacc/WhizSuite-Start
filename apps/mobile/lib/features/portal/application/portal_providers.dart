@@ -34,8 +34,8 @@ final portalProjectsProvider = FutureProvider.autoDispose<List<PortalProject>>(
   (ref) => ref.watch(portalRepositoryProvider).projects(),
 );
 
-final portalThreadsProvider = FutureProvider.autoDispose<List<PortalThread>>(
-  (ref) => ref.watch(portalRepositoryProvider).threads(),
+final portalRoomsProvider = FutureProvider.autoDispose<List<PortalRoom>>(
+  (ref) => ref.watch(portalRepositoryProvider).rooms(),
 );
 
 final portalSummaryProvider = FutureProvider.autoDispose<PortalSummary>((ref) async {
@@ -46,13 +46,13 @@ final portalSummaryProvider = FutureProvider.autoDispose<PortalSummary>((ref) as
       policy.can(Permissions.invoicesView) ? await ref.watch(portalInvoicesProvider.future) : const <PortalInvoice>[];
   final projects =
       policy.can(Permissions.projectsView) ? await ref.watch(portalProjectsProvider.future) : const <PortalProject>[];
-  final threads =
-      policy.can(Permissions.feedbackView) ? await ref.watch(portalThreadsProvider.future) : const <PortalThread>[];
+  final rooms =
+      policy.can(Permissions.chatView) ? await ref.watch(portalRoomsProvider.future) : const <PortalRoom>[];
   return PortalSummary.of(
     content: content,
     invoices: invoices,
     projects: projects,
-    threads: threads,
+    rooms: rooms,
     now: DateTime.now(),
   );
 });
@@ -62,14 +62,14 @@ final List<({String permission, FutureProvider<Object?> source})> portalSources 
   (permission: Permissions.contentView, source: portalContentProvider),
   (permission: Permissions.invoicesView, source: portalInvoicesProvider),
   (permission: Permissions.projectsView, source: portalProjectsProvider),
-  (permission: Permissions.feedbackView, source: portalThreadsProvider),
+  (permission: Permissions.chatView, source: portalRoomsProvider),
 ];
 
 /// Permissions that unlock at least one portal KPI tile.
 const List<String> portalKpiPermissions = [
   Permissions.contentView,
   Permissions.invoicesView,
-  Permissions.feedbackView,
+  Permissions.chatView,
   Permissions.projectsView,
 ];
 

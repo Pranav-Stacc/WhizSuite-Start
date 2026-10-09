@@ -50,12 +50,24 @@ export async function listMessages(roomId: string, cursor?: string): Promise<Cur
   return demoListMessages(roomId);
 }
 
-export async function sendMessage(roomId: string, body: string): Promise<ChatMessageDto> {
-  if (isLiveMode) return sendChatMessage(roomId, body);
+export async function sendMessage(
+  roomId: string,
+  body: string,
+  mentions: Array<{
+    type: string;
+    targetId: string;
+    displayText: string;
+    startOffset?: number;
+    endOffset?: number;
+  }> = [],
+  replyToId?: string,
+): Promise<ChatMessageDto> {
+  if (isLiveMode) return sendChatMessage(roomId, body, mentions, undefined, replyToId);
   const message = await chatMessagesRepository.create({
     roomId,
     senderId: 'm-aarav',
     body,
+    replyToId: replyToId ?? null,
     createdAt: new Date().toISOString(),
     deletedAt: null,
   });
@@ -64,7 +76,19 @@ export async function sendMessage(roomId: string, body: string): Promise<ChatMes
     lastMessagePreview: body.slice(0, 280),
     unreadCount: 0,
   });
-  return toMessageDto(message);
+  const dto = toMessageDto(message);
+  if (!mentions.length) return dto;
+  return {
+    ...dto,
+    mentions: mentions.map((m, index) => ({
+      id: `mention-${message.id}-${index}`,
+      type: m.type as ChatMessageDto['mentions'][number]['type'],
+      targetId: m.targetId,
+      displayText: m.displayText,
+      startOffset: m.startOffset ?? null,
+      endOffset: m.endOffset ?? null,
+    })),
+  };
 }
 
 export async function openDm(userId: string): Promise<ChatRoomDto> {

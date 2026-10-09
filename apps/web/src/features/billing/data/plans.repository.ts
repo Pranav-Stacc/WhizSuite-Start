@@ -3,7 +3,7 @@ import { createRepository, type Entity } from '@/shared/data/repository';
 import { KB_PER_GB, type LimitKey } from '../config';
 
 /** Feature entitlements that appear in the plan comparison. Labels live in the message catalog. */
-export const PLAN_FEATURES = ['calendar', 'approvals', 'inbox', 'invoices', 'reports', 'whiteLabel', 'support'] as const;
+export const PLAN_FEATURES = ['calendar', 'approvals', 'chat', 'invoices', 'reports', 'whiteLabel', 'support'] as const;
 export type PlanFeature = (typeof PLAN_FEATURES)[number];
 
 export interface Plan extends Entity {
@@ -34,7 +34,7 @@ export const plansRepository = createRepository<Plan>('plans', () => [
     tagline: 'For growing teams running many brands.',
     monthlyMinor: 599_900,
     limits: { seats: 20, clients: 40, channels: 100, storageKb: 250 * KB_PER_GB, automationRuns: 5_000 },
-    features: ['calendar', 'approvals', 'inbox', 'invoices', 'reports', 'support'],
+    features: ['calendar', 'approvals', 'chat', 'invoices', 'reports', 'support'],
     recommended: true,
   },
   {
@@ -43,7 +43,7 @@ export const plansRepository = createRepository<Plan>('plans', () => [
     tagline: 'For established agencies at scale.',
     monthlyMinor: 1_499_900,
     limits: { seats: 50, channels: 300, storageKb: 1024 * KB_PER_GB, automationRuns: 25_000 },
-    features: ['calendar', 'approvals', 'inbox', 'invoices', 'reports', 'whiteLabel', 'support'],
+    features: ['calendar', 'approvals', 'chat', 'invoices', 'reports', 'whiteLabel', 'support'],
     recommended: false,
   },
   {
@@ -51,7 +51,7 @@ export const plansRepository = createRepository<Plan>('plans', () => [
     name: 'Enterprise',
     tagline: 'Custom limits, SSO and a dedicated team.',
     limits: {},
-    features: ['calendar', 'approvals', 'inbox', 'invoices', 'reports', 'whiteLabel', 'support'],
+    features: ['calendar', 'approvals', 'chat', 'invoices', 'reports', 'whiteLabel', 'support'],
     recommended: false,
   },
 ]);

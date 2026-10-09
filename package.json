@@ -6,6 +6,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
     "dev:api": "pnpm --filter @agency-os/api dev",
+    "dev:agent": "cd apps/agent && python -m uvicorn app.main:app --reload --port 8000",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

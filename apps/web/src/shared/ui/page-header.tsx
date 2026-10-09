@@ -11,13 +11,13 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, eyebrow, actions, className }: PageHeaderProps) {
   return (
-    <header className={cn('mb-8 flex flex-wrap items-end justify-between gap-4', className)}>
+    <header className={cn('mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between', className)}>
       <div className="min-w-0">
-        {eyebrow ? <div className="eyebrow mb-3">{eyebrow}</div> : null}
-        <h1 className="display text-[28px] sm:text-[34px]">{title}</h1>
+        {eyebrow ? <div className="eyebrow mb-2 sm:mb-3">{eyebrow}</div> : null}
+        <h1 className="display text-[1.5rem] leading-tight sm:text-[28px] lg:text-[34px]">{title}</h1>
         {description ? <p className="mt-2 max-w-2xl text-[13px] text-muted">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{actions}</div> : null}
     </header>
   );
 }

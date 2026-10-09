@@ -5,7 +5,7 @@ import { Logo } from '@/shared/ui/logo';
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border-soft">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-12">
         <div className="space-y-3">
           <Logo />
           <p className="max-w-sm text-sm leading-relaxed text-muted">{t('landing.footer.tagline')}</p>

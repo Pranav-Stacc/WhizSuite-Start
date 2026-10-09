@@ -19,17 +19,19 @@ export async function PortalShell({ session, children }: { session: Session; chi
         {t('shell.skip')}
       </a>
       <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
-          <Link href="/portal" className="flex items-center gap-2.5" aria-label={t('portal.title')}>
-            <Logo compact />
-            <span className="hidden text-sm font-semibold sm:inline">{session.orgName}</span>
-          </Link>
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 sm:gap-3 sm:px-6">
           <PortalMobileMenu badges={summary} />
+          <Link href="/portal" className="flex min-w-0 flex-1 items-center gap-2.5 md:flex-none" aria-label={t('portal.title')}>
+            <Logo compact />
+            <span className="truncate text-sm font-semibold">{session.orgName}</span>
+          </Link>
           <PortalDesktopNav badges={summary} />
-          <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} />
+          <div className="ml-auto shrink-0 md:ml-0">
+            <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} />
+          </div>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-7xl animate-fade-up px-4 pb-28 pt-6 sm:px-6 md:pb-6">{children}</main>
+      <main id="main" className="mx-auto max-w-7xl animate-fade-up px-3 pb-28 pt-5 sm:px-6 sm:pt-6 md:pb-6">{children}</main>
       <PortalMobileDock badges={summary} />
     </div>
   );

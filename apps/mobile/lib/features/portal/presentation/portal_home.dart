@@ -43,7 +43,7 @@ class PortalHome extends ConsumerWidget {
     final sections = <Widget>[
       if (policy.can(Permissions.contentView)) const _ApprovalsSection(),
       if (policy.can(Permissions.invoicesView)) const _InvoicesSection(),
-      if (policy.can(Permissions.feedbackView)) const _MessagesSection(),
+      if (policy.can(Permissions.chatView)) const _MessagesSection(),
       if (policy.can(Permissions.projectsView)) const _ProjectsSection(),
       if (policy.can(Permissions.contentView)) const _ContentSection(),
     ];
@@ -144,7 +144,7 @@ final List<_PortalAction> _portalActions = [
     route: InvoicesRoutes.root,
   ),
   (
-    permission: Permissions.feedbackCreate,
+    permission: Permissions.chatSend,
     icon: Icons.forum_outlined,
     label: (l10n) => l10n.portalQuickMessage,
     route: MessagesRoutes.root,
@@ -226,12 +226,12 @@ class _PortalKpis extends ConsumerWidget {
               tone: data.openInvoices > 0 ? StatusTone.info : StatusTone.neutral,
             ),
           ),
-        if (policy.can(Permissions.feedbackView))
+        if (policy.can(Permissions.chatView))
           AsyncMetricTile<PortalSummary>(
             label: l10n.portalKpiMessages,
             icon: Icons.forum_outlined,
             value: summary,
-            onRetry: () => ref.invalidate(portalThreadsProvider),
+            onRetry: () => ref.invalidate(portalRoomsProvider),
             onTap: () => context.go(MessagesRoutes.root),
             present: (data) => (
               value: context.formats.number(data.openThreads),
@@ -318,8 +318,8 @@ class _MessagesSection extends ConsumerWidget {
       title: l10n.portalMessagesTitle,
       trailing: ViewAllButton(onPressed: () => context.go(MessagesRoutes.root), label: l10n.portalMessagesCta),
       value: ref.watch(portalSummaryProvider),
-      onRetry: () => ref.invalidate(portalThreadsProvider),
-      builder: (context, summary) => summary.threadRows.isEmpty
+      onRetry: () => ref.invalidate(portalRoomsProvider),
+      builder: (context, summary) => summary.roomRows.isEmpty
           ? SectionEmpty(
               message: l10n.portalMessagesEmpty,
               icon: Icons.chat_bubble_outline,
@@ -327,7 +327,7 @@ class _MessagesSection extends ConsumerWidget {
             )
           : OverviewList(
               children: [
-                for (final thread in summary.threadRows) _ThreadRow(thread: thread),
+                for (final room in summary.roomRows) _RoomRow(room: room),
               ],
             ),
     );
@@ -433,26 +433,28 @@ class _InvoiceRow extends StatelessWidget {
   }
 }
 
-class _ThreadRow extends StatelessWidget {
-  const _ThreadRow({required this.thread});
+class _RoomRow extends StatelessWidget {
+  const _RoomRow({required this.room});
 
-  final PortalThread thread;
+  final PortalRoom room;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final formats = context.formats;
-    final title = thread.subjectType == FeedbackSubjectTypes.content
-        ? l10n.messagesContentConversation
-        : l10n.messagesAgencyConversation;
-    final when = thread.updatedAt;
+    final title = room.name ?? l10n.messagesAgencyConversation;
+    final preview = room.lastMessagePreview;
+    final when = room.lastMessageAt;
+    final subtitle = preview ?? (when == null ? l10n.messagesNoMessages : formats.relative(when));
     return OverviewRow(
       leading: const RowMark(icon: Icons.forum_outlined),
       title: title,
-      subtitle: when == null ? l10n.portalMessageOpen : formats.relative(when),
-      trailing: StatusBadge(label: l10n.portalMessageOpen, tone: StatusTone.info, dense: true),
+      subtitle: subtitle,
+      trailing: room.hasUnread
+          ? StatusBadge(label: l10n.portalMessageOpen, tone: StatusTone.info, dense: true)
+          : null,
       semanticLabel: title,
-      onTap: () => context.push(MessagesRoutes.detail(thread.id)),
+      onTap: () => context.push(MessagesRoutes.detail(room.id)),
     );
   }
 }

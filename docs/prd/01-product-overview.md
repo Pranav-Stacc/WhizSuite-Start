@@ -26,7 +26,7 @@ Results: missed deadlines, lost approvals, "who approved this?" disputes, unbill
 2. **Granular data scopes** — RBAC + resource-level scopes; an Account Manager sees only their assigned clients.
 3. **Client portal** — clients approve content, give contextual feedback, and see results without seeing agency internals.
 4. **Approval & creative review engine** — versioned, auditable approvals with image annotations, video timestamps, and PDF comments.
-5. **Publish + engage + report** — native scheduling, unified engagement inbox, and automated white-labeled reports.
+5. **Publish + engage + report** — native scheduling, team & client chat, and automated white-labeled reports.
 6. **Retainer intelligence** — track deliverables against retainer quotas (e.g. "12 posts + 4 reels / month"), profitability, and team capacity.
 
 ## 1.4 Target Customers
@@ -40,7 +40,7 @@ Results: missed deadlines, lost approvals, "who approved this?" disputes, unbill
 |---|---|---|
 | **Agency Owner / Founder** | Growth, profitability, client retention | Dashboards, profitability, client health, billing, CRM |
 | **Agency Admin / Ops** | Smooth operations, permissions, onboarding | Workspace settings, roles, templates, SOP automation |
-| **Account Manager (AM)** | Keep clients happy, deliver on retainer | Client view, approvals, reports, retainer tracker, inbox |
+| **Account Manager (AM)** | Keep clients happy, deliver on retainer | Client view, approvals, reports, retainer tracker, chat |
 | **Social Media Manager / Strategist** | Plan and ship content calendar | Content calendar, composer, campaigns, analytics |
 | **Copywriter** | Write captions on time | Task queue, caption editor, brand voice, AI assist |
 | **Designer / Video Editor** | Produce creatives, handle revisions | Task queue, creative review, versions, media library |

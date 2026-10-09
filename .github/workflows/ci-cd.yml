@@ -27,6 +27,7 @@ jobs:
           filters: |
             api:
               - 'apps/api/**'
+              - 'apps/agent/**'
               - 'packages/**'
               - 'deploy/**'
               - 'pnpm-lock.yaml'
@@ -83,7 +84,8 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
@@ -91,6 +93,15 @@ jobs:
           tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
+      - name: Build and push agent image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/agent
+          file: apps/agent/Dockerfile
+          push: true
+          tags: ${{ steps.ecr.outputs.registry }}/whizsuite-agent:${{ github.sha }}
+          cache-from: type=gha,scope=agent
+          cache-to: type=gha,scope=agent,mode=max
       - name: Deploy to EC2 via SSM
         env:
           INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}

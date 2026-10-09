@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/formatting/formats.dart';
@@ -16,20 +14,15 @@ import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/state_views.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../access/application/access_controller.dart';
 import '../../access/presentation/permission_gate.dart';
-import '../../content/content_routes.dart';
+import '../../auth/application/session_controller.dart';
+import '../../directory/application/directory_providers.dart';
 import '../application/messages_providers.dart';
-import '../domain/feedback_models.dart';
+import '../domain/chat_models.dart';
 import 'conversation_labels.dart';
 
-/// How often an open conversation re-reads its messages; feedback has no realtime event.
-const messagesPollInterval = Duration(seconds: 20);
-
-/// A conversation: header with status actions, day-grouped messages and the composer.
-/// Used full-screen on phones and as the detail pane on wide layouts.
+/// A chat room: title header, day-grouped messages and the composer.
 class ConversationPane extends ConsumerWidget {
   const ConversationPane({required this.threadId, this.showTitle = true, super.key});
 
@@ -40,16 +33,16 @@ class ConversationPane extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final value = ref.watch(conversationProvider(threadId));
-    return switch (value) {
-      AsyncValue(value: final conversation?) => _Conversation(
-          key: ValueKey(conversation.subject),
-          conversation: conversation,
+    final roomValue = ref.watch(roomProvider(threadId));
+    return switch (roomValue) {
+      AsyncValue(value: final room?) => _Conversation(
+          key: ValueKey(room.id),
+          room: room,
           showTitle: showTitle,
         ),
       AsyncValue(error: final error?) => ErrorState(
           error: error,
-          onRetry: () => ref.invalidate(messageThreadsProvider),
+          onRetry: () => ref.invalidate(roomProvider(threadId)),
         ),
       _ => const SkeletonList(itemCount: 4),
     };
@@ -57,9 +50,9 @@ class ConversationPane extends ConsumerWidget {
 }
 
 class _Conversation extends ConsumerStatefulWidget {
-  const _Conversation({required this.conversation, required this.showTitle, super.key});
+  const _Conversation({required this.room, required this.showTitle, super.key});
 
-  final Conversation conversation;
+  final ChatRoom room;
   final bool showTitle;
 
   @override
@@ -67,59 +60,61 @@ class _Conversation extends ConsumerStatefulWidget {
 }
 
 class _ConversationState extends ConsumerState<_Conversation> {
-  Timer? _poll;
-
-  FeedbackSubject get _subject => widget.conversation.subject;
-
-  @override
-  void initState() {
-    super.initState();
-    _poll = Timer.periodic(messagesPollInterval, (_) => _refresh());
-  }
-
-  @override
-  void dispose() {
-    _poll?.cancel();
-    super.dispose();
-  }
-
-  /// Skipped while a message is sending so the optimistic copy is not dropped.
-  void _refresh() {
-    final sending = ref.read(subjectCommentsProvider(_subject)).value?.any((c) => c.pending) ?? false;
-    if (sending) return;
-    ref
-      ..invalidate(subjectCommentsProvider(_subject))
-      ..invalidate(messageThreadsProvider);
-  }
+  ChatMessage? _replyTo;
 
   Future<void> _pullToRefresh() async {
-    ref.invalidate(messageThreadsProvider);
-    await ref.refresh(subjectCommentsProvider(_subject).future).then<void>((_) {}, onError: (Object _) {});
+    ref.invalidate(chatRoomsProvider);
+    await ref.refresh(roomMessagesProvider(widget.room.id).future).then<void>((_) {}, onError: (Object _) {});
+  }
+
+  List<MentionCandidate> _mentionCandidates() {
+    final members = ref.watch(memberDirectoryProvider).value;
+    final me = ref.watch(sessionProvider).value?.userId;
+    if (members == null) return const [];
+    return [
+      for (final entry in members.entries)
+        if (entry.id != me)
+          MentionCandidate(
+            id: entry.id,
+            label: entry.name.split(' ').where((p) => p.isNotEmpty).firstOrNull ?? entry.name,
+          ),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(messagesRealtimeProvider, (_, next) {
-      if (next.hasValue) _refresh();
-    });
-    final comments = ref.watch(subjectCommentsProvider(_subject));
+    ref.watch(messagesRealtimeProvider);
+    final messages = ref.watch(roomMessagesProvider(widget.room.id));
+    final canPost = widget.room.viewerCanPost;
     return Column(
       children: [
-        _Header(conversation: widget.conversation, showTitle: widget.showTitle),
+        if (widget.showTitle) _Header(room: widget.room),
         Expanded(
-          child: switch (comments) {
-            AsyncValue(value: final list?) => _MessageList(comments: list, onRefresh: _pullToRefresh),
+          child: switch (messages) {
+            AsyncValue(value: final list?) => _MessageList(
+                roomId: widget.room.id,
+                messages: list,
+                onRefresh: _pullToRefresh,
+                onReply: (message) => setState(() => _replyTo = message),
+              ),
             AsyncValue(error: final error?) => ErrorState(
                 error: error,
-                onRetry: () => ref.invalidate(subjectCommentsProvider(_subject)),
+                onRetry: () => ref.invalidate(roomMessagesProvider(widget.room.id)),
               ),
             _ => const SkeletonList(itemCount: 5),
           },
         ),
         PermissionGate(
-          anyOf: const [Permissions.feedbackCreate],
+          anyOf: const [Permissions.chatSend],
           fallback: _ReadOnlyNote(message: AppLocalizations.of(context).messagesReadOnly),
-          child: _Composer(subject: _subject, resolved: !widget.conversation.isOpen),
+          child: canPost
+              ? _Composer(
+                  roomId: widget.room.id,
+                  replyTo: _replyTo,
+                  mentionCandidates: _mentionCandidates(),
+                  onClearReply: () => setState(() => _replyTo = null),
+                )
+              : _ReadOnlyNote(message: AppLocalizations.of(context).messagesReadOnly),
         ),
       ],
     );
@@ -127,73 +122,40 @@ class _ConversationState extends ConsumerState<_Conversation> {
 }
 
 class _Header extends ConsumerWidget {
-  const _Header({required this.conversation, required this.showTitle});
+  const _Header({required this.room});
 
-  final Conversation conversation;
-  final bool showTitle;
-
-  Future<void> _toggle(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context);
-    final actions = ref.read(messagesActionsProvider);
-    if (conversation.isOpen) {
-      await runAction(context, () => actions.resolve(conversation), success: l10n.messagesResolvedToast);
-    } else {
-      await runAction(context, () => actions.reopen(conversation), success: l10n.messagesReopenedToast);
-    }
-  }
+  final ChatRoom room;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
-    final title = conversationTitle(ref, l10n, conversation);
-    final subject = conversation.subject;
-    final isOpen = conversation.isOpen;
-    final canOpenPost = subject.type == FeedbackSubjectTypes.content &&
-        ref.watch(accessPolicyProvider.select((p) => p.can(Permissions.contentView)));
+    final title = roomTitle(ref, l10n, room);
 
     return Container(
       padding: EdgeInsets.fromLTRB(tokens.lg, tokens.sm, tokens.sm, tokens.sm),
       decoration: BoxDecoration(border: Border(bottom: BorderSide(color: tokens.border))),
-      child: Row(
-        children: [
-          if (showTitle) ...[
-            Expanded(
-              child: Semantics(
-                header: true,
-                child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleMedium),
-              ),
-            ),
-            SizedBox(width: tokens.sm),
-          ],
-          StatusBadge(label: l10n.messagesStatus(conversation.status), tone: conversationTone(conversation.status)),
-          if (!showTitle) const Spacer(),
-          if (canOpenPost)
-            IconButton(
-              tooltip: l10n.messagesOpenPost,
-              icon: const Icon(Icons.open_in_new),
-              onPressed: () => context.push(ContentRoutes.detail(subject.id)),
-            ),
-          PermissionGate(
-            anyOf: const [Permissions.feedbackCreate],
-            child: TextButton.icon(
-              onPressed: () => _toggle(context, ref),
-              icon: Icon(isOpen ? Icons.check_circle_outline : Icons.replay),
-              label: Text(isOpen ? l10n.messagesResolve : l10n.messagesReopen),
-            ),
-          ),
-        ],
+      child: Semantics(
+        header: true,
+        child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleMedium),
       ),
     );
   }
 }
 
 class _MessageList extends ConsumerStatefulWidget {
-  const _MessageList({required this.comments, required this.onRefresh});
+  const _MessageList({
+    required this.roomId,
+    required this.messages,
+    required this.onRefresh,
+    required this.onReply,
+  });
 
-  final List<FeedbackComment> comments;
+  final String roomId;
+  final List<ChatMessage> messages;
   final Future<void> Function() onRefresh;
+  final ValueChanged<ChatMessage> onReply;
 
   @override
   ConsumerState<_MessageList> createState() => _MessageListState();
@@ -211,7 +173,7 @@ class _MessageListState extends ConsumerState<_MessageList> {
   @override
   void didUpdateWidget(_MessageList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.comments.length != oldWidget.comments.length) _scrollToEnd();
+    if (widget.messages.length != oldWidget.messages.length) _scrollToEnd();
   }
 
   @override
@@ -237,7 +199,10 @@ class _MessageListState extends ConsumerState<_MessageList> {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final names = AuthorNames(ref, l10n);
-    final days = groupCommentsByDay(widget.comments);
+    final days = groupMessagesByDay(widget.messages);
+    final byId = {for (final m in widget.messages) m.id: m};
+    final notifier = ref.read(roomMessagesProvider(widget.roomId).notifier);
+    final hasMore = notifier.hasMore;
 
     if (days.isEmpty) {
       return RefreshIndicator(
@@ -259,17 +224,31 @@ class _MessageListState extends ConsumerState<_MessageList> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.md, tokens.md),
         children: [
+          if (hasMore)
+            Center(
+              child: TextButton(
+                onPressed: () => notifier.loadMore(),
+                child: Text(l10n.auditLoadMore),
+              ),
+            ),
           for (final day in days) ...[
             _DaySeparator(day: day.day),
-            for (final (i, comment) in day.comments.indexed)
+            for (final (i, message) in day.messages.indexed)
               FadeSlideIn(
                 index: i,
-                child: _Bubble(
-                  comment: comment,
-                  author: names.of(comment),
-                  mine: names.isMine(comment),
-                  // Consecutive messages from one author share a single name and avatar.
-                  showAuthor: i == 0 || day.comments[i - 1].authorId != comment.authorId,
+                child: Builder(
+                  builder: (_) {
+                    final parent = message.replyToId == null ? null : byId[message.replyToId];
+                    return _Bubble(
+                      message: message,
+                      parent: parent,
+                      author: names.of(message),
+                      parentAuthor: parent == null ? null : names.of(parent),
+                      mine: names.isMine(message),
+                      showAuthor: i == 0 || day.messages[i - 1].senderId != message.senderId,
+                      onReply: () => widget.onReply(message),
+                    );
+                  },
                 ),
               ),
           ],
@@ -314,9 +293,30 @@ class _DaySeparator extends StatelessWidget {
   }
 }
 
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.comment, required this.author, required this.mine, required this.showAuthor});
+class _Bubble extends StatefulWidget {
+  const _Bubble({
+    required this.message,
+    required this.author,
+    required this.mine,
+    required this.showAuthor,
+    required this.onReply,
+    this.parent,
+    this.parentAuthor,
+  });
 
+  final ChatMessage message;
+  final ChatMessage? parent;
+  final String author;
+  final String? parentAuthor;
+  final bool mine;
+  final bool showAuthor;
+  final VoidCallback onReply;
+
+  @override
+  State<_Bubble> createState() => _BubbleState();
+}
+
+class _BubbleState extends State<_Bubble> {
   static const _maxWidthFactor = 0.78;
   static const _maxWidth = 560.0;
   static const _mineAlpha = 0.14;
@@ -324,33 +324,111 @@ class _Bubble extends StatelessWidget {
   static const _spinnerSize = 10.0;
   static const _avatarSize = 26.0;
   static const _cornerExtra = 12.0;
+  static const _replyThreshold = 56.0;
 
-  final FeedbackComment comment;
-  final String author;
-  final bool mine;
-  final bool showAuthor;
+  double _drag = 0;
 
   @override
   Widget build(BuildContext context) {
+    final message = widget.message;
+    final mine = widget.mine;
+    final showAuthor = widget.showAuthor;
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
-    final time = context.formats.time(comment.createdAt);
+    final time = context.formats.time(message.createdAt);
     final corner = Radius.circular(tokens.radius + _cornerExtra);
     final tight = Radius.circular(tokens.radius);
-    final bubble = Container(
-      padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.sm),
-      decoration: BoxDecoration(
-        color: mine ? tokens.primary.withValues(alpha: _mineAlpha) : tokens.subtle,
-        border: mine ? null : Border.all(color: tokens.border),
-        borderRadius: BorderRadiusDirectional.only(
-          topStart: mine || !showAuthor ? corner : tight,
-          topEnd: mine && showAuthor ? tight : corner,
-          bottomStart: corner,
-          bottomEnd: corner,
+    final body = message.isDeleted ? l10n.messagesDeleted : message.body;
+    final replySnippet = message.replyPreview ??
+        (widget.parent == null
+            ? null
+            : (widget.parent!.isDeleted ? l10n.messagesDeleted : widget.parent!.body));
+
+    final bubble = GestureDetector(
+      onLongPress: message.isDeleted ? null : widget.onReply,
+      onHorizontalDragUpdate: message.isDeleted
+          ? null
+          : (details) {
+              setState(() {
+                final next = _drag + details.delta.dx;
+                _drag = mine ? next.clamp(-88.0, 0.0) : next.clamp(0.0, 88.0);
+              });
+            },
+      onHorizontalDragEnd: message.isDeleted
+          ? null
+          : (_) {
+              if (_drag.abs() >= _replyThreshold) {
+                HapticFeedback.selectionClick();
+                widget.onReply();
+              }
+              setState(() => _drag = 0);
+            },
+      onHorizontalDragCancel: () => setState(() => _drag = 0),
+      child: Transform.translate(
+        offset: Offset(_drag, 0),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            if (_drag.abs() > 12)
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: mine ? null : -28,
+                right: mine ? -28 : null,
+                child: Opacity(
+                  opacity: (_drag.abs() / _replyThreshold).clamp(0.0, 1.0),
+                  child: Icon(Icons.reply, size: 18, color: tokens.muted),
+                ),
+              ),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.sm),
+              decoration: BoxDecoration(
+                color: mine ? tokens.primary.withValues(alpha: _mineAlpha) : tokens.subtle,
+                border: mine ? null : Border.all(color: tokens.border),
+                borderRadius: BorderRadiusDirectional.only(
+                  topStart: mine || !showAuthor ? corner : tight,
+                  topEnd: mine && showAuthor ? tight : corner,
+                  bottomStart: corner,
+                  bottomEnd: corner,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (replySnippet != null && !message.isDeleted)
+                    Container(
+                      margin: EdgeInsets.only(bottom: tokens.sm),
+                      padding: EdgeInsets.all(tokens.sm),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(tokens.radius),
+                        border: Border(left: BorderSide(color: tokens.primary, width: 2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (widget.parentAuthor != null)
+                            Text(
+                              widget.parentAuthor!,
+                              style: text.labelSmall?.copyWith(color: tokens.primary, fontWeight: FontWeight.w600),
+                            ),
+                          Text(
+                            replySnippet,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.labelSmall?.copyWith(color: tokens.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  _MentionText(body: body, mentions: message.mentions, style: text.bodyMedium?.copyWith(height: 1.35)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      child: SelectableText(comment.body, style: text.bodyMedium?.copyWith(height: 1.35)),
     );
 
     final column = Column(
@@ -359,7 +437,7 @@ class _Bubble extends StatelessWidget {
         if (showAuthor && !mine)
           Padding(
             padding: EdgeInsets.only(left: tokens.xs, bottom: tokens.xs),
-            child: Text(author, style: text.labelSmall?.copyWith(color: tokens.muted, fontWeight: FontWeight.w600)),
+            child: Text(widget.author, style: text.labelSmall?.copyWith(color: tokens.muted, fontWeight: FontWeight.w600)),
           ),
         bubble,
         Padding(
@@ -367,7 +445,7 @@ class _Bubble extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (comment.pending) ...[
+              if (message.pending) ...[
                 const SizedBox.square(
                   dimension: _spinnerSize,
                   child: CircularProgressIndicator(strokeWidth: 1.5),
@@ -375,9 +453,20 @@ class _Bubble extends StatelessWidget {
                 SizedBox(width: tokens.xs),
               ],
               Text(
-                comment.pending ? l10n.messagesSending : time,
+                message.pending ? l10n.messagesSending : time,
                 style: text.labelSmall?.copyWith(color: tokens.muted),
               ),
+              if (!message.isDeleted && !message.pending) ...[
+                SizedBox(width: tokens.xs),
+                InkWell(
+                  onTap: widget.onReply,
+                  borderRadius: BorderRadius.circular(tokens.radius),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: tokens.xs),
+                    child: Icon(Icons.reply, size: 14, color: tokens.primary),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -385,7 +474,7 @@ class _Bubble extends StatelessWidget {
     );
 
     return Semantics(
-      label: l10n.messagesMessageLabel(author, comment.pending ? l10n.messagesSending : time, comment.body),
+      label: l10n.messagesMessageLabel(widget.author, message.pending ? l10n.messagesSending : time, message.body),
       child: ExcludeSemantics(
         child: Padding(
           padding: EdgeInsets.only(bottom: showAuthor ? tokens.sm + tokens.xs : tokens.xs + 2),
@@ -400,14 +489,14 @@ class _Bubble extends StatelessWidget {
                     showAuthor
                         ? Padding(
                             padding: EdgeInsets.only(top: tokens.lg),
-                            child: InitialsAvatar(name: author, seed: comment.authorId, size: _avatarSize),
+                            child: InitialsAvatar(name: widget.author, seed: message.senderId, size: _avatarSize),
                           )
                         : const SizedBox(width: _avatarSize),
                     SizedBox(width: tokens.sm),
                   ],
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxWidth),
-                    child: Opacity(opacity: comment.pending ? _pendingOpacity : 1, child: column),
+                    child: Opacity(opacity: message.pending ? _pendingOpacity : 1, child: column),
                   ),
                 ],
               );
@@ -419,11 +508,50 @@ class _Bubble extends StatelessWidget {
   }
 }
 
-class _Composer extends ConsumerStatefulWidget {
-  const _Composer({required this.subject, required this.resolved});
+class _MentionText extends StatelessWidget {
+  const _MentionText({required this.body, required this.mentions, this.style});
 
-  final FeedbackSubject subject;
-  final bool resolved;
+  final String body;
+  final List<ChatMention> mentions;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    if (mentions.isEmpty) return SelectableText(body, style: style);
+    final tokens = context.tokens;
+    final spans = <TextSpan>[];
+    var cursor = 0;
+    final ordered = [...mentions]..sort((a, b) => (a.startOffset ?? 0).compareTo(b.startOffset ?? 0));
+    for (final mention in ordered) {
+      final start = mention.startOffset ?? body.indexOf('@${mention.displayText}');
+      if (start < cursor || start < 0) continue;
+      if (start > cursor) spans.add(TextSpan(text: body.substring(cursor, start)));
+      final end = mention.endOffset ?? start + mention.displayText.length + 1;
+      spans.add(
+        TextSpan(
+          text: body.substring(start, end.clamp(0, body.length)),
+          style: style?.copyWith(color: tokens.primary, fontWeight: FontWeight.w600),
+        ),
+      );
+      cursor = end;
+    }
+    if (cursor < body.length) spans.add(TextSpan(text: body.substring(cursor)));
+    return SelectableText.rich(TextSpan(style: style, children: spans));
+  }
+}
+
+class _Composer extends ConsumerStatefulWidget {
+  const _Composer({
+    required this.roomId,
+    required this.mentionCandidates,
+    this.replyTo,
+    required this.onClearReply,
+  });
+
+  final String roomId;
+  final List<MentionCandidate> mentionCandidates;
+  final ChatMessage? replyTo;
+  final VoidCallback onClearReply;
 
   @override
   ConsumerState<_Composer> createState() => _ComposerState();
@@ -434,29 +562,70 @@ class _ComposerState extends ConsumerState<_Composer> {
 
   final _controller = TextEditingController();
   final _focus = FocusNode();
+  String? _mentionQuery;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() {}));
+    _controller.addListener(_onChanged);
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_onChanged);
     _controller.dispose();
     _focus.dispose();
     super.dispose();
   }
 
+  void _onChanged() {
+    setState(() {
+      final text = _controller.text;
+      final caret = _controller.selection.baseOffset.clamp(0, text.length);
+      final before = text.substring(0, caret);
+      final match = RegExp(r'(?:^|\s)@([\w.-]*)$').firstMatch(before);
+      _mentionQuery = match != null ? match.group(1) : null;
+    });
+  }
+
   bool get _canSend => _controller.text.trim().isNotEmpty;
+
+  List<MentionCandidate> get _suggestions {
+    if (_mentionQuery == null) return const [];
+    final q = _mentionQuery!.toLowerCase();
+    return widget.mentionCandidates.where((c) => q.isEmpty || c.label.toLowerCase().contains(q)).take(6).toList();
+  }
+
+  void _insertMention(MentionCandidate candidate) {
+    final text = _controller.text;
+    final caret = _controller.selection.baseOffset.clamp(0, text.length);
+    final before = text.substring(0, caret);
+    final after = text.substring(caret);
+    final replaced = before.replaceFirstMapped(RegExp(r'(?:^|\s)@([\w.-]*)$'), (match) {
+      final prefix = match.group(0)!.startsWith('@') ? '' : match.group(0)![0];
+      return '$prefix@${candidate.label} ';
+    });
+    final next = '$replaced$after';
+    _controller.value = TextEditingValue(text: next, selection: TextSelection.collapsed(offset: replaced.length));
+    setState(() => _mentionQuery = null);
+  }
 
   Future<void> _send() async {
     if (!_canSend) return;
     final l10n = AppLocalizations.of(context);
     final body = _controller.text;
+    final mentions = extractMentions(body, widget.mentionCandidates);
+    final replyToId = widget.replyTo?.id;
+    final replyPreview = widget.replyTo?.body;
     _controller.clear();
+    widget.onClearReply();
     try {
-      await ref.read(subjectCommentsProvider(widget.subject).notifier).send(body);
+      await ref.read(roomMessagesProvider(widget.roomId).notifier).send(
+            body,
+            mentions: mentions,
+            replyToId: replyToId,
+            replyPreview: replyPreview,
+          );
     } on ApiException catch (error) {
       if (!mounted) return;
       if (_controller.text.isEmpty) _controller.text = body;
@@ -474,15 +643,49 @@ class _ComposerState extends ConsumerState<_Composer> {
         padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.sm, tokens.sm),
         decoration: BoxDecoration(border: Border(top: BorderSide(color: tokens.border))),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (widget.resolved)
-              Padding(
-                padding: EdgeInsets.only(bottom: tokens.xs, left: tokens.xs),
-                child: Text(
-                  l10n.messagesReopenHint,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tokens.muted),
+            if (widget.replyTo != null)
+              Container(
+                margin: EdgeInsets.only(bottom: tokens.sm),
+                padding: EdgeInsets.symmetric(horizontal: tokens.sm, vertical: tokens.xs),
+                decoration: BoxDecoration(
+                  color: tokens.subtle,
+                  borderRadius: BorderRadius.circular(tokens.radius),
+                  border: Border(left: BorderSide(color: tokens.primary, width: 2)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.reply, size: 16, color: tokens.primary),
+                    SizedBox(width: tokens.xs),
+                    Expanded(
+                      child: Text(
+                        widget.replyTo!.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: l10n.storageClearSelection,
+                      onPressed: widget.onClearReply,
+                      icon: const Icon(Icons.close, size: 18),
+                    ),
+                  ],
+                ),
+              ),
+            if (_suggestions.isNotEmpty)
+              Card(
+                margin: EdgeInsets.only(bottom: tokens.sm),
+                child: Column(
+                  children: [
+                    for (final candidate in _suggestions)
+                      ListTile(
+                        dense: true,
+                        title: Text('@${candidate.label}'),
+                        onTap: () => _insertMention(candidate),
+                      ),
+                  ],
                 ),
               ),
             Row(
@@ -499,7 +702,7 @@ class _ComposerState extends ConsumerState<_Composer> {
                       focusNode: _focus,
                       minLines: 1,
                       maxLines: _maxLines,
-                      maxLength: feedbackCommentMaxLengthDefault,
+                      maxLength: chatMessageMaxLength,
                       maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       keyboardType: TextInputType.multiline,
                       textCapitalization: TextCapitalization.sentences,

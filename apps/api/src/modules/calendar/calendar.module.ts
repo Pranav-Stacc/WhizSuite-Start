@@ -27,6 +27,11 @@ import {
     ShootService,
     CalendarRepository,
   ],
-  exports: [CalendarService, CalendarFeedService, CalendarRepository],
+  exports: [
+    CalendarService,
+    CalendarFeedService,
+    CalendarRepository,
+    ShootService,
+  ],
 })
 export class CalendarModule {}

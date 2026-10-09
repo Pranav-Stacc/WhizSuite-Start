@@ -100,7 +100,7 @@ Optional predicates on a grant, e.g. `content.status IN ('DRAFT','IN_REVIEW')`, 
 |---|---|
 | Owner | All permissions @ ORGANIZATION (cannot be removed from last owner) |
 | Admin | All except billing @ ORGANIZATION |
-| Account Manager | Clients/projects/content/approvals/reports/inbox @ CLIENT (dynamic: assigned clients) |
+| Account Manager | Clients/projects/content/approvals/reports/chat @ CLIENT (dynamic: assigned clients) |
 | Social Media Manager | Content/social/calendar/analytics @ CLIENT or TEAM |
 | Content Creator (Copy/Design/Video) | Tasks/content/files/feedback @ SELF + PROJECT |
 | Community Manager | Inbox + social.view @ CLIENT |

@@ -352,6 +352,17 @@ export const messageSchema = z.object({
 });
 export type MessageInput = z.infer<typeof messageSchema>;
 
+export const createChatDmSchema = z.object({
+  userId: z.string().uuid('validation.required'),
+});
+export type CreateChatDmInput = z.infer<typeof createChatDmSchema>;
+
+export const createChatGroupSchema = z.object({
+  name: z.string().trim().min(1, 'validation.required').max(120),
+  memberUserIds: z.array(z.string().uuid()).max(100).default([]),
+});
+export type CreateChatGroupInput = z.infer<typeof createChatGroupSchema>;
+
 export const decisionSchema = z.object({
   contentId: z.string().min(1),
   action: z.enum(ApprovalActions),

@@ -24,7 +24,7 @@ Organization → Subscription → Plan (versioned) → Entitlements (features + 
 | Content calendar & scheduling | ✓ | ✓ | ✓ | ✓ |
 | Approvals | Single-step | Multi-step | Multi-step + conditional | All |
 | Creative review (annotations) | Images | Images + video + PDF | All + guest reviewers | All |
-| Engagement inbox | — | ✓ | ✓ + SLA & rules | ✓ |
+| Team & client chat | — | ✓ | ✓ | ✓ |
 | Automations (runs/mo) | 500 | 5,000 | 25,000 | Custom |
 | Custom workflows/states | 1 pipeline | Unlimited | Unlimited | Unlimited |
 | Reports | Standard | White-label PDF + link | + scheduled + custom templates | All |

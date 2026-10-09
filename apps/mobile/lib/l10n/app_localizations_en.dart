@@ -6409,4 +6409,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String workflowKpiActiveOf(int active, int total) {
     return '$active of $total';
   }
+
+  @override
+  String get storageTitle => 'Storage used';
+
+  @override
+  String storageUsedOf(String used, String limit) {
+    return '$used of $limit';
+  }
+
+  @override
+  String storageUsedUnlimited(String used) {
+    return '$used used';
+  }
+
+  @override
+  String storageFileCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files',
+      one: '1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get storageSettingsTitle => 'Storage';
+
+  @override
+  String get storageSettingsBody => 'Usage, data sources, and Google Drive';
+
+  @override
+  String get storageSourcesTitle => 'Data sources';
+
+  @override
+  String get storageSourcesBody =>
+      'Connect external libraries and manage where agency files live.';
+
+  @override
+  String get storageSourcePlatformBody =>
+      'Secure platform storage used across media, clients, and the portal.';
+
+  @override
+  String get storageSourceDriveBody =>
+      'Connect Google Drive to import files or transfer copies out.';
+
+  @override
+  String get storageStatusConnected => 'Connected';
+
+  @override
+  String get storageStatusAvailable => 'Ready';
+
+  @override
+  String get storageStatusPending => 'Connecting';
+
+  @override
+  String get storageStatusError => 'Error';
+
+  @override
+  String get storageStatusDisabled => 'Not configured';
+
+  @override
+  String get storageDriveConnect => 'Connect Google Drive';
+
+  @override
+  String get storageDriveDisconnect => 'Disconnect';
+
+  @override
+  String get storageDriveTransferAll => 'Transfer all to Drive';
+
+  @override
+  String get storageDriveNotConfigured =>
+      'Ask your platform admin to set Google Drive OAuth credentials.';
+
+  @override
+  String get storageDriveConnectFailed =>
+      'Could not start Google Drive connect.';
+
+  @override
+  String get storageDriveDisconnectFailed =>
+      'Could not disconnect Google Drive.';
+
+  @override
+  String get storageDriveDisconnected => 'Google Drive disconnected.';
+
+  @override
+  String get storageDriveTransferFailed =>
+      'Could not start the Drive transfer.';
+
+  @override
+  String get storageDriveTransferStarted => 'Drive transfer started.';
+
+  @override
+  String get storageZipSelect => 'Select files';
+
+  @override
+  String get storageZipDownload => 'Download ZIP';
+
+  @override
+  String get storageZipFailed => 'Could not build the ZIP.';
+
+  @override
+  String storageSelectedCount(int count) {
+    return '$count selected';
+  }
+
+  @override
+  String get storageClearSelection => 'Clear selection';
+
+  @override
+  String get messagesDeleted => 'Message deleted';
+
+  @override
+  String get messagesGroupConversation => 'Group chat';
+
+  @override
+  String get messagesGroupNameLabel => 'Group name';
+
+  @override
+  String get agentTitle => 'AI Agent';
+
+  @override
+  String get agentNewSession => 'New session';
+
+  @override
+  String get agentMultiAgent => 'Multi-agent mode';
+
+  @override
+  String get agentUntitledSession => 'Untitled session';
+
+  @override
+  String agentToolsCount(int count) {
+    return '$count tools available';
+  }
+
+  @override
+  String get agentConfirm => 'Confirm';
+
+  @override
+  String get agentEmptyTitle => 'Ask the agent to work for you';
+
+  @override
+  String get agentEmptyBody =>
+      'Create a session to draft content, manage tasks, summarize data, and more — under your permissions.';
+
+  @override
+  String get agentComposerHint => 'Ask the agent…';
+
+  @override
+  String get agentSendFailed => 'Could not send your message.';
 }

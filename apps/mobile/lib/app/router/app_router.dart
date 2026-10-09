@@ -10,6 +10,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/notifications/presentation/preferences_screen.dart';
 import '../../features/settings/presentation/appearance_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../../features/settings/presentation/storage_settings_screen.dart';
 import '../feature_registry.dart';
 import '../navigation/app_routes.dart';
 import '../shell/app_shell.dart';
@@ -67,6 +68,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.notificationPreferences.substring(AppRoutes.settings.length + 1),
                 builder: (_, _) => const NotificationPreferencesScreen(),
+              ),
+              GoRoute(
+                path: AppRoutes.storage.substring(AppRoutes.settings.length + 1),
+                builder: (_, _) => const StorageSettingsScreen(),
               ),
             ],
           ),

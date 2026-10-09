@@ -7,6 +7,7 @@ import type { AuditService } from '../../../audit/application/services/audit.ser
 import type { MediaRepository } from '../../infrastructure/repositories/media.repository';
 import type { MediaAssetRecord } from '../mappers/media-asset.mapper';
 import { MediaService } from './media.service';
+import type { MediaStorageService } from './media-storage.service';
 
 const ORG = '00000000-0000-4000-8000-000000000001';
 const ACTOR = '00000000-0000-4000-8000-000000000002';
@@ -72,11 +73,13 @@ function setup() {
     deleteObjects: jest.fn(),
   };
   const audit = { record: jest.fn() };
+  const mediaStorage = { canAccept: jest.fn().mockResolvedValue(true), usage: jest.fn() };
   const config = { get: (key: keyof AppConfig) => configValues[key] };
   const service = new MediaService(
     repository as unknown as MediaRepository,
     audit as unknown as AuditService,
     storage as unknown as StorageService,
+    mediaStorage as unknown as MediaStorageService,
     config as unknown as ConfigService<AppConfig, true>,
   );
   return { service, repository, storage, audit };

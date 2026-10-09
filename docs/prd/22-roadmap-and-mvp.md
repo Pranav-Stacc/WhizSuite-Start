@@ -52,7 +52,7 @@ Must-have for beta: multi-tenancy, auth, invitations, RBAC + scopes, clients + b
 **Exit criteria:** 10–20 design-partner agencies publishing approved content weekly; approval turnaround measured.
 
 ### Phase 4 — Growth & Intelligence (≈ 3–4 months) → **Public Launch**
-- Engagement inbox (comments + DMs for Meta, LinkedIn comments), SLA, saved replies
+- Org chat (DMs, groups, client rooms), mentions, media; social community inbox deferred
 - YouTube, TikTok, X, Pinterest
 - Automation builder v1 (triggers/conditions/actions, templates, run history), recurring work, playbooks
 - Forms (onboarding, briefs) → automations

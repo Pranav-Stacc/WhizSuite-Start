@@ -3,7 +3,6 @@ import { t, type MessageKey } from '@/shared/i18n/t';
 import { Badge, type BadgeTone } from './badge';
 
 type LeadStatus = 'NEW' | 'CONTACTED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST';
-type InboxStatus = 'open' | 'replied' | 'archived';
 type SentimentValue = 'positive' | 'neutral' | 'negative';
 
 const TONES = {
@@ -14,7 +13,6 @@ const TONES = {
   project: { PLANNING: 'neutral', ACTIVE: 'success', ON_HOLD: 'warning', COMPLETED: 'primary' } satisfies Record<ProjectStatus, BadgeTone>,
   invoice: { DRAFT: 'neutral', SENT: 'info', PAID: 'success', OVERDUE: 'danger', VOID: 'neutral' } satisfies Record<InvoiceStatus, BadgeTone>,
   lead: { NEW: 'neutral', CONTACTED: 'info', PROPOSAL: 'violet', NEGOTIATION: 'warning', WON: 'success', LOST: 'danger' } satisfies Record<LeadStatus, BadgeTone>,
-  inbox: { open: 'warning', replied: 'success', archived: 'neutral' } satisfies Record<InboxStatus, BadgeTone>,
   sentiment: { positive: 'success', neutral: 'neutral', negative: 'danger' } satisfies Record<SentimentValue, BadgeTone>,
 } as const;
 

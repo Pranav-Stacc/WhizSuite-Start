@@ -59,8 +59,12 @@ abstract final class Permissions {
   static const String timeTrack = 'time.track';
   static const String auditView = 'audit.view';
   static const String integrationsManage = 'integrations.manage';
+  static const String aiView = 'ai.view';
+  static const String aiChat = 'ai.chat';
+  static const String aiManage = 'ai.manage';
+  static const String aiAgentsManage = 'ai.agents.manage';
 
-  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, chatView, chatSend, chatCreateRoom, chatManage, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage];
+  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, chatView, chatSend, chatCreateRoom, chatManage, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage, aiView, aiChat, aiManage, aiAgentsManage];
 }
 
 abstract final class ScopeTypes {

@@ -5,12 +5,8 @@ import { getClient } from '@/features/clients/services/clients.service';
 import { listAssets } from '@/features/media/services/media.service';
 import { listInvoices, effectiveStatus } from '@/features/invoices/services/invoices.service';
 import { loadReport, type Report } from '@/features/reports/services/reports.service';
-import { memberDirectory } from '@/features/team/services/members.service';
+import { openClientRoom } from '@/features/chat/services/chat.service';
 import { ApiError } from '@/shared/api/api-client';
-import { fetchClientThread } from '@/shared/api/live/feedback';
-import { getSession } from '@/shared/auth/session';
-import { isLiveMode } from '@/shared/config/env';
-import { threadRepository, type ThreadMessage } from '../data/thread.repository';
 
 const PORTAL_INVOICE_STATUSES: InvoiceStatus[] = ['SENT', 'PAID', 'OVERDUE'];
 
@@ -66,43 +62,19 @@ export async function portalFiles(clientId: string) {
 
 export const PORTAL_CACHE_TAG = 'portal';
 
-/** Agency authors the client cannot look up are shown under the agency's name. */
-async function liveMessages(clientId: string): Promise<ThreadMessage[]> {
-  const [comments, directory, session] = await Promise.all([
-    softFail(() => fetchClientThread(clientId, PORTAL_CACHE_TAG), []),
-    softFail(() => memberDirectory(), new Map()),
-    getSession(),
-  ]);
-  return comments.map((c) => {
-    const author = directory.get(c.authorId);
-    return {
-      id: c.id,
-      clientId,
-      fromClient: author?.isClient ?? false,
-      authorName: author?.name ?? session?.orgName ?? '',
-      body: c.body,
-      at: c.createdAt,
-    };
-  });
-}
-
-/** The agency ↔ client conversation, oldest first; shared by the portal and the client workspace. */
-export async function clientThread(clientId: string): Promise<ThreadMessage[]> {
-  const messages = isLiveMode
-    ? await liveMessages(clientId)
-    : (await softFail(() => threadRepository.list(), [])).filter((m) => m.clientId === clientId);
-  return messages.sort((a, b) => a.at.localeCompare(b.at));
-}
-
 export async function portalSummary(clientId: string) {
   const empty = { approvals: 0, openInvoices: 0, messages: 0 };
   return softFail(async () => {
-    const [approvals, invoices, messages] = await Promise.all([
+    const [approvals, invoices, room] = await Promise.all([
       portalApprovals(clientId),
       portalInvoices(clientId),
-      clientThread(clientId),
+      softFail(() => openClientRoom(clientId, 'Client chat'), null),
     ]);
     const openInvoices = invoices.filter((inv) => effectiveStatus(inv) === 'SENT' || effectiveStatus(inv) === 'OVERDUE');
-    return { approvals: approvals.length, openInvoices: openInvoices.length, messages: messages.length };
+    return {
+      approvals: approvals.length,
+      openInvoices: openInvoices.length,
+      messages: room?.unreadCount ?? 0,
+    };
   }, empty);
 }

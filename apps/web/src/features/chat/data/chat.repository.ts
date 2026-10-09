@@ -23,6 +23,7 @@ export interface ChatMessage extends Entity {
   roomId: string;
   senderId: string | null;
   body: string;
+  replyToId: string | null;
   createdAt: string;
   deletedAt: string | null;
 }
@@ -77,6 +78,7 @@ const MESSAGE_SEEDS: ChatMessage[] = [
     roomId: 'chat-group-ops',
     senderId: 'm-priya',
     body: 'Morning — approvals queue is light today.',
+    replyToId: null,
     createdAt: ago(120),
     deletedAt: null,
   },
@@ -84,7 +86,8 @@ const MESSAGE_SEEDS: ChatMessage[] = [
     id: 'cm2',
     roomId: 'chat-group-ops',
     senderId: 'm-rohan',
-    body: 'Can someone take the Verde shoot brief? @task Fix shot list',
+    body: 'Can someone take the Verde shoot brief?',
+    replyToId: 'cm1',
     createdAt: ago(12),
     deletedAt: null,
   },
@@ -93,6 +96,7 @@ const MESSAGE_SEEDS: ChatMessage[] = [
     roomId: 'chat-client-nimbus',
     senderId: 'c-neha',
     body: 'Looks good — ship the carousel.',
+    replyToId: null,
     createdAt: ago(45),
     deletedAt: null,
   },
@@ -101,6 +105,7 @@ const MESSAGE_SEEDS: ChatMessage[] = [
     roomId: 'chat-dm-priya',
     senderId: 'm-priya',
     body: 'Ping me when the draft is ready',
+    replyToId: null,
     createdAt: ago(90),
     deletedAt: null,
   },
@@ -139,7 +144,7 @@ export function toMessageDto(message: ChatMessage): ChatMessageDto {
     clientMessageId: null,
     type: 'TEXT',
     body: message.body,
-    replyToId: null,
+    replyToId: message.replyToId,
     linkPreview: null,
     editedAt: null,
     deletedAt: message.deletedAt,

@@ -1,41 +1,75 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/contracts/contracts.g.dart';
 import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
-import '../domain/feedback_models.dart';
+import '../domain/chat_models.dart';
 
-/// Feedback threads and per-subject comments. Permissions follow the API's
-/// `@RequirePermissions`: reads need feedback.view, every write needs feedback.create.
+/// Chat rooms and messages. Permissions follow the API's `@RequirePermissions`:
+/// reads need chat.view, sends need chat.send, room creation needs chat.create_room.
 class MessagesRepository {
   MessagesRepository(this._api);
 
   final ApiClient _api;
 
-  String _comments(FeedbackSubject subject) => _api.org('feedback/subjects/${subject.type}/${subject.id}/comments');
+  String get _rooms => _api.org('chat/rooms');
 
-  /// feedback.view — newest first, capped by the server's list limit.
-  Future<List<FeedbackThread>> threads() async =>
-      jsonList(await _api.get<Object?>(_api.org('feedback/threads'))).map(FeedbackThread.fromJson).toList();
+  /// chat.view — newest activity first.
+  Future<List<ChatRoom>> rooms() async =>
+      jsonList(await _api.get<Object?>(_rooms)).map(ChatRoom.fromJson).toList();
 
-  /// feedback.view
-  Future<FeedbackThread> thread(String id) async =>
-      FeedbackThread.fromJson(jsonObject(await _api.get<Object?>(_api.org('feedback/threads/$id'))));
+  /// chat.view
+  Future<ChatRoom> room(String roomId) async =>
+      ChatRoom.fromJson(jsonObject(await _api.get<Object?>('$_rooms/$roomId')));
 
-  /// feedback.view — oldest first, across every thread of the subject.
-  Future<List<FeedbackComment>> comments(FeedbackSubject subject) async =>
-      jsonList(await _api.get<Object?>(_comments(subject))).map(FeedbackComment.fromJson).toList();
+  /// chat.view — oldest first within each page.
+  Future<ChatMessagePage> messages(String roomId, {String? cursor}) async => ChatMessagePage.fromJson(
+        jsonObject(await _api.get<Object?>('$_rooms/$roomId/messages', query: {'cursor': cursor})),
+      );
 
-  /// feedback.create — appends to the subject's open thread, opening one when none is.
-  Future<FeedbackComment> addComment(FeedbackSubject subject, String body) async =>
-      FeedbackComment.fromJson(jsonObject(await _api.post<Object?>(_comments(subject), body: {'body': body})));
+  /// chat.send
+  Future<ChatMessage> send(
+    String roomId,
+    String body, {
+    List<ChatMention> mentions = const [],
+    String? replyToId,
+  }) async =>
+      ChatMessage.fromJson(
+        jsonObject(
+          await _api.post<Object?>(
+            '$_rooms/$roomId/messages',
+            body: {
+              'body': body,
+              if (mentions.isNotEmpty) 'mentions': mentions.map((m) => m.toJson()).toList(),
+              if (replyToId != null) 'replyToId': replyToId,
+            },
+          ),
+        ),
+      );
 
-  /// content.view — ids of the content the member can read (client-scoped by the API).
-  Future<Set<String>> contentIds() async =>
-      {for (final item in jsonList(await _api.get<Object?>(_api.org('content')))) item.str('id')};
+  /// chat.create_room — opens or returns an existing DM.
+  Future<ChatRoom> openDm(String userId) async =>
+      ChatRoom.fromJson(jsonObject(await _api.post<Object?>(_api.org('chat/dms'), body: {'userId': userId})));
 
-  /// feedback.create (the API gates status changes with the create permission).
-  Future<void> setStatus(String threadId, String status) =>
-      _api.patch<Object?>(_api.org('feedback/threads/$threadId'), body: {'status': status});
+  /// chat.create_room — group with members.
+  Future<ChatRoom> createGroup({required String name, required List<String> memberUserIds}) async =>
+      ChatRoom.fromJson(
+        jsonObject(
+          await _api.post<Object?>(
+            _rooms,
+            body: {'type': ChatRoomTypes.group, 'name': name, 'memberUserIds': memberUserIds},
+          ),
+        ),
+      );
+
+  /// chat.view — get or create the client room.
+  Future<ChatRoom> clientRoom(String clientId) async => ChatRoom.fromJson(
+        jsonObject(await _api.get<Object?>(_api.org('chat/clients/$clientId/room'))),
+      );
+
+  /// chat.view — marks messages read through [messageId].
+  Future<void> markRead(String roomId, String messageId) =>
+      _api.post<Object?>('$_rooms/$roomId/read', body: {'messageId': messageId});
 }
 
 final messagesRepositoryProvider = Provider<MessagesRepository>(

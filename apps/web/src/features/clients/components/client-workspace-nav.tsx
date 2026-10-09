@@ -17,22 +17,24 @@ export function ClientWorkspaceNav({ clientId, clientName, sections }: { clientI
   const active = activeSection(pathname, clientId);
 
   return (
-    <div className="mb-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-border-soft pb-3">
+    <div className="mb-6 flex flex-col gap-3 border-b border-border-soft pb-3 sm:gap-y-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-x-8">
       <nav aria-label={t('clients.workspace.breadcrumb')} className="flex min-w-0 items-center gap-2 text-[12px] text-muted">
-        <Link href="/clients" className="inline-flex items-center gap-1 hover:text-foreground">
+        <Link href="/clients" className="inline-flex shrink-0 items-center gap-1 hover:text-foreground">
           <ArrowLeft className="size-3" aria-hidden />
-          {t('nav.clients')}
+          <span className="hidden sm:inline">{t('nav.clients')}</span>
         </Link>
-        <span aria-hidden>/</span>
+        <span aria-hidden className="hidden sm:inline">
+          /
+        </span>
         <Link href={clientSectionHref(clientId, 'overview')} className="truncate uppercase tracking-[0.12em] hover:text-foreground">
           {clientName}
         </Link>
         <span aria-hidden>/</span>
-        <span className="text-foreground" aria-current="page">
+        <span className="shrink-0 text-foreground" aria-current="page">
           {t(`clients.workspace.${active}` as MessageKey)}
         </span>
       </nav>
-      <nav aria-label={t('clients.tabs.label')} className="no-scrollbar flex gap-5 overflow-x-auto">
+      <nav aria-label={t('clients.tabs.label')} className="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 sm:gap-5">
         {sections.map((section) => (
           <Link key={section} href={clientSectionHref(clientId, section)} aria-current={section === active ? 'page' : undefined} className="nav-link whitespace-nowrap">
             {t(`clients.workspace.${section}` as MessageKey)}

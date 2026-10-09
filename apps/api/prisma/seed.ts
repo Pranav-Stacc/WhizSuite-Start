@@ -55,6 +55,19 @@ async function main() {
     update: { value: 5 },
   });
 
+  const STORAGE_BYTES_50_GB = 50 * 1024 * 1024 * 1024;
+  await prisma.planEntitlement.upsert({
+    where: {
+      planVersionId_key: { planVersionId: planVersion.id, key: 'storage.bytes' },
+    },
+    create: {
+      planVersionId: planVersion.id,
+      key: 'storage.bytes',
+      value: { max: STORAGE_BYTES_50_GB },
+    },
+    update: { value: { max: STORAGE_BYTES_50_GB } },
+  });
+
   const integrationProviders = [
     {
       key: 'meta',
@@ -69,8 +82,21 @@ async function main() {
         ],
       },
     },
+
     { key: 'linkedin', name: 'LinkedIn', category: 'social', manifest: { scopes: ['w_member_social'] } },
     { key: 'google', name: 'Google', category: 'productivity', manifest: {} },
+    {
+      key: 'google_drive',
+      name: 'Google Drive',
+      category: 'storage',
+      manifest: {
+        scopes: [
+          'https://www.googleapis.com/auth/drive.file',
+          'https://www.googleapis.com/auth/drive.readonly',
+        ],
+        actions: ['import', 'export', 'list'],
+      },
+    },
   ];
   for (const provider of integrationProviders) {
     await prisma.integrationProvider.upsert({
@@ -82,7 +108,7 @@ async function main() {
 
   console.log('Seeded permissions catalog, starter plan, and integration providers');
 
-  // Demo org for local dev (optional â€” skip if exists)
+  // Demo org for local dev (optional — skip if exists)
   const demoSlug = 'demo-agency';
   const existing = await prisma.organization.findUnique({
     where: { slug: demoSlug },

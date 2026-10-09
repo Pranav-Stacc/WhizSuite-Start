@@ -1,0 +1,142 @@
+model AgentSession {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  title          String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  messages AgentMessage[]
+  runs     AgentRun[]
+
+  @@index([organizationId, userId, updatedAt])
+  @@map("agent_sessions")
+  @@schema("ai")
+}
+
+model AgentMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  sessionId      String   @map("session_id") @db.Uuid
+  role           String
+  content        String
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  session AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, sessionId, createdAt])
+  @@map("agent_messages")
+  @@schema("ai")
+}
+
+model AgentDefinition {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  createdById    String   @map("created_by_id") @db.Uuid
+  name           String
+  description    String?
+  systemPrompt   String   @map("system_prompt")
+  toolIds        Json     @default("[]") @map("tool_ids")
+  subAgents      Json     @default("[]") @map("sub_agents")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  runs      AgentRun[]
+  schedules AgentSchedule[]
+
+  @@index([organizationId, isActive])
+  @@map("agent_definitions")
+  @@schema("ai")
+}
+
+model AgentSchedule {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  createdById       String    @map("created_by_id") @db.Uuid
+  agentDefinitionId String?   @map("agent_definition_id") @db.Uuid
+  name              String
+  prompt            String
+  cron              String
+  timezone          String    @default("UTC")
+  status            String    @default("ACTIVE")
+  lastRunAt         DateTime? @map("last_run_at") @db.Timestamptz
+  nextRunAt         DateTime? @map("next_run_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  agentDefinition AgentDefinition? @relation(fields: [agentDefinitionId], references: [id])
+  runs            AgentRun[]
+
+  @@index([organizationId, status, nextRunAt])
+  @@map("agent_schedules")
+  @@schema("ai")
+}
+
+model AgentRun {
+  id                String    @id @default(uuid()) @db.Uuid
+  organizationId    String    @map("organization_id") @db.Uuid
+  sessionId         String    @map("session_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  agentDefinitionId String?   @map("agent_definition_id") @db.Uuid
+  scheduleId        String?   @map("schedule_id") @db.Uuid
+  status            String    @default("QUEUED")
+  prompt            String
+  response          String?
+  error             String?
+  multiAgent        Boolean   @default(false) @map("multi_agent")
+  startedAt         DateTime? @map("started_at") @db.Timestamptz
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  session         AgentSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  agentDefinition AgentDefinition?  @relation(fields: [agentDefinitionId], references: [id])
+  schedule        AgentSchedule?    @relation(fields: [scheduleId], references: [id])
+  steps           AgentRunStep[]
+  pendingActions  AgentPendingAction[]
+
+  @@index([organizationId, status, createdAt])
+  @@map("agent_runs")
+  @@schema("ai")
+}
+
+model AgentRunStep {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  runId          String    @map("run_id") @db.Uuid
+  agentName      String    @map("agent_name")
+  stepType       String    @map("step_type")
+  status         String    @default("RUNNING")
+  input          Json?
+  output         Json?
+  error          String?
+  startedAt      DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  completedAt    DateTime? @map("completed_at") @db.Timestamptz
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, runId])
+  @@map("agent_run_steps")
+  @@schema("ai")
+}
+
+model AgentPendingAction {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  runId          String    @map("run_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  toolId         String    @map("tool_id")
+  input          Json
+  summary        String
+  status         String    @default("PENDING")
+  expiresAt      DateTime  @map("expires_at") @db.Timestamptz
+  resolvedAt     DateTime? @map("resolved_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, status])
+  @@map("agent_pending_actions")
+  @@schema("ai")
+}

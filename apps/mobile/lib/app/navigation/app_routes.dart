@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const appearance = '/settings/appearance';
   static const notificationPreferences = '/settings/notifications';
+  static const storage = '/settings/storage';
 
   static const public = {login, register, portalAccess};
 }

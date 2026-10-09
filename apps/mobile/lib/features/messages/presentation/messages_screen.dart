@@ -12,7 +12,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
 import '../../directory/application/directory_providers.dart';
 import '../application/messages_providers.dart';
-import '../domain/feedback_models.dart';
+import '../domain/chat_models.dart';
 import '../messages_routes.dart';
 import 'conversation_labels.dart';
 import 'conversation_pane.dart';
@@ -23,8 +23,7 @@ import 'new_conversation_sheet.dart';
 const messagesSplitBreakpoint = 840.0;
 const _listPaneWidth = 380.0;
 
-/// Conversations with clients, filterable by status and (for staff) by client.
-/// On wide screens the selected conversation opens beside the list.
+/// Chat rooms, filterable by client for staff. On wide screens the selected room opens beside the list.
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
@@ -33,17 +32,36 @@ class MessagesScreen extends ConsumerStatefulWidget {
 }
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
-  String? _status = FeedbackThreadStatuses.open;
   String? _clientId;
   String? _selectedId;
+  var _handledClientDeepLink = false;
 
-  Future<void> _refresh() => ref.refresh(messageThreadsProvider.future).then<void>((_) {}, onError: (Object _) {});
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openClientDeepLink());
+  }
 
-  void _open(Conversation conversation, {required bool wide}) {
+  Future<void> _openClientDeepLink() async {
+    if (_handledClientDeepLink) return;
+    _handledClientDeepLink = true;
+    final clientId = GoRouterState.of(context).uri.queryParameters['clientId'];
+    if (clientId == null || clientId.isEmpty) return;
+    try {
+      final room = await ref.read(messagesActionsProvider).openClientRoom(clientId);
+      if (!mounted) return;
+      final wide = MediaQuery.sizeOf(context).width >= messagesSplitBreakpoint;
+      _open(room, wide: wide);
+    } catch (_) {}
+  }
+
+  Future<void> _refresh() => ref.refresh(chatRoomsProvider.future).then<void>((_) {}, onError: (Object _) {});
+
+  void _open(ChatRoom room, {required bool wide}) {
     if (wide) {
-      setState(() => _selectedId = conversation.id);
+      setState(() => _selectedId = room.id);
     } else {
-      context.push(MessagesRoutes.detail(conversation.id));
+      context.push(MessagesRoutes.detail(room.id));
     }
   }
 
@@ -51,7 +69,6 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     final id = await showNewConversationSheet(context, ref);
     if (id == null || !mounted) return;
     setState(() {
-      _status = FeedbackThreadStatuses.open;
       if (wide) _selectedId = id;
     });
     if (!wide) await context.push(MessagesRoutes.detail(id));
@@ -61,26 +78,26 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    final conversations = ref.watch(messageConversationsProvider);
+    final rooms = ref.watch(chatRoomsProvider);
     final isPortal = ref.watch(messagesPortalClientProvider).value != null;
     final clients = isPortal ? null : ref.watch(clientDirectoryProvider).value;
-    final all = conversations.value ?? const <Conversation>[];
+    final all = rooms.value ?? const <ChatRoom>[];
     final clientIds = {
-      for (final c in all)
-        if (c.subject.type == FeedbackSubjectTypes.client) c.subject.id,
+      for (final room in all)
+        if (room.isClientRoom && room.clientId != null) room.clientId!,
     }.toList()
       ..sort((a, b) => (clients?.nameOf(a) ?? a).compareTo(clients?.nameOf(b) ?? b));
-    int countOf(String? status) => all.where((c) => status == null || c.status == status).length;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= messagesSplitBreakpoint;
-        final selectedId = wide ? (_selectedId ?? all.where(_matches).firstOrNull?.id) : null;
+        final filtered = all.where(_matches).toList();
+        final selectedId = wide ? (_selectedId ?? filtered.firstOrNull?.id) : null;
 
-        final list = ResourceList<Conversation>(
-          value: conversations,
+        final list = ResourceList<ChatRoom>(
+          value: rooms,
           onRefresh: _refresh,
-          matches: (c, query) => conversationTitle(ref, l10n, c).toLowerCase().contains(query),
+          matches: (room, query) => roomTitle(ref, l10n, room).toLowerCase().contains(query),
           searchHint: l10n.messagesSearchHint,
           filter: _matches,
           itemSpacing: tokens.xs,
@@ -88,16 +105,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                l10n.messagesThreadCount(all.where(_matches).length),
+                l10n.messagesThreadCount(filtered.length),
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tokens.muted),
-              ),
-              SizedBox(height: tokens.sm),
-              FilterBar<String>(
-                options: FeedbackThreadStatuses.values,
-                selected: _status,
-                labelOf: l10n.messagesStatus,
-                countOf: countOf,
-                onSelected: (value) => setState(() => _status = value),
               ),
               if (!isPortal && clientIds.length > 1) ...[
                 SizedBox(height: tokens.md),
@@ -118,17 +127,17 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             title: l10n.messagesEmpty,
             body: isPortal ? l10n.messagesEmptyPortalBody : l10n.messagesEmptyBody,
           ),
-          itemBuilder: (context, conversation) => ConversationTile(
-            conversation: conversation,
-            selected: conversation.id == selectedId,
-            onTap: () => _open(conversation, wide: wide),
+          itemBuilder: (context, room) => ConversationTile(
+            room: room,
+            selected: room.id == selectedId,
+            onTap: () => _open(room, wide: wide),
           ),
         );
 
         return PageScaffold(
           title: l10n.navMessages,
           floatingActionButton: PermissionGate(
-            anyOf: const [Permissions.feedbackCreate],
+            anyOf: const [Permissions.chatCreateRoom, Permissions.chatSend],
             child: CreateFab(
               label: isPortal ? l10n.messagesNewPortal : l10n.messagesNew,
               icon: Icons.edit_outlined,
@@ -158,6 +167,5 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     );
   }
 
-  bool _matches(Conversation c) =>
-      (_status == null || c.status == _status) && (_clientId == null || c.subject.id == _clientId);
+  bool _matches(ChatRoom room) => _clientId == null || room.clientId == _clientId;
 }

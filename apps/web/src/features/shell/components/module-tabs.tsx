@@ -28,9 +28,9 @@ export function ModuleTabs({
   if (!group || group.items.length < 2) return null;
 
   return (
-    <nav aria-label={t(group.label)} className="mb-8 flex flex-wrap items-center justify-between gap-3 border-b border-border-soft pb-3">
-      <p className="eyebrow">{t(group.label)}</p>
-      <ul className="no-scrollbar flex gap-5 overflow-x-auto">
+    <nav aria-label={t(group.label)} className="mb-6 flex flex-col gap-3 border-b border-border-soft pb-3 sm:mb-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <p className="eyebrow shrink-0">{t(group.label)}</p>
+      <ul className="no-scrollbar -mx-1 flex gap-4 overflow-x-auto px-1 sm:gap-5">
         {group.items.map((item) => {
           const badge = badges[item.href];
           return (

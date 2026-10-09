@@ -330,13 +330,13 @@ class _ManageTab extends ConsumerWidget {
           body: l10n.clientManageCalendarBody,
           route: CalendarRoutes.root,
         ),
-      if (policy.can(Permissions.feedbackView))
+      if (policy.can(Permissions.chatView))
         (
-          permission: Permissions.feedbackView,
+          permission: Permissions.chatView,
           icon: Icons.forum_outlined,
           title: l10n.clientManageMessages,
           body: l10n.clientManageMessagesBody,
-          route: MessagesRoutes.root,
+          route: MessagesRoutes.clientRoom(client.id),
         ),
       if (policy.can(Permissions.filesView))
         (

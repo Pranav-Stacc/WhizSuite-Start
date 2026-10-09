@@ -13,6 +13,6 @@ import { AuditInterceptor } from './interface/http/interceptors/audit.intercepto
     AuditRepository,
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
-  exports: [AuditService],
+  exports: [AuditService, AuditRepository],
 })
 export class AuditModule {}

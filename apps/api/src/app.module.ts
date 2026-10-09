@@ -36,6 +36,8 @@ import { SearchModule } from './modules/search/search.module';
 import { ActivityModule } from './modules/activity/activity.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { AiModule } from './modules/ai/ai.module';
+import { AgentModule } from './modules/agent/agent.module';
+import { CapabilitiesModule } from './modules/capabilities/capabilities.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
@@ -89,6 +91,8 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     ActivityModule,
     IntegrationsModule,
     AiModule,
+    CapabilitiesModule,
+    AgentModule,
     BillingModule,
     KnowledgeModule,
     RealtimeModule,

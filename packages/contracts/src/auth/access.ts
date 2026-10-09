@@ -64,6 +64,8 @@ const STAFF_PERMISSIONS: readonly Permission[] = [
   Permissions.CHAT_SEND,
   Permissions.CHAT_CREATE_ROOM,
   Permissions.TIME_TRACK,
+  Permissions.AI_VIEW,
+  Permissions.AI_CHAT,
 ];
 
 const MANAGER_EXCLUDED = new Set<Permission>([

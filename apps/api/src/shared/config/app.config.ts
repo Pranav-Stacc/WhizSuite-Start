@@ -249,11 +249,34 @@ export const appConfigSchema = z
           .map((id) => id.trim())
           .filter(Boolean),
       ),
+    /** Drive data-source OAuth (separate from login audiences). Empty = connect disabled. */
+    GOOGLE_DRIVE_CLIENT_ID: z.string().default(''),
+    GOOGLE_DRIVE_CLIENT_SECRET: z.string().default(''),
+    GOOGLE_DRIVE_REDIRECT_URI: z.string().default(''),
     /** Meta (Facebook Login for Business / Instagram Graph). Empty = connect disabled. */
     META_APP_ID: z.string().default(''),
     META_APP_SECRET: z.string().default(''),
     META_REDIRECT_URI: z.string().default(''),
     META_GRAPH_API_VERSION: z.string().default('v21.0'),
+
+    AGENT_SERVICE_URL: z.string().url().default('http://localhost:8000'),
+    AGENT_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
+    AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+    AGENT_PENDING_ACTION_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(3600),
+    AGENT_SESSION_LIST_LIMIT: z.coerce.number().int().positive().default(50),
+    AGENT_RUN_LIST_LIMIT: z.coerce.number().int().positive().default(50),
+    AGENT_SCHEDULER_ENABLED: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((v) => v === 'true'),
+    AGENT_SCHEDULER_POLL_MS: z.coerce.number().int().positive().default(60_000),
+    AGENT_SCHEDULER_BATCH: z.coerce.number().int().positive().default(20),
+    OPENAI_API_KEY: z.string().default(''),
+    ANTHROPIC_API_KEY: z.string().default(''),
   })
   .superRefine((config, ctx) => {
     if (config.PUSH_ENABLED) {

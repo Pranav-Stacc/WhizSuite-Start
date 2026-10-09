@@ -39,7 +39,7 @@ The backend is a **production-grade modular monolith** with full database schema
 ### Platform modules
 - Media assets + `POST .../media/assets/presign` (MinIO/S3)
 - Automations CRUD + `POST .../publish` + `POST .../run`
-- Finance, time, feedback, inbox, reports, custom fields
+- Finance, time, feedback, chat, reports, custom fields
 - Templates, calendar, activity, analytics metrics
 - Integrations connections, knowledge spaces, invitations
 - **Search** `GET .../search?q=`
@@ -75,7 +75,7 @@ Tests auto-run `prisma db push` + seed in `test/global-setup.ts`.
 2. MFA, SSO, refresh token rotation hardening
 3. PostgreSQL RLS policies + cross-tenant isolation tests
 4. Automation visual builder UI execution (advanced conditions)
-5. Engagement inbox platform webhook sync
+5. Chat realtime hardening and attachment delivery
 6. Stripe/Razorpay payment webhooks
 7. Client portal BFF routes
 8. Phase 5/6: ads API, marketplace, agency collaboration

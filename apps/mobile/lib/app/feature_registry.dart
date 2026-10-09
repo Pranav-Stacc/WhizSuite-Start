@@ -1,4 +1,5 @@
 import '../core/navigation/feature_module.dart';
+import '../features/agent/agent_module.dart';
 import '../features/approvals/approvals_module.dart';
 import '../features/audit/audit_module.dart';
 import '../features/automations/automations_module.dart';
@@ -44,6 +45,7 @@ final List<FeatureModule> featureModules = [
   timeModule,
   reportsModule,
   automationsModule,
+  agentModule,
   workflowsModule,
   integrationsModule,
   teamModule,

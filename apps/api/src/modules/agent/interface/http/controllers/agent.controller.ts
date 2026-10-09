@@ -1,0 +1,197 @@
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Permissions, sendAgentMessageSchema } from '@agency-os/contracts';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../../../../shared/auth/current-user.decorator';
+import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
+import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
+import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
+import { requireOrganizationId } from '../../../../../shared/http/org-context';
+import { AgentRunService } from '../../../application/services/agent-run.service';
+import { AgentSessionService } from '../../../application/services/agent-session.service';
+
+@ApiTags('agent')
+@ApiBearerAuth()
+@Controller('v1/organizations/:organizationId/agent')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+export class AgentController {
+  constructor(
+    private readonly sessions: AgentSessionService,
+    private readonly runs: AgentRunService,
+  ) {}
+
+  @Get('sessions')
+  @RequirePermissions(Permissions.AI_VIEW)
+  listSessions(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.sessions.listSessions(
+      requireOrganizationId(organizationId),
+      user.userId,
+    );
+  }
+
+  @Post('sessions')
+  @RequirePermissions(Permissions.AI_CHAT)
+  createSession(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { title?: string },
+  ) {
+    return this.sessions.createSession(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body.title,
+    );
+  }
+
+  @Get('sessions/:sessionId')
+  @RequirePermissions(Permissions.AI_VIEW)
+  getSession(
+    @Param('organizationId') organizationId: string,
+    @Param('sessionId', ParseUUIDPipe) sessionId: string,
+  ) {
+    return this.sessions.getSession(
+      requireOrganizationId(organizationId),
+      sessionId,
+    );
+  }
+
+  @Post('sessions/:sessionId/messages')
+  @RequirePermissions(Permissions.AI_CHAT)
+  sendMessage(
+    @Param('organizationId') organizationId: string,
+    @Param('sessionId', ParseUUIDPipe) sessionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+  ) {
+    const input = sendAgentMessageSchema.parse(body);
+    return this.runs.sendMessage(
+      requireOrganizationId(organizationId),
+      user,
+      sessionId,
+      input,
+    );
+  }
+
+  @Get('runs')
+  @RequirePermissions(Permissions.AI_VIEW)
+  listRuns(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.runs.listRuns(requireOrganizationId(organizationId), user.userId);
+  }
+
+  @Get('runs/:runId')
+  @RequirePermissions(Permissions.AI_VIEW)
+  getRun(
+    @Param('organizationId') organizationId: string,
+    @Param('runId', ParseUUIDPipe) runId: string,
+  ) {
+    return this.runs.getRun(requireOrganizationId(organizationId), runId);
+  }
+
+  @Get('pending')
+  @RequirePermissions(Permissions.AI_VIEW)
+  listPending(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.runs.listPending(requireOrganizationId(organizationId), user.userId);
+  }
+
+  @Post('pending/:pendingId/confirm')
+  @RequirePermissions(Permissions.AI_CHAT)
+  confirmPending(
+    @Param('organizationId') organizationId: string,
+    @Param('pendingId', ParseUUIDPipe) pendingId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.runs.confirmPending(
+      requireOrganizationId(organizationId),
+      user,
+      pendingId,
+    );
+  }
+
+  @Post('pending/:pendingId/reject')
+  @RequirePermissions(Permissions.AI_CHAT)
+  rejectPending(
+    @Param('organizationId') organizationId: string,
+    @Param('pendingId', ParseUUIDPipe) pendingId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.runs.rejectPending(
+      requireOrganizationId(organizationId),
+      user.userId,
+      pendingId,
+    );
+  }
+
+  @Get('definitions')
+  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  listDefinitions(@Param('organizationId') organizationId: string) {
+    return this.runs.listDefinitions(requireOrganizationId(organizationId));
+  }
+
+  @Post('definitions')
+  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  createDefinition(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+  ) {
+    return this.runs.createDefinition(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Get('schedules')
+  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  listSchedules(@Param('organizationId') organizationId: string) {
+    return this.runs.listSchedules(requireOrganizationId(organizationId));
+  }
+
+  @Post('schedules')
+  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  createSchedule(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+  ) {
+    return this.runs.createSchedule(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Patch('schedules/:scheduleId')
+  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  updateSchedule(
+    @Param('organizationId') organizationId: string,
+    @Param('scheduleId', ParseUUIDPipe) scheduleId: string,
+    @Body() body: { status: 'ACTIVE' | 'PAUSED' | 'ARCHIVED' },
+  ) {
+    return this.runs.updateScheduleStatus(
+      requireOrganizationId(organizationId),
+      scheduleId,
+      body.status,
+    );
+  }
+}

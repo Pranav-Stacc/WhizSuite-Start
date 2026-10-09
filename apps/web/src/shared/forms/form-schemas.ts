@@ -12,6 +12,8 @@ import {
   createArticleSchema,
   createAssetSchema,
   createAutomationSchema,
+  createChatDmSchema,
+  createChatGroupSchema,
   createClientSchema,
   createContractFormSchema,
   createContentSchema,
@@ -54,6 +56,8 @@ export const FORM_SCHEMAS = {
   profile: updateProfileSchema,
   asset: createAssetSchema,
   message: messageSchema,
+  chatDm: createChatDmSchema,
+  chatGroup: createChatGroupSchema,
   integration: connectIntegrationSchema,
   department: createDepartmentFormSchema,
 } satisfies Record<string, ZodTypeAny>;

@@ -4,6 +4,7 @@ import { toInputJson } from '../../../../shared/database/prisma-json.util';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { DomainEventTypes } from '@agency-os/contracts';
+import { AuditRepository } from '../../infrastructure/repositories/audit.repository';
 
 export interface AuditRecordInput {
   organizationId: string;
@@ -24,7 +25,18 @@ export class AuditService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly outbox: OutboxService,
+    private readonly repository: AuditRepository,
   ) {}
+
+  list(
+    organizationId: string,
+    options: { cursor?: string; limit?: number } = {},
+  ) {
+    return this.repository.list(organizationId, {
+      cursor: options.cursor,
+      limit: options.limit ?? 20,
+    });
+  }
 
   async record(input: AuditRecordInput): Promise<void> {
     const ctx = TenantContext.get();

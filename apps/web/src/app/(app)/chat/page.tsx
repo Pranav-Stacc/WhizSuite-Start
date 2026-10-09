@@ -4,20 +4,29 @@ import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { PageHeader } from '@/shared/ui/page-header';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
-import { membersById } from '@/features/team/services/members.service';
+import { listMembers, membersById } from '@/features/team/services/members.service';
 import { ChatWorkspace } from '@/features/chat/components/chat-workspace';
+import { NewChatDialogs } from '@/features/chat/components/new-chat-dialogs';
 import { getRoom, listMessages, listRooms, markRead } from '@/features/chat/services/chat.service';
+import { chatRoomsRepository } from '@/features/chat/data/chat.repository';
+import { isLiveMode } from '@/shared/config/env';
 
 export const metadata: Metadata = { title: t('chat.title') };
 
 export default async function ChatPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requirePermission(Permissions.CHAT_VIEW);
+  const session = await requirePermission(Permissions.CHAT_VIEW);
   const sp = await searchParams;
   const roomId = param(sp, 'room');
 
-  const [rooms, members] = await Promise.all([listRooms(), membersById()]);
+  const [rooms, membersMap, allMembers] = await Promise.all([
+    listRooms(),
+    membersById(),
+    listMembers(),
+  ]);
   const selected = roomId ? await getRoom(roomId) : (rooms[0] ?? null);
-  const page = selected ? await listMessages(selected.id) : { items: [], nextCursor: null, hasMore: false };
+  const page = selected
+    ? await listMessages(selected.id)
+    : { items: [], nextCursor: null, hasMore: false };
 
   if (selected && page.items.length > 0) {
     const last = page.items[page.items.length - 1];
@@ -25,18 +34,46 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   }
 
   const names = new Map<string, string>();
-  for (const [id, member] of members) {
-    names.set(id, member.name);
+  for (const [id, member] of membersMap) names.set(id, member.name);
+
+  const roomTitles = new Map<string, string>();
+  if (!isLiveMode) {
+    const demoRooms = await chatRoomsRepository.list();
+    for (const room of demoRooms) {
+      if (room.type === 'DM') {
+        const peer = room.memberUserIds.find((id) => id !== session.userId);
+        if (peer) roomTitles.set(room.id, names.get(peer) ?? t('chat.dm'));
+      }
+    }
   }
+  if (selected?.type === 'DM' && selected.members) {
+    const peer = selected.members.find((m) => m.userId !== session.userId);
+    if (peer) roomTitles.set(selected.id, names.get(peer.userId) ?? t('chat.dm'));
+  }
+
+  const memberOptions = allMembers
+    .filter((m) => m.id !== session.userId && m.status !== 'INVITED')
+    .map((m) => ({ value: m.id, label: m.name }));
+
+  const mentionCandidates = allMembers
+    .filter((m) => m.id !== session.userId)
+    .map((m) => ({ id: m.id, label: m.name.split(' ')[0] || m.name, type: 'USER' as const }));
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('chat.title')} description={t('chat.subtitle')} />
+      <PageHeader
+        title={t('chat.title')}
+        description={t('chat.subtitle')}
+        actions={<NewChatDialogs memberOptions={memberOptions} />}
+      />
       <ChatWorkspace
         rooms={rooms}
         selected={selected}
         messages={page.items}
         membersById={names}
+        roomTitles={roomTitles}
+        viewerId={session.userId}
+        mentionCandidates={mentionCandidates}
       />
     </div>
   );

@@ -9226,6 +9226,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{active} of {total}'**
   String workflowKpiActiveOf(int active, int total);
+
+  /// No description provided for @storageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage used'**
+  String get storageTitle;
+
+  /// No description provided for @storageUsedOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {limit}'**
+  String storageUsedOf(String used, String limit);
+
+  /// No description provided for @storageUsedUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} used'**
+  String storageUsedUnlimited(String used);
+
+  /// No description provided for @storageFileCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file} other{{count} files}}'**
+  String storageFileCount(int count);
+
+  /// No description provided for @storageSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageSettingsTitle;
+
+  /// No description provided for @storageSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage, data sources, and Google Drive'**
+  String get storageSettingsBody;
+
+  /// No description provided for @storageSourcesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources'**
+  String get storageSourcesTitle;
+
+  /// No description provided for @storageSourcesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect external libraries and manage where agency files live.'**
+  String get storageSourcesBody;
+
+  /// No description provided for @storageSourcePlatformBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure platform storage used across media, clients, and the portal.'**
+  String get storageSourcePlatformBody;
+
+  /// No description provided for @storageSourceDriveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Drive to import files or transfer copies out.'**
+  String get storageSourceDriveBody;
+
+  /// No description provided for @storageStatusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get storageStatusConnected;
+
+  /// No description provided for @storageStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get storageStatusAvailable;
+
+  /// No description provided for @storageStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get storageStatusPending;
+
+  /// No description provided for @storageStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get storageStatusError;
+
+  /// No description provided for @storageStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get storageStatusDisabled;
+
+  /// No description provided for @storageDriveConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Drive'**
+  String get storageDriveConnect;
+
+  /// No description provided for @storageDriveDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get storageDriveDisconnect;
+
+  /// No description provided for @storageDriveTransferAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer all to Drive'**
+  String get storageDriveTransferAll;
+
+  /// No description provided for @storageDriveNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your platform admin to set Google Drive OAuth credentials.'**
+  String get storageDriveNotConfigured;
+
+  /// No description provided for @storageDriveConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Google Drive connect.'**
+  String get storageDriveConnectFailed;
+
+  /// No description provided for @storageDriveDisconnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not disconnect Google Drive.'**
+  String get storageDriveDisconnectFailed;
+
+  /// No description provided for @storageDriveDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive disconnected.'**
+  String get storageDriveDisconnected;
+
+  /// No description provided for @storageDriveTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the Drive transfer.'**
+  String get storageDriveTransferFailed;
+
+  /// No description provided for @storageDriveTransferStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive transfer started.'**
+  String get storageDriveTransferStarted;
+
+  /// No description provided for @storageZipSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select files'**
+  String get storageZipSelect;
+
+  /// No description provided for @storageZipDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download ZIP'**
+  String get storageZipDownload;
+
+  /// No description provided for @storageZipFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not build the ZIP.'**
+  String get storageZipFailed;
+
+  /// No description provided for @storageSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String storageSelectedCount(int count);
+
+  /// No description provided for @storageClearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get storageClearSelection;
+
+  /// No description provided for @messagesDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messagesDeleted;
+
+  /// No description provided for @messagesGroupConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Group chat'**
+  String get messagesGroupConversation;
+
+  /// No description provided for @messagesGroupNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get messagesGroupNameLabel;
+
+  /// No description provided for @agentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Agent'**
+  String get agentTitle;
+
+  /// No description provided for @agentNewSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New session'**
+  String get agentNewSession;
+
+  /// No description provided for @agentMultiAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-agent mode'**
+  String get agentMultiAgent;
+
+  /// No description provided for @agentUntitledSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled session'**
+  String get agentUntitledSession;
+
+  /// No description provided for @agentToolsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tools available'**
+  String agentToolsCount(int count);
+
+  /// No description provided for @agentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get agentConfirm;
+
+  /// No description provided for @agentEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the agent to work for you'**
+  String get agentEmptyTitle;
+
+  /// No description provided for @agentEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a session to draft content, manage tasks, summarize data, and more — under your permissions.'**
+  String get agentEmptyBody;
+
+  /// No description provided for @agentComposerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask the agent…'**
+  String get agentComposerHint;
+
+  /// No description provided for @agentSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send your message.'**
+  String get agentSendFailed;
 }
 
 class _AppLocalizationsDelegate

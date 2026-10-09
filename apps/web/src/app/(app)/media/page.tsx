@@ -16,15 +16,17 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { SearchInput } from '@/shared/ui/search-input';
 import type { Client } from '@/features/clients/data/clients.repository';
 import { clientsById } from '@/features/clients/services/clients.service';
-import { AssetCard } from '@/features/media/components/asset-card';
 import { AssetDialog } from '@/features/media/components/asset-dialog';
 import { AssetUploader } from '@/features/media/components/asset-uploader';
 import { EnsureFoldersButton, NewFolderDialog } from '@/features/media/components/folder-actions';
 import { FolderTree, buildFolderTree, folderAncestors } from '@/features/media/components/folder-tree';
+import { SelectableAssetGrid } from '@/features/media/components/selectable-asset-grid';
+import { StorageUsageCard } from '@/features/media/components/storage-usage-card';
 import { UploadDropzone } from '@/features/media/components/upload-dropzone';
 import { deleteFolderAction } from '@/features/media/actions/folder.actions';
 import { listFolders } from '@/features/media/services/folders.service';
 import { listAssets } from '@/features/media/services/media.service';
+import { getStorageUsage } from '@/features/media/services/storage.service';
 
 export const metadata: Metadata = { title: t('media.title') };
 
@@ -46,11 +48,13 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
   const granted = await getPermissions();
   const canUpload = granted.has(Permissions.FILES_UPLOAD);
   const canDelete = granted.has(Permissions.FILES_DELETE);
-  const [assets, clients, folders] = await Promise.all([
+  const [assets, clients, folders, storageUsage] = await Promise.all([
     listAssets(),
     loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
     clientId ? listFolders(clientId) : Promise.resolve([]),
+    getStorageUsage(),
   ]);
+  const clientNames = Object.fromEntries([...clients.entries()].map(([id, c]) => [id, c.name]));
 
   const scoped = assets.filter(
     (a) =>
@@ -101,6 +105,10 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
           </>
         }
       />
+
+      <div className="mb-5">
+        <StorageUsageCard usage={storageUsage} />
+      </div>
 
       <div role="search" aria-label={t('media.filters.label')} className="mb-5 flex flex-wrap items-center gap-3">
         <SearchInput placeholder={t('media.search')} className="max-w-64" />
@@ -229,18 +237,12 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
                 />
               </div>
             ) : (
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {visible.map((asset) => (
-                  <li key={asset.id}>
-                    <AssetCard
-                      asset={asset}
-                      clientName={clients.get(asset.clientId)?.name}
-                      canDelete={canDelete}
-                      canDownload={isLiveMode}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <SelectableAssetGrid
+                assets={visible}
+                clientNames={clientNames}
+                canDelete={canDelete}
+                canDownload={isLiveMode}
+              />
             )}
           </div>
         </div>
@@ -261,18 +263,12 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
           />
         </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {visible.map((asset) => (
-            <li key={asset.id}>
-              <AssetCard
-                asset={asset}
-                clientName={clients.get(asset.clientId)?.name}
-                canDelete={canDelete}
-                canDownload={isLiveMode}
-              />
-            </li>
-          ))}
-        </ul>
+        <SelectableAssetGrid
+          assets={visible}
+          clientNames={clientNames}
+          canDelete={canDelete}
+          canDownload={isLiveMode}
+        />
       )}
     </div>
   );

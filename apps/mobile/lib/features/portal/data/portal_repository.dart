@@ -34,9 +34,8 @@ class PortalRepository {
   /// projects.view
   Future<List<PortalProject>> projects() async => (await _list('projects')).map(PortalProject.fromJson).toList();
 
-  /// feedback.view
-  Future<List<PortalThread>> threads() async =>
-      (await _list('feedback/threads')).map(PortalThread.fromJson).toList();
+  /// chat.view
+  Future<List<PortalRoom>> rooms() async => (await _list('chat/rooms')).map(PortalRoom.fromJson).toList();
 }
 
 final portalRepositoryProvider = Provider<PortalRepository>(
