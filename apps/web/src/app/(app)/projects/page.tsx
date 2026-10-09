@@ -55,6 +55,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
               <ProjectDialog
                 clients={clientOptions}
                 defaultOpen={param(sp, 'new') === '1'}
+                defaultClientId={clientId}
                 trigger={
                   <Button variant="primary">
                     <Plus />

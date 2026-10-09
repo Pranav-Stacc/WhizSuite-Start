@@ -39,10 +39,10 @@ export default async function ClientGridPage({ params }: { params: Promise<{ id:
           <NewPostButton className="nav-link">{t('grid.newPost')}</NewPostButton>
         </SectionHeading>
 
-        <div className="grid gap-12 lg:grid-cols-[400px_minmax(0,1fr)] xl:gap-20">
+        <div className="grid gap-8 lg:grid-cols-[400px_minmax(0,1fr)] xl:gap-12">
           <PhoneGrid clientId={client.id} clientName={client.name} clientInitials={initials(client.name)} tiles={toGridTiles(planner.posts)} />
 
-          <div className="space-y-12">
+          <div className="space-y-8">
             <section aria-labelledby="grid-upload">
               <h3 id="grid-upload" className="eyebrow mb-4">
                 {t('grid.upload.title')}

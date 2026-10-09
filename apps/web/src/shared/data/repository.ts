@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { apiFetch } from '@/shared/api/api-client';
 import { isLiveMode } from '@/shared/config/env';
 import { getSession } from '@/shared/auth/session';
-import { unwrapList } from '@/shared/api/live/utils';
+import { fetchAllPages } from '@/shared/api/live/utils';
 
 export interface Entity {
   id: string;
@@ -70,8 +70,8 @@ export function createRepository<T extends Entity>(
     async list() {
       if (useLive(live)) {
         const org = await orgId();
-        const data = await apiFetch<unknown>(live.path(org), { tags: [`org:${org}:${live.tag}`] });
-        return unwrapList(data).map(live.fromApi);
+        const rows = await fetchAllPages(live.path(org), [`org:${org}:${live.tag}`]);
+        return rows.map(live.fromApi);
       }
       return [...rows()];
     },

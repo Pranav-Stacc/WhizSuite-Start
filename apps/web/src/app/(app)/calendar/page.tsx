@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Plus } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
@@ -65,6 +65,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 { href: link({ view: 'agenda' }), label: t('calendar.view.agenda'), active: view === 'agenda', icon: <List /> },
               ]}
             />
+            <Button variant="primary" asChild>
+              <Link href={clientId ? `/content?new=1&client=${clientId}` : '/content?new=1'}>
+                <Plus />
+                {t('content.new')}
+              </Link>
+            </Button>
           </>
         }
       />
@@ -107,7 +113,10 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       </div>
 
       {view === 'month' ? (
-        <MonthGrid days={days} month={month} itemsByDay={itemsByDay} weekdayLabels={weekdayLabels()} />
+        <>
+          {items.length === 0 ? <p className="mb-3 text-[13px] text-muted">{t('calendar.month.empty')}</p> : null}
+          <MonthGrid days={days} month={month} itemsByDay={itemsByDay} weekdayLabels={weekdayLabels()} />
+        </>
       ) : items.length === 0 ? (
         <div className="card-surface">
           <EmptyState icon={<CalendarDays />} title={t('calendar.empty')} />

@@ -10,7 +10,7 @@ import { PersonaCards } from '@/features/auth/components/persona-cards';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
 
-export const metadata: Metadata = { title: 'Sign in' };
+export const metadata: Metadata = { title: t('auth.login.meta') };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await getSession();

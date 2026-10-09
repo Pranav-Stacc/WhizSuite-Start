@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { BadgeDollarSign, KanbanSquare, List, Percent, Plus, Target, Trophy, TrendingUp } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
@@ -7,6 +6,7 @@ import { formatMoney } from '@/shared/lib/format';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { ActionButton } from '@/shared/ui/action-button';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { Kanban } from '@/shared/ui/kanban';
@@ -166,13 +166,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
             icon={<Target />}
             title={t('leads.empty.title')}
             body={t('leads.empty.body')}
-            action={
-              hasFilters ? (
-                <Button variant="secondary" asChild>
-                  <Link href={BASE}>{t('common.clearFilters')}</Link>
-                </Button>
-              ) : undefined
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={link({ new: '1' })} createLabel={t('leads.new')} />}
           />
         </div>
       ) : view === 'board' ? (

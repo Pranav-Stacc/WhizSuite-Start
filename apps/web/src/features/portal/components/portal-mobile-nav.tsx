@@ -71,6 +71,34 @@ export function PortalMobileMenu({ badges }: { badges: PortalBadges }) {
   );
 }
 
+export function PortalDesktopNav({ badges }: { badges: PortalBadges }) {
+  const pathname = usePathname();
+  return (
+    <nav aria-label={t('portal.nav')} className="ml-auto hidden items-center gap-1 md:flex">
+      {NAV.map((item) => {
+        const Icon = item.icon;
+        const badge = item.badgeKey ? badges[item.badgeKey] : 0;
+        const active = isActive(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? 'page' : undefined}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-medium transition',
+              active ? 'bg-primary/12 text-primary' : 'text-muted hover:bg-surface-2 hover:text-foreground',
+            )}
+          >
+            <Icon className="size-4" />
+            {t(item.label)}
+            {badge > 0 ? <span className="rounded-full bg-primary/16 px-1.5 text-[10px] font-semibold text-primary">{badge}</span> : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function PortalMobileDock({ badges }: { badges: PortalBadges }) {
   const pathname = usePathname();
   const dock = NAV.filter((item) => DOCK_HREFS.includes(item.href));

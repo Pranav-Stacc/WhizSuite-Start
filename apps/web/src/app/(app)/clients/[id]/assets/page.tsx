@@ -3,6 +3,8 @@ import { requireRole } from '@/shared/auth/session';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
+import { ImageIcon } from 'lucide-react';
+import { EmptyState } from '@/shared/ui/feedback';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { getClient } from '@/features/clients/services/clients.service';
 import { clientSectionNumber } from '@/features/clients/workspace';
@@ -24,7 +26,7 @@ export default async function ClientAssetsPage({ params }: { params: Promise<{ i
       <SectionHeading number={clientSectionNumber('assets')} title={t('clients.workspace.assets')}>
         <span className="eyebrow">{t('assets.count', { count: assets.length })}</span>
       </SectionHeading>
-      <UploadDropzone clientId={client.id} enabled={isLiveMode} className="mb-10" />
+      <UploadDropzone clientId={client.id} enabled={isLiveMode} className="mb-6" />
       {assets.length ? (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {assets.map((asset) => (
@@ -34,7 +36,9 @@ export default async function ClientAssetsPage({ params }: { params: Promise<{ i
           ))}
         </ul>
       ) : (
-        <p className="border border-border bg-surface px-6 py-16 text-center text-[13px] text-muted">{t('grid.tray.empty')}</p>
+        <div className="card-surface">
+          <EmptyState icon={<ImageIcon />} title={t('assets.empty.title')} body={t('assets.empty.body')} />
+        </div>
       )}
     </section>
   );

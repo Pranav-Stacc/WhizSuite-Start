@@ -17,7 +17,7 @@ import { pushNotification } from '@/features/notifications/services/notification
 import { listMembers } from '@/features/team/services/members.service';
 import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
 import { listClientContent, recordContentEvent } from '../services/content.service';
-import { canApprove, checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
+import { canApprove, canDeleteContent, checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
 
 const DECISION_TARGET: Record<ApprovalAction, ContentStatus> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
 const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes', REJECTED: 'rejected' };
@@ -261,9 +261,10 @@ export async function reorderGridAction(raw: unknown): Promise<ActionResult> {
 
 export async function deleteContentAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    const session = await authorize();
     const post = await contentRepository.get(id);
     if (!post) return fail(t('toast.failed'));
+    if (!canDeleteContent(session, post)) return fail(t('toast.forbidden'));
     await contentRepository.remove(id);
     await recordAudit({ action: 'content.deleted', entityType: 'content', entityId: id, entityLabel: post.title, summary: 'Deleted content' });
     await refreshData('content');

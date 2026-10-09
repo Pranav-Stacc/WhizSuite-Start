@@ -1,5 +1,10 @@
 export const auth = {
   'auth.login.title': 'Welcome back',
+  'auth.login.meta': 'Sign in',
+  'auth.register.meta': 'Create workspace',
+  'auth.invite.meta': 'Accept invitation',
+  'auth.email.placeholder': 'you@agency.com',
+  'landing.nav.label': 'Primary',
   'auth.login.subtitle': 'Sign in to run your agency from one place.',
   'auth.login.email': 'Work email',
   'auth.login.password': 'Password',

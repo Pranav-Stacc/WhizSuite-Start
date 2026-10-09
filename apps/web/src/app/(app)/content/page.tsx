@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { KanbanSquare, List, PencilLine, Plus } from 'lucide-react';
 import { ContentStatuses, Platforms } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { Kanban } from '@/shared/ui/kanban';
@@ -56,6 +56,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const mineCount = scoped.filter((p) => p.authorId === session.userId).length;
   const visible = scoped.filter((p) => (!mine || p.authorId === session.userId) && (view === 'board' || !status || p.status === status));
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, ...overrides });
+  const hasFilters = Boolean(clientId || platform || status || mine || query);
 
   const composerClients = toComposerClients([...clients.values()]);
   const newButton = (
@@ -133,11 +134,7 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
             icon={<PencilLine />}
             title={t('content.empty.title')}
             body={t('content.empty.body')}
-            action={
-              <Button variant="secondary" asChild>
-                <Link href={BASE}>{t('common.clearFilters')}</Link>
-              </Button>
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={link({ new: '1' })} createLabel={t('content.new')} />}
           />
         </div>
       ) : view === 'board' ? (

@@ -39,12 +39,12 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
     .slice(0, RECENT_CONTENT_LIMIT);
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
-          <p className="eyebrow mb-3">{client.industry}</p>
-          <h1 className="display truncate text-[36px] sm:text-[44px]">{client.name}</h1>
-          <p className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
+          <p className="eyebrow mb-2">{client.industry}</p>
+          <h1 className="display truncate text-[30px] sm:text-[36px]">{client.name}</h1>
+          <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] text-muted">
             <HealthPill score={client.health} showLabel />
             <span className="tabular-nums">
               {formatMoney(client.retainerMinor)} <span className="eyebrow ml-1">{t('clients.col.retainer')}</span>
@@ -87,7 +87,7 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
       </section>
       <section>
         <SectionHeading title={t('clients.tab.work')} />
-        <WorkTab clientId={client.id} projects={clientProjects} posts={clientPosts} />
+        <WorkTab clientId={client.id} projects={clientProjects} posts={clientPosts} canManage={canManage} />
       </section>
     </div>
   );

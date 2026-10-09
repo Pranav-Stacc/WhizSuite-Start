@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { BookOpen, Plus } from 'lucide-react';
 import { ArticleCategories, type ArticleCategory } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
@@ -87,13 +87,7 @@ export default async function KnowledgePage({ searchParams }: { searchParams: Pr
             icon={<BookOpen />}
             title={t('knowledge.empty.title')}
             body={t('knowledge.empty.body')}
-            action={
-              hasFilters ? (
-                <Button variant="secondary" asChild>
-                  <Link href={BASE}>{t('common.clearFilters')}</Link>
-                </Button>
-              ) : undefined
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={canWrite ? `${BASE}?new=1` : undefined} createLabel={t('knowledge.new')} />}
           />
         </div>
       ) : (

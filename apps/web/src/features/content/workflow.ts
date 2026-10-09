@@ -32,6 +32,12 @@ export function isEditable(status: ContentStatus): boolean {
   return status !== 'PUBLISHED';
 }
 
+/** Approvers may delete any post; authors only their own posts that have not gone live. */
+export function canDeleteContent(viewer: { role: UserRole; userId: string }, post: { authorId: string; status: ContentStatus }): boolean {
+  if (APPROVER_ROLES.includes(viewer.role)) return true;
+  return post.authorId === viewer.userId && isEditable(post.status);
+}
+
 /** Statuses whose approval is voided when the content is edited. */
 export function resetsApprovalOnEdit(status: ContentStatus): boolean {
   return status === 'APPROVED' || status === 'SCHEDULED' || status === 'IN_REVIEW';

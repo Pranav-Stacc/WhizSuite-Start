@@ -12,12 +12,12 @@ function activeSection(pathname: string, clientId: string): ClientSection {
 }
 
 /** Breadcrumb on the left, the client's sections on the right — the client is the workspace. */
-export function ClientWorkspaceNav({ clientId, clientName }: { clientId: string; clientName: string }) {
+export function ClientWorkspaceNav({ clientId, clientName, sections }: { clientId: string; clientName: string; sections: ClientSection[] }) {
   const pathname = usePathname();
   const active = activeSection(pathname, clientId);
 
   return (
-    <div className="mb-10 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-border-soft pb-3">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-border-soft pb-3">
       <nav aria-label={t('clients.workspace.breadcrumb')} className="flex min-w-0 items-center gap-2 text-[12px] text-muted">
         <Link href="/clients" className="inline-flex items-center gap-1 hover:text-foreground">
           <ArrowLeft className="size-3" aria-hidden />
@@ -33,7 +33,7 @@ export function ClientWorkspaceNav({ clientId, clientName }: { clientId: string;
         </span>
       </nav>
       <nav aria-label={t('clients.tabs.label')} className="no-scrollbar flex gap-5 overflow-x-auto">
-        {CLIENT_WORKSPACE_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <Link key={section} href={clientSectionHref(clientId, section)} aria-current={section === active ? 'page' : undefined} className="nav-link whitespace-nowrap">
             {t(`clients.workspace.${section}` as MessageKey)}
           </Link>

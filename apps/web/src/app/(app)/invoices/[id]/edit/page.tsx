@@ -4,6 +4,7 @@ import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { fromMinorUnits, toDateKey } from '@/shared/lib/format';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { BackLink } from '@/shared/ui/back-link';
 import { PageHeader } from '@/shared/ui/page-header';
 import { listClients } from '@/features/clients/services/clients.service';
 import { updateInvoiceAction } from '@/features/invoices/actions/invoice.actions';
@@ -23,6 +24,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
 
   return (
     <div>
+      <BackLink href={`/invoices/${id}`} label={invoice.number} className="mb-3 -ml-2" />
       <PageHeader title={t('invoices.edit')} description={invoice.number} />
       <InvoiceForm
         clients={clients.map((c) => ({ id: c.id, name: c.name }))}

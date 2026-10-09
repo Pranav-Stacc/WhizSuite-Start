@@ -23,7 +23,8 @@ import { ContentComposer } from '@/features/content/components/content-composer'
 import { PostPreview } from '@/features/content/components/post-preview';
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
 import { eventsFor, getPost } from '@/features/content/services/content.service';
-import { canApprove, isEditable } from '@/features/content/workflow';
+import { canApprove, canDeleteContent, isEditable } from '@/features/content/workflow';
+import { DEFAULT_CLIENT_COLOR } from '@/features/clients/config';
 import { listAssets } from '@/features/media/services/media.service';
 import { membersById } from '@/features/team/services/members.service';
 
@@ -110,7 +111,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                 }
               />
             ) : null}
-            <ConfirmButton action={deleteContentAction.bind(null, post.id)} label={t('content.delete')} redirectTo="/content" />
+            {canDeleteContent(session, post) ? <ConfirmButton action={deleteContentAction.bind(null, post.id)} label={t('content.delete')} redirectTo="/content" /> : null}
           </div>
         </header>
       </div>
@@ -123,7 +124,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
           {previewPlatform ? (
             <PostPreview
               clientName={client?.name ?? ''}
-              clientColor={client?.color ?? '#18E889'}
+              clientColor={client?.color ?? DEFAULT_CLIENT_COLOR}
               platform={previewPlatform}
               contentType={post.contentType}
               caption={post.caption}

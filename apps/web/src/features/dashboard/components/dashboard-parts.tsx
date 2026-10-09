@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
+import { formatDate } from '@/shared/lib/format';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
@@ -20,7 +21,7 @@ export function DashboardHeader({ name, subtitle, actions, guide }: { name: stri
     <PageHeader
       title={t(greetingKey(), { name: first })}
       description={subtitle}
-      eyebrow={new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+      eyebrow={formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
       actions={
         <>
           <PageGuide items={guide} />

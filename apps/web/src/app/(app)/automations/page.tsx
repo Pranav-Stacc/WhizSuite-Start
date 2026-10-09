@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Activity, CheckCircle2, Plus, Zap } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
@@ -104,13 +104,7 @@ export default async function AutomationsPage({ searchParams }: { searchParams: 
                 icon={<Zap />}
                 title={t('automations.empty.title')}
                 body={t('automations.empty.body')}
-                action={
-                  filter !== 'all' || query ? (
-                    <Button variant="secondary" asChild>
-                      <Link href={BASE}>{t('common.clearFilters')}</Link>
-                    </Button>
-                  ) : undefined
-                }
+                action={<EmptyAction filtered={filter !== 'all' || Boolean(query)} clearHref={BASE} createHref={link({ new: '1' })} createLabel={t('automations.new')} />}
               />
             </div>
           ) : (

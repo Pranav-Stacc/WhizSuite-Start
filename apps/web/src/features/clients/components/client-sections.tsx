@@ -10,6 +10,7 @@ import { EmptyState, Progress } from '@/shared/ui/feedback';
 import { PlatformBadge, PlatformStack } from '@/shared/ui/platform';
 import { StatusBadge } from '@/shared/ui/status';
 import type { Client } from '../data/clients.repository';
+import { clientSectionHref } from '../workspace';
 import { BrandKitDialog } from './client-dialogs';
 
 // Structural row shapes keep this feature independent of other domains' internals;
@@ -71,7 +72,7 @@ export function OverviewTab({ client, ownerName, integrations }: { client: Clien
           {ownerName ? (
             <div className="flex items-center gap-2 border-t border-border-soft pt-3">
               <Avatar name={ownerName} size="xs" />
-              <span className="text-muted">{t('clients.owner')}:</span>
+              <span className="text-muted">{t('clients.owner')}</span>
               <span className="font-medium">{ownerName}</span>
             </div>
           ) : null}
@@ -83,7 +84,7 @@ export function OverviewTab({ client, ownerName, integrations }: { client: Clien
           title={t('clients.channels')}
           action={
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/integrations">{t('clients.channels.manage')}</Link>
+              <Link href={clientSectionHref(client.id, 'integrations')}>{t('clients.channels.manage')}</Link>
             </Button>
           }
         />
@@ -154,23 +155,31 @@ export function BrandTab({ client, canEdit }: { client: Client; canEdit: boolean
           </div>
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">{t('clients.brand.pillars')}</p>
-            <ul className="flex flex-wrap gap-2">
-              {client.brand.pillars.map((pillar) => (
-                <li key={pillar} className="rounded-full border border-border-soft bg-surface-2 px-3 py-1 text-[13px]">
-                  {pillar}
-                </li>
-              ))}
-            </ul>
+            {client.brand.pillars.length ? (
+              <ul className="flex flex-wrap gap-2">
+                {client.brand.pillars.map((pillar) => (
+                  <li key={pillar} className="rounded-full border border-border-soft bg-surface-2 px-3 py-1 text-[13px]">
+                    {pillar}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted">{t('clients.brand.none')}</p>
+            )}
           </div>
           <div>
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">{t('clients.brand.hashtags')}</p>
-            <ul className="flex flex-wrap gap-2">
-              {client.brand.hashtags.map((tag) => (
-                <li key={tag} className="rounded-md bg-primary/10 px-2 py-1 font-mono text-xs text-primary">
-                  {tag}
-                </li>
-              ))}
-            </ul>
+            {client.brand.hashtags.length ? (
+              <ul className="flex flex-wrap gap-2">
+                {client.brand.hashtags.map((tag) => (
+                  <li key={tag} className="rounded-md bg-primary/10 px-2 py-1 font-mono text-xs text-primary">
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted">{t('clients.brand.none')}</p>
+            )}
           </div>
         </div>
       </CardBody>
@@ -178,19 +187,21 @@ export function BrandTab({ client, canEdit }: { client: Client; canEdit: boolean
   );
 }
 
-export function WorkTab({ clientId, projects, posts }: { clientId: string; projects: ProjectRow[]; posts: PostRow[] }) {
+export function WorkTab({ clientId, projects, posts, canManage }: { clientId: string; projects: ProjectRow[]; posts: PostRow[]; canManage: boolean }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
         <CardHeader
           title={t('clients.projects')}
           action={
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/projects?new=1">
-                <Plus />
-                {t('projects.new')}
-              </Link>
-            </Button>
+            canManage ? (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/projects?new=1&client=${clientId}`}>
+                  <Plus />
+                  {t('projects.new')}
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
         <CardBody className="pt-3">

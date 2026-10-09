@@ -4,6 +4,7 @@ import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
@@ -50,7 +51,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
 
       {workflows.length === 0 ? (
         <div className="card-surface">
-          <EmptyState icon={<Workflow />} title={t('workflows.empty.title')} body={t('workflows.empty.body')} />
+          <EmptyState icon={<Workflow />} title={t('workflows.empty.title')} body={t('workflows.empty.body')} action={<EmptyAction filtered={false} clearHref={BASE} createHref={`${BASE}?new=1`} createLabel={t('workflows.new')} />} />
         </div>
       ) : (
         <ul className="grid gap-4 lg:grid-cols-2">

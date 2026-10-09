@@ -33,6 +33,15 @@ interface InvoiceFormProps {
 
 const EMPTY_LINE = { description: '', quantity: 1, unitPrice: 0 } as const;
 
+function LineError({ message }: { message: string | undefined }) {
+  if (!message) return null;
+  return (
+    <p role="alert" className="mt-1 text-xs text-danger">
+      {message}
+    </p>
+  );
+}
+
 export function InvoiceForm({ clients, defaults, submit, cancelHref, heading }: InvoiceFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -68,7 +77,7 @@ export function InvoiceForm({ clients, defaults, submit, cancelHref, heading }: 
           <CardBody className="grid gap-4 sm:grid-cols-3">
             <Field label={t('invoices.field.client')} htmlFor="inv-client" required error={translateError(errors.clientId?.message)}>
               <Select id="inv-client" aria-invalid={Boolean(errors.clientId)} {...form.register('clientId')}>
-                <option value="">—</option>
+                <option value="">{t('invoices.field.client.placeholder')}</option>
                 {clients.map((client) => (
                   <option key={client.id} value={client.id}>
                     {client.name}
@@ -103,14 +112,16 @@ export function InvoiceForm({ clients, defaults, submit, cancelHref, heading }: 
                 <div key={field.id} className="grid grid-cols-2 items-start gap-3 sm:grid-cols-[1fr_88px_128px_112px_36px]">
                   <div className="col-span-2 sm:col-span-1">
                     <Input aria-label={t('invoices.line.description')} placeholder={t('invoices.line.description.placeholder')} aria-invalid={Boolean(lineErrors?.description)} {...form.register(`lines.${index}.description`)} />
-                    {lineErrors?.description ? (
-                      <p role="alert" className="mt-1 text-xs text-danger">
-                        {translateError(lineErrors.description.message)}
-                      </p>
-                    ) : null}
+                    <LineError message={translateError(lineErrors?.description?.message)} />
                   </div>
-                  <Input aria-label={t('invoices.line.quantity')} type="number" min={1} step="1" {...form.register(`lines.${index}.quantity`, { valueAsNumber: true })} />
-                  <Input aria-label={t('invoices.line.unitPrice')} type="number" min={0} step="0.01" {...form.register(`lines.${index}.unitPrice`, { valueAsNumber: true })} />
+                  <div>
+                    <Input aria-label={t('invoices.line.quantity')} type="number" min={1} step="1" aria-invalid={Boolean(lineErrors?.quantity)} {...form.register(`lines.${index}.quantity`, { valueAsNumber: true })} />
+                    <LineError message={translateError(lineErrors?.quantity?.message)} />
+                  </div>
+                  <div>
+                    <Input aria-label={t('invoices.line.unitPrice')} type="number" min={0} step="0.01" aria-invalid={Boolean(lineErrors?.unitPrice)} {...form.register(`lines.${index}.unitPrice`, { valueAsNumber: true })} />
+                    <LineError message={translateError(lineErrors?.unitPrice?.message)} />
+                  </div>
                   <p className="flex h-10 items-center justify-end text-sm font-medium tabular-nums">{formatMoney(amount)}</p>
                   <Button type="button" variant="ghost" size="icon" aria-label={t('invoices.line.remove')} disabled={fields.length === 1} onClick={() => remove(index)}>
                     <Trash2 />

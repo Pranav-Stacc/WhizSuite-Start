@@ -84,6 +84,11 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           }))}
         />
       </div>
+      {!planChangesEnabled ? (
+        <p role="note" className="mb-4 rounded-xl border border-border-soft bg-surface-2/60 px-4 py-3 text-[13px] text-muted">
+          {t('billing.plans.managedNote')}
+        </p>
+      ) : null}
       {plans.length === 0 ? (
         <section className="card-surface mb-8">
           <EmptyState title={t('billing.plans.empty')} />

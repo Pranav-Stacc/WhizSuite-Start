@@ -25,6 +25,7 @@ const GUIDE: GuideItem[] = [
 ];
 
 const UPCOMING_DAYS = 7;
+const APPROVALS_SHOWN = 6;
 const WEEK_MS = UPCOMING_DAYS * 24 * 60 * 60 * 1000;
 
 export async function ManagerDashboard({ session }: { session: Session }) {
@@ -61,7 +62,7 @@ export async function ManagerDashboard({ session }: { session: Session }) {
         }
       />
 
-      <section aria-label={t('nav.home')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label={t('dashboard.kpi.aria')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={t('dashboard.kpi.clients')} value={active.length} icon={<Users />} hint={t('dashboard.kpi.clients.hint', { count: onboarding })} href="/clients" />
         <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
         <StatCard label={t('dashboard.kpi.overdue')} value={overdue.length} icon={<CheckSquare />} hint={t('dashboard.kpi.overdue.hint')} href="/tasks" invertDelta />
@@ -89,7 +90,7 @@ export async function ManagerDashboard({ session }: { session: Session }) {
                 const due = dueInfo(task.dueDate, false);
                 return (
                   <li key={task.id}>
-                    <RowLink href="/tasks" className="py-3">
+                    <RowLink href={`/tasks?edit=${task.id}`} className="py-3">
                       <Badge tone={due.tone === 'danger' ? 'danger' : 'warning'}>{due.label}</Badge>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{task.title}</span>
@@ -107,7 +108,7 @@ export async function ManagerDashboard({ session }: { session: Session }) {
         <ListCard title={t('dashboard.approvals.title')} description={t('dashboard.approvals.desc')} href="/approvals" empty={t('dashboard.approvals.empty')}>
           {approvals.length ? (
             <ul>
-              {approvals.map((p) => {
+              {approvals.slice(0, APPROVALS_SHOWN).map((p) => {
                 const client = byClient.get(p.clientId);
                 return (
                   <li key={p.id}>
@@ -149,18 +150,20 @@ export async function ManagerDashboard({ session }: { session: Session }) {
           ) : null}
         </ListCard>
 
-        <ListCard title={t('dashboard.health.title')} description={t('dashboard.health.desc')} href="/clients">
-          <ul>
-            {[...active].sort((a, b) => a.health - b.health).slice(0, 5).map((c) => (
-              <li key={c.id}>
-                <RowLink href={`/clients/${c.id}`}>
-                  <LogoTile name={c.name} color={c.color} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.name}</span>
-                  <ProgressRing value={c.health} size={38} stroke={3.5} />
-                </RowLink>
-              </li>
-            ))}
-          </ul>
+        <ListCard title={t('dashboard.health.title')} description={t('dashboard.health.desc')} href="/clients" empty={t('dashboard.health.empty')}>
+          {active.length ? (
+            <ul>
+              {[...active].sort((a, b) => a.health - b.health).slice(0, 5).map((c) => (
+                <li key={c.id}>
+                  <RowLink href={`/clients/${c.id}`}>
+                    <LogoTile name={c.name} color={c.color} size="sm" />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{c.name}</span>
+                    <ProgressRing value={c.health} size={38} stroke={3.5} />
+                  </RowLink>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </ListCard>
       </section>
     </div>

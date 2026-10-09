@@ -79,6 +79,7 @@ export const clientsMessages = {
   'clients.brand.pillars.hint': 'Separate with commas, e.g. Origin stories, Barista tips.',
   'clients.brand.updated': 'Brand kit saved',
   'clients.brand.voice.empty': 'No voice guidelines yet.',
+  'clients.brand.none': 'None added yet — edit the brand kit to add some.',
   'clients.guide.cards.title': 'See who needs you',
   'clients.guide.cards.body': 'Health combines approvals speed, delivery and payments. Anything below 70 deserves a check-in.',
   'clients.guide.add.title': 'Add a client in seconds',

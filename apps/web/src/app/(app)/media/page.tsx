@@ -6,6 +6,7 @@ import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
@@ -85,7 +86,12 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
 
       {visible.length === 0 ? (
         <div className="card-surface">
-          <EmptyState icon={<ImageIcon />} title={t('media.empty.title')} body={t('media.empty.body')} />
+          <EmptyState
+            icon={<ImageIcon />}
+            title={t('media.empty.title')}
+            body={t('media.empty.body')}
+            action={<EmptyAction filtered={Boolean(kind || clientId || query)} clearHref={BASE} createHref={link({ new: '1' })} createLabel={isLiveMode ? t('media.upload') : t('media.add')} />}
+          />
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

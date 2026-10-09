@@ -16,7 +16,7 @@ import { clientsById, listClients, monthlyRecurring } from '@/features/clients/s
 import { pendingApprovals, listContent } from '@/features/content/services/content.service';
 import { listInvoices, summarize } from '@/features/invoices/services/invoices.service';
 import { listLeads, summarizePipeline } from '@/features/leads/services/leads.service';
-import { invoicedByMonth, lastChangePercent, monthLabels } from '@/features/reports/services/reports.service';
+import { invoicedByMonth, monthLabels } from '@/features/reports/services/reports.service';
 import { listTasks, openHoursByAssignee, overdueTasks } from '@/features/tasks/services/tasks.service';
 import { listMembers } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
@@ -60,7 +60,7 @@ export async function OwnerDashboard({ session }: { session: Session }) {
 
   const slipping = [
     ...invoices.filter((i) => i.status === 'OVERDUE').map((i) => ({ key: `inv-${i.id}`, href: `/invoices/${i.id}`, label: t('dashboard.attention.invoice', { number: i.number }), tone: 'danger' as const, icon: <Receipt className="size-4" /> })),
-    ...overdue.slice(0, 3).map((x) => ({ key: `task-${x.id}`, href: '/tasks', label: t('dashboard.attention.task', { title: x.title }), tone: 'warning' as const, icon: <Clock className="size-4" /> })),
+    ...overdue.slice(0, 3).map((x) => ({ key: `task-${x.id}`, href: `/tasks?edit=${x.id}`, label: t('dashboard.attention.task', { title: x.title }), tone: 'warning' as const, icon: <Clock className="size-4" /> })),
     ...content.filter((c) => c.status === 'CHANGES_REQUESTED').map((c) => ({ key: `post-${c.id}`, href: `/content/${c.id}`, label: t('dashboard.attention.changes', { title: c.title }), tone: 'warning' as const, icon: <AlertTriangle className="size-4" /> })),
   ].slice(0, 6);
 
@@ -90,8 +90,8 @@ export async function OwnerDashboard({ session }: { session: Session }) {
         }
       />
 
-      <section aria-label="KPIs" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} delta={lastChangePercent(invoiced)} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} spark={revenue} href="/reports" />
+      <section aria-label={t('dashboard.kpi.aria')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} href="/clients" />
         <StatCard label={t('dashboard.kpi.outstanding')} value={formatMoney(receivables.outstanding, undefined, true)} icon={<HandCoins />} hint={t('dashboard.kpi.outstanding.hint', { overdue: formatMoney(receivables.overdue, undefined, true) })} href="/invoices" />
         <StatCard label={t('dashboard.kpi.pipeline')} value={formatMoney(pipeline.weighted, undefined, true)} icon={<Gauge />} hint={t('dashboard.kpi.pipeline.hint', { open: formatMoney(pipeline.open, undefined, true) })} href="/leads" />
         <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
@@ -127,7 +127,8 @@ export async function OwnerDashboard({ session }: { session: Session }) {
           ) : null}
         </ListCard>
 
-        <ListCard title={t('dashboard.workload.title')} description={t('dashboard.workload.desc')} href="/team">
+        <ListCard title={t('dashboard.workload.title')} description={t('dashboard.workload.desc')} href="/team" empty={t('dashboard.workload.empty')}>
+          {workload.length ? (
           <ul className="space-y-3.5">
             {workload.map(({ member, used }) => {
               const ratio = used / member.capacityHours;
@@ -145,9 +146,11 @@ export async function OwnerDashboard({ session }: { session: Session }) {
               );
             })}
           </ul>
+          ) : null}
         </ListCard>
 
-        <ListCard title={t('dashboard.health.title')} description={t('dashboard.health.desc')} href="/clients">
+        <ListCard title={t('dashboard.health.title')} description={t('dashboard.health.desc')} href="/clients" empty={t('dashboard.health.empty')}>
+          {lowHealth.length ? (
           <ul>
             {lowHealth.map((c) => (
               <li key={c.id}>
@@ -162,6 +165,7 @@ export async function OwnerDashboard({ session }: { session: Session }) {
               </li>
             ))}
           </ul>
+          ) : null}
         </ListCard>
       </section>
 
@@ -185,7 +189,8 @@ export async function OwnerDashboard({ session }: { session: Session }) {
           ) : null}
         </ListCard>
 
-        <ListCard title={t('dashboard.activity.title')} description={t('dashboard.activity.desc')} href="/audit" className="lg:col-span-2">
+        <ListCard title={t('dashboard.activity.title')} description={t('dashboard.activity.desc')} href="/audit" className="lg:col-span-2" empty={t('dashboard.activity.empty')}>
+          {audit.length ? (
           <ul className="divide-y divide-border-soft">
             {audit.slice(0, 6).map((entry) => (
               <li key={entry.id} className="flex items-center gap-3 py-2.5">
@@ -199,6 +204,7 @@ export async function OwnerDashboard({ session }: { session: Session }) {
               </li>
             ))}
           </ul>
+          ) : null}
         </ListCard>
       </section>
     </div>

@@ -54,6 +54,7 @@ export const moneyMessages = {
   'invoices.doc.due': 'Due',
   'invoices.doc.paid': 'Paid',
   'invoices.field.client': 'Client',
+  'invoices.field.client.placeholder': 'Select a client',
   'invoices.field.dueDate': 'Due date',
   'invoices.field.taxRate': 'Tax rate (%)',
   'invoices.line.description': 'Description',

@@ -106,7 +106,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={t('projects.stat.progress')} value={<span>{progress}%</span>} icon={<CheckCircle2 />} hint={t('projects.progress', { done: doneCount, total: projectTasks.length })} />
-        <StatCard label={t('projects.stat.logged')} value={<span>{formatNumber(Math.round(loggedHours * 10) / 10)}h</span>} icon={<Clock />} href="/time" />
+        <StatCard label={t('projects.stat.logged')} value={t('common.hours', { hours: formatNumber(Math.round(loggedHours * 10) / 10) })} icon={<Clock />} href="/time" />
         <StatCard label={t('projects.stat.budget')} value={<span>{formatMoney(project.budgetMinor, undefined, true)}</span>} icon={<Wallet />} />
         <StatCard
           label={t('projects.timeline')}

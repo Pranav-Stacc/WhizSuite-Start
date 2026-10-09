@@ -35,8 +35,10 @@ export async function portalInvoices(clientId: string) {
     .sort((a, b) => b.issueDate.localeCompare(a.issueDate));
 }
 
+export const PORTAL_REPORT_DAYS = 30;
+
 export async function portalReport(clientId: string) {
-  return loadReport({ days: 30, clientId });
+  return loadReport({ days: PORTAL_REPORT_DAYS, clientId });
 }
 
 export async function portalFiles(clientId: string) {

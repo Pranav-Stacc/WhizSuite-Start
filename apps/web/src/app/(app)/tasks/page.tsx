@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { KanbanSquare, List, ListChecks, Plus } from 'lucide-react';
 import { TaskStatuses } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { FilterChips, ViewToggle, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
@@ -148,13 +148,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             icon={<ListChecks />}
             title={t('tasks.empty.title')}
             body={t('tasks.empty.body')}
-            action={
-              hasFilters ? (
-                <Button variant="secondary" asChild>
-                  <Link href={BASE}>{t('common.clearFilters')}</Link>
-                </Button>
-              ) : undefined
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={link({ new: '1' })} createLabel={t('tasks.new')} />}
           />
         </div>
       ) : view === 'board' ? (

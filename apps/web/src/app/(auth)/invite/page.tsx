@@ -5,7 +5,7 @@ import { Logo } from '@/shared/ui/logo';
 import { AcceptInvitationForm } from '@/features/auth/components/accept-invitation-form';
 import { fetchInvitationPreview } from '@/features/auth/data/invitations.api';
 
-export const metadata: Metadata = { title: 'Accept invitation' };
+export const metadata: Metadata = { title: t('auth.invite.meta') };
 
 interface InvitePageProps {
   searchParams: Promise<{ token?: string }>;

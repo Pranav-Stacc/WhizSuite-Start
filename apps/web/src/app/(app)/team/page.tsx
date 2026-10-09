@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Gauge, MailPlus, UserPlus, Users, UsersRound } from 'lucide-react';
 import { UserRoles } from '@agency-os/contracts';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
 import { ROLES_LEADERSHIP, ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
@@ -114,13 +114,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             icon={<Users />}
             title={t('team.empty.title')}
             body={t('team.empty.body')}
-            action={
-              hasFilters ? (
-                <Button variant="secondary" asChild>
-                  <Link href={BASE}>{t('common.clearFilters')}</Link>
-                </Button>
-              ) : undefined
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={canManage ? `${BASE}?new=1` : undefined} createLabel={t('team.invite')} />}
           />
         </div>
       ) : (

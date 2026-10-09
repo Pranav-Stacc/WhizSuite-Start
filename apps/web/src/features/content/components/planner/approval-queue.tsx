@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { CheckCircle2 } from 'lucide-react';
 import type { ContentStatus } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { formatDate, formatDateTime } from '@/shared/lib/format';
+import { EmptyState } from '@/shared/ui/feedback';
 import { MediaThumb } from '@/shared/ui/media-thumb';
 import { StatusBadge } from '@/shared/ui/status';
 import type { ContentEvent, Post } from '../../data/content.repository';
@@ -47,7 +49,7 @@ interface ApprovalQueueProps {
 /** Three-pane review desk: grouped queue · selected post with its conversation · feed preview. */
 export function ApprovalQueue({ groups, posts, selectedId, hrefs, children, aside }: ApprovalQueueProps) {
   return (
-    <div className="grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+    <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
       <nav aria-label={t('queue.title')} className="space-y-8">
         {groups.map((group) => {
           const items = posts.filter((p) => QUEUE_GROUP_STATUSES[group].includes(p.status)).sort(byDate);
@@ -91,7 +93,16 @@ export function ApprovalQueue({ groups, posts, selectedId, hrefs, children, asid
         })}
       </nav>
 
-      <div className="min-w-0">{children ?? <p className="border border-border bg-surface px-6 py-16 text-center text-[13px] text-muted">{t('queue.pick')}</p>}</div>
+      <div className="min-w-0">
+        {children ??
+          (posts.length ? (
+            <p className="border border-border bg-surface px-6 py-16 text-center text-[13px] text-muted">{t('queue.pick')}</p>
+          ) : (
+            <div className="card-surface">
+              <EmptyState icon={<CheckCircle2 />} title={t('queue.empty.title')} body={t('queue.empty.body')} />
+            </div>
+          ))}
+      </div>
 
       {aside ? <aside className="hidden xl:block">{aside}</aside> : null}
     </div>

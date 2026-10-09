@@ -33,7 +33,7 @@ export default async function LandingPage() {
       <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 size-[720px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/18 blur-[140px]" />
       <header className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
         <Logo />
-        <nav className="flex items-center gap-2" aria-label="Primary">
+        <nav className="flex items-center gap-2" aria-label={t('landing.nav.label')}>
           <Button variant="ghost" asChild>
             <Link href="/login">{t('landing.nav.signin')}</Link>
           </Button>

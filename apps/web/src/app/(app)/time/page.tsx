@@ -69,7 +69,7 @@ export default async function TimePage({ searchParams }: { searchParams: Promise
   };
   const byClient = [...sumBy((e) => e.clientId)].sort((a, b) => b[1] - a[1]).map(([id, minutes]) => ({ label: clients.get(id)?.name ?? id, value: minutes / MINUTES_PER_HOUR, color: clients.get(id)?.color }));
   const byPerson = [...sumBy((e) => e.userId)].sort((a, b) => b[1] - a[1]).map(([id, minutes]) => ({ label: members.get(id)?.name ?? id, value: minutes / MINUTES_PER_HOUR }));
-  const hours = (value: number): string => `${Math.round(value * 10) / 10}h`;
+  const hours = (value: number): string => t('common.hours', { hours: Math.round(value * 10) / 10 });
 
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, ...overrides });
   const rangeLabels: Record<Range, string> = { week: t('time.range.week'), month: t('time.range.month'), all: t('time.range.all') };

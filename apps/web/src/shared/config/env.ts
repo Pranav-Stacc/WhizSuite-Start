@@ -13,6 +13,8 @@ const envSchema = z.object({
   SESSION_TTL_SECONDS: z.coerce.number().int().positive().default(60 * 60 * 24 * 7),
   SESSION_REFRESH_SKEW_SECONDS: z.coerce.number().int().nonnegative().default(60),
   SESSION_REFRESH_SHARE_MS: z.coerce.number().int().nonnegative().default(10_000),
+  API_LIST_PAGE_SIZE: z.coerce.number().int().positive().default(100),
+  API_LIST_MAX_PAGES: z.coerce.number().int().positive().default(50),
 });
 
 function loadEnv() {

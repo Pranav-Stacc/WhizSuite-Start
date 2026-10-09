@@ -4,6 +4,7 @@ import { t } from '@/shared/i18n/t';
 import { daysFromNow, toDateKey } from '@/shared/lib/format';
 import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
+import { BackLink } from '@/shared/ui/back-link';
 import { PageHeader } from '@/shared/ui/page-header';
 import { listClients } from '@/features/clients/services/clients.service';
 import { createInvoiceAction } from '@/features/invoices/actions/invoice.actions';
@@ -21,6 +22,7 @@ export default async function NewInvoicePage({ searchParams }: { searchParams: P
 
   return (
     <div>
+      <BackLink href="/invoices" label={t('invoices.back')} className="mb-3 -ml-2" />
       <PageHeader title={t('invoices.new')} description={t('invoices.new.desc')} />
       <InvoiceForm
         clients={clients.map((c) => ({ id: c.id, name: c.name }))}

@@ -20,6 +20,8 @@ export const plannerMessages = {
   'media.dropzone.title': '+ Upload assets',
   'media.dropzone.hint': 'Drop files here, or tap to choose — works from your phone too.',
   'assets.count': '{count} files',
+  'assets.empty.title': 'No files for this client yet',
+  'assets.empty.body': 'Drop images, videos or documents above to share them with the team and use them in posts.',
 
   // Spreadsheet calendar
   'sheet.views': 'Calendar views',
@@ -58,6 +60,8 @@ export const plannerMessages = {
   'queue.group.live': 'Published',
   'queue.group.empty': 'Nothing here.',
   'queue.pick': 'Select a post from the queue to review it.',
+  'queue.empty.title': 'All caught up',
+  'queue.empty.body': 'Nothing is waiting for review. Posts sent for approval will appear here.',
   'queue.slide': 'Slide {n} of {total}',
   'queue.conversation': 'Conversation',
 } as const;

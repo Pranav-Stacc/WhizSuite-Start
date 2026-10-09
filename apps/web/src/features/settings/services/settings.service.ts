@@ -23,8 +23,11 @@ export async function getProfile(session: Session): Promise<ProfileView> {
   return { name: stored?.displayName ?? session.name, title: stored?.title ?? '' };
 }
 
-export async function getNotificationPreferences(userId: string): Promise<NotificationPreferenceDto[]> {
-  if (isLiveMode) return fetchNotificationPreferences();
-  const stored = (await preferencesRepository.get(userId))?.notifications ?? {};
+export async function getNotificationPreferences(
+  userId: string,
+): Promise<Pick<NotificationPreferenceDto, 'typeKey' | 'enabled'>[]> {
+  const stored: Record<string, boolean> = isLiveMode
+    ? Object.fromEntries((await fetchNotificationPreferences()).map((pref) => [pref.typeKey, pref.enabled]))
+    : ((await preferencesRepository.get(userId))?.notifications ?? {});
   return NOTIFICATION_PREFERENCE_KEYS.map((typeKey) => ({ typeKey, enabled: stored[typeKey] !== false }));
 }

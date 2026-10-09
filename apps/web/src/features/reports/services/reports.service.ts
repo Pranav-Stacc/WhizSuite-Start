@@ -2,6 +2,7 @@ import 'server-only';
 import { Platforms, type InvoiceStatus, type Platform } from '@agency-os/contracts';
 import type { InvoiceView } from '@/features/invoices/services/invoices.service';
 import { isLiveMode } from '@/shared/config/env';
+import { formatDate } from '@/shared/lib/format';
 import { series } from '@/shared/lib/seeded';
 import { dailyMetrics, loadMetricData, reachByPlatform as liveReachByPlatform, totalsByClient } from './live-metrics';
 import { listIntegrations, type Integration } from '@/features/integrations/services/integrations.service';
@@ -40,7 +41,7 @@ function dayLabels(days: number): string[] {
   return Array.from({ length: days }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (days - 1 - i));
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return formatDate(d);
   });
 }
 
@@ -193,7 +194,7 @@ export function monthLabels(months: number): string[] {
   return Array.from({ length: months }, (_, i) => {
     const d = new Date();
     d.setMonth(d.getMonth() - (months - 1 - i));
-    return d.toLocaleDateString('en-IN', { month: 'short' });
+    return formatDate(d, { month: 'short' });
   });
 }
 

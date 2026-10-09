@@ -7,7 +7,7 @@ import { t } from '@/shared/i18n/t';
 import { Logo } from '@/shared/ui/logo';
 import { RegisterForm } from '@/features/auth/components/register-form';
 
-export const metadata: Metadata = { title: 'Create workspace' };
+export const metadata: Metadata = { title: t('auth.register.meta') };
 
 export default async function RegisterPage() {
   const session = await getSession();

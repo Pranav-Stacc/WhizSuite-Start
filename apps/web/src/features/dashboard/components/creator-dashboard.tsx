@@ -47,7 +47,7 @@ export async function CreatorDashboard({ session }: { session: Session }) {
   const weekMinutes = minutesThisWeek(entries, session.userId);
   const capacity = me?.capacityHours ?? DEFAULT_WEEKLY_CAPACITY_HOURS;
   const weekHours = weekMinutes / MINUTES_PER_HOUR;
-  const doneThisWeek = tasks.filter((x) => x.assigneeId === session.userId && x.status === 'DONE').length;
+  const completed = tasks.filter((x) => x.assigneeId === session.userId && x.status === 'DONE').length;
   const timerTask = timer ? tasks.find((x) => x.id === timer.taskId) : undefined;
 
   return (
@@ -80,12 +80,12 @@ export async function CreatorDashboard({ session }: { session: Session }) {
           tasks={mine.map((x) => ({ id: x.id, title: x.title }))}
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-          <StatCard label={t('dashboard.kpi.hours')} value={<span>{formatNumber(Math.round(weekHours * 10) / 10)}h</span>} icon={<Clock />} hint={t('dashboard.kpi.hours.hint', { capacity })} href="/time" />
+          <StatCard label={t('dashboard.kpi.hours')} value={t('common.hours', { hours: formatNumber(Math.round(weekHours * 10) / 10) })} icon={<Clock />} hint={t('dashboard.kpi.hours.hint', { capacity })} href="/time" />
           <div className="card-surface flex items-center justify-between gap-4 p-5">
             <div>
               <p className="text-[13px] font-medium text-muted">{t('dashboard.myTasks.title')}</p>
               <p className="mt-2 text-[28px] font-semibold leading-none tabular-nums">{mine.length}</p>
-              <p className="mt-2 text-xs text-muted">{t('status.task.DONE')}: {doneThisWeek}</p>
+              <p className="mt-2 text-xs text-muted">{t('dashboard.myTasks.completed', { count: completed })}</p>
             </div>
             <ProgressRing value={(weekHours / capacity) * 100} size={76} stroke={6} />
           </div>
@@ -100,7 +100,7 @@ export async function CreatorDashboard({ session }: { session: Session }) {
                 const due = dueInfo(task.dueDate, false);
                 return (
                   <li key={task.id}>
-                    <RowLink href="/tasks" className="py-3">
+                    <RowLink href={`/tasks?edit=${task.id}`} className="py-3">
                       <span className="size-2.5 shrink-0 rounded-full" style={{ background: byClient.get(task.clientId)?.color }} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{task.title}</span>

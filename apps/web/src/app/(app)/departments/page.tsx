@@ -5,6 +5,7 @@ import { t } from '@/shared/i18n/t';
 import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
+import { EmptyState } from '@/shared/ui/feedback';
 import { PageHeader } from '@/shared/ui/page-header';
 import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { CreateDepartmentDialog } from '@/features/departments/components/create-department-dialog';
@@ -34,10 +35,15 @@ export default async function DepartmentsPage() {
           />
         }
       />
-      <StatGrid cols={3}>
+      <StatGrid cols={2}>
         <StatCard label={t('departments.stat.total')} value={departments.length} icon={<Building2 />} />
         <StatCard label={t('departments.stat.headcount')} value={headcount} icon={<Users />} />
       </StatGrid>
+      {departments.length === 0 ? (
+        <div className="card-surface mt-4">
+          <EmptyState icon={<Building2 />} title={t('departments.empty.title')} body={t('departments.empty.body')} />
+        </div>
+      ) : null}
       <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {departments.map((dept) => (
           <li key={dept.id}>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Shield, Users } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
+import { humanizeKey } from '@/shared/lib/format';
 import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Badge } from '@/shared/ui/badge';
 import { Card } from '@/shared/ui/card';
@@ -12,6 +13,8 @@ import { listRoles } from '@/features/roles/services/roles.service';
 import { listPermissionCatalog } from '@/features/roles/services/permissions.service';
 
 export const metadata: Metadata = { title: t('roles.title') };
+
+const PERMISSIONS_SHOWN = 8;
 
 export default async function RolesPage() {
   await requireRole(ROLES_OWNER);
@@ -42,10 +45,14 @@ export default async function RolesPage() {
               </div>
               <p className="mt-3 text-xs text-muted">{t('roles.permissionCount', { count: role.permissionKeys.length })}</p>
               <ul className="mt-2 flex flex-wrap gap-1">
-                {role.permissionKeys.slice(0, 8).map((key) => (
-                  <li key={key} className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] text-muted">{key}</li>
+                {role.permissionKeys.slice(0, PERMISSIONS_SHOWN).map((key) => (
+                  <li key={key} title={key} className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted">
+                    {humanizeKey(key)}
+                  </li>
                 ))}
-                {role.permissionKeys.length > 8 ? <li className="text-[10px] text-muted">+{role.permissionKeys.length - 8}</li> : null}
+                {role.permissionKeys.length > PERMISSIONS_SHOWN ? (
+                  <li className="px-1 text-[11px] text-muted">{t('roles.morePermissions', { count: role.permissionKeys.length - PERMISSIONS_SHOWN })}</li>
+                ) : null}
               </ul>
             </Card>
           </li>

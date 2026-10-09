@@ -27,7 +27,7 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
       <Field label={t('auth.login.email')} htmlFor="login-email" error={translateError(form.formState.errors.email?.message)}>
-        <Input id="login-email" type="email" autoComplete="email" placeholder="you@agency.com" aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
+        <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.email.placeholder')} aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
       </Field>
       <Field label={t('auth.login.password')} htmlFor="login-password" error={translateError(form.formState.errors.password?.message)}>
         <Input id="login-password" type="password" autoComplete="current-password" aria-invalid={Boolean(form.formState.errors.password)} {...form.register('password')} />

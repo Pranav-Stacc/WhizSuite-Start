@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Compass, RotateCcw } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { Button } from './button';
 import { Skeleton } from './feedback';
@@ -19,7 +19,7 @@ export function RouteError({ error, reset, homeHref = '/dashboard' }: { error: E
       </span>
       <h1 className="text-xl font-semibold">{t('common.error.title')}</h1>
       <p className="text-sm text-muted">{t('common.error.body')}</p>
-      {error.digest ? <p className="font-mono text-xs text-muted/70">ref: {error.digest}</p> : null}
+      {error.digest ? <p className="font-mono text-xs text-muted/70">{t('common.error.ref', { digest: error.digest })}</p> : null}
       <div className="flex gap-2">
         <Button variant="primary" onClick={reset}>
           <RotateCcw />
@@ -27,6 +27,27 @@ export function RouteError({ error, reset, homeHref = '/dashboard' }: { error: E
         </Button>
         <Button variant="ghost" asChild>
           <Link href={homeHref}>{t('common.notFound.home')}</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Shared body for every `not-found.tsx`, rendered inside the surrounding shell. */
+export function RouteNotFound({ homeHref = '/dashboard', homeLabel = t('common.notFound.home') }: { homeHref?: string; homeLabel?: string }) {
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+      <span className="grid size-16 place-items-center rounded-2xl bg-primary/12 text-primary">
+        <Compass className="size-7" />
+      </span>
+      <h1 className="text-xl font-semibold">{t('common.notFound.title')}</h1>
+      <p className="text-sm text-muted">{t('common.notFound.body')}</p>
+      <div className="flex gap-2">
+        <Button variant="primary" asChild>
+          <Link href={homeHref}>{homeLabel}</Link>
+        </Button>
+        <Button variant="ghost" onClick={() => window.history.back()}>
+          {t('common.notFound.back')}
         </Button>
       </div>
     </div>

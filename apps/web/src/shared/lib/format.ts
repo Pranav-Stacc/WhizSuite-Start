@@ -31,6 +31,15 @@ export function formatNumber(value: number, compact = false): string {
   }).format(value);
 }
 
+/** Turns machine keys like `content.state_changed` into readable text: "Content · state changed". */
+export function humanizeKey(key: string): string {
+  const text = key
+    .split('.')
+    .map((part) => part.replace(/[_-]+/g, ' ').toLowerCase())
+    .join(' · ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function formatPercent(value: number, digits = 0): string {
   return `${value.toFixed(digits)}%`;
 }

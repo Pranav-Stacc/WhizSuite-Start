@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { Bell, CheckCheck } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
@@ -26,7 +25,6 @@ interface NotificationListProps {
 }
 
 export function NotificationList({ items, unread }: NotificationListProps) {
-  const router = useRouter();
   const [, startTransition] = useTransition();
 
   return (
@@ -49,13 +47,12 @@ export function NotificationList({ items, unread }: NotificationListProps) {
         ) : (
           items.map((item) => (
             <li key={item.id}>
-              <button
-                type="button"
+              <Link
+                href={item.href}
                 onClick={() => {
-                  startTransition(() => void markReadAction(item.id));
-                  router.push(item.href);
+                  if (!item.read) startTransition(() => void markReadAction(item.id));
                 }}
-                className={cn('flex w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-2', !item.read && 'bg-primary/5')}
+                className={cn('group flex w-full gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-2', !item.read && 'bg-primary/5')}
               >
                 <span className={cn('mt-1 size-2.5 shrink-0 rounded-full', item.read ? 'bg-border' : 'bg-primary shadow-[0_0_8px_var(--primary)]')} />
                 <span className="min-w-0 flex-1">
@@ -66,10 +63,10 @@ export function NotificationList({ items, unread }: NotificationListProps) {
                   <span className="mt-1 block text-[13px] text-muted">{item.body}</span>
                   <span className="mt-2 block text-[11px] text-muted/80">{relativeTime(item.at)}</span>
                 </span>
-                <Link href={item.href} className="self-center text-xs font-medium text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                <span aria-hidden className="self-center text-xs font-medium text-primary group-hover:underline">
                   {t('notifications.open')}
-                </Link>
-              </button>
+                </span>
+              </Link>
             </li>
           ))
         )}

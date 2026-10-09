@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 
 export interface TabItem {
@@ -13,7 +14,7 @@ export interface TabItem {
 /** Underline tabs driven by the URL — server rendered, instantly shareable. */
 export function TabLinks({ items, className }: { items: TabItem[]; className?: string }) {
   return (
-    <nav aria-label="Sections" className={cn('no-scrollbar mb-8 flex gap-6 overflow-x-auto', className)}>
+    <nav aria-label={t('common.sections')} className={cn('no-scrollbar mb-8 flex gap-6 overflow-x-auto', className)}>
       {items.map((item) => (
         <Link
           key={item.href}

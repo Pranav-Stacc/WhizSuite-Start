@@ -1,4 +1,5 @@
 import { Clock } from 'lucide-react';
+import { t } from '@/shared/i18n/t';
 import { Avatar } from '@/shared/ui/avatar';
 import { DueBadge } from '@/shared/ui/due-badge';
 import { StatusBadge } from '@/shared/ui/status';
@@ -26,7 +27,7 @@ export function TaskCardContent({ task, clientName, clientColor, assigneeName }:
         {task.estimateHours !== undefined ? (
           <span className="ml-auto inline-flex items-center gap-1 text-xs tabular-nums text-muted">
             <Clock className="size-3" />
-            {task.estimateHours}h
+            {t('common.hours', { hours: task.estimateHours })}
           </span>
         ) : null}
         {assigneeName ? <Avatar name={assigneeName} size="xs" /> : null}

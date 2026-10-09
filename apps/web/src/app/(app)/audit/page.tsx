@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Download, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { CalendarRange, Download, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { requireRole } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
+import { humanizeKey } from '@/shared/lib/format';
 import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
+import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
@@ -68,7 +70,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <StatCard label={t('audit.stat.events')} value={String(rows.length)} icon={<ScrollText />} hint={t('audit.stat.events.hint')} />
         <StatCard label={t('audit.stat.failures')} value={String(failures)} icon={<ShieldAlert />} hint={t('audit.stat.failures.hint')} />
         <StatCard label={t('audit.stat.actors')} value={String(actors)} icon={<ShieldCheck />} hint={t('audit.stat.actors.hint')} />
-        <StatCard label={t('audit.stat.retention')} value={t('audit.stat.retention.value')} icon={<ShieldCheck />} hint={t('audit.stat.retention.hint')} />
+        <StatCard label={t('audit.stat.range')} value={filter.range === 'all' ? t('audit.range.all') : t('audit.range.days', { days: filter.range })} icon={<CalendarRange />} hint={t('audit.stat.range.hint')} />
       </div>
 
       <div role="search" aria-label={t('audit.filters.label')} className="mb-5 space-y-3">
@@ -87,8 +89,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           />
         </div>
         <div className="flex flex-wrap gap-3">
-          <FilterSelect name="action" value={filter.action} label={t('audit.filter.action')} allLabel={t('audit.filter.action')} options={facets.actions.map((a) => ({ value: a, label: a.replace(/\./g, ' · ') }))} />
-          <FilterSelect name="entity" value={filter.entityType} label={t('audit.filter.entity')} allLabel={t('audit.filter.entity')} options={facets.entityTypes.map((e) => ({ value: e, label: e }))} />
+          <FilterSelect name="action" value={filter.action} label={t('audit.filter.action')} allLabel={t('audit.filter.action')} options={facets.actions.map((a) => ({ value: a, label: humanizeKey(a) }))} />
+          <FilterSelect name="entity" value={filter.entityType} label={t('audit.filter.entity')} allLabel={t('audit.filter.entity')} options={facets.entityTypes.map((e) => ({ value: e, label: humanizeKey(e) }))} />
           <FilterSelect
             name="outcome"
             value={filter.outcome}
@@ -109,17 +111,11 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
             icon={<ScrollText />}
             title={t('audit.empty.title')}
             body={t('audit.empty.body')}
-            action={
-              hasFilters ? (
-                <Button variant="secondary" asChild>
-                  <Link href={BASE}>{t('common.clearFilters')}</Link>
-                </Button>
-              ) : undefined
-            }
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} />}
           />
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="card-surface divide-y divide-border-soft overflow-hidden">
           {rows.map((entry) => (
             <li key={entry.id}>
               <AuditRow entry={entry} />

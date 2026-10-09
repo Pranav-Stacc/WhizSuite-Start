@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
-import { formatDateTime } from '@/shared/lib/format';
+import { formatDateTime, humanizeKey } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
 import { Badge, type BadgeTone } from '@/shared/ui/badge';
 import type { AuditEntry } from '../data/audit.repository';
@@ -17,7 +17,7 @@ interface AuditRowProps {
 export function AuditRow({ entry }: AuditRowProps) {
   const diff = entry.diff ? Object.entries(entry.diff) : [];
   return (
-    <article className="card-surface p-4 sm:p-5">
+    <article className="px-4 py-3 transition-colors hover:bg-surface-2/50 sm:px-5">
       <div className="flex flex-wrap items-start gap-3">
         <Avatar name={entry.actorName} size="sm" />
         <div className="min-w-0 flex-1">
@@ -27,7 +27,7 @@ export function AuditRow({ entry }: AuditRowProps) {
             <span className="text-xs text-muted">{formatDateTime(entry.at)}</span>
           </div>
           <p className="mt-1 text-sm">
-            <span className="font-medium text-primary">{entry.action.replace(/\./g, ' · ')}</span>
+            <span className="font-medium text-primary">{humanizeKey(entry.action)}</span>
             <span className="text-muted"> · {entry.entityLabel}</span>
           </p>
           <p className="mt-1 text-[13px] text-muted">{entry.summary}</p>

@@ -63,7 +63,7 @@ export function TaskList({ tasks, clientName, clientColor, assigneeName, editHre
                 <td className="px-4 py-3">
                   {task.dueDate ? <DueBadge date={task.dueDate} done={task.status === 'DONE'} /> : <span className="text-muted">—</span>}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums text-muted">{task.estimateHours !== undefined ? `${task.estimateHours}h` : '—'}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-muted">{task.estimateHours !== undefined ? t('common.hours', { hours: task.estimateHours }) : '—'}</td>
               </tr>
             );
           })}

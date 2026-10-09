@@ -74,11 +74,11 @@ export function PlanCard({ plan, interval, current, switchesInterval, currentMon
           <Button variant="secondary" disabled className="w-full">
             {t('billing.plan.current')}
           </Button>
-        ) : price === undefined ? (
+        ) : price === undefined || !canChange ? (
           <Button variant="secondary" disabled className="w-full">
             {t('billing.contactSales')}
           </Button>
-        ) : !canChange ? null : switchesInterval ? (
+        ) : switchesInterval ? (
           <ActionButton action={action} label={t(`billing.switchTo.${interval}`)} variant="secondary" className="w-full" />
         ) : isDowngrade ? (
           <ConfirmButton action={action} label={t('billing.plan.downgrade', { plan: plan.name })} icon={<ArrowDownRight />} variant="secondary" className="w-full" />
