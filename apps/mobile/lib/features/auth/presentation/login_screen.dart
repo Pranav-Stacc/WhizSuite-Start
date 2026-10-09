@@ -11,6 +11,7 @@ import '../../../core/widgets/error_message.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/session_controller.dart';
+import '../../../core/widgets/forms.dart';
 import 'auth_layout.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {

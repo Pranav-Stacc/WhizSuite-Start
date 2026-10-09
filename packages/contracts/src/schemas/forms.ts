@@ -17,6 +17,8 @@ import {
   CONTENT_PILLAR_MAX_LENGTH,
   normalizeHashtags,
 } from '../content/content.js';
+import { RESOURCE_NAME_MIN_LENGTH } from '../platform/resources.js';
+import { MEMBER_ROLES_MAX } from '../auth/access.js';
 
 const optionalText = z
   .string()
@@ -55,7 +57,7 @@ export const registerSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const createClientSchema = z.object({
-  displayName: z.string().trim().min(2, 'validation.min2'),
+  displayName: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   industry: optionalText,
   website: optionalText,
   tier: optionalText,
@@ -80,7 +82,7 @@ export const brandKitSchema = z.object({
 export type BrandKitInput = z.infer<typeof brandKitSchema>;
 
 export const createProjectSchema = z.object({
-  name: z.string().trim().min(2, 'validation.min2'),
+  name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   clientId: z.string().min(1, 'validation.required'),
   type: optionalText,
   endDate: optionalDate,
@@ -90,7 +92,7 @@ export const createProjectSchema = z.object({
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export const createTaskSchema = z.object({
-  title: z.string().trim().min(2, 'validation.min2'),
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   projectId: z.string().min(1, 'validation.required'),
   priority: z.enum(Priorities).default('MEDIUM'),
   status: z.enum(TaskStatuses).default('TODO'),
@@ -104,7 +106,7 @@ export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 const HASHTAG_SEPARATOR = /[\s,]+/;
 
 export const createContentSchema = z.object({
-  title: z.string().trim().min(2, 'validation.min2'),
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   clientId: z.string().min(1, 'validation.required'),
   contentType: z.enum(ContentTypes).default('POST'),
   caption: optionalText,
@@ -129,7 +131,7 @@ export const createContentSchema = z.object({
 export type CreateContentInput = z.infer<typeof createContentSchema>;
 
 export const createLeadSchema = z.object({
-  companyName: z.string().trim().min(2, 'validation.min2'),
+  companyName: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   industry: optionalText,
   source: optionalText,
   website: optionalText,
@@ -165,6 +167,8 @@ export const inviteMemberSchema = z.object({
   email: z.string().trim().email('validation.email'),
   membershipType: z.enum(MembershipTypes).default('MEMBER'),
   note: optionalText,
+  /** Custom roles granted on acceptance instead of the membership type's default role. */
+  roleIds: z.array(z.string().min(1)).max(MEMBER_ROLES_MAX).default([]),
 });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 
@@ -191,14 +195,14 @@ export const logTimeSchema = z.object({
 export type LogTimeInput = z.infer<typeof logTimeSchema>;
 
 export const createAutomationSchema = z.object({
-  name: z.string().trim().min(2, 'validation.min2'),
+  name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   trigger: z.enum(AutomationTriggers, { errorMap: () => ({ message: 'validation.required' }) }),
   action: z.enum(AutomationActions, { errorMap: () => ({ message: 'validation.required' }) }),
 });
 export type CreateAutomationInput = z.infer<typeof createAutomationSchema>;
 
 export const connectIntegrationSchema = z.object({
-  handle: z.string().trim().min(2, 'validation.min2'),
+  handle: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
 });
 export type ConnectIntegrationInput = z.infer<typeof connectIntegrationSchema>;
 
@@ -212,14 +216,14 @@ export const ArticleCategories = ['SOP', 'PLAYBOOK', 'TEMPLATE', 'POLICY', 'ONBO
 export type ArticleCategory = (typeof ArticleCategories)[number];
 
 export const createArticleSchema = z.object({
-  title: z.string().trim().min(2, 'validation.min2'),
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   category: z.enum(ArticleCategories).default('SOP'),
   body: z.string().trim().min(10, 'validation.min10'),
 });
 export type CreateArticleInput = z.infer<typeof createArticleSchema>;
 
 export const updateProfileSchema = z.object({
-  name: z.string().trim().min(2, 'validation.min2'),
+  name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   title: optionalText,
 });
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
@@ -228,7 +232,7 @@ export const AssetKinds = ['image', 'video', 'document'] as const;
 export type AssetKind = (typeof AssetKinds)[number];
 
 export const createAssetSchema = z.object({
-  name: z.string().trim().min(2, 'validation.min2'),
+  name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   clientId: z.string().min(1, 'validation.required'),
   kind: z.enum(AssetKinds).default('image'),
   tags: optionalText,
@@ -251,6 +255,8 @@ export const WORKFLOW_STAGE_SEPARATOR = ',';
 export const MIN_WORKFLOW_STAGES = 2;
 export const MAX_WORKFLOW_STAGES = 20;
 export const MAX_WORKFLOW_SLA_HOURS = 720;
+export const MAX_WORKFLOW_STAGE_LENGTH = 80;
+export const MAX_AUTOMATION_RUN_DETAIL_LENGTH = 500;
 
 /** Splits a comma separated stage list into trimmed, non-empty stage names. */
 export function parseWorkflowStages(value: string): string[] {
@@ -260,16 +266,20 @@ export function parseWorkflowStages(value: string): string[] {
     .filter(Boolean);
 }
 
+export const workflowStageSchema = z.object({
+  name: z.string().trim().min(1).max(MAX_WORKFLOW_STAGE_LENGTH),
+  /** Optional workflow role that owns / is the default assignee for this stage. */
+  assigneeRoleId: z.string().uuid().nullish(),
+});
+export type WorkflowStageInput = z.infer<typeof workflowStageSchema>;
+
 export const createWorkflowSchema = z.object({
-  name: z.string().trim().min(2, 'validation.min2'),
+  name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
   slaHours: z.coerce.number().int().min(1).max(MAX_WORKFLOW_SLA_HOURS).default(48),
   stages: z
-    .string()
-    .trim()
-    .refine((value) => {
-      const count = parseWorkflowStages(value).length;
-      return count >= MIN_WORKFLOW_STAGES && count <= MAX_WORKFLOW_STAGES;
-    }, 'validation.stages'),
+    .array(workflowStageSchema)
+    .min(MIN_WORKFLOW_STAGES, 'validation.stages')
+    .max(MAX_WORKFLOW_STAGES, 'validation.stages'),
   requiresClientApproval: z.boolean().default(false),
 });
 export type CreateWorkflowInput = z.infer<typeof createWorkflowSchema>;

@@ -1,10 +1,9 @@
+import { ClientStatuses, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { AlertTriangle, LayoutGrid, Plus, Rows3, Users, Wallet } from 'lucide-react';
-import { ClientStatuses } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterChips, ViewToggle, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
@@ -30,9 +29,9 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function ClientsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CLIENTS_VIEW);
   const sp = await searchParams;
-  const canManage = ROLES_LEADERSHIP.includes(session.role);
+  const canManage = await can(Permissions.CLIENTS_CREATE);
   const view = param(sp, 'view') === 'table' ? 'table' : 'cards';
   const status = ClientStatuses.find((s) => s === param(sp, 'status'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();

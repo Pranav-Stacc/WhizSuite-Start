@@ -1,8 +1,11 @@
 import 'server-only';
 import type { z, ZodTypeAny } from 'zod';
 import { ApiError } from '@/shared/api/api-client';
+import { ForbiddenError } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { fail, type ActionResult } from './action-result';
+
+const HTTP_FORBIDDEN = 403;
 
 type Parsed<S extends ZodTypeAny> = { ok: true; data: z.output<S> } | { ok: false; result: ActionResult<never> };
 
@@ -24,7 +27,8 @@ export async function guarded<T>(run: () => Promise<ActionResult<T>>): Promise<A
     return await run();
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'digest' in error) throw error;
-    if (error instanceof ApiError) return fail(error.message);
+    if (error instanceof ForbiddenError) return fail(t('toast.forbidden'));
+    if (error instanceof ApiError) return fail(error.status === HTTP_FORBIDDEN ? t('toast.forbidden') : error.message);
     return fail(t('toast.failed'));
   }
 }

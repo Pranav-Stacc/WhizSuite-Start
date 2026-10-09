@@ -1,7 +1,7 @@
+import { Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { Card, CardBody } from '@/shared/ui/card';
 import { SectionHeading } from '@/shared/ui/section-heading';
@@ -14,7 +14,7 @@ import { clientThread } from '@/features/portal/services/portal.service';
 export const metadata = { title: t('clients.workspace.messages') };
 
 export default async function ClientMessagesPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.INBOX_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
   const messages = await clientThread(client.id);

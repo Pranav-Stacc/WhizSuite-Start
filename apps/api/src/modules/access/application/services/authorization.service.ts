@@ -66,21 +66,16 @@ export class AuthorizationService {
     return false;
   }
 
-  async getCapabilities(
-    organizationId: string,
-    membershipId: string,
-    permissions: Permission[],
-  ): Promise<Record<string, boolean>> {
-    const result: Record<string, boolean> = {};
-    for (const p of permissions) {
-      result[p] = await this.can(organizationId, membershipId, p);
-    }
-    return result;
-  }
-
   async invalidateCache(organizationId: string, membershipId: string) {
     await this.redis.delPattern(
       this.redis.orgKey(organizationId, 'authz', 'user', membershipId, '*'),
+    );
+  }
+
+  /** Drops every member's cached permissions, e.g. after a role's permission set changes. */
+  async invalidateOrganization(organizationId: string) {
+    await this.redis.delPattern(
+      this.redis.orgKey(organizationId, 'authz', 'user', '*'),
     );
   }
 }

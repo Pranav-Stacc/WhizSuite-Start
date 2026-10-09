@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { CalendarClock, CreditCard, Receipt, Sparkles } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatDate, formatMoney } from '@/shared/lib/format';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -42,7 +42,7 @@ function parseInterval(value: string | undefined): BillingInterval | undefined {
 }
 
 export default async function BillingPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_OWNER);
+  const session = await requirePermission(Permissions.ORG_BILLING_MANAGE);
   const sp = await searchParams;
 
   const [subscription, plans, usage, invoices] = await Promise.all([getSubscription(), listPlans(), currentUsage(), listBillingInvoices()]);
@@ -50,7 +50,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
 
   const interval = parseInterval(param(sp, 'interval')) ?? subscription?.interval ?? BILLING_INTERVALS[0];
   const currentMonthly = plan ? monthlyPrice(plan, interval) : undefined;
-  const canChange = planChangesEnabled && ROLES_OWNER.includes(session.role);
+  const canChange = planChangesEnabled;
 
   return (
     <div>

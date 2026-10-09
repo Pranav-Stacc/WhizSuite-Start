@@ -1,8 +1,8 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Activity, CheckCircle2, Plus, Zap } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -43,7 +43,7 @@ function parseFilter(value: string | undefined): AutomationFilter {
 }
 
 export default async function AutomationsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.AUTOMATIONS_MANAGE);
   const sp = await searchParams;
   const filter = parseFilter(param(sp, 'f'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();

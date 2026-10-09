@@ -1,10 +1,9 @@
 'use server';
 
-import { createAutomationSchema } from '@agency-os/contracts';
+import { createAutomationSchema, Permissions } from '@agency-os/contracts';
 import { runAutomation } from '@/shared/api/live/mutations';
-import { requireSession } from '@/shared/auth/session';
+import { authorize } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -13,15 +12,10 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { AUTOMATION_RECIPES } from '../config';
 import { automationRunsRepository, automationsRepository } from '../data/automations.repository';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function createAutomationAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const parsed = parseInput(createAutomationSchema, raw);
     if (!parsed.ok) return parsed.result;
     const automation = await automationsRepository.create({ ...parsed.data, enabled: true, runs: 0, failures: 0, createdAt: new Date().toISOString() });
@@ -33,7 +27,7 @@ export async function createAutomationAction(raw: unknown): Promise<ActionResult
 
 export async function createAutomationFromRecipeAction(recipeId: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const recipe = AUTOMATION_RECIPES.find((r) => r.id === recipeId);
     if (!recipe) return fail(t('toast.failed'));
     const automation = await automationsRepository.create({
@@ -53,7 +47,7 @@ export async function createAutomationFromRecipeAction(recipeId: string): Promis
 
 export async function updateAutomationAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const parsed = parseInput(createAutomationSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await automationsRepository.get(id);
@@ -67,7 +61,7 @@ export async function updateAutomationAction(id: string, raw: unknown): Promise<
 
 export async function toggleAutomationAction(id: string, enabled: boolean): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const before = await automationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await automationsRepository.update(id, { enabled });
@@ -86,7 +80,7 @@ export async function toggleAutomationAction(id: string, enabled: boolean): Prom
 
 export async function runAutomationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const automation = await automationsRepository.get(id);
     if (!automation) return fail(t('toast.failed'));
     const detail = t('automations.run.manual', { name: automation.name });
@@ -105,7 +99,7 @@ export async function runAutomationAction(id: string): Promise<ActionResult> {
 
 export async function deleteAutomationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.AUTOMATIONS_MANAGE);
     const before = await automationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await automationsRepository.remove(id);

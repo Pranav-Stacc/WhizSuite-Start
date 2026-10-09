@@ -1,11 +1,10 @@
+import { Permissions, Platforms } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BarChart3, Download, Eye, Heart, Percent, UserPlus } from 'lucide-react';
-import { Platforms } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatDate, formatNumber, formatPercent } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { AreaChart, HBarList } from '@/shared/ui/charts';
@@ -33,7 +32,7 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.REPORTS_VIEW);
   const sp = await searchParams;
   const filter = parseReportFilter((key) => param(sp, key));
   const clients = await clientsById();

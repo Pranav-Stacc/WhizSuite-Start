@@ -1,11 +1,11 @@
 {
-    "name": "agency_os",
-    "short_name": "agency_os",
+    "name": "WhizSuite",
+    "short_name": "WhizSuite",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "WhizSuite — agency operations for staff and clients.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

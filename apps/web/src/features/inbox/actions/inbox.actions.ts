@@ -1,10 +1,9 @@
 'use server';
 
-import { messageSchema } from '@agency-os/contracts';
+import { messageSchema, Permissions } from '@agency-os/contracts';
 import { replyToConversation } from '@/shared/api/live/mutations';
-import { requireSession } from '@/shared/auth/session';
+import { authorize } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -12,15 +11,10 @@ import { t } from '@/shared/i18n/t';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { InboxStatuses, inboxRepository, type InboxStatus } from '../data/inbox.repository';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function replyToInboxItemAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.INBOX_REPLY);
     const parsed = parseInput(messageSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await inboxRepository.get(id);
@@ -42,7 +36,7 @@ export async function replyToInboxItemAction(id: string, raw: unknown): Promise<
 
 export async function setInboxStatusAction(id: string, status: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INBOX_REPLY);
     if (!InboxStatuses.includes(status as InboxStatus)) return fail(t('toast.failed'));
     const before = await inboxRepository.get(id);
     if (!before) return fail(t('toast.failed'));
@@ -62,7 +56,7 @@ export async function setInboxStatusAction(id: string, status: string): Promise<
 
 export async function assignInboxItemAction(id: string, memberId: string | undefined): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.INBOX_REPLY);
     const before = await inboxRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     const assigneeId = memberId ?? undefined;

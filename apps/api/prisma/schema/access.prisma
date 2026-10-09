@@ -12,19 +12,24 @@ model Permission {
 }
 
 model Role {
-  id             String   @id @default(uuid()) @db.Uuid
-  organizationId String   @map("organization_id") @db.Uuid
-  name           String
-  description    String?
-  isSystem       Boolean  @default(false) @map("is_system")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  name               String
+  description        String?
+  /// ACCESS grants permissions; WORKFLOW is an assignee pool for workflow stages.
+  kind               String   @default("ACCESS")
+  /// Intended assignment scope types (e.g. ORGANIZATION, CLIENT). Actual resources live on RoleAssignmentScope.
+  defaultScopeTypes  Json     @default("[\"ORGANIZATION\"]") @map("default_scope_types")
+  isSystem           Boolean  @default(false) @map("is_system")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   permissions RolePermission[]
   assignments RoleAssignment[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
+  @@index([organizationId, kind])
   @@map("roles")
   @@schema("access")
 }

@@ -1,10 +1,9 @@
+import { ClientStatuses, Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
 import { UserPlus } from 'lucide-react';
-import { ClientStatuses } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { SectionHeading } from '@/shared/ui/section-heading';
@@ -19,6 +18,7 @@ import { listContent } from '@/features/content/services/content.service';
 import { listIntegrations } from '@/features/integrations/services/integrations.service';
 import { listProjectsWithProgress } from '@/features/projects/services/projects.service';
 import { PortalInviteDialog } from '@/features/team/components/portal-invite-dialog';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 
 const RECENT_CONTENT_LIMIT = 6;
@@ -26,12 +26,19 @@ const RECENT_CONTENT_LIMIT = 6;
 const GUIDE: GuideItem[] = [{ title: t('clients.guide.detail.title'), body: t('clients.guide.detail.body') }];
 
 export default async function ClientOverviewPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CLIENTS_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
 
-  const canManage = ROLES_LEADERSHIP.includes(session.role);
-  const [members, integrations, projects, content] = await Promise.all([membersById(), listIntegrations(), listProjectsWithProgress(), listContent()]);
+  const granted = await getPermissions();
+  const canEdit = granted.has(Permissions.CLIENTS_EDIT);
+  const canInvite = granted.has(Permissions.MEMBERS_INVITE);
+  const [members, integrations, projects, content] = await Promise.all([
+    granted.has(Permissions.MEMBERS_VIEW) ? membersById() : new Map<string, Member>(),
+    granted.has(Permissions.INTEGRATIONS_MANAGE) ? listIntegrations() : [],
+    granted.has(Permissions.PROJECTS_VIEW) ? listProjectsWithProgress() : [],
+    granted.has(Permissions.CONTENT_VIEW) ? listContent() : [],
+  ]);
   const clientProjects = projects.filter((p) => p.clientId === client.id);
   const clientPosts = content
     .filter((c) => c.clientId === client.id)
@@ -53,7 +60,7 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <PageGuide items={GUIDE} />
-          {canManage ? (
+          {canInvite ? (
             <PortalInviteDialog
               clientId={client.id}
               clientName={client.name}
@@ -66,7 +73,7 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
               }
             />
           ) : null}
-          {canManage ? (
+          {canEdit ? (
             <StatusMenu
               current={client.status}
               label={t('clients.status.change')}
@@ -83,11 +90,11 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
       </section>
       <section>
         <SectionHeading title={t('clients.tab.brand')} />
-        <BrandTab client={client} canEdit={canManage} />
+        <BrandTab client={client} canEdit={canEdit} />
       </section>
       <section>
         <SectionHeading title={t('clients.tab.work')} />
-        <WorkTab clientId={client.id} projects={clientProjects} posts={clientPosts} canManage={canManage} />
+        <WorkTab clientId={client.id} projects={clientProjects} posts={clientPosts} canManage={granted.has(Permissions.PROJECTS_CREATE)} />
       </section>
     </div>
   );

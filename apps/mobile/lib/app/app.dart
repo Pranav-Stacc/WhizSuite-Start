@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+import '../core/formatting/formats.dart';
 import '../core/theme/app_theme.dart';
 import '../core/theme/app_tokens.dart';
 import '../core/theme/theme_controller.dart';
@@ -28,6 +30,10 @@ class AgencyOsApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => FormatDefaults(
+        currency: ref.watch(appConfigProvider).defaultCurrency,
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }

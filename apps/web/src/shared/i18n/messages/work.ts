@@ -148,6 +148,6 @@ export const work = {
   'time.guide.timer.body': 'Start a timer from your dashboard and stop it when you are done — no math required.',
   'time.guide.log.title': 'Add missed time',
   'time.guide.log.body': 'Use Log time to record work after the fact. You can delete wrong entries any time.',
-  'time.guide.team.title': 'Managers see the team',
-  'time.guide.team.body': 'Switch to Whole team to compare hours by person and by client.',
+  'time.guide.team.title': 'See the whole team',
+  'time.guide.team.body': 'With team time permission, switch to Whole team to compare hours by person and by client.',
 } as const;

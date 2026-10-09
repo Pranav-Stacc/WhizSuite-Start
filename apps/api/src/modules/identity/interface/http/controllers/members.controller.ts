@@ -8,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -21,7 +22,7 @@ import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { MembersService } from '../../../application/services/members.service';
-import { UpdateMemberDto } from '../dto/member.dto';
+import { AssignMemberRolesDto, UpdateMemberDto } from '../dto/member.dto';
 
 @ApiTags('members')
 @ApiBearerAuth()
@@ -49,6 +50,23 @@ export class MembersController {
       user.userId,
       userId,
       dto.membershipType,
+    );
+  }
+
+  @Put(':userId/roles')
+  @RequirePermissions(Permissions.ROLES_MANAGE)
+  assignRoles(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: AssignMemberRolesDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.members.assignRoles(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      dto.roleIds,
+      dto.scopes,
     );
   }
 

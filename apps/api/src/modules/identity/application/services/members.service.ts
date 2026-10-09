@@ -1,9 +1,13 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { ErrorCodes } from '@agency-os/contracts';
+import {
+  ErrorCodes,
+  type RoleAssignmentScopeInput,
+} from '@agency-os/contracts';
 import { problem } from '../../../../shared/errors/problem-details.exception';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AuthorizationService } from '../../../access/application/services/authorization.service';
 import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
+import { RoleAssignmentService } from '../../../access/application/services/role-assignment.service';
 import {
   STAFF_MEMBERSHIP_TYPES,
   type StaffMembershipType,
@@ -22,11 +26,15 @@ export class MembersService {
     private readonly identity: IdentityRepository,
     private readonly defaultRoles: DefaultRolesService,
     private readonly authorization: AuthorizationService,
+    private readonly roleAssignment: RoleAssignmentService,
     private readonly audit: AuditService,
   ) {}
 
   async list(organizationId: string) {
-    const rows = await this.identity.listOrganizationMembers(organizationId);
+    const [rows, rolesByMembership] = await Promise.all([
+      this.identity.listOrganizationMembers(organizationId),
+      this.roleAssignment.rolesByMembership(organizationId),
+    ]);
     return rows.map(({ membership, user }) => ({
       id: user.id,
       membershipId: membership.id,
@@ -37,8 +45,31 @@ export class MembersService {
       title: user.jobTitle,
       membershipType: membership.type,
       status: membership.status,
+      roles: rolesByMembership.get(membership.id) ?? [],
       createdAt: membership.createdAt,
     }));
+  }
+
+  async assignRoles(
+    organizationId: string,
+    actorId: string,
+    userId: string,
+    roleIds: readonly string[],
+    scopes?: readonly RoleAssignmentScopeInput[],
+  ) {
+    const membership = await this.requireManageable(
+      organizationId,
+      actorId,
+      userId,
+    );
+    const roles = await this.roleAssignment.assign(
+      organizationId,
+      actorId,
+      membership.id,
+      roleIds,
+      scopes,
+    );
+    return { id: userId, membershipId: membership.id, roles };
   }
 
   async changeType(

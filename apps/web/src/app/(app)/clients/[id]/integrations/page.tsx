@@ -1,8 +1,8 @@
+import { Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
 import { Plug } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { EmptyState } from '@/shared/ui/feedback';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { getClient } from '@/features/clients/services/clients.service';
@@ -13,7 +13,7 @@ import { listIntegrations } from '@/features/integrations/services/integrations.
 export const metadata = { title: t('clients.workspace.integrations') };
 
 export default async function ClientIntegrationsPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.INTEGRATIONS_MANAGE);
   const client = await getClient((await params).id);
   if (!client) notFound();
   const rows = (await listIntegrations()).filter((integration) => integration.clientId === client.id);

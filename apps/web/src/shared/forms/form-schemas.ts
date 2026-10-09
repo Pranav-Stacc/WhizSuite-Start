@@ -6,6 +6,7 @@ const createDepartmentFormSchema = z.object({
   parentId: z.string().optional(),
 });
 import {
+  assignMemberRolesSchema,
   brandKitSchema,
   connectIntegrationSchema,
   createArticleSchema,
@@ -16,7 +17,6 @@ import {
   createLeadSchema,
   createProjectSchema,
   createTaskSchema,
-  createWorkflowSchema,
   inviteMemberSchema,
   invitePortalUserSchema,
   logTimeSchema,
@@ -37,6 +37,7 @@ export const FORM_SCHEMAS = {
   content: createContentSchema,
   lead: createLeadSchema,
   invite: inviteMemberSchema,
+  memberRoles: assignMemberRolesSchema,
   portalInvite: invitePortalUserSchema,
   time: logTimeSchema,
   automation: createAutomationSchema,
@@ -45,7 +46,6 @@ export const FORM_SCHEMAS = {
   profile: updateProfileSchema,
   asset: createAssetSchema,
   message: messageSchema,
-  workflow: createWorkflowSchema,
   integration: connectIntegrationSchema,
   department: createDepartmentFormSchema,
 } satisfies Record<string, ZodTypeAny>;

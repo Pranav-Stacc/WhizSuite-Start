@@ -110,7 +110,7 @@ export const auditLive: LiveBinding<AuditEntry> = {
   deletable: false,
 };
 
-export const rolesLive = binding<AgencyRole>('roles', 'roles', roleFromApi, roleToApi, { deletable: false });
+export const rolesLive = binding<AgencyRole>('roles', 'roles', roleFromApi, roleToApi);
 export const departmentsLive = binding<Department>('departments', 'departments', departmentFromApi, departmentToApi, { deletable: false });
 
 export const membersLive: LiveBinding<Member> = {

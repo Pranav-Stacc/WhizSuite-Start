@@ -1,8 +1,7 @@
 'use server';
 
-import { LeadStages, createLeadSchema, type CreateLeadInput, type LeadStage } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { LeadStages, createLeadSchema, type CreateLeadInput, type LeadStage, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -14,11 +13,6 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { onboardClient } from '@/features/clients/services/clients.service';
 import { leadsRepository, type Lead } from '../data/leads.repository';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 function toLeadFields(input: CreateLeadInput): Omit<Lead, 'id' | 'stage' | 'createdAt' | 'ownerId' | 'convertedClientId'> {
   return {
@@ -36,7 +30,7 @@ function toLeadFields(input: CreateLeadInput): Omit<Lead, 'id' | 'stage' | 'crea
 
 export async function createLeadAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.LEADS_CREATE);
     const parsed = parseInput(createLeadSchema, raw);
     if (!parsed.ok) return parsed.result;
     const lead = await leadsRepository.create({
@@ -53,7 +47,7 @@ export async function createLeadAction(raw: unknown): Promise<ActionResult> {
 
 export async function updateLeadAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.LEADS_CREATE);
     const parsed = parseInput(createLeadSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await leadsRepository.get(id);
@@ -67,7 +61,7 @@ export async function updateLeadAction(id: string, raw: unknown): Promise<Action
 
 export async function moveLeadAction(id: string, stage: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.LEADS_CREATE);
     if (!LeadStages.includes(stage as LeadStage)) return fail(t('toast.failed'));
     const before = await leadsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
@@ -88,7 +82,7 @@ export async function moveLeadAction(id: string, stage: string): Promise<ActionR
 
 export async function convertLeadAction(id: string): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.LEADS_CONVERT);
     const lead = await leadsRepository.get(id);
     if (!lead) return fail(t('toast.failed'));
     if (lead.convertedClientId) return fail(t('leads.convert.already'));
@@ -112,7 +106,7 @@ export async function convertLeadAction(id: string): Promise<ActionResult<{ href
 
 export async function deleteLeadAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.LEADS_CREATE);
     const before = await leadsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await leadsRepository.remove(id);

@@ -1,6 +1,5 @@
 import 'server-only';
-import type { UserRole } from '@agency-os/contracts';
-import { isLeadership } from '@/shared/auth/roles';
+import { Permissions, type Permission } from '@agency-os/contracts';
 import { formatMoney } from '@/shared/lib/format';
 import type { SearchGroup } from '@/features/shell/components/search-types';
 import { clientsRepository } from '@/features/clients/data/clients.repository';
@@ -15,20 +14,23 @@ const PER_GROUP = 5;
 
 const matches = (needle: string, ...fields: Array<string | undefined>): boolean => fields.some((f) => f?.toLowerCase().includes(needle));
 
-/** Cross-domain quick search for the command palette. Composes each domain's public data; never joins tables. */
-export async function searchWorkspace(query: string, role: UserRole): Promise<SearchGroup[]> {
+/**
+ * Cross-domain quick search for the command palette. Composes each domain's public data; never joins tables.
+ * Only domains the member may read are queried, mirroring the API's permission checks.
+ */
+export async function searchWorkspace(query: string, granted: ReadonlySet<Permission>): Promise<SearchGroup[]> {
   const needle = query.trim().toLowerCase();
   if (needle.length < 2) return [];
-  const leader = isLeadership(role);
+  const whenAllowed = <T,>(permission: Permission, load: () => Promise<T[]>): Promise<T[]> => (granted.has(permission) ? load() : Promise.resolve([]));
 
   const [clients, tasks, content, projects, leads, invoices, articles] = await Promise.all([
-    clientsRepository.list(),
-    tasksRepository.list(),
-    contentRepository.list(),
-    projectsRepository.list(),
-    leader ? leadsRepository.list() : Promise.resolve([]),
-    leader ? invoicesRepository.list() : Promise.resolve([]),
-    knowledgeRepository.list(),
+    whenAllowed(Permissions.CLIENTS_VIEW, () => clientsRepository.list()),
+    whenAllowed(Permissions.TASKS_VIEW, () => tasksRepository.list()),
+    whenAllowed(Permissions.CONTENT_VIEW, () => contentRepository.list()),
+    whenAllowed(Permissions.PROJECTS_VIEW, () => projectsRepository.list()),
+    whenAllowed(Permissions.LEADS_VIEW, () => leadsRepository.list()),
+    whenAllowed(Permissions.INVOICES_VIEW, () => invoicesRepository.list()),
+    whenAllowed(Permissions.ORG_VIEW, () => knowledgeRepository.list()),
   ]);
   const clientName = new Map(clients.map((c) => [c.id, c.name]));
 
@@ -36,7 +38,7 @@ export async function searchWorkspace(query: string, role: UserRole): Promise<Se
     {
       type: 'client',
       label: 'search.type.client',
-      items: (leader ? clients : []).filter((c) => matches(needle, c.name, c.industry, c.contactName)).slice(0, PER_GROUP).map((c) => ({ id: c.id, title: c.name, subtitle: c.industry, href: `/clients/${c.id}` })),
+      items: clients.filter((c) => matches(needle, c.name, c.industry, c.contactName)).slice(0, PER_GROUP).map((c) => ({ id: c.id, title: c.name, subtitle: c.industry, href: `/clients/${c.id}` })),
     },
     {
       type: 'task',

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-09
+- Updated: 2026-10-09
 
 ## Context
 
@@ -10,29 +11,39 @@ and assign one or more roles to a membership, optionally scoped (organization, c
 DENY grants. The API enforces this with `@RequirePermissions` and resolves a member's effective permissions
 in `AuthorizationService`, exposed at `GET /api/v1/access/capabilities`.
 
-The web client instead derives one of four fixed personas (owner / manager / creator / client) from the
-membership type and gates navigation on those. A custom role therefore has no effect on what the web shows,
-and the UI can disagree with what the API actually allows.
+Clients must not infer what a user can see from membership type labels or a fixed set of named roles.
+Custom roles only work if navigation and actions follow the same permission keys the API enforces.
 
 ## Decision
 
-The mobile app (`apps/mobile`) never infers access from role names or membership types:
+Both clients load effective permissions and gate UI on those keys:
+
+### Mobile (`apps/mobile`)
 
 - After sign-in it loads `GET /v1/access/capabilities` into an `AccessPolicy` (the granted permission keys),
   caches it per membership for offline use, and refreshes it on an interval
   (`ACCESS_REFRESH_INTERVAL_SECONDS`), on app resume, and on pull-to-refresh.
 - Every navigation destination declares the permission keys that unlock it (`anyOf`), matching the
   `@RequirePermissions` on the endpoints its screen loads. Actions use `PermissionGate`.
-- The membership type only chooses the audience (agency workspace vs. client portal), because the API
-  data-scopes client memberships to their client. Inside each audience, visibility is permission-driven.
 - Permission keys, membership types and other constants are generated from `packages/contracts`
   (`pnpm --filter @agency-os/contracts generate:dart`) so the app cannot drift from the API catalog.
 
+### Web (`apps/web`)
+
+- Live mode loads `GET /v1/access/capabilities` once per request (`getPermissions`); demo mode uses the
+  default permission set for the signed-in membership type.
+- Navigation, quick-create, search domains, page guards and server actions use `can` /
+  `requirePermission` / `authorize` against those keys — not owner / manager / creator labels.
+- Team management assigns roles via `PUT …/members/:userId/roles`; invitations accept `roleIds`.
+  Changing a membership type keeps custom roles and only swaps the matching system role.
+
+### Shared
+
+- Membership type only chooses the audience (agency workspace vs. client portal), because the API
+  data-scopes client memberships to their client. Inside each audience, visibility is permission-driven.
+
 ## Consequences
 
-- Custom roles edited in Roles & permissions reshape the app without a release or re-login.
+- Custom roles edited in Roles & permissions reshape both clients without a release.
 - The API stays the authority: hiding a destination is a UX concern; a 403 is still handled everywhere.
-- The web should move to the same model (load capabilities, gate `nav-config` by permission) so both
-  clients agree with the API. Until then the web ignores custom roles in its navigation.
-- Assigning custom roles to an existing member currently has no endpoint (only invitation `roleIds` and the
-  membership-type switch); one is needed for full role management from either client.
+- Demo sign-in personas remain a convenience for exploring the product; they are not an authorization model.

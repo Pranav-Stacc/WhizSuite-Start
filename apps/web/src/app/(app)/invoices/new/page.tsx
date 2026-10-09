@@ -1,8 +1,8 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { daysFromNow, toDateKey } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
 import { BackLink } from '@/shared/ui/back-link';
 import { PageHeader } from '@/shared/ui/page-header';
@@ -14,7 +14,7 @@ import { DEFAULT_PAYMENT_TERMS_DAYS, DEFAULT_TAX_RATE } from '@/features/invoice
 export const metadata: Metadata = { title: t('invoices.new') };
 
 export default async function NewInvoicePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.INVOICES_CREATE);
   const sp = await searchParams;
   const clients = (await listClients()).filter((c) => c.status !== 'CHURNED');
   const requested = param(sp, 'client');

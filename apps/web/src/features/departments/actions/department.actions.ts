@@ -1,8 +1,8 @@
 'use server';
 
+import { Permissions } from '@agency-os/contracts';
 import { z } from 'zod';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -15,15 +15,10 @@ const createDepartmentSchema = z.object({
   parentId: z.string().uuid().optional().or(z.literal('')),
 });
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_OWNER.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function createDepartmentAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.ORG_SETTINGS_MANAGE);
     const parsed = parseInput(createDepartmentSchema, raw);
     if (!parsed.ok) return parsed.result;
     const dept = await departmentsRepository.create({
@@ -41,7 +36,7 @@ export async function createDepartmentAction(raw: unknown): Promise<ActionResult
 
 export async function deleteDepartmentAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.ORG_SETTINGS_MANAGE);
     const before = await departmentsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await departmentsRepository.remove(id);

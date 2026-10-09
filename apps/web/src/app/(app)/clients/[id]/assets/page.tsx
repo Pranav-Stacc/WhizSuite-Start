@@ -1,8 +1,8 @@
+import { Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
-import { requireRole } from '@/shared/auth/session';
+import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { ImageIcon } from 'lucide-react';
 import { EmptyState } from '@/shared/ui/feedback';
 import { SectionHeading } from '@/shared/ui/section-heading';
@@ -15,23 +15,24 @@ import { listAssets } from '@/features/media/services/media.service';
 export const metadata = { title: t('clients.workspace.assets') };
 
 export default async function ClientAssetsPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.FILES_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
   const assets = (await listAssets()).filter((a) => a.clientId === client.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const leadership = ROLES_LEADERSHIP.includes(session.role);
+  const granted = await getPermissions();
+  const canDelete = granted.has(Permissions.FILES_DELETE);
 
   return (
     <section>
       <SectionHeading number={clientSectionNumber('assets')} title={t('clients.workspace.assets')}>
         <span className="eyebrow">{t('assets.count', { count: assets.length })}</span>
       </SectionHeading>
-      <UploadDropzone clientId={client.id} enabled={isLiveMode} className="mb-6" />
+      <UploadDropzone clientId={client.id} enabled={isLiveMode && granted.has(Permissions.FILES_UPLOAD)} className="mb-6" />
       {assets.length ? (
         <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {assets.map((asset) => (
             <li key={asset.id}>
-              <AssetCard asset={asset} canDelete={leadership || asset.uploadedBy === session.userId} canDownload={isLiveMode} />
+              <AssetCard asset={asset} canDelete={canDelete} canDownload={isLiveMode} />
             </li>
           ))}
         </ul>

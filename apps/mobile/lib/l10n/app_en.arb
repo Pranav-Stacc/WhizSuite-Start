@@ -1,7 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Agency OS",
-
+  "appTitle": "WhizSuite",
   "authLoginTitle": "Welcome back",
   "authLoginSubtitle": "Sign in to run your agency from one place.",
   "authEmail": "Work email",
@@ -10,7 +9,7 @@
   "authLoginSubmit": "Sign in",
   "authLoginInvalid": "Incorrect email or password.",
   "authLoginExpired": "Your session expired. Please sign in again.",
-  "authNoAccount": "New to Agency OS?",
+  "authNoAccount": "New to WhizSuite?",
   "authCreateWorkspace": "Create a workspace",
   "authRegisterTitle": "Create your agency workspace",
   "authRegisterSubtitle": "Set up in under two minutes. No credit card.",
@@ -20,23 +19,33 @@
   "authSlug": "Workspace URL",
   "authSlugHint": "Lowercase letters, numbers and hyphens",
   "authRegisterPassword": "Password ({min}+ characters)",
-  "@authRegisterPassword": { "placeholders": { "min": { "type": "int" } } },
+  "@authRegisterPassword": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "authRegisterSubmit": "Create workspace",
   "authRegisterExists": "That workspace URL or email is already taken.",
   "authHaveAccount": "Already have a workspace?",
   "authSignIn": "Sign in",
   "authShowPassword": "Show password",
   "authHidePassword": "Hide password",
-  "authHeroEyebrow": "Agency OS",
+  "authHeroEyebrow": "WhizSuite",
   "authHeroTitle": "Every client, post and invoice in one calm cockpit.",
   "authSignedOut": "You have been signed out.",
-
   "validationRequired": "Required",
   "validationEmail": "Enter a valid email address",
   "validationMinLength": "Use at least {min} characters",
-  "@validationMinLength": { "placeholders": { "min": { "type": "int" } } },
+  "@validationMinLength": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
   "validationSlug": "Use lowercase letters, numbers and hyphens",
-
   "errorOffline": "You are offline. Check your connection and try again.",
   "errorTimeout": "The server took too long to respond.",
   "errorUnauthorized": "Your session expired. Please sign in again.",
@@ -52,7 +61,6 @@
   "offlineBanner": "Offline — showing saved data",
   "forbiddenTitle": "No access",
   "forbiddenBody": "Your role does not include this area. Ask an admin if you need it.",
-
   "navHome": "Overview",
   "navNotifications": "Notifications",
   "navSettings": "Settings",
@@ -64,19 +72,35 @@
   "navGroupMoney": "Money",
   "navGroupAgency": "Agency",
   "navMoreEmpty": "Nothing else is available for your role yet.",
-
   "homeGreeting": "Hello, {name}",
-  "@homeGreeting": { "placeholders": { "name": { "type": "String" } } },
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "homeSubtitle": "Here is what needs you today.",
   "homeAccessSummary": "{count, plural, =0{No permissions granted} =1{1 permission granted} other{{count} permissions granted}}",
-  "@homeAccessSummary": { "placeholders": { "count": { "type": "int" } } },
-
+  "@homeAccessSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notificationsTitle": "Notifications",
   "notificationsEmpty": "You are all caught up",
   "notificationsEmptyBody": "New assignments, approvals and feedback will show up here.",
   "notificationsMarkAll": "Mark all read",
   "notificationsUnread": "{count} unread",
-  "@notificationsUnread": { "placeholders": { "count": { "type": "int" } } },
+  "@notificationsUnread": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notificationsMarkRead": "Mark as read",
   "notificationTypeTaskAssigned": "Task assigned",
   "notificationTypeContentApproved": "Content approved",
@@ -85,7 +109,6 @@
   "notificationChannelName": "Agency updates",
   "notificationChannelDescription": "Assignments, approvals and feedback from your agency workspace",
   "notificationsOpen": "Open",
-
   "settingsTitle": "Settings",
   "settingsProfile": "Profile",
   "profileJobTitle": "Job title",
@@ -94,17 +117,163 @@
   "settingsNotifications": "Notification preferences",
   "settingsNotificationsBody": "Choose how you hear about each update",
   "settingsSignOut": "Sign out",
-  "settingsSignOutConfirm": "Sign out of Agency OS on this device?",
+  "settingsSignOutConfirm": "Sign out of WhizSuite on this device?",
   "cancel": "Cancel",
   "save": "Save",
-
+  "create": "Create",
+  "edit": "Edit",
+  "delete": "Delete",
+  "close": "Close",
+  "confirm": "Confirm",
+  "viewAll": "View all",
+  "details": "Details",
+  "savedToast": "Saved",
+  "createdToast": "Created",
+  "deletedToast": "Deleted",
+  "deleteConfirmTitle": "Delete {name}?",
+  "@deleteConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteConfirmBody": "This cannot be undone.",
+  "moreActions": "More actions",
+  "unassigned": "Unassigned",
+  "noDueDate": "No due date",
+  "valueNone": "None",
+  "valueClear": "Clear",
+  "valueAdd": "Add",
+  "valueRemove": "Remove {value}",
+  "@valueRemove": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "valueUnknown": "—",
+  "searchHint": "Search",
+  "searchNoMatches": "No matches",
+  "searchNoMatchesBody": "Try a different search or filter.",
+  "filterAll": "All",
+  "timeJustNow": "just now",
+  "timeMinutesAgo": "{count}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "{count}d ago",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeInMinutes": "in {count}m",
+  "@timeInMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeInHours": "in {count}h",
+  "@timeInHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeInDays": "in {count}d",
+  "@timeInDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueToday": "Due today",
+  "dueTomorrow": "Due tomorrow",
+  "dueInDays": "Due in {count}d",
+  "@dueInDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dueOverdue": "{count}d overdue",
+  "@dueOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{minutes}m",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHours": "{hours}h",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours}h {minutes}m",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "fileSizeKb": "{size} KB",
+  "@fileSizeKb": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "fileSizeMb": "{size} MB",
+  "@fileSizeMb": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
   "preferencesTitle": "Notification preferences",
   "preferencesBody": "Pick the channels for each kind of update. Push needs notifications allowed on this device.",
   "channelInApp": "In-app",
   "channelEmail": "Email",
   "channelPush": "Push",
   "preferencesSaved": "Preferences saved",
-
   "themeTitle": "Make it yours",
   "themeDescription": "Pick a preset or fine-tune every colour. Changes apply instantly and are remembered on this device.",
   "themePresets": "Presets",
@@ -132,5 +301,3685 @@
   "themeReset": "Reset to default",
   "themeHexLabel": "Hex colour",
   "themeHexInvalid": "Use the #RRGGBB format",
-  "themeApply": "Apply"
+  "themeApply": "Apply",
+  "navApprovals": "Approvals",
+  "approvalsTitle": "Approvals",
+  "approvalsDescription": "Everything waiting for a decision. Approve in one tap or tell the author what to fix.",
+  "approvalsDescriptionViewer": "Requests you submitted that are waiting for a decision.",
+  "approvalsSearch": "Search subject, requester or step",
+  "approvalsEmpty": "Nothing to review",
+  "approvalsEmptyBody": "When content or other work is sent for approval, it will appear here.",
+  "approvalsStatPending": "Pending",
+  "approvalsStatPendingHint": "Waiting on a decision",
+  "approvalsStatOverdue": "Overdue",
+  "approvalsStatOverdueHint": "Past their due date",
+  "approvalsStatDone": "Decided",
+  "approvalsStatDoneHint": "Approved, rejected or changes requested",
+  "approvalStepsProgress": "{done} of {total}",
+  "@approvalStepsProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "approvalStatus": "{status, select, PENDING{Pending} APPROVED{Approved} REJECTED{Rejected} CHANGES_REQUESTED{Changes requested} other{{status}}}",
+  "@approvalStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalSubjectType": "{type, select, CONTENT{Content} CLIENT{Client} other{{type}}}",
+  "@approvalSubjectType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalSubjectFallback": "{type} approval",
+  "@approvalSubjectFallback": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalRequester": "Requested by {name}",
+  "@approvalRequester": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalRequesterUnknown": "Requested by a teammate",
+  "approvalDue": "Due {date}",
+  "@approvalDue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalDueLabel": "Due date",
+  "approvalNoDue": "No due date",
+  "approvalRequestedAgo": "Requested {time}",
+  "@approvalRequestedAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalCurrentStep": "Current step",
+  "approvalStepsTitle": "Steps",
+  "approvalTimelineTitle": "Activity",
+  "approvalTimelineEmpty": "No decisions recorded yet.",
+  "approvalOpenSubject": "Open subject",
+  "approvalDecideTitle": "Your decision",
+  "approvalActionApprove": "Approve",
+  "approvalActionReject": "Reject",
+  "approvalActionRequestChanges": "Request changes",
+  "approvalComment": "Comment",
+  "approvalCommentHint": "Optional note for the requester",
+  "approvalCommentRequiredHint": "Tell them what to change",
+  "approvalApproveConfirmTitle": "Approve this request?",
+  "approvalApproveConfirmBody": "The next step will start, or the request will complete if this is the last step.",
+  "approvalRejectTitle": "Reject request",
+  "approvalChangesTitle": "Request changes",
+  "approvalApprovedToast": "Approved",
+  "approvalRejectedToast": "Rejected",
+  "approvalChangesToast": "Changes requested",
+  "approvalRule": "{rule, select, ANY{Any named approver} ALL{Every named approver} other{{rule}}}",
+  "@approvalRule": {
+    "placeholders": {
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalStepPending": "Waiting",
+  "approvalStepDone": "Done",
+  "approvalNotApprover": "You are not listed as an approver for the current step.",
+  "approvalWaitingDecision": "Waiting for an approver.",
+  "approvalAlreadyDecided": "This request is already {status}.",
+  "@approvalAlreadyDecided": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalActionBy": "{action} by {name}",
+  "@approvalActionBy": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "approvalActionLabel": "{action, select, APPROVED{Approved} REJECTED{Rejected} CHANGES_REQUESTED{Changes requested} other{{action}}}",
+  "@approvalActionLabel": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "navAudit": "Audit log",
+  "auditTitle": "Audit log",
+  "auditSubtitle": "Every change, sign-in and permission update in your agency, newest first.",
+  "auditSearch": "Search by person, action, record or request ID",
+  "auditEmpty": "No activity recorded yet",
+  "auditEmptyBody": "Actions taken in your workspace will be recorded here automatically.",
+  "auditStatLoaded": "Loaded",
+  "auditStatFailures": "Failures",
+  "auditStatActors": "People",
+  "auditNoMatchesLoaded": "Nothing in the loaded history matches. Load older events to search further back.",
+  "auditLoadMore": "Load older events",
+  "auditLoadingMore": "Loading older events",
+  "auditEnd": "You have reached the beginning of the log",
+  "auditResultCount": "{shown, plural, =0{No events} =1{1 event} other{{shown} events}}{failures, plural, =0{} =1{ · 1 failed} other{ · {failures} failed}}",
+  "@auditResultCount": {
+    "placeholders": {
+      "shown": {
+        "type": "int"
+      },
+      "failures": {
+        "type": "int"
+      }
+    }
+  },
+  "auditFilters": "Filters",
+  "auditFiltersBody": "Filters apply to the events loaded so far.",
+  "auditClearFilters": "Clear filters",
+  "auditApplyFilters": "Show results",
+  "auditRangeLabel": "Time range",
+  "auditRangeAll": "All time",
+  "auditRangeDays": "{days, plural, =1{Last 24 hours} other{Last {days} days}}",
+  "@auditRangeDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "auditOutcomeLabel": "Outcome",
+  "auditOutcome": "{outcome, select, SUCCESS{Succeeded} FAILURE{Failed} other{{outcome}}}",
+  "@auditOutcome": {
+    "placeholders": {
+      "outcome": {
+        "type": "String"
+      }
+    }
+  },
+  "auditActor": "Performed by",
+  "auditActorId": "Actor ID",
+  "auditActorTypeLabel": "Actor type",
+  "auditActorType": "{type, select, user{Unknown person} system{System} service{Integration} other{{type}}}",
+  "@auditActorType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "auditUnknownActor": "Unknown person",
+  "auditAction": "Action",
+  "auditEntity": "Record",
+  "auditEntityId": "Record ID",
+  "auditWhen": "When",
+  "auditIp": "IP address",
+  "auditUserAgent": "Device",
+  "auditCorrelation": "Request ID",
+  "auditCopy": "Copy",
+  "auditCopied": "Copied to clipboard",
+  "auditSectionEvent": "Event",
+  "auditSectionRequest": "Request",
+  "auditSectionChanges": "Changes",
+  "auditSectionMetadata": "Additional details",
+  "auditNoChanges": "No before or after snapshot was recorded for this event.",
+  "auditChangedFields": "{count, plural, =0{No fields changed} =1{1 field changed} other{{count} fields changed}}",
+  "@auditChangedFields": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "auditShowUnchanged": "{count, plural, =1{Show 1 unchanged field} other{Show {count} unchanged fields}}",
+  "@auditShowUnchanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "auditHideUnchanged": "Hide unchanged fields",
+  "auditBefore": "Before",
+  "auditAfter": "After",
+  "auditChangeKind": "{kind, select, added{Added} removed{Removed} changed{Changed} other{Unchanged}}",
+  "@auditChangeKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "auditEntityType": "{type, select, k_user{Person} k_session{Session} k_membership{Membership} k_invitation{Invitation} k_role{Role} k_workspace{Workspace} k_department{Department} k_team{Team} k_client{Client} k_brand_kit{Brand kit} k_project{Project} k_task{Task} k_lead{Lead} k_invoice{Invoice} k_article{Article} k_reports{Report} k_report{Report} k_templates{Template} k_template{Template} k_automations{Automation} k_automation{Automation} k_automationVersion{Automation version} k_automationRun{Automation run} k_workflows{Workflow} k_workflow{Workflow} k_approvals{Approval} k_approval{Approval} k_feedbackThread{Feedback thread} k_feedbackComment{Feedback comment} k_contentVariant{Content variant} k_metricSnapshot{Metric snapshot} k_activity{Activity} k_activityEvent{Activity} k_notification{Notification} k_notification_preference{Notification preference} k_auth{Sign-in} k_subscription{Subscription} k_http_request{API request} other{{fallback}}}",
+  "@auditEntityType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "auditVerb": "{verb, select, k_create{Created} k_update{Updated} k_delete{Deleted} k_archive{Archived} k_publish{Published} k_run{Ran} k_register{Signed up} k_refresh{Session refreshed} k_login{Signed in} k_logout{Signed out} k_login_failed{Sign-in failed} k_profile_update{Profile updated} k_role_change{Access level changed} k_roles_assign{Roles assigned} k_deactivate{Deactivated} k_send{Invitation sent} k_revoke{Revoked} k_accept{Accepted} k_request{Requested} k_act{Responded} k_transition{Status changed} k_preference_update{Preferences updated} k_device_register{Device registered} k_device_remove{Device removed} other{{fallback}}}",
+  "@auditVerb": {
+    "placeholders": {
+      "verb": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "navAutomations": "Automations",
+  "automationsTitle": "Automations",
+  "automationsSearch": "Search automations",
+  "automationsEmpty": "No automations yet",
+  "automationsEmptyBody": "Let routine work run itself — when something happens, do something useful. Start from a recipe or create your own.",
+  "automationNew": "New automation",
+  "automationEdit": "Edit automation",
+  "automationTabRules": "Rules",
+  "automationTabRuns": "Run history",
+  "automationName": "Name",
+  "automationNameHint": "e.g. Notify client when content is ready",
+  "automationTriggerField": "When this happens",
+  "automationActionField": "Do this",
+  "automationStatusField": "Status",
+  "automationEnabledLabel": "Turned on",
+  "automationEnabledHint": "Paused automations keep their history and can be resumed any time.",
+  "automationTrigger": "{trigger, select, content_submitted{content is sent for review} content_approved{content is approved} content_published{content is published} task_overdue{a task becomes overdue} invoice_overdue{an invoice becomes overdue} lead_won{a lead is won} inbox_negative{a negative message arrives} other{{trigger}}}",
+  "@automationTrigger": {
+    "placeholders": {
+      "trigger": {
+        "type": "String"
+      }
+    }
+  },
+  "automationAction": "{action, select, notify_client{notify the client} notify_team{notify the team} create_task{create a task} send_email{send an email} post_webhook{post to a webhook} other{{action}}}",
+  "@automationAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "automationStatus": "{status, select, ACTIVE{Active} PAUSED{Paused} ARCHIVED{Archived} other{{status}}}",
+  "@automationStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "automationWhen": "When",
+  "automationThen": "then",
+  "automationSentence": "When {trigger}, then {action}",
+  "@automationSentence": {
+    "placeholders": {
+      "trigger": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "automationToggle": "Turn {name} on or off",
+  "@automationToggle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "automationEnabledToast": "Automation turned on",
+  "automationPausedToast": "Automation paused",
+  "automationStatRuns": "Runs",
+  "automationStatFailures": "Failures",
+  "automationStatLastRun": "Last run",
+  "automationNever": "Never",
+  "automationNoRunsYet": "Not run yet",
+  "automationSuccessRate": "Success rate",
+  "automationKpiActive": "Active",
+  "automationKpiActiveOf": "{count, plural, =0{none set up} =1{of 1 total} other{of {count} total}}",
+  "@automationKpiActiveOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "automationKpiRuns": "Total runs",
+  "automationRecipesTitle": "Start from a recipe",
+  "automationRecipeAdd": "Add",
+  "automationRecipeName": "{recipe, select, clientReview{Tell the client when content is ready} approvalTask{Create a task after approval} overdueAlert{Alert the team about overdue tasks} dunning{Remind clients about overdue invoices} welcome{Kick off onboarding when a deal is won} escalate{Escalate negative comments} other{{recipe}}}",
+  "@automationRecipeName": {
+    "placeholders": {
+      "recipe": {
+        "type": "String"
+      }
+    }
+  },
+  "automationRecipeDescription": "{recipe, select, clientReview{Notify the client as soon as a post is sent for approval.} approvalTask{Schedule follow-up work the moment content is approved.} overdueAlert{Nudge the team when a task slips past its due date.} dunning{Email a polite reminder when an invoice is late.} welcome{Create an onboarding task as soon as a lead is marked Won.} escalate{Post to your team channel when a conversation turns negative.} other{{recipe}}}",
+  "@automationRecipeDescription": {
+    "placeholders": {
+      "recipe": {
+        "type": "String"
+      }
+    }
+  },
+  "automationFlowTitle": "How it works",
+  "automationConfigTitle": "Configuration",
+  "automationCreated": "Created",
+  "automationUpdated": "Last changed",
+  "automationRecentRuns": "Recent runs",
+  "automationRunNow": "Run now",
+  "automationRunTitle": "Run {name}",
+  "@automationRunTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "automationRunDetail": "Note",
+  "automationRunDetailHint": "Saved with the run so the team knows why it ran.",
+  "automationRunManualDetail": "Run manually: {name}",
+  "@automationRunManualDetail": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "automationRunDone": "{name} ran successfully",
+  "@automationRunDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "automationPublish": "Publish",
+  "automationPublished": "Published as version {version}",
+  "@automationPublished": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "automationDeleteBody": "The automation stops running. Its run history is kept.",
+  "automationRunsSearch": "Search runs",
+  "automationRunsFailedOnly": "{count, plural, =0{Failed only} other{Failed only · {count}}}",
+  "@automationRunsFailedOnly": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "automationRunsEmpty": "Nothing has run yet",
+  "automationRunsEmptyBody": "Runs appear here every time an automation fires or is run by hand.",
+  "automationRunOk": "Succeeded",
+  "automationRunFailed": "Failed",
+  "automationRunDeleted": "Deleted automation",
+  "navBilling": "Plan & billing",
+  "billingTitle": "Plan & billing",
+  "billingDescription": "Your organisation's plan, limits and catalogue.",
+  "billingCurrentPlan": "Current plan",
+  "billingNoSubscription": "No active plan",
+  "billingNoSubscriptionBody": "This organisation is not on a paid plan yet. Browse the catalogue below or contact support to get started.",
+  "billingStatus": "{status, select, TRIALING{Trial} ACTIVE{Active} PAST_DUE{Past due} CANCELED{Canceled} other{{status}}}",
+  "@billingStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "billingInterval": "{interval, select, k_month{Monthly} k_year{Yearly} other{{fallback}}}",
+  "@billingInterval": {
+    "placeholders": {
+      "interval": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "billingLimit": "{key, select, k_seats{Team seats} k_clients{Clients} k_channels{Channels} k_storageKb{Storage} k_automationRuns{Automation runs} other{{fallback}}}",
+  "@billingLimit": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "billingFeature": "{key, select, k_calendar{Calendar} k_approvals{Approvals} k_inbox{Inbox} k_invoices{Invoices} k_reports{Reports} k_whiteLabel{White label} k_support{Priority support} other{{fallback}}}",
+  "@billingFeature": {
+    "placeholders": {
+      "key": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "billingUnlimited": "Unlimited",
+  "billingStorageGb": "{value} GB",
+  "@billingStorageGb": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "billingPricePer": "{price} / {interval}",
+  "@billingPricePer": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "interval": {
+        "type": "String"
+      }
+    }
+  },
+  "billingCustomPrice": "Custom pricing",
+  "billingCharge": "Charge",
+  "billingRenews": "Renews",
+  "billingPeriodEnds": "Period ends",
+  "billingTrialEnds": "Trial ends",
+  "billingDaysLeft": "{count, plural, =0{Ends today} =1{1 day left} other{{count} days left}}",
+  "@billingDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "billingPeriodProgress": "Billing period",
+  "billingLimits": "Plan limits",
+  "billingFeatures": "Included features",
+  "billingPlans": "Plans",
+  "billingPlansEmpty": "No plans available",
+  "billingPlansEmptyBody": "The plan catalogue could not be loaded.",
+  "billingManagedNote": "Plan changes are managed outside the mobile app. Contact your administrator or use the web app to upgrade or downgrade.",
+  "billingYearlySaving": "Save up to {percent}% yearly",
+  "@billingYearlySaving": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "billingCurrentBadge": "Current",
+  "billingLimitUpTo": "Up to {value}",
+  "@billingLimitUpTo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "billingInvoicesUnavailable": "Invoice history is not available from the API yet.",
+  "navCalendar": "Calendar",
+  "calendarTitle": "Calendar",
+  "calendarToday": "Today",
+  "calendarPreviousMonth": "Previous month",
+  "calendarNextMonth": "Next month",
+  "calendarModeMonth": "Month",
+  "calendarModeUpcoming": "Upcoming",
+  "calendarSource": "{type, select, MANUAL{Event} CONTENT{Content} TASK{Task} MEETING{Meeting} DEADLINE{Deadline} other{{type}}}",
+  "@calendarSource": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarVisibility": "{visibility, select, INTERNAL{Internal only} CLIENT_VISIBLE{Visible to client} other{{visibility}}}",
+  "@calendarVisibility": {
+    "placeholders": {
+      "visibility": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarDayEmpty": "Nothing scheduled",
+  "calendarDayEmptyBody": "Nothing is planned for this day yet.",
+  "calendarUpcomingEmpty": "Nothing coming up",
+  "calendarUpcomingEmptyBody": "Events, scheduled content and task deadlines will show up here.",
+  "calendarNoMatches": "No items match these filters.",
+  "calendarDaySemantics": "{date}, {count, plural, =0{nothing scheduled} =1{1 item} other{{count} items}}",
+  "@calendarDaySemantics": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarDayCount": "{count, plural, =0{Nothing scheduled} =1{1 item} other{{count} items}}",
+  "@calendarDayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarMoreItems": "{count, plural, other{+{count} more}}",
+  "@calendarMoreItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarAllDay": "All day",
+  "calendarTimeRange": "{start} – {end}",
+  "@calendarTimeRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarUntil": "Until {time}",
+  "@calendarUntil": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarNew": "New event",
+  "calendarEdit": "Edit event",
+  "calendarTitleLabel": "Title",
+  "calendarTitleHint": "e.g. Campaign kickoff call",
+  "calendarTypeLabel": "Type",
+  "calendarStarts": "Starts",
+  "calendarEnds": "Ends",
+  "calendarEndBeforeStart": "The end must be after the start.",
+  "calendarVisibilityLabel": "Visibility",
+  "calendarClient": "Client",
+  "calendarClientLocked": "The client can't be changed after creation.",
+  "calendarProject": "Project",
+  "calendarWhen": "When",
+  "calendarFilterClient": "Client",
+  "calendarFilterType": "Type",
+  "calendarFiltersClear": "Clear filters",
+  "calendarOpenTask": "Open task",
+  "calendarOpenContent": "Open content",
+  "calendarOpenProject": "Open project {name}",
+  "@calendarOpenProject": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarOpenClient": "Open client {name}",
+  "@calendarOpenClient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarPartialSources": "Some items couldn't be loaded. Pull to refresh to try again.",
+  "calendarItemDetails": "Event details",
+  "navClients": "Clients",
+  "clientsTitle": "Clients",
+  "clientsSearch": "Search clients",
+  "clientsEmpty": "No clients yet",
+  "clientsEmptyBody": "Add your first client to start planning work, content and invoices for them.",
+  "clientNew": "New client",
+  "clientEdit": "Edit client",
+  "clientName": "Client name",
+  "clientLegalName": "Legal name",
+  "clientIndustry": "Industry",
+  "clientWebsite": "Website",
+  "clientWebsiteHint": "example.com",
+  "clientTier": "Tier",
+  "clientStatusLabel": "Status",
+  "clientStatusChange": "Change status",
+  "clientStatus": "{status, select, ONBOARDING{Onboarding} ACTIVE{Active} PAUSED{Paused} CHURNED{Churned} other{{status}}}",
+  "@clientStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "clientRetainer": "Monthly retainer",
+  "clientSince": "Client since",
+  "clientDetails": "Details",
+  "clientContacts": "Contacts",
+  "clientContactsEmpty": "No contacts recorded for this client.",
+  "clientDecisionMaker": "Decision maker",
+  "clientEmailContact": "Email {name}",
+  "@clientEmailContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "clientCallContact": "Call {name}",
+  "@clientCallContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "clientTabOverview": "Overview",
+  "clientTabBrand": "Brand kit",
+  "clientTabProjects": "Projects",
+  "clientProjectsEmpty": "No projects for this client yet.",
+  "clientBrandColours": "Colours",
+  "clientBrandEdit": "Edit brand kit",
+  "clientBrandPrimary": "Primary",
+  "clientBrandSecondary": "Secondary",
+  "clientBrandAccent": "Accent",
+  "clientBrandVoice": "Voice & tone",
+  "clientBrandVoiceEmpty": "No voice guidelines yet.",
+  "clientBrandPillars": "Content pillars",
+  "clientBrandHashtags": "Hashtags",
+  "clientBrandNone": "None added yet.",
+  "clientStatAll": "Clients",
+  "clientStatActive": "Active",
+  "clientStatOnboarding": "Onboarding",
+  "clientStatPaused": "Paused",
+  "navContent": "Content",
+  "contentTitle": "Content",
+  "contentNew": "New post",
+  "contentEditTitle": "Edit post",
+  "contentTabLibrary": "Library",
+  "contentTabPlanner": "Planner",
+  "contentSearch": "Search title, caption or hashtags",
+  "contentEmpty": "No content yet",
+  "contentEmptyBody": "Draft posts for your clients, send them for review and plan the feed.",
+  "contentUntitled": "Untitled post",
+  "contentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@contentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "contentType": "{type, select, POST{Post} CAROUSEL{Carousel} REEL{Reel} STORY{Story} VIDEO{Video} ARTICLE{Article} other{{type}}}",
+  "@contentType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "contentPlatform": "{platform, select, instagram{Instagram} facebook{Facebook} linkedin{LinkedIn} x{X} youtube{YouTube} tiktok{TikTok} other{{platform}}}",
+  "@contentPlatform": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "contentPlatformNotConnected": "{platform} · not connected",
+  "@contentPlatformNotConnected": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "contentFilterMine": "Mine",
+  "contentFilterClient": "Client",
+  "contentFilterType": "Type",
+  "contentFilterPlatform": "Platform",
+  "contentScheduledFor": "Scheduled {date}",
+  "@contentScheduledFor": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "contentUnscheduled": "Not scheduled",
+  "contentUpdatedAgo": "Updated {time}",
+  "@contentUpdatedAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "contentSlidePosition": "Slide {current} of {total}",
+  "@contentSlidePosition": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "contentSlidePrevious": "Previous slide",
+  "contentSlideNext": "Next slide",
+  "contentPlannerPosts": "Posts",
+  "contentPlannerPlanned": "Planned",
+  "contentPlannerLive": "Live",
+  "contentPlannerFeed": "Feed",
+  "contentPlannerSaving": "Saving order…",
+  "contentPlannerSaved": "Feed order saved",
+  "contentPlannerHint": "Long-press and drag a tile to rearrange the feed",
+  "contentPlannerEmpty": "Pick a client to plan their feed",
+  "contentPlannerEmptyBody": "The planner shows a client’s posts as they will appear on their profile grid.",
+  "contentPlannerMoveEarlier": "Move earlier",
+  "contentPlannerMoveLater": "Move later",
+  "contentPlannerTile": "{title}, {status}, position {position}",
+  "@contentPlannerTile": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "position": {
+        "type": "int"
+      }
+    }
+  },
+  "contentWorkflowTitle": "Workflow",
+  "contentWorkflowHint": "{status, select, DRAFT{Finish the post, then submit it for review.} IN_REVIEW{Waiting for a reviewer to approve or request changes.} CHANGES_REQUESTED{The reviewer asked for changes. Edit the post and resubmit it.} APPROVED{Approved. Schedule it or publish it now.} SCHEDULED{Scheduled to go out at the planned time.} PUBLISHED{Published. This post can no longer be changed.} other{{status}}}",
+  "@contentWorkflowHint": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "contentPipelineSemantics": "Workflow: {status}, step {step} of {total}",
+  "@contentPipelineSemantics": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "contentWaitingForReview": "Waiting for someone with approval rights to review it.",
+  "contentActionApprove": "Approve",
+  "contentActionRequestChanges": "Request changes",
+  "contentActionReject": "Reject",
+  "contentActionSubmit": "Submit for review",
+  "contentActionWithdraw": "Withdraw from review",
+  "contentActionSchedule": "Schedule",
+  "contentActionUnschedule": "Unschedule",
+  "contentActionPublish": "Mark as published",
+  "contentActionBackToDraft": "Back to draft",
+  "contentMovedToast": "Moved to {status}",
+  "@contentMovedToast": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "contentApprovedToast": "Post approved",
+  "contentSubmittedToast": "Sent for review",
+  "contentPublishConfirmTitle": "Mark as published?",
+  "contentPublishConfirmBody": "Published posts are locked and can no longer be edited.",
+  "contentScheduleTitle": "Schedule post",
+  "contentRescheduleTitle": "Change publish date",
+  "contentScheduleBody": "Choose when this post should go out.",
+  "contentReviewChangesTitle": "Request changes to “{title}”",
+  "@contentReviewChangesTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentReviewRejectTitle": "Reject “{title}”",
+  "@contentReviewRejectTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "contentReviewChangesBody": "The post goes back to its author with your note.",
+  "contentReviewRejectBody": "The post goes back to draft. Tell the author why.",
+  "contentReviewNote": "Note for the author",
+  "contentReviewNoteHint": "What should change?",
+  "contentPreviewTitle": "Preview",
+  "contentPreviewEmpty": "The caption will appear here.",
+  "contentPreviewSemantics": "Post preview for {platform}",
+  "@contentPreviewSemantics": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "contentPreviewTruncated": "{platform} shows the first {limit} characters; the rest is cut off.",
+  "@contentPreviewTruncated": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "contentPublishedReadOnly": "Published posts are read-only.",
+  "contentNotEditable": "This post can’t be edited",
+  "contentLinkFailed": "Couldn’t open the link",
+  "contentCommentsTitle": "Comments",
+  "contentCommentsCount": "{count, plural, =0{Comments} =1{1 comment} other{{count} comments}}",
+  "@contentCommentsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contentCommentsEmpty": "No comments yet. Start the conversation.",
+  "contentCommentYou": "You",
+  "contentCommentTeammate": "Teammate",
+  "contentCommentLabel": "Add a comment",
+  "contentCommentHint": "Share feedback on this post",
+  "contentCommentSend": "Send comment",
+  "contentCommentSent": "Comment added",
+  "contentSectionBasics": "Basics",
+  "contentSectionMedia": "Media",
+  "contentSectionCopy": "Caption & hashtags",
+  "contentSectionPublishing": "Publishing",
+  "contentFieldClient": "Client",
+  "contentFieldAuthor": "Author",
+  "contentFieldTitle": "Title",
+  "contentFieldTitleHint": "Internal name, e.g. Spring launch teaser",
+  "contentFieldType": "Format",
+  "contentFieldPlatforms": "Platforms",
+  "contentFieldCaption": "Caption",
+  "contentFieldCaptionHint": "Write the post copy",
+  "contentFieldHashtags": "Hashtags",
+  "contentFieldPillar": "Content pillar",
+  "contentFieldPillarHint": "e.g. Education, Behind the scenes",
+  "contentFieldCta": "Call-to-action link",
+  "contentFieldCtaHint": "https://",
+  "contentFieldScheduledAt": "Publish date",
+  "contentFieldUpdated": "Last updated",
+  "contentNoClients": "You need access to at least one client to create content.",
+  "contentEditResetsApproval": "Saving changes sends this post back to draft so it can be reviewed again.",
+  "contentOpenApproval": "Open approval request",
+  "contentOpenApprovalBody": "A formal approval is waiting for a decision on this post.",
+  "contentCtaInvalid": "Enter a full link starting with http:// or https://",
+  "contentCaptionCounter": "{count} / {limit} characters",
+  "@contentCaptionCounter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "contentCaptionOver": "{count} / {limit} characters · too long for the selected platforms",
+  "@contentCaptionOver": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "contentHashtagsCount": "{count} of {max} hashtags",
+  "@contentHashtagsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "contentHashtagsFull": "You can add up to {max} hashtags",
+  "@contentHashtagsFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "contentHashtagsAdded": "{count, plural, =0{No new hashtags} =1{Added 1 hashtag} other{Added {count} hashtags}}",
+  "@contentHashtagsAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contentBrandVoice": "Brand voice: {voice}",
+  "@contentBrandVoice": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      }
+    }
+  },
+  "contentBrandHashtags": "Brand hashtags",
+  "contentBrandPillars": "Brand pillars",
+  "contentAiWriteCaption": "Write caption",
+  "contentAiSuggestHashtags": "Suggest hashtags",
+  "contentAiNeedsTopic": "Add a title or a few words first so AI knows what to write about",
+  "contentAiCaptionDone": "Caption drafted",
+  "contentUndo": "Undo",
+  "contentStatMedia": "Media",
+  "contentMediaAdd": "Add from library",
+  "contentMediaEmpty": "No media yet. Add images or videos from the client’s library.",
+  "contentMediaCount": "{count} of {max} files",
+  "@contentMediaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "contentMediaItem": "Slide {position} of {total}: {name}",
+  "@contentMediaItem": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contentMediaMoveEarlier": "Move earlier",
+  "contentMediaMoveLater": "Move later",
+  "contentMediaReorderHint": "Long-press and drag to reorder slides",
+  "contentMediaPickClientFirst": "Choose a client first",
+  "contentSaveDraft": "Save draft",
+  "contentSaveAndSubmit": "Save & submit",
+  "contentVersionConflict": "Someone else changed this post while you were editing. Reload to get the latest version.",
+  "contentReloadLatest": "Reload latest",
+  "contentStatAll": "Posts",
+  "contentStatDraft": "Drafts",
+  "contentStatReview": "In review",
+  "contentStatScheduled": "Scheduled",
+  "navCustomFields": "Custom fields",
+  "customFieldsTitle": "Custom fields",
+  "customFieldsSearch": "Search fields, keys or options",
+  "customFieldsEmpty": "No custom fields yet",
+  "customFieldsEmptyBody": "Add the extra details your agency tracks on clients, projects, tasks, content and leads.",
+  "customFieldNew": "New field",
+  "customFieldEdit": "Edit field",
+  "customFieldEntity": "{entity, select, client{Clients} project{Projects} task{Tasks} content{Content} lead{Leads} other{{entity}}}",
+  "@customFieldEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "customFieldType": "{type, select, TEXT{Text} NUMBER{Number} DATE{Date} SELECT{Single choice} MULTI_SELECT{Multiple choice} BOOLEAN{Yes / no} URL{Link} other{{type}}}",
+  "@customFieldType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "customFieldGroupTitle": "{entity} · {count}",
+  "@customFieldGroupTitle": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customFieldAddTo": "Add a field to {entity}",
+  "@customFieldAddTo": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "customFieldLabelField": "Label",
+  "customFieldLabelHint": "e.g. Contract end date",
+  "customFieldKeyField": "Key",
+  "customFieldKeyHint": "Used in exports and integrations. Lowercase letters, numbers and underscores.",
+  "customFieldKeyLocked": "The key cannot change once the field exists.",
+  "customFieldKeyInvalid": "Start with a letter; use lowercase letters, numbers and underscores",
+  "customFieldEntityField": "Applies to",
+  "customFieldTypeField": "Field type",
+  "customFieldOptionsField": "Options",
+  "customFieldOptionsRequired": "Add at least one option",
+  "customFieldRequiredField": "Required",
+  "customFieldRequiredHint": "Records cannot be saved without a value.",
+  "customFieldFilterableField": "Filterable",
+  "customFieldFilterableHint": "Show this field as a filter in lists.",
+  "customFieldClientVisibleField": "Visible to clients",
+  "customFieldClientVisibleHint": "Clients see this field in their portal.",
+  "customFieldRequired": "Required",
+  "customFieldFilterable": "Filterable",
+  "customFieldClientVisible": "Client visible",
+  "customFieldMoreOptions": "+{count}",
+  "@customFieldMoreOptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "customFieldStatTotal": "Fields",
+  "customFieldStatRequired": "Required",
+  "customFieldStatClientVisible": "Client visible",
+  "dashboardKpiAria": "Key metrics",
+  "dashboardKpiRetry": "Couldn't load · tap to retry",
+  "dashboardKpiMyTasks": "My open tasks",
+  "dashboardKpiMyTasksCaption": "{count, plural, =0{Nothing due this week} =1{1 due this week} other{{count} due this week}}",
+  "@dashboardKpiMyTasksCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardKpiDue": "Due today & overdue",
+  "dashboardKpiDueCaption": "{count, plural, =0{Nothing overdue} =1{1 overdue} other{{count} overdue}}",
+  "@dashboardKpiDueCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardKpiInReview": "Content in review",
+  "dashboardKpiInReviewCaption": "{count, plural, =0{No changes requested} =1{1 needs changes} other{{count} need changes}}",
+  "@dashboardKpiInReviewCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardKpiApprovals": "Approvals pending",
+  "dashboardKpiApprovalsCaption": "{count, plural, =0{All on schedule} =1{1 past due} other{{count} past due}}",
+  "@dashboardKpiApprovalsCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardKpiOutstanding": "Outstanding invoices",
+  "dashboardKpiOutstandingCaption": "{amount} overdue",
+  "@dashboardKpiOutstandingCaption": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardKpiOutstandingClear": "Nothing overdue",
+  "dashboardKpiClients": "Active clients",
+  "dashboardKpiClientsCaption": "{count, plural, =0{None onboarding} =1{1 onboarding} other{{count} onboarding}}",
+  "@dashboardKpiClientsCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardQuickActions": "Quick actions",
+  "dashboardQuickNewTask": "New task",
+  "dashboardQuickNewPost": "New post",
+  "dashboardQuickNewClient": "New client",
+  "dashboardQuickLogTime": "Log time",
+  "dashboardEmptyTitle": "Your home is quiet",
+  "dashboardEmptyBody": "Nothing is available for your role yet. Ask an admin if you expected to see work here.",
+  "dashboardMyWorkTitle": "My work",
+  "dashboardMyWorkEmpty": "You are all caught up. Nothing assigned to you is open.",
+  "dashboardApprovalsTitle": "Awaiting approval",
+  "dashboardApprovalsEmpty": "Nothing is waiting for approval.",
+  "dashboardApprovalSubject": "{type, select, CONTENT{Content approval} CLIENT{Client approval} other{Approval request}}",
+  "@dashboardApprovalSubject": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardRequested": "Requested {when}",
+  "@dashboardRequested": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardUpcomingTitle": "Upcoming",
+  "dashboardUpcomingEmpty": "{days, plural, =1{Nothing scheduled for tomorrow.} other{Nothing scheduled in the next {days} days.}}",
+  "@dashboardUpcomingEmpty": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardUpcomingKind": "{kind, select, CONTENT{Post} TASK{Task} MEETING{Meeting} DEADLINE{Deadline} other{Event}}",
+  "@dashboardUpcomingKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardAllDay": "All day",
+  "dashboardPipelineTitle": "Pipeline snapshot",
+  "dashboardPipelineEmpty": "No open leads yet.",
+  "dashboardPipelineCaption": "{amount} still to win",
+  "@dashboardPipelineCaption": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardDealCount": "{count, plural, =0{No deals} =1{1 deal} other{{count} deals}}",
+  "@dashboardDealCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRevenueTitle": "Revenue",
+  "dashboardRevenueCaption": "{months, plural, =1{Paid this month} other{Paid in the last {months} months}}",
+  "@dashboardRevenueCaption": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRevenueEmpty": "{months, plural, =1{No payments this month.} other{No payments in the last {months} months.}}",
+  "@dashboardRevenueEmpty": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "dashboardRevenueChart": "Paid per month: {summary}",
+  "@dashboardRevenueChart": {
+    "placeholders": {
+      "summary": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardActivityTitle": "Recent activity",
+  "dashboardActivityEmpty": "Nothing has happened yet. Actions across the workspace appear here.",
+  "dashboardActivitySystem": "System",
+  "dashboardActivitySomeone": "Someone",
+  "dashboardTaskStatus": "{status, select, TODO{To do} IN_PROGRESS{In progress} IN_REVIEW{In review} DONE{Done} other{{status}}}",
+  "@dashboardTaskStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardContentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@dashboardContentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardApprovalStatus": "{status, select, PENDING{Pending} APPROVED{Approved} REJECTED{Rejected} CHANGES_REQUESTED{Changes requested} other{{status}}}",
+  "@dashboardApprovalStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardInvoiceStatus": "{status, select, DRAFT{Draft} SENT{Sent} PAID{Paid} OVERDUE{Overdue} VOID{Void} other{{status}}}",
+  "@dashboardInvoiceStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardReportStatus": "{status, select, DRAFT{Draft} READY{Ready} SENT{Sent} other{{status}}}",
+  "@dashboardReportStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardClientStatus": "{status, select, ONBOARDING{Onboarding} ACTIVE{Active} PAUSED{Paused} CHURNED{Churned} other{{status}}}",
+  "@dashboardClientStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardProjectStatus": "{status, select, PLANNING{Planning} ACTIVE{Active} ON_HOLD{On hold} COMPLETED{Completed} CANCELLED{Cancelled} other{{status}}}",
+  "@dashboardProjectStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardLeadStage": "{stage, select, NEW{New} CONTACTED{Contacted} PROPOSAL{Proposal} NEGOTIATION{Negotiation} WON{Won} LOST{Lost} other{{stage}}}",
+  "@dashboardLeadStage": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "navDepartments": "Departments",
+  "departmentsTitle": "Departments",
+  "departmentsSearch": "Search departments",
+  "departmentsEmpty": "No departments yet",
+  "departmentsEmptyBody": "Group your agency into departments like Creative or Accounts to organise access and reporting.",
+  "departmentNew": "New department",
+  "departmentAddSub": "Add sub-department",
+  "departmentName": "Department name",
+  "departmentNameHint": "e.g. Creative",
+  "departmentParent": "Parent department",
+  "departmentParentNone": "This department will sit at the top level.",
+  "departmentParentHint": "It will sit under {path}.",
+  "@departmentParentHint": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "departmentPositions": "{count, plural, =0{No positions} =1{1 position} other{{count} positions}}",
+  "@departmentPositions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "departmentPositionsLabel": "Positions",
+  "departmentPositionsEmpty": "No positions defined in this department yet.",
+  "departmentSubCount": "{count, plural, =1{1 sub-department} other{{count} sub-departments}}",
+  "@departmentSubCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "departmentSubDepartments": "Sub-departments",
+  "departmentTopLevel": "{count, plural, =1{1 top level} other{{count} top level}}",
+  "@departmentTopLevel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "departmentCreated": "Created",
+  "departmentExpand": "Expand",
+  "departmentCollapse": "Collapse",
+  "departmentExpandAll": "Expand all",
+  "departmentCollapseAll": "Collapse all",
+  "departmentTeamNew": "New team",
+  "departmentTeamBody": "Teams group people who work together across departments, such as a client pod.",
+  "departmentTeamName": "Team name",
+  "departmentTeamNameHint": "e.g. Retail pod",
+  "departmentTeamDescription": "Description (optional)",
+  "departmentTeamCreated": "Team created",
+  "navInbox": "Inbox",
+  "inboxTitle": "Inbox",
+  "inboxSearch": "Search author or message",
+  "inboxEmpty": "Inbox zero",
+  "inboxEmptyBody": "Comments, DMs and mentions from your clients' channels will land here.",
+  "inboxStatOpen": "Open",
+  "inboxStatOpenHint": "Needs a reply",
+  "inboxStatUrgent": "Urgent",
+  "inboxStatUrgentHint": "High or urgent priority",
+  "inboxStatMine": "Mine",
+  "inboxStatMineHint": "Assigned to you",
+  "inboxStatus": "{status, select, OPEN{Open} REPLIED{Replied} ARCHIVED{Archived} other{{status}}}",
+  "@inboxStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxType": "{type, select, COMMENT{Comment} DM{Direct message} MENTION{Mention} other{{type}}}",
+  "@inboxType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxSentiment": "{sentiment, select, POSITIVE{Positive} NEUTRAL{Neutral} NEGATIVE{Negative} other{Not rated}}",
+  "@inboxSentiment": {
+    "placeholders": {
+      "sentiment": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxPriority": "{priority, select, LOW{Low} NORMAL{Normal} HIGH{High} URGENT{Urgent} other{{priority}}}",
+  "@inboxPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxPlatform": "{platform, select, instagram{Instagram} facebook{Facebook} linkedin{LinkedIn} x{X} youtube{YouTube} tiktok{TikTok} other{{platform}}}",
+  "@inboxPlatform": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxFilterType": "Type",
+  "inboxFilterSentiment": "Sentiment",
+  "inboxFilterPriority": "Priority",
+  "inboxFilterClient": "Client",
+  "inboxFilterMine": "Assigned to me",
+  "inboxClearFilters": "Clear filters",
+  "inboxUnknownAuthor": "Unknown author",
+  "inboxNoPreview": "No message text",
+  "inboxSelectTitle": "Select a conversation",
+  "inboxSelectBody": "Pick a message to read the thread, triage it and reply.",
+  "inboxMetaClient": "Client",
+  "inboxMetaReceived": "Received",
+  "inboxMetaSentiment": "Sentiment",
+  "inboxMetaPriority": "Priority",
+  "inboxMetaAssignee": "Assignee",
+  "inboxPriorityValue": "Priority: {priority}",
+  "@inboxPriorityValue": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxChangeStatus": "Change status",
+  "inboxChangeSentiment": "Change sentiment",
+  "inboxChangePriority": "Change priority",
+  "inboxChangeAssignee": "Change assignee",
+  "inboxAssignMe": "Assign to me",
+  "inboxUnassign": "Unassign",
+  "inboxArchive": "Archive",
+  "inboxReopen": "Reopen",
+  "inboxArchivedToast": "Conversation archived",
+  "inboxReopenedToast": "Conversation reopened",
+  "inboxReplyHint": "Reply to {name}…",
+  "@inboxReplyHint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxReplySend": "Send reply",
+  "inboxReplySent": "Reply sent",
+  "inboxReplyReadOnly": "Your role can read this conversation but not reply to it.",
+  "inboxMessagesEmpty": "No messages in this thread yet.",
+  "inboxSending": "Sending…",
+  "inboxCharacterCount": "{count} / {max}",
+  "@inboxCharacterCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "inboxYou": "You",
+  "inboxTeam": "Team",
+  "inboxToday": "Today",
+  "inboxYesterday": "Yesterday",
+  "inboxMessageLabel": "{author}, {time}: {body}",
+  "@inboxMessageLabel": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxRowLabel": "{author}, {status}, {time}",
+  "@inboxRowLabel": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "navIntegrations": "Integrations",
+  "integrationsTitle": "Integrations",
+  "integrationsSearch": "Search providers, handles or clients",
+  "integrationsEmpty": "No connections yet",
+  "integrationsEmptyBody": "Connect provider accounts so publishing, inbox and reports stay in sync.",
+  "integrationStatus": "{status, select, PENDING{Pending} CONNECTED{Connected} DISCONNECTED{Disconnected} ERROR{Error} other{{status}}}",
+  "@integrationStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationStatusField": "Status",
+  "integrationProviderFallback": "Provider {id}",
+  "@integrationProviderFallback": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationOrgWide": "Whole agency",
+  "integrationLastSync": "Synced {when}",
+  "@integrationLastSync": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationNeverSynced": "Never synced",
+  "integrationSince": "Since {date}",
+  "@integrationSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationConnect": "Connect account",
+  "integrationConnectSubmit": "Connect",
+  "integrationEdit": "Edit connection",
+  "integrationKnownProviders": "Providers already in use",
+  "integrationProviderId": "Provider ID",
+  "integrationProviderIdHint": "The provider's identifier from your integration settings.",
+  "integrationProviderIdInvalid": "Enter a valid provider ID",
+  "integrationProviderName": "Provider name",
+  "integrationProviderNameHint": "e.g. Meta",
+  "integrationClient": "Client",
+  "integrationHandle": "Account handle",
+  "integrationHandleHint": "e.g. @lumencoffee",
+  "integrationCreatedToast": "Connection added — it stays pending until the provider confirms it",
+  "integrationMarkConnected": "Mark as connected",
+  "integrationDisconnect": "Disconnect",
+  "integrationDisconnectTitle": "Disconnect {provider}?",
+  "@integrationDisconnectTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationDisconnectBody": "Publishing and syncing stop for this account. Past content stays, and you can reconnect later.",
+  "integrationConnectedToast": "{provider} connected",
+  "@integrationConnectedToast": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationDisconnectedToast": "{provider} disconnected",
+  "@integrationDisconnectedToast": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "integrationKpiConnected": "Connected",
+  "integrationKpiIssues": "Needs attention",
+  "integrationKpiPending": "Pending",
+  "navInvoices": "Invoices",
+  "invoicesTitle": "Invoices",
+  "invoicesSearch": "Search by number or client",
+  "invoicesEmpty": "No invoices yet",
+  "invoicesEmptyBody": "Create your first invoice to bill a client and track what is outstanding.",
+  "invoicesEmptyPortalBody": "Invoices from your agency will appear here once they are sent.",
+  "invoiceNew": "New invoice",
+  "invoiceEdit": "Edit invoice",
+  "invoiceEditTitle": "Edit {number}",
+  "@invoiceEditTitle": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceClient": "Client",
+  "invoiceClientUnknown": "Client",
+  "invoiceFilterValue": "{label}: {value}",
+  "@invoiceFilterValue": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceStatus": "{status, select, DRAFT{Draft} SENT{Sent} PAID{Paid} OVERDUE{Overdue} VOID{Void} other{{status}}}",
+  "@invoiceStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceStatusLabel": "Status",
+  "invoiceStatusDraftHint": "Save privately and send it later.",
+  "invoiceStatusSentHint": "Issue it now; it can no longer be edited.",
+  "invoiceCardSemantics": "Invoice {number} for {client}, {status}, {total}",
+  "@invoiceCardSemantics": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceIssuedOn": "Issued {date}",
+  "@invoiceIssuedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceCreatedOn": "Created {date}",
+  "@invoiceCreatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceSummaryOutstanding": "Outstanding",
+  "invoiceSummaryOverdue": "Overdue",
+  "invoiceSummaryPaidThisMonth": "Paid this month",
+  "invoiceSummaryDrafts": "Drafts",
+  "invoiceCount": "{count, plural, =1{1 invoice} other{{count} invoices}}",
+  "@invoiceCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceDocumentTitle": "Invoice",
+  "invoiceBillTo": "Bill to",
+  "invoiceIssued": "Issued",
+  "invoiceNotIssued": "Not issued yet",
+  "invoiceDue": "Due date",
+  "invoicePaid": "Paid",
+  "invoiceLineItems": "{count, plural, =0{Line items} =1{1 line item} other{{count} line items}}",
+  "@invoiceLineItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceNoLines": "This invoice has no line items.",
+  "invoiceLineDescription": "Description",
+  "invoiceLineQuantity": "Qty",
+  "invoiceLineUnitPrice": "Unit price",
+  "invoiceLineAmount": "Amount",
+  "invoiceLineQuantityTimesUnit": "{quantity} × {unit}",
+  "@invoiceLineQuantityTimesUnit": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceLineSemantics": "{description}: {quantity} at {unit}, {amount}",
+  "@invoiceLineSemantics": {
+    "placeholders": {
+      "description": {
+        "type": "String"
+      },
+      "quantity": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceLinePosition": "Line {position} of {count}",
+  "@invoiceLinePosition": {
+    "placeholders": {
+      "position": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceLineAdd": "Add line",
+  "invoiceLineRemove": "Remove line",
+  "invoiceLineMoveUp": "Move line up",
+  "invoiceLineMoveDown": "Move line down",
+  "invoiceLinesFull": "Up to {max} lines",
+  "@invoiceLinesFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceSubtotal": "Subtotal",
+  "invoiceTax": "Tax ({rate}%)",
+  "@invoiceTax": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceTotal": "Total",
+  "invoiceTotalsSemantics": "Subtotal {subtotal}, tax {tax}, total {total}",
+  "@invoiceTotalsSemantics": {
+    "placeholders": {
+      "subtotal": {
+        "type": "String"
+      },
+      "tax": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceCopyNumber": "Copy number",
+  "invoiceCopied": "Invoice number copied",
+  "invoiceShare": "Copy summary",
+  "invoiceSummaryCopied": "Invoice summary copied",
+  "invoiceShareText": "Invoice {number} for {client}: {total}, due {due}",
+  "@invoiceShareText": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "due": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceTransitionAction": "{status, select, SENT{Mark as sent} PAID{Mark as paid} VOID{Void invoice} other{Update status}}",
+  "@invoiceTransitionAction": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceTransitionDone": "{status, select, SENT{Invoice sent} PAID{Payment recorded} VOID{Invoice voided} other{Status updated}}",
+  "@invoiceTransitionDone": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceTransitionConfirmTitle": "{status, select, PAID{Mark {number} as paid?} VOID{Void {number}?} other{Update {number}?}}",
+  "@invoiceTransitionConfirmTitle": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceTransitionConfirmBody": "{status, select, PAID{A payment for the full total is recorded today.} VOID{A void invoice stays on record but can no longer be paid or edited.} other{The invoice status will change.}}",
+  "@invoiceTransitionConfirmBody": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "invoiceNotEditable": "Only drafts can be edited",
+  "invoiceNotEditableBody": "Once an invoice is sent it becomes a financial record. Void it and create a new one instead.",
+  "invoiceBackToInvoice": "Back to invoice",
+  "invoiceDetailsSection": "Details",
+  "invoiceSummarySection": "Summary",
+  "invoiceNumber": "Invoice number",
+  "invoiceNumberHint": "Suggested from your numbering sequence",
+  "invoiceNumberLocked": "The number cannot change after creation",
+  "invoiceNumberTaken": "That invoice number is already in use.",
+  "invoiceTaxRate": "Tax rate",
+  "invoiceTaxRateRange": "Use a rate from 0 to {max}",
+  "@invoiceTaxRateRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceDecimalsMax": "{count, plural, =1{Use at most 1 decimal} other{Use at most {count} decimals}}",
+  "@invoiceDecimalsMax": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceQuantityRange": "Use a whole number from 1 to {max}",
+  "@invoiceQuantityRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "invoiceAmountInvalid": "Enter a valid amount",
+  "invoiceTotalTooLarge": "The invoice total is too large.",
+  "invoiceCreateAndSend": "Create and send",
+  "invoiceSaveDraft": "Save draft",
+  "invoiceFormHint": "Amounts are in the invoice currency. Tax is calculated once on the subtotal.",
+  "navKnowledge": "Knowledge base",
+  "knowledgeTitle": "Knowledge base",
+  "knowledgeSearch": "Search articles",
+  "knowledgeEmpty": "No articles yet",
+  "knowledgeEmptyBody": "Write down how your agency works — SOPs, playbooks and policies — so everyone does it the same way.",
+  "knowledgeNew": "New article",
+  "knowledgeEdit": "Edit article",
+  "knowledgePublish": "Publish",
+  "knowledgePublishedToast": "Article published",
+  "knowledgeCategory": "{category, select, SOP{SOP} PLAYBOOK{Playbook} TEMPLATE{Template} POLICY{Policy} ONBOARDING{Onboarding} other{{category}}}",
+  "@knowledgeCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "knowledgeCategoryField": "Category",
+  "knowledgeTitleField": "Title",
+  "knowledgeTitleHint": "e.g. How we onboard a new client",
+  "knowledgeBodyField": "Article",
+  "knowledgeBodyHint": "Leave a blank line between paragraphs. A block of several lines becomes a checklist.",
+  "knowledgeWrite": "Write",
+  "knowledgePreview": "Preview",
+  "knowledgePreviewEmpty": "Nothing to preview yet.",
+  "knowledgeBodyEmpty": "This article has no content yet.",
+  "knowledgeReadTime": "{minutes, plural, =1{1 min read} other{{minutes} min read}}",
+  "@knowledgeReadTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "knowledgeByAuthor": "{name} · {when}",
+  "@knowledgeByAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "knowledgeUpdated": "Updated {when}",
+  "@knowledgeUpdated": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "knowledgeVersionFooter": "Version {version} · First written {date}",
+  "@knowledgeVersionFooter": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "knowledgeStatArticles": "Articles",
+  "knowledgeStatCategories": "Categories",
+  "knowledgeStatReading": "Total read time",
+  "navLeads": "Pipeline",
+  "leadsTitle": "Pipeline",
+  "leadsSearch": "Search company or contact",
+  "leadsEmpty": "No leads yet",
+  "leadsEmptyBody": "Add prospects to track every deal from first contact to signed client.",
+  "leadsViewBoard": "Show board",
+  "leadsViewList": "Show list",
+  "leadsStatOpen": "Open pipeline",
+  "leadsStatOpenHint": "Deals in progress",
+  "leadsStatForecast": "Weighted forecast",
+  "leadsStatForecastHint": "Open value × stage probability",
+  "leadsStatWon": "Won",
+  "leadsStatWonHint": "{count, plural, =0{No deals won yet} =1{1 deal won} other{{count} deals won}}",
+  "@leadsStatWonHint": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "leadsStatWinRate": "Win rate",
+  "leadsStatWinRateHint": "Won ÷ closed deals",
+  "leadsColumnSummary": "{count, plural, =0{No leads} =1{1 lead} other{{count} leads}} · {value}",
+  "@leadsColumnSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsColumnEmpty": "No leads in this stage",
+  "leadsColumnDrop": "Drop here to move to {stage}",
+  "@leadsColumnDrop": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadsFilterOwner": "Owner",
+  "leadsFilterOwnerMe": "Me",
+  "leadsFilterFollowUp": "Follow-up due",
+  "leadsClearFilters": "Clear filters",
+  "leadNew": "New lead",
+  "leadEdit": "Edit lead",
+  "leadDelete": "Delete lead",
+  "leadStage": "{stage, select, NEW{New} CONTACTED{Contacted} PROPOSAL{Proposal} NEGOTIATION{Negotiation} WON{Won} LOST{Lost} other{{stage}}}",
+  "@leadStage": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadStageLabel": "Stage",
+  "leadStageProgress": "Stage {current} of {total}",
+  "@leadStageProgress": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "leadMoveTo": "Move to stage",
+  "leadMovedToast": "Moved to {stage}",
+  "@leadMovedToast": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadAdvance": "Advance to {stage}",
+  "@leadAdvance": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadStepBack": "Back to {stage}",
+  "@leadStepBack": {
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
+  },
+  "leadMarkWon": "Mark won",
+  "leadMarkLost": "Mark lost",
+  "leadReopen": "Reopen deal",
+  "leadCompany": "Company",
+  "leadCompanyHint": "Acme Studio",
+  "leadContact": "Contact name",
+  "leadEmail": "Contact email",
+  "leadIndustry": "Industry",
+  "leadWebsite": "Website",
+  "leadWebsiteHint": "example.com",
+  "leadSource": "Source",
+  "leadSourceHint": "Referral, website, event…",
+  "leadValue": "Estimated value",
+  "leadValueHint": "Amount in {currency}",
+  "@leadValueHint": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "leadValueInvalid": "Enter an amount of zero or more",
+  "leadOwner": "Owner",
+  "leadNextStep": "Next step",
+  "leadNextStepHint": "Send proposal, book a call…",
+  "leadNextStepAt": "Next step date",
+  "leadNextStepEdit": "Edit next step",
+  "leadNextStepEmpty": "No next step planned. Add one so the deal keeps moving.",
+  "leadProbability": "Win probability",
+  "leadWeightedValue": "Weighted value",
+  "leadDetails": "Details",
+  "leadContactSection": "Contact",
+  "leadEmailContact": "Email {name}",
+  "@leadEmailContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leadCreated": "Created",
+  "leadUpdated": "Last updated",
+  "leadConverted": "Converted to client",
+  "leadOpenClient": "Open client",
+  "leadCardLabel": "{company}, {stage}, {value}",
+  "@leadCardLabel": {
+    "placeholders": {
+      "company": {
+        "type": "String"
+      },
+      "stage": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "navMedia": "Assets",
+  "mediaTitle": "Assets",
+  "mediaSearch": "Search files",
+  "mediaEmpty": "No files yet",
+  "mediaEmptyBody": "Upload images, videos and documents to share them with your team and use them in posts.",
+  "mediaUpload": "Upload",
+  "mediaFilterClient": "Client",
+  "mediaKind": "{kind, select, image{Images} video{Videos} document{Documents} other{{kind}}}",
+  "@mediaKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaStatus": "{status, select, PENDING_UPLOAD{Uploading} READY{Ready} FAILED{Failed} other{{status}}}",
+  "@mediaStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaTileSemantics": "{name}, {kind}, {status}",
+  "@mediaTileSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "kind": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaUploadedToast": "{count, plural, =1{1 file uploaded} other{{count} files uploaded}}",
+  "@mediaUploadedToast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadInProgress": "{count, plural, =1{1 upload in progress} other{{count} uploads in progress}}",
+  "@mediaUploadInProgress": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadPickTitle": "Choose files to upload",
+  "mediaUploadClientTitle": "{count, plural, =1{Upload 1 file} other{Upload {count} files}}",
+  "@mediaUploadClientTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadClientBody": "Files are filed under a client so they can be used in that client’s posts.",
+  "mediaUploadStart": "Start upload",
+  "mediaUploadTitle": "Uploads",
+  "mediaUploadProgress": "{done} of {total} uploaded",
+  "@mediaUploadProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadSummary": "{failed, plural, =0{{done} uploaded} other{{done} uploaded, {failed} failed}}",
+  "@mediaUploadSummary": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadRetryAll": "Retry failed",
+  "mediaUploadHide": "Hide",
+  "mediaUploadQueued": "Waiting",
+  "mediaUploadSending": "Uploading",
+  "mediaUploadFinishing": "Finishing",
+  "mediaUploadDone": "Done",
+  "mediaUploadFailed": "Failed",
+  "mediaUploadPercent": "{percent}%",
+  "@mediaUploadPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadBytes": "{sent} of {total}",
+  "@mediaUploadBytes": {
+    "placeholders": {
+      "sent": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaUploadErrorEmpty": "This file is empty.",
+  "mediaUploadErrorNameTooLong": "File names can be at most {max} characters.",
+  "@mediaUploadErrorNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaUploadErrorType": "This file type isn’t allowed.",
+  "mediaUploadErrorSize": "This file is larger than the upload limit.",
+  "mediaUploadErrorIncomplete": "The upload didn’t finish. Try again.",
+  "mediaEditTitle": "Edit file details",
+  "mediaDeleteBody": "The file is removed from the library and from any posts that use it.",
+  "mediaFieldName": "Name",
+  "mediaFieldClient": "Client",
+  "mediaFieldKind": "Kind",
+  "mediaFieldType": "File type",
+  "mediaFieldSize": "Size",
+  "mediaFieldUploadedBy": "Uploaded by",
+  "mediaFieldUploaded": "Uploaded",
+  "mediaFieldUpdated": "Last updated",
+  "mediaFieldVersion": "Version",
+  "mediaVersion": "v{version}",
+  "@mediaVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaNoClient": "No client",
+  "mediaYou": "You",
+  "mediaOpen": "Open",
+  "mediaDownload": "Download",
+  "mediaOpenFailed": "Couldn’t open the file",
+  "mediaZoomHint": "Pinch or scroll to zoom",
+  "mediaPreviewSemantics": "Preview of {name}",
+  "@mediaPreviewSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaNotReadyBody": "{status, select, PENDING_UPLOAD{This file is still uploading. It can be opened once the upload finishes.} FAILED{This upload failed. Delete it and upload the file again.} other{This file isn’t available yet.}}",
+  "@mediaNotReadyBody": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mediaPickerTitle": "Choose media",
+  "mediaPickerEmpty": "No ready files for this client",
+  "mediaPickerEmptyBody": "Upload images or videos to use them in this post.",
+  "mediaPickerSelected": "{count, plural, =0{Nothing selected} =1{1 selected} other{{count} selected}}",
+  "@mediaPickerSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaPickerSelectedOf": "{count} of {max} selected",
+  "@mediaPickerSelectedOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaPickerConfirm": "{count, plural, =0{Add} other{Add {count}}}",
+  "@mediaPickerConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mediaStatAll": "Files",
+  "mediaStatImages": "Images",
+  "mediaStatVideos": "Videos",
+  "mediaStatDocs": "Documents",
+  "navMessages": "Messages",
+  "messagesSearchHint": "Search conversations",
+  "messagesEmpty": "No conversations yet",
+  "messagesEmptyBody": "Start a conversation with a client, or wait for them to message you.",
+  "messagesEmptyPortalBody": "Message your agency when you have a question or feedback.",
+  "messagesSelectTitle": "Select a conversation",
+  "messagesSelectBody": "Pick a thread from the list to read and reply.",
+  "messagesThreadCount": "{count, plural, =0{No threads} =1{1 thread} other{{count} threads}}",
+  "@messagesThreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "messagesNew": "New conversation",
+  "messagesNewPortal": "Message agency",
+  "messagesNewTitle": "New conversation",
+  "messagesNewPortalTitle": "Message your agency",
+  "messagesClientFilter": "Client",
+  "messagesClientLabel": "Client",
+  "messagesFirstMessageLabel": "Message",
+  "messagesSend": "Send",
+  "messagesComposerHint": "Write a message…",
+  "messagesResolve": "Resolve",
+  "messagesReopen": "Reopen",
+  "messagesReopenHint": "This conversation is resolved. Sending a message will reopen it.",
+  "messagesResolvedToast": "Conversation resolved",
+  "messagesReopenedToast": "Conversation reopened",
+  "messagesOpenPost": "Open post",
+  "messagesReadOnly": "You can read this conversation but not reply.",
+  "messagesNoMessages": "No messages yet",
+  "messagesNoMessagesBody": "Send the first message to start the conversation.",
+  "messagesPreviewUnavailable": "Preview unavailable",
+  "messagesPreview": "{author}: {body}",
+  "@messagesPreview": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messagesMessageLabel": "{author}, {when}: {body}",
+  "@messagesMessageLabel": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      },
+      "body": {
+        "type": "String"
+      }
+    }
+  },
+  "messagesSending": "Sending…",
+  "messagesToday": "Today",
+  "messagesYesterday": "Yesterday",
+  "messagesYou": "You",
+  "messagesAgency": "Agency",
+  "messagesAgencyConversation": "Your agency",
+  "messagesClientConversation": "Client",
+  "messagesContentConversation": "Content feedback",
+  "messagesStatus": "{status, select, OPEN{Open} RESOLVED{Resolved} other{{status}}}",
+  "@messagesStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "portalWelcome": "Client portal",
+  "portalSubtitle": "Welcome back, {name}. Here is what needs your attention.",
+  "@portalSubtitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "portalSubtitleFallback": "Here is what needs your attention with your agency.",
+  "portalEmptyTitle": "Nothing to show yet",
+  "portalEmptyBody": "When your agency shares work, invoices or messages, they will appear here.",
+  "portalQuickActions": "Quick actions",
+  "portalQuickReview": "Review posts",
+  "portalQuickInvoices": "Open invoices",
+  "portalQuickMessage": "Message agency",
+  "portalQuickProjects": "View projects",
+  "portalKpiAria": "Portal summary",
+  "portalKpiRetry": "Couldn't load · tap to retry",
+  "portalKpiApprovals": "Awaiting your review",
+  "portalKpiApprovalsCaption": "{count, plural, =0{Nothing waiting} =1{1 post ready} other{{count} posts ready}}",
+  "@portalKpiApprovalsCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalKpiInvoices": "Open invoices",
+  "portalKpiInvoicesCaption": "{count, plural, =0{All clear} =1{1 needs payment} other{{count} need payment}}",
+  "@portalKpiInvoicesCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalKpiMessages": "Open conversations",
+  "portalKpiMessagesCaption": "{count, plural, =0{Inbox clear} =1{1 open thread} other{{count} open threads}}",
+  "@portalKpiMessagesCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalKpiProjects": "Active projects",
+  "portalKpiProjectsCaption": "{count, plural, =0{None in flight} =1{1 in progress} other{{count} in progress}}",
+  "@portalKpiProjectsCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalApprovalsTitle": "Ready for your review",
+  "portalApprovalsEmpty": "Nothing is waiting for your approval right now.",
+  "portalApprovalsCta": "Review posts",
+  "portalInvoicesTitle": "Invoices",
+  "portalInvoicesEmpty": "No open invoices. You're all caught up.",
+  "portalInvoicesCta": "View invoices",
+  "portalMessagesTitle": "Messages",
+  "portalMessagesEmpty": "No open conversations with your agency.",
+  "portalMessagesCta": "Open messages",
+  "portalProjectsTitle": "Projects",
+  "portalProjectsEmpty": "No active projects yet.",
+  "portalProjectsCta": "View projects",
+  "portalContentTitle": "Recent content",
+  "portalContentEmpty": "No published or scheduled posts to show yet.",
+  "portalContentCta": "Browse content",
+  "portalContentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@portalContentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "portalInvoiceStatus": "{status, select, DRAFT{Draft} SENT{Sent} PAID{Paid} OVERDUE{Overdue} VOID{Void} other{{status}}}",
+  "@portalInvoiceStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "portalProjectStatus": "{status, select, PLANNING{Planning} ACTIVE{Active} ON_HOLD{On hold} COMPLETED{Completed} CANCELLED{Cancelled} other{{status}}}",
+  "@portalProjectStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "portalMessageOpen": "Open",
+  "portalMessageResolved": "Resolved",
+  "portalDue": "Due {when}",
+  "@portalDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "portalScheduled": "Scheduled {when}",
+  "@portalScheduled": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "navProjects": "Projects",
+  "projectsTitle": "Projects",
+  "projectsSearch": "Search projects",
+  "projectsEmpty": "No projects yet",
+  "projectsEmptyBody": "Projects group a client's tasks, budget and timeline in one place.",
+  "projectNew": "New project",
+  "projectEdit": "Edit project",
+  "projectStatus": "{status, select, PLANNING{Planning} ACTIVE{Active} ON_HOLD{On hold} COMPLETED{Completed} other{{status}}}",
+  "@projectStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "projectStatusLabel": "Status",
+  "projectStatusChange": "Change status",
+  "projectName": "Project name",
+  "projectNameHint": "e.g. Diwali campaign",
+  "projectType": "Type",
+  "projectTypeHint": "e.g. Campaign, Retainer, Website",
+  "projectClient": "Client",
+  "projectClientLocked": "A project's client cannot be changed.",
+  "projectOwner": "Owner",
+  "projectStartDate": "Start date",
+  "projectEndDate": "End date",
+  "projectEndBeforeStart": "The end date cannot be before the start date.",
+  "projectBudget": "Budget",
+  "projectBudgetField": "Budget ({currency})",
+  "@projectBudgetField": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "projectBudgetInvalid": "Enter an amount, e.g. 50000",
+  "projectNoBudget": "No budget",
+  "projectCreatedOn": "Created",
+  "projectTimeline": "Timeline",
+  "projectNoEnd": "No end date",
+  "projectDateRange": "{start} – {end}",
+  "@projectDateRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "projectProgress": "{done} of {total, plural, =1{1 task} other{{total} tasks}} done",
+  "@projectProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "projectProgressLabel": "Progress",
+  "projectNoTasks": "No tasks yet",
+  "projectLogged": "Time logged",
+  "projectTasks": "Tasks",
+  "projectTasksEmpty": "No tasks in this project yet.",
+  "projectAddTask": "Add task",
+  "projectFacts": "Key facts",
+  "projectContent": "Client content",
+  "projectContentEmpty": "No content for this client yet.",
+  "projectContentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@projectContentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "projectFilterClient": "Client",
+  "projectOpenClient": "Open client {name}",
+  "@projectOpenClient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "projectOpenTask": "Open task {title}",
+  "@projectOpenTask": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "projectNoClients": "Add a client first — every project belongs to one.",
+  "projectStatAll": "Projects",
+  "projectStatActive": "Active",
+  "projectStatPlanning": "Planning",
+  "projectStatDone": "Completed",
+  "navReports": "Reports",
+  "reportsTitle": "Reports",
+  "reportsTab": "Reports",
+  "reportAnalyticsTab": "Analytics",
+  "reportNew": "New report",
+  "reportEdit": "Edit report",
+  "reportsSearch": "Search by title or client",
+  "reportsEmpty": "No reports yet",
+  "reportsEmptyBody": "Create a report to share a period's results with a client.",
+  "reportsEmptyPortalBody": "Reports your agency shares with you will appear here.",
+  "reportClient": "Client",
+  "reportClientUnknown": "Unknown client",
+  "reportStatusLabel": "Status",
+  "reportStatus": "{status, select, DRAFT{Draft} READY{Ready} SENT{Sent} other{Unknown}}",
+  "@reportStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportStatusHint": "{status, select, DRAFT{Still being prepared. Mark it ready once the figures are final.} READY{Final and ready to share. Send it, or move it back to draft to keep editing.} SENT{Shared with the client.} other{Status unknown.}}",
+  "@reportStatusHint": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTransitionAction": "{status, select, DRAFT{Back to draft} READY{Mark ready} SENT{Mark sent} other{Update}}",
+  "@reportTransitionAction": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTransitionDone": "{status, select, DRAFT{Moved back to draft} READY{Marked ready} SENT{Marked as sent} other{Status updated}}",
+  "@reportTransitionDone": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSendConfirmTitle": "Mark “{title}” as sent?",
+  "@reportSendConfirmTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSendConfirmBody": "Sent reports can no longer change status.",
+  "reportStepSemantics": "Step {step} of {total}: {status}",
+  "@reportStepSemantics": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPeriod": "Period",
+  "reportPeriodRange": "{start} – {end}",
+  "@reportPeriodRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "reportPeriodStart": "Period start",
+  "reportPeriodEnd": "Period end",
+  "reportCreated": "Created",
+  "reportTitleLabel": "Title",
+  "reportSummary": "Summary",
+  "reportNoSummary": "No summary yet",
+  "reportCardSemantics": "{title}, {client}, {status}, {period}",
+  "@reportCardSemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSnapshot": "Contents",
+  "reportSnapshotEmpty": "This report has no figures yet.",
+  "reportHighlights": "Highlights",
+  "reportDetails": "Details",
+  "reportYes": "Yes",
+  "reportNo": "No",
+  "reportMetricName": "{metric, select, reach{Reach} engagement{Engagement} followers{Followers} impressions{Impressions} other{{fallback}}}",
+  "@reportMetricName": {
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "reportRangeDays": "{days}d",
+  "@reportRangeDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportRangeTooltip": "{days, plural, =1{Last day} other{Last {days} days}}",
+  "@reportRangeTooltip": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportAnalyticsEmpty": "No analytics yet",
+  "reportAnalyticsEmptyBody": "{days, plural, =1{No metrics were recorded in the last day.} other{No metrics were recorded in the last {days} days.}} Connect social accounts to start collecting them.",
+  "@reportAnalyticsEmptyBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportChange": "{direction, select, up{▲ {percent}} down{▼ {percent}} other{{percent}}} vs previous {days} days",
+  "@reportChange": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      },
+      "direction": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reportNoComparison": "No earlier data to compare",
+  "reportLatest": "Latest {value}",
+  "@reportLatest": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTotal": "Total {value}",
+  "@reportTotal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "reportChartSemantics": "{metric} over the last {days} days: total {total}, daily peak {peak}",
+  "@reportChartSemantics": {
+    "placeholders": {
+      "metric": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      },
+      "peak": {
+        "type": "String"
+      }
+    }
+  },
+  "navRoles": "Roles & permissions",
+  "rolesTitle": "Roles & permissions",
+  "rolesSubtitle": "Define what each role can see and do. Members can hold several roles; their access is the sum of them.",
+  "rolesSearch": "Search roles",
+  "rolesEmpty": "No roles yet",
+  "rolesEmptyBody": "Create a custom role to give people exactly the access they need.",
+  "roleNew": "New role",
+  "roleEdit": "Edit role",
+  "roleCreate": "Create role",
+  "roleDuplicate": "Duplicate as custom role",
+  "roleDuplicateName": "{name} (copy)",
+  "@roleDuplicateName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "roleDelete": "Delete role",
+  "roleKind": "{kind, select, system{System} custom{Custom} other{{kind}}}",
+  "@roleKind": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "roleMembers": "{count, plural, =0{No members} =1{1 member} other{{count} members}}",
+  "@roleMembers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rolePermissionCount": "{count, plural, =0{No permissions} =1{1 permission} other{{count} permissions}}",
+  "@rolePermissionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roleNoDescription": "No description",
+  "roleName": "Role name",
+  "roleNameHint": "e.g. Senior strategist",
+  "roleDescription": "Description",
+  "roleDescriptionHint": "What is this role for?",
+  "rolePermissions": "Permissions",
+  "rolePermissionsSearch": "Search permissions",
+  "rolePermissionsSelected": "{selected} of {total} permissions selected",
+  "@rolePermissionsSelected": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "roleGroupCount": "{selected}/{total}",
+  "@roleGroupCount": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "roleGroupToggle": "Grant every {group} permission",
+  "@roleGroupToggle": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      }
+    }
+  },
+  "roleAssignedTo": "Assigned to",
+  "roleExpandAll": "Expand all",
+  "roleCollapseAll": "Collapse all",
+  "rolePermissionsNoMatch": "No permissions match your search.",
+  "rolePermissionsRequired": "Select at least one permission.",
+  "rolePermissionsMore": "+{count} more",
+  "@rolePermissionsMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roleSystemReadOnly": "System roles are read-only. Duplicate this role to grant a different set of permissions.",
+  "roleUnsavedTitle": "Discard changes?",
+  "roleUnsavedBody": "Your edits to this role have not been saved.",
+  "roleDiscard": "Discard",
+  "roleInUse": "{count, plural, =1{1 member still holds this role. Reassign them before deleting it.} other{{count} members still hold this role. Reassign them before deleting it.}}",
+  "@roleInUse": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roleStatRoles": "Roles",
+  "roleStatCustom": "Custom roles",
+  "roleStatPermissions": "Permissions available",
+  "rolePermissionGroup": "{group, select, k_org{Organization} k_members{Members} k_roles{Roles} k_workspaces{Workspaces} k_clients{Clients} k_leads{Leads} k_projects{Projects} k_tasks{Tasks} k_content{Content} k_social{Social publishing} k_approvals{Approvals} k_feedback{Feedback} k_files{Files} k_inbox{Inbox} k_workflows{Workflows} k_automations{Automations} k_reports{Reports} k_invoices{Invoices} k_time{Time tracking} k_audit{Audit log} k_integrations{Integrations} other{{fallback}}}",
+  "@rolePermissionGroup": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "rolePermissionAction": "{action, select, k_view{View} k_create{Create} k_edit{Edit} k_delete{Delete} k_invite{Invite} k_deactivate{Deactivate} k_manage{Manage} k_settings_manage{Manage settings} k_billing_manage{Manage billing} k_branding_manage{Manage branding} k_convert{Convert} k_assign{Assign} k_transition{Change status} k_schedule{Schedule} k_publish{Publish} k_approve{Approve} k_resolve{Resolve} k_upload{Upload} k_reply{Reply} k_track{Track} other{{fallback}}}",
+  "@rolePermissionAction": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "fallback": {
+        "type": "String"
+      }
+    }
+  },
+  "rolePermissionLabel": "{group} · {action}",
+  "@rolePermissionLabel": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "action": {
+        "type": "String"
+      }
+    }
+  },
+  "navSearch": "Search",
+  "searchTitle": "Search",
+  "searchPlaceholder": "Search clients, projects, tasks…",
+  "searchMinChars": "Type at least {count} characters to search",
+  "@searchMinChars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchEmpty": "No results",
+  "searchEmptyBody": "Nothing matched “{query}”. Try a different name or keyword.",
+  "@searchEmptyBody": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "searchIdleTitle": "Search the workspace",
+  "searchIdleBody": "Find clients, projects, tasks, leads and content in one place.",
+  "searchResultsCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResultsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchGroupCount": "{count}",
+  "@searchGroupCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchGroupClients": "Clients",
+  "searchGroupProjects": "Projects",
+  "searchGroupTasks": "Tasks",
+  "searchGroupLeads": "Leads",
+  "searchGroupContent": "Content",
+  "searchGroupInvoices": "Invoices",
+  "searchGroupApprovals": "Approvals",
+  "searchResultAria": "{type}: {title}",
+  "@searchResultAria": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "searchStatus": "{status, select, ONBOARDING{Onboarding} ACTIVE{Active} PAUSED{Paused} CHURNED{Churned} PLANNING{Planning} ON_HOLD{On hold} COMPLETED{Completed} TODO{To do} IN_PROGRESS{In progress} IN_REVIEW{In review} DONE{Done} DRAFT{Draft} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@searchStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "navTasks": "To-do",
+  "tasksTitle": "To-do",
+  "tasksSearch": "Search tasks",
+  "tasksEmpty": "No tasks yet",
+  "tasksEmptyBody": "Create a task to plan, assign and track work for your clients.",
+  "taskNew": "New task",
+  "taskEdit": "Edit task",
+  "taskDelete": "Delete task",
+  "taskViewBoard": "Board",
+  "taskViewList": "List",
+  "taskScope": "{scope, select, mine{Mine} unassigned{Unassigned} overdue{Overdue} other{{scope}}}",
+  "@taskScope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "taskStatus": "{status, select, TODO{To do} IN_PROGRESS{In progress} IN_REVIEW{In review} DONE{Done} other{{status}}}",
+  "@taskStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "taskPriority": "{priority, select, LOW{Low} MEDIUM{Medium} HIGH{High} URGENT{Urgent} other{{priority}}}",
+  "@taskPriority": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "taskFilterPriority": "Priority",
+  "taskFilterProject": "Project",
+  "taskFilterClient": "Client",
+  "taskFilterStatus": "Status",
+  "taskFiltersClear": "Clear filters",
+  "taskColumnCount": "{count, plural, =0{No tasks} =1{1 task} other{{count} tasks}}",
+  "@taskColumnCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskColumnSemantics": "{status}: {count, plural, =0{no tasks} =1{1 task} other{{count} tasks}}",
+  "@taskColumnSemantics": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskColumnEmpty": "Nothing here yet",
+  "taskColumnDrop": "Drop to move here",
+  "taskDragHint": "Long-press a card and drag it to another column to change its status.",
+  "taskMovedToast": "Moved to {status}",
+  "@taskMovedToast": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "taskStatusChange": "Change status",
+  "taskStatusLabel": "Status",
+  "taskPriorityLabel": "Priority",
+  "taskPriorityChange": "Change priority",
+  "taskTitleLabel": "Title",
+  "taskTitleHint": "What needs to be done?",
+  "taskDescription": "Description",
+  "taskDescriptionEmpty": "No description yet.",
+  "taskProject": "Project",
+  "taskProjectWithClient": "{client} · {project}",
+  "@taskProjectWithClient": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      },
+      "project": {
+        "type": "String"
+      }
+    }
+  },
+  "taskClient": "Client",
+  "taskAssignee": "Assignee",
+  "taskAssigneeChange": "Change assignee",
+  "taskAssignedTo": "Assigned to {name}",
+  "@taskAssignedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "taskDueDate": "Due date",
+  "taskEstimate": "Estimate",
+  "taskEstimateHours": "Estimate (hours)",
+  "taskEstimateHint": "e.g. 1.5",
+  "taskEstimateInvalid": "Enter a number of hours, e.g. 1.5",
+  "taskCreatedOn": "Created",
+  "taskOpenProject": "Open project {name}",
+  "@taskOpenProject": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "taskOpenClient": "Open client {name}",
+  "@taskOpenClient": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "taskNoProjects": "Create a project first — every task belongs to one.",
+  "navTeam": "Team",
+  "teamTabMembers": "Members",
+  "teamTabInvitations": "Invitations",
+  "teamSearch": "Search people, emails or roles",
+  "teamFilterByRole": "Filter by role",
+  "teamEmpty": "No one here yet",
+  "teamEmptyBody": "Invite teammates and clients to start working together.",
+  "teamYou": "You",
+  "teamEmail": "Email",
+  "teamEmailHint": "name@agency.com",
+  "teamEmailCopied": "Email copied",
+  "teamJoined": "Joined",
+  "teamType": "Access level",
+  "teamMembershipType": "{type, select, OWNER{Owner} ADMIN{Admin} MEMBER{Member} CLIENT{Client} other{{type}}}",
+  "@teamMembershipType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "teamMembershipTypeHint": "{type, select, OWNER{Owns the workspace, including billing and every permission.} ADMIN{Default admin permissions for clients, projects and the team. Assign custom roles for finer control.} MEMBER{Default member permissions for tasks and content. Assign custom roles for finer control.} CLIENT{Client — sees only their own content, approvals, files and invoices in the portal.} other{{type}}}",
+  "@teamMembershipTypeHint": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "teamMemberStatus": "{status, select, ACTIVE{Active} INVITED{Invited} DEACTIVATED{Deactivated} other{{status}}}",
+  "@teamMemberStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "teamRoles": "Roles",
+  "teamRolesNone": "No roles assigned.",
+  "teamRolesEdit": "Roles for {name}",
+  "@teamRolesEdit": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamRolesRequired": "Pick at least one role.",
+  "teamRolesMax": "Pick up to {max} roles.",
+  "@teamRolesMax": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "teamRolesCount": "{selected} of {max}",
+  "@teamRolesCount": {
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "teamRolesHint": "Access is the sum of every role selected. Build custom roles in Roles & permissions.",
+  "teamRolesHintNoCustom": "Only system roles exist so far. Create custom roles in Roles & permissions for finer control.",
+  "teamTypeChange": "Change access level",
+  "teamTypeChangeNotice": "Switching access level replaces their system role with the default role for the new level. Custom roles stay assigned.",
+  "teamProtected": "{reason, select, self{You cannot change your own membership. Ask another admin.} owner{The owner's membership cannot be changed here.} client{Client portal access is managed from the client's invitations.} other{This membership cannot be changed here.}}",
+  "@teamProtected": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "teamDeactivate": "Deactivate",
+  "teamDeactivateTitle": "Deactivate {name}?",
+  "@teamDeactivateTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamDeactivateBody": "They lose access to this workspace immediately and every role they hold is removed. You can invite them again later.",
+  "teamDeactivated": "{name} was deactivated",
+  "@teamDeactivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInvite": "Invite",
+  "teamInviteSend": "Send invite",
+  "teamInviteBody": "They get an email with a link to join. You can change their access any time.",
+  "teamClient": "Client",
+  "teamClientRequired": "Choose the client this person belongs to.",
+  "teamClientNone": "No clients are available to you. Portal invitations need a client you can view.",
+  "teamClientUnavailable": "Clients could not be loaded. Try again in a moment.",
+  "teamInviteDefaultRole": "Leave roles empty to give the default role for the access level.",
+  "teamInviteExpiry": "Link expires after",
+  "teamInviteExpiryDays": "{days, plural, =1{1 day} other{{days} days}}",
+  "@teamInviteExpiryDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "teamInviteSent": "Invitation sent",
+  "teamInviteSentBody": "We emailed {email} a link to join. You can also share it yourself.",
+  "@teamInviteSentBody": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInviteExpires": "Link expires {date}",
+  "@teamInviteExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "teamCopyLink": "Copy link",
+  "teamLinkCopied": "Invite link copied",
+  "teamCopyMessage": "Copy invitation message",
+  "teamMessageCopied": "Invitation message copied",
+  "teamInviteShareText": "You're invited to join our workspace on WhizSuite. Accept here: {url}",
+  "@teamInviteShareText": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInvitationsSearch": "Search invitations",
+  "teamInvitationsEmpty": "No invitations",
+  "teamInvitationsEmptyBody": "Invitations you send appear here until they are accepted.",
+  "teamInvitationStatus": "{status, select, PENDING{Pending} ACCEPTED{Accepted} REVOKED{Revoked} EXPIRED{Expired} other{{status}}}",
+  "@teamInvitationStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInviteAccepted": "Accepted {when}",
+  "@teamInviteAccepted": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInviteExpiresIn": "Expires {when}",
+  "@teamInviteExpiresIn": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "teamInviteExpiredAgo": "Expired {when}",
+  "@teamInviteExpiredAgo": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "teamRevoke": "Revoke invite",
+  "teamRevokeTitle": "Revoke the invite for {email}?",
+  "@teamRevokeTitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "teamRevokeBody": "The link stops working straight away. You can send a new invite later.",
+  "teamRevoked": "Invitation revoked",
+  "teamStatMembers": "People",
+  "teamStatStaff": "Staff",
+  "teamStatClients": "Clients",
+  "navTemplates": "Templates",
+  "templatesTitle": "Templates",
+  "templatesSearch": "Search templates",
+  "templatesEmpty": "No templates yet",
+  "templatesEmptyBody": "Save your best projects, checklists and messages as templates so every new one starts right.",
+  "templateNew": "New template",
+  "templateEdit": "Edit template",
+  "templateName": "Name",
+  "templateNameHint": "e.g. Monthly social retainer kickoff",
+  "templateType": "{type, select, PROJECT{Project} TASK{Task} CONTENT{Content} REPORT{Report} MESSAGE{Message} other{{type}}}",
+  "@templateType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "templateScope": "{scope, select, ORGANIZATION{Whole agency} CLIENT{One client} other{{scope}}}",
+  "@templateScope": {
+    "placeholders": {
+      "scope": {
+        "type": "String"
+      }
+    }
+  },
+  "templateItems": "{type, select, PROJECT{Tasks} TASK{Checklist} CONTENT{Sections} REPORT{Sections} MESSAGE{Talking points} other{Items}}",
+  "@templateItems": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "templateTypeField": "Type",
+  "templateScopeField": "Available to",
+  "templateClientField": "Client",
+  "templateDescriptionField": "Description",
+  "templateBodyField": "Body",
+  "templateBodyHint": "Default text new items start with, such as a brief or message.",
+  "templateVersionField": "Version",
+  "templateCreated": "Created",
+  "templateNoDescription": "No description",
+  "templateNoItems": "Nothing added yet.",
+  "templateOtherFields": "Other fields",
+  "templateItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@templateItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "templateVersion": "v{version}",
+  "@templateVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "templateStatAll": "Templates",
+  "templateStatOrg": "Agency-wide",
+  "templateStatClient": "Client-scoped",
+  "templateCreatedOn": "Created {when}",
+  "@templateCreatedOn": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "navTime": "Time",
+  "timeTitle": "Time",
+  "timeLog": "Log time",
+  "timeLogged": "Time logged",
+  "timeDeleteTitle": "Delete this time entry?",
+  "timeScopeMine": "My time",
+  "timeScopeTeam": "Team",
+  "timeEntries": "Entries",
+  "timeEntryCount": "{count, plural, =0{No entries} =1{1 entry} other{{count} entries}}",
+  "@timeEntryCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeEntriesEmpty": "No time tracked this week",
+  "timeEntriesEmptyBody": "Start the timer on a task or log time you have already spent.",
+  "timeToday": "Today",
+  "timeYesterday": "Yesterday",
+  "timeDaySemantics": "{day}, {dayDate}: {total} tracked",
+  "@timeDaySemantics": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "dayDate": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "timeTimerTitle": "Timer",
+  "timeTimerIdle": "Pick a task and start tracking.",
+  "timeTimerLoadFailed": "Could not load your timer.",
+  "timeTimerRunningUnknown": "Tracking a task",
+  "timeTimerStartedAt": "Started at {startedAt}",
+  "@timeTimerStartedAt": {
+    "placeholders": {
+      "startedAt": {
+        "type": "String"
+      }
+    }
+  },
+  "timeTimerElapsedSemantics": "Timer running, {duration} elapsed",
+  "@timeTimerElapsedSemantics": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "timeTimerStart": "Start timer",
+  "timeTimerStop": "Stop and save",
+  "timeTimerStarted": "Timer started",
+  "timeTimerSaved": "Time saved",
+  "timeTimerNoAssignedTasks": "No open tasks are assigned to you. Pick a project to see all of its tasks.",
+  "timeTimerNoProjectTasks": "This project has no open tasks.",
+  "timeProject": "Project",
+  "timeProjectOfClient": "{project} · {client}",
+  "@timeProjectOfClient": {
+    "placeholders": {
+      "project": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      }
+    }
+  },
+  "timeNoProject": "No project",
+  "timeTask": "Task",
+  "timeTaskOptional": "Task (optional)",
+  "timeDate": "Date",
+  "timeHours": "Hours",
+  "timeHoursSuffix": "h",
+  "timeMinutes": "Minutes",
+  "timeMinutesSuffix": "m",
+  "timeDurationRange": "Enter between 1 minute and {max} hours",
+  "@timeDurationRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "timeMinutesRange": "Use 0 to {max} minutes",
+  "@timeMinutesRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "timeNote": "Note",
+  "timeBillable": "Billable",
+  "timeNonBillable": "Non-billable",
+  "timeBillableHint": "Counts towards client billing",
+  "timeEntrySemantics": "{title}, {duration}, {billable}",
+  "@timeEntrySemantics": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      },
+      "billable": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWeekRange": "{start} – {end}",
+  "@timeWeekRange": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "timeWeekPrevious": "Previous week",
+  "timeWeekNext": "Next week",
+  "timeWeekCurrent": "Back to this week",
+  "timeWeekTotal": "Week total",
+  "timeWeekChartSemantics": "Hours per day: {days}",
+  "@timeWeekChartSemantics": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "navWorkflows": "Workflows",
+  "workflowsTitle": "Approval workflows",
+  "workflowsSearch": "Search workflows or stages",
+  "workflowsEmpty": "No workflows yet",
+  "workflowsEmptyBody": "Create a workflow to standardise how content gets approved, from draft to published.",
+  "workflowNew": "New workflow",
+  "workflowEdit": "Edit workflow",
+  "workflowName": "Name",
+  "workflowNameHint": "e.g. Standard content approval",
+  "workflowActive": "Active",
+  "workflowInactive": "Inactive",
+  "workflowClientApproval": "Client approval",
+  "workflowInternalOnly": "Internal only",
+  "workflowToggle": "Turn {name} on or off",
+  "@workflowToggle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "workflowActivatedToast": "Workflow activated",
+  "workflowDeactivatedToast": "Workflow deactivated",
+  "workflowStageCount": "{count, plural, =1{1 stage} other{{count} stages}}",
+  "@workflowStageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStagesSemantics": "{count, plural, =1{1 stage: {stages}} other{{count} stages: {stages}}}",
+  "@workflowStagesSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "stages": {
+        "type": "String"
+      }
+    }
+  },
+  "workflowSla": "Respond within {hours}h",
+  "@workflowSla": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowNoSla": "No response time set",
+  "workflowStagesTitle": "Stages",
+  "workflowStagesField": "Stages",
+  "workflowStagesHint": "Content moves through the stages in this order. The first is where it starts, the last means done.",
+  "workflowStagesCount": "{count} of {max}",
+  "@workflowStagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStageLabel": "Stage {number}",
+  "@workflowStageLabel": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStageAdd": "Add stage",
+  "workflowStageMoveUp": "Move up",
+  "workflowStageMoveDown": "Move down",
+  "workflowStageRemove": "Remove stage {number}",
+  "@workflowStageRemove": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStagesTooFew": "Add at least {min} stages",
+  "@workflowStagesTooFew": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStagesTooMany": "Use at most {max} stages",
+  "@workflowStagesTooMany": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStagesBlank": "Every stage needs a name",
+  "workflowStagesTooLong": "Keep stage names under {max} characters",
+  "@workflowStagesTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStagesVersionNote": "Changing the stages publishes a new version. Content already in progress keeps its version.",
+  "workflowSlaField": "Response time",
+  "workflowSlaHint": "How long each approval may take. Leave empty for no limit.",
+  "workflowSlaSuffix": "hours",
+  "workflowSlaInvalid": "Enter whole hours",
+  "workflowSlaRange": "Use between 1 and {max} hours",
+  "@workflowSlaRange": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowClientApprovalField": "Needs client approval",
+  "workflowClientApprovalHint": "The client must approve before publishing.",
+  "workflowActiveField": "Active",
+  "workflowActiveHint": "Inactive workflows are not offered for new content.",
+  "workflowApprovalMetric": "Sign-off",
+  "workflowVersionsTitle": "Version",
+  "workflowNoVersion": "This workflow has no published version yet.",
+  "workflowVersionLabel": "v{version}",
+  "@workflowVersionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowVersionCurrent": "Current version",
+  "workflowVersionUnpublished": "Not published yet",
+  "workflowVersionPublishedOn": "Published {date}",
+  "@workflowVersionPublishedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "workflowVersionStatus": "{status, select, DRAFT{Draft} PUBLISHED{Published} other{{status}}}",
+  "@workflowVersionStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "workflowVersionPublish": "Publish version",
+  "workflowVersionPublishedToast": "Version published",
+  "workflowTransitionsTitle": "Allowed moves",
+  "workflowTransitionsEmpty": "No moves are defined in this version.",
+  "workflowCheckerTitle": "Check a move",
+  "workflowCheckerBody": "Pick two stages to see whether content can move directly between them.",
+  "workflowCheckerFrom": "From stage",
+  "workflowCheckerTo": "To stage",
+  "workflowCheckerCheck": "Check",
+  "workflowCheckerAllowed": "Allowed",
+  "workflowCheckerBlocked": "Not allowed",
+  "workflowEntityType": "Applies to",
+  "workflowEntity": "{entity, select, content{Content} task{Tasks} project{Projects} other{{entity}}}",
+  "@workflowEntity": {
+    "placeholders": {
+      "entity": {
+        "type": "String"
+      }
+    }
+  },
+  "workflowCreated": "Created",
+  "workflowUpdated": "Last changed",
+  "workflowKpiActiveOf": "{active} of {total}",
+  "@workflowKpiActiveOf": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

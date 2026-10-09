@@ -1,8 +1,7 @@
 'use server';
 
-import { ClientStatuses, brandKitSchema, createClientSchema, type ClientStatus } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { ClientStatuses, brandKitSchema, createClientSchema, type ClientStatus, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -17,11 +16,6 @@ import { onboardClient } from '../services/clients.service';
 const LIST_SEPARATOR = /[\s,]+/;
 const PILLAR_SEPARATOR = /\s*,\s*/;
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 function splitList(value: string | undefined, separator: RegExp): string[] {
   return (value ?? '')
@@ -36,7 +30,7 @@ function normalizeHashtag(tag: string): string {
 
 export async function createClientAction(raw: unknown): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.CLIENTS_CREATE);
     const parsed = parseInput(createClientSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -58,7 +52,7 @@ export async function createClientAction(raw: unknown): Promise<ActionResult<{ h
 
 export async function updateBrandKitAction(clientId: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.CLIENTS_EDIT);
     const parsed = parseInput(brandKitSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -86,7 +80,7 @@ export async function updateBrandKitAction(clientId: string, raw: unknown): Prom
 
 export async function setClientStatusAction(clientId: string, status: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.CLIENTS_EDIT);
     if (!ClientStatuses.includes(status as ClientStatus)) return fail(t('toast.failed'));
     const before = await clientsRepository.get(clientId);
     if (!before) return fail(t('toast.failed'));

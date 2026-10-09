@@ -6,9 +6,10 @@ import '../../../app/navigation/app_routes.dart';
 import '../../../app/session/sign_out.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/fade_slide_in.dart';
+import '../../../core/widgets/feedback.dart';
+import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../notifications/presentation/notification_bell.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/profile_editor.dart';
 
@@ -17,18 +18,13 @@ class SettingsScreen extends ConsumerWidget {
 
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.settingsSignOut),
-        content: Text(l10n.settingsSignOutConfirm),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l10n.settingsSignOut)),
-        ],
-      ),
+    final confirmed = await confirmAction(
+      context,
+      title: l10n.settingsSignOut,
+      body: l10n.settingsSignOutConfirm,
+      confirmLabel: l10n.settingsSignOut,
     );
-    if (confirmed ?? false) await ref.read(signOutProvider)();
+    if (confirmed) await ref.read(signOutProvider)();
   }
 
   @override
@@ -37,8 +33,8 @@ class SettingsScreen extends ConsumerWidget {
     final tokens = context.tokens;
     final profile = ref.watch(profileProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.settingsTitle), actions: const [NotificationBell()]),
+    return PageScaffold(
+      title: l10n.settingsTitle,
       body: ListView(
         padding: EdgeInsets.all(tokens.lg),
         children: [

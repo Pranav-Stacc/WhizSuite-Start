@@ -1,9 +1,8 @@
+import { Permissions, ProjectStatuses } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { FolderKanban, Plus } from 'lucide-react';
-import { ProjectStatuses } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
@@ -28,9 +27,9 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function ProjectsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.PROJECTS_VIEW);
   const sp = await searchParams;
-  const canManage = ROLES_LEADERSHIP.includes(session.role);
+  const canManage = await can(Permissions.PROJECTS_CREATE);
   const status = ProjectStatuses.find((s) => s === param(sp, 'status'));
   const clientId = param(sp, 'client');
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();

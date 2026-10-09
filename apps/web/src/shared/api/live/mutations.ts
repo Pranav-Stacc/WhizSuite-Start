@@ -58,11 +58,16 @@ export interface InvitationCreated {
   acceptUrl: string;
 }
 
-export async function inviteMember(email: string, membershipType: string, clientId?: string): Promise<InvitationCreated> {
+export async function inviteMember(
+  email: string,
+  membershipType: string,
+  clientId?: string,
+  roleIds: readonly string[] = [],
+): Promise<InvitationCreated> {
   const org = await orgId();
   return apiFetch<InvitationCreated>(orgPath(org, 'invitations'), {
     method: 'POST',
-    body: { email, membershipType, clientId },
+    body: { email, membershipType, clientId, ...(roleIds.length ? { roleIds } : {}) },
   });
 }
 
@@ -84,6 +89,18 @@ export async function revokeInvitation(invitationId: string): Promise<void> {
 export async function changeMembershipType(userId: string, membershipType: string): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'members')}/${userId}`, { method: 'PATCH', body: { membershipType } });
+}
+
+export async function assignMemberRoles(
+  userId: string,
+  roleIds: readonly string[],
+  scopes?: readonly { scopeType: string; resourceId?: string | null }[],
+): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'members')}/${userId}/roles`, {
+    method: 'PUT',
+    body: { roleIds, ...(scopes?.length ? { scopes } : {}) },
+  });
 }
 
 export async function deactivateMember(userId: string): Promise<void> {

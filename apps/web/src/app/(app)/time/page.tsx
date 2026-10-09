@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Clock, Plus, Timer, Users } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { toDateKey } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
 import { HBarList } from '@/shared/ui/charts';
@@ -12,9 +12,11 @@ import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/na
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { StatCard } from '@/shared/ui/stat-card';
+import type { Client } from '@/features/clients/data/clients.repository';
 import { clientsById } from '@/features/clients/services/clients.service';
 import { listProjects } from '@/features/projects/services/projects.service';
 import { listTasks } from '@/features/tasks/services/tasks.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 import { LogTimeDialog } from '@/features/time/components/log-time-dialog';
 import { TimerCard } from '@/features/time/components/timer-card';
@@ -41,19 +43,19 @@ function rangeStart(range: Range): string {
 }
 
 export default async function TimePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  const session = await requirePermission(Permissions.TIME_TRACK);
   const sp = await searchParams;
-  const isLeader = ROLES_LEADERSHIP.includes(session.role);
+  const isLeader = await can(Permissions.MEMBERS_EDIT);
   const team = isLeader && param(sp, 'scope') === 'team';
   const range = RANGES.find((r) => r === param(sp, 'range')) ?? 'week';
   const since = rangeStart(range);
 
   const [entries, projects, clients, members, tasks, timer] = await Promise.all([
     listEntries(),
-    listProjects(),
-    clientsById(),
-    membersById(),
-    listTasks(),
+    loadIf(Permissions.PROJECTS_VIEW, listProjects, []),
+    loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
+    loadIf(Permissions.TASKS_VIEW, listTasks, []),
     activeTimerFor(session.userId),
   ]);
 

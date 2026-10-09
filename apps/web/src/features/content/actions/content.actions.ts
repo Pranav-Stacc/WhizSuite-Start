@@ -1,9 +1,21 @@
 'use server';
 
 import { z } from 'zod';
-import { ContentStatuses, ApprovalActions, createContentSchema, messageSchema, scheduleSchema, type ApprovalAction, type ContentStatus, type CreateContentInput } from '@agency-os/contracts';
-import { requireSession, type Session } from '@/shared/auth/session';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
+import {
+  ContentStatuses,
+  ApprovalActions,
+  Permissions,
+  UserRoles,
+  createContentSchema,
+  messageSchema,
+  scheduleSchema,
+  type ApprovalAction,
+  type ContentStatus,
+  type CreateContentInput,
+  type UserRole,
+} from '@agency-os/contracts';
+import { authorize, can } from '@/shared/auth/permissions';
+import type { Session } from '@/shared/auth/session';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -17,7 +29,7 @@ import { pushNotification } from '@/features/notifications/services/notification
 import { listMembers } from '@/features/team/services/members.service';
 import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
 import { listClientContent, recordContentEvent } from '../services/content.service';
-import { canApprove, canDeleteContent, checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
+import { checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
 
 const DECISION_TARGET: Record<ApprovalAction, ContentStatus> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
 const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED: 'approved', CHANGES_REQUESTED: 'changes', REJECTED: 'rejected' };
@@ -27,18 +39,15 @@ const reorderSchema = z.object({
   orderedIds: z.array(z.string().min(1)).min(1),
 });
 
-async function authorize(): Promise<Session> {
-  const session = await requireSession();
-  if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
+/** Members pinged when work is submitted for review: those whose default role holds the approve permission. */
+const REVIEWER_ROLES: ReadonlySet<UserRole> = new Set([UserRoles.OWNER, UserRoles.MANAGER]);
 
 async function logEvent(contentId: string, kind: ContentEvent['kind'], session: Session, body: string): Promise<void> {
   await recordContentEvent(contentId, kind, session.name, body);
 }
 
 async function notifyApprovers(post: Post, actor: Session): Promise<void> {
-  const approvers = (await listMembers()).filter((m) => canApprove(m.role) && m.id !== actor.userId);
+  const approvers = (await listMembers()).filter((m) => REVIEWER_ROLES.has(m.role) && m.id !== actor.userId);
   await Promise.all(
     approvers.map((m) => pushNotification({ userId: m.id, kind: 'approval', title: t('content.notify.review.title'), body: t('content.notify.review.body', { title: post.title }), href: `/content/${post.id}` })),
   );
@@ -75,7 +84,7 @@ async function postFields(input: CreateContentInput, existing?: PostMedia[]) {
 
 export async function createContentAction(raw: unknown): Promise<ActionResult<{ id: string; href: string }>> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.CONTENT_CREATE);
     const parsed = parseInput(createContentSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -101,7 +110,7 @@ export async function createContentAction(raw: unknown): Promise<ActionResult<{ 
 
 export async function updateContentAction(id: string, raw: unknown): Promise<ActionResult<{ id: string; href: string }>> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.CONTENT_EDIT);
     const parsed = parseInput(createContentSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -138,12 +147,12 @@ export async function updateContentAction(id: string, raw: unknown): Promise<Act
 /** Moves a post along the workflow (board drag, detail buttons). Enforces transition + role rules. */
 export async function moveContentAction(id: string, target: string): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.CONTENT_EDIT);
     if (!ContentStatuses.includes(target as ContentStatus)) return fail(t('toast.failed'));
     const post = await contentRepository.get(id);
     if (!post) return fail(t('toast.failed'));
 
-    const check = checkTransition(session.role, post, target as ContentStatus);
+    const check = checkTransition(await can(Permissions.APPROVALS_APPROVE), post, target as ContentStatus);
     if (check === 'invalid') return fail(t('content.error.transition'));
     if (check === 'forbidden') return fail(t('content.error.forbidden'));
     if (check === 'needsSchedule') return fail(t('content.error.needsSchedule'));
@@ -171,8 +180,7 @@ export async function moveContentAction(id: string, target: string): Promise<Act
 
 export async function decideContentAction(id: string, decision: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
-    if (!canApprove(session.role)) return fail(t('content.error.forbidden'));
+    const session = await authorize(Permissions.APPROVALS_APPROVE);
     if (!ApprovalActions.includes(decision as ApprovalAction)) return fail(t('toast.failed'));
     const action = decision as ApprovalAction;
     const parsed = parseInput(messageSchema, raw);
@@ -203,7 +211,7 @@ export async function decideContentAction(id: string, decision: string, raw: unk
 
 export async function addCommentAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.FEEDBACK_CREATE);
     const parsed = parseInput(messageSchema, raw);
     if (!parsed.ok) return parsed.result;
     const post = await contentRepository.get(id);
@@ -218,7 +226,7 @@ export async function addCommentAction(id: string, raw: unknown): Promise<Action
 
 export async function rescheduleContentAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.CONTENT_EDIT);
     const parsed = parseInput(scheduleSchema, raw);
     if (!parsed.ok) return parsed.result;
     const post = await contentRepository.get(id);
@@ -244,7 +252,7 @@ export async function rescheduleContentAction(id: string, raw: unknown): Promise
 /** Persists the client's grid planner order (first id = top-left tile). */
 export async function reorderGridAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.CONTENT_EDIT);
     const parsed = parseInput(reorderSchema, raw);
     if (!parsed.ok) return parsed.result;
     const { clientId, orderedIds } = parsed.data;
@@ -261,10 +269,9 @@ export async function reorderGridAction(raw: unknown): Promise<ActionResult> {
 
 export async function deleteContentAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    await authorize(Permissions.CONTENT_DELETE);
     const post = await contentRepository.get(id);
     if (!post) return fail(t('toast.failed'));
-    if (!canDeleteContent(session, post)) return fail(t('toast.forbidden'));
     await contentRepository.remove(id);
     await recordAudit({ action: 'content.deleted', entityType: 'content', entityId: id, entityLabel: post.title, summary: 'Deleted content' });
     await refreshData('content');

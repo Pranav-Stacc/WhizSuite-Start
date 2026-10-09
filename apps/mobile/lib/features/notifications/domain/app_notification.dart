@@ -1,4 +1,5 @@
 import '../../../core/contracts/contracts.g.dart';
+import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -15,13 +16,13 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Json json) => AppNotification(
-        id: json['id'] as String,
-        typeKey: json['typeKey'] as String,
-        title: json['title'] as String,
-        body: json['body'] as String,
-        data: (json['data'] as Map<String, dynamic>?) ?? const {},
-        readAt: DateTime.tryParse(json['readAt'] as String? ?? ''),
-        createdAt: DateTime.parse(json['createdAt'] as String),
+        id: json.str('id'),
+        typeKey: json.str('typeKey'),
+        title: json.str('title'),
+        body: json.str('body'),
+        data: json.object('data') ?? const {},
+        readAt: json.date('readAt'),
+        createdAt: json.date('createdAt') ?? DateTime.now(),
       );
 
   final String id;
@@ -57,9 +58,9 @@ class NotificationPreference {
   const NotificationPreference({required this.typeKey, required this.channels});
 
   factory NotificationPreference.fromJson(Json json) {
-    final raw = (json['channels'] as Map<String, dynamic>?) ?? const {};
+    final raw = json.object('channels') ?? const {};
     return NotificationPreference(
-      typeKey: json['typeKey'] as String,
+      typeKey: json.str('typeKey'),
       channels: {for (final channel in NotificationChannels.values) channel: raw[channel] == true},
     );
   }

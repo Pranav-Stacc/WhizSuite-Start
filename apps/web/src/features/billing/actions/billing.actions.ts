@@ -1,7 +1,7 @@
 'use server';
 
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
+import { Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -12,11 +12,6 @@ import { plansRepository } from '../data/plans.repository';
 import { subscriptionRepository, SUBSCRIPTION_ID } from '../data/subscription.repository';
 import { chargePerPeriod, currentUsage, exceededLimits, getSubscription, planChangesEnabled } from '../services/billing.service';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_OWNER.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 function parseInterval(value: string): BillingInterval | undefined {
   return BILLING_INTERVALS.find((i) => i === value);
@@ -24,7 +19,7 @@ function parseInterval(value: string): BillingInterval | undefined {
 
 export async function changePlanAction(planId: string, intervalRaw: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.ORG_BILLING_MANAGE);
     if (!planChangesEnabled) return fail(t('billing.contactSales'));
     const interval = parseInterval(intervalRaw);
     const plan = await plansRepository.get(planId);

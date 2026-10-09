@@ -28,6 +28,7 @@ export type FeedbackThreadStatus = (typeof FeedbackThreadStatuses)[number];
 export const ApprovalStepRules = ['ANY', 'ALL'] as const;
 export type ApprovalStepRule = (typeof ApprovalStepRules)[number];
 
+export const RESOURCE_NAME_MIN_LENGTH = 2;
 export const RESOURCE_NAME_MAX_LENGTH = 200;
 export const RESOURCE_KEY_MAX_LENGTH = 100;
 export const RESOURCE_TEXT_MAX_LENGTH = 2000;

@@ -1,8 +1,7 @@
 'use server';
 
-import { createArticleSchema } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { createArticleSchema, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -10,15 +9,10 @@ import { t } from '@/shared/i18n/t';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { knowledgeRepository } from '../data/knowledge.repository';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function createArticleAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.ORG_SETTINGS_MANAGE);
     const parsed = parseInput(createArticleSchema, raw);
     if (!parsed.ok) return parsed.result;
     const article = await knowledgeRepository.create({ ...parsed.data, authorId: session.userId, updatedAt: new Date().toISOString() });
@@ -30,7 +24,7 @@ export async function createArticleAction(raw: unknown): Promise<ActionResult> {
 
 export async function updateArticleAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.ORG_SETTINGS_MANAGE);
     const parsed = parseInput(createArticleSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await knowledgeRepository.get(id);
@@ -51,7 +45,7 @@ export async function updateArticleAction(id: string, raw: unknown): Promise<Act
 
 export async function deleteArticleAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.ORG_SETTINGS_MANAGE);
     const before = await knowledgeRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await knowledgeRepository.remove(id);

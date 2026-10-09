@@ -4,10 +4,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import { Loader2, Plus, Search } from 'lucide-react';
-import type { UserRole } from '@agency-os/contracts';
+import type { Permission } from '@agency-os/contracts';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { groupsForRole } from '@/shared/navigation/nav-config';
+import { allowedGroups } from '@/shared/navigation/nav-config';
 import { QUICK_CREATE } from '@/shared/navigation/quick-create';
 import { Kbd } from '@/shared/ui/feedback';
 import type { SearchGroup } from './search-types';
@@ -19,7 +19,7 @@ const itemClass =
   'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-foreground outline-none data-[selected=true]:bg-primary/12 data-[selected=true]:text-primary [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted data-[selected=true]:[&_svg]:text-primary';
 const headingClass = '[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted';
 
-export function CommandPalette({ role }: { role: UserRole }) {
+export function CommandPalette({ permissions }: { permissions: Permission[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -71,14 +71,18 @@ export function CommandPalette({ role }: { role: UserRole }) {
   }, [query]);
 
   const needle = query.trim().toLowerCase();
+  const granted = useMemo(() => new Set(permissions), [permissions]);
   const pages = useMemo(
     () =>
-      groupsForRole(role)
+      allowedGroups(granted)
         .flatMap((g) => g.items)
         .filter((item) => !needle || t(item.label).toLowerCase().includes(needle) || t(item.desc).toLowerCase().includes(needle)),
-    [role, needle],
+    [granted, needle],
   );
-  const actions = useMemo(() => QUICK_CREATE.filter((a) => a.roles.includes(role) && (!needle || t(a.label).toLowerCase().includes(needle))), [role, needle]);
+  const actions = useMemo(
+    () => QUICK_CREATE.filter((a) => granted.has(a.permission) && (!needle || t(a.label).toLowerCase().includes(needle))),
+    [granted, needle],
+  );
 
   const go = (href: string) => {
     setOpen(false);

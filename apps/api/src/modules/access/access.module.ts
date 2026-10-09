@@ -9,6 +9,8 @@ import {
 import { AccessService } from './application/services/access.service';
 import { AccessBootstrapService } from './application/services/access-bootstrap.service';
 import { DefaultRolesService } from './application/services/default-roles.service';
+import { RoleAssignmentService } from './application/services/role-assignment.service';
+import { RolesService } from './application/services/roles.service';
 
 @Module({
   controllers: [
@@ -22,7 +24,14 @@ import { DefaultRolesService } from './application/services/default-roles.servic
     AccessRepository,
     AccessBootstrapService,
     DefaultRolesService,
+    RoleAssignmentService,
+    RolesService,
   ],
-  exports: [AuthorizationService, AccessRepository, DefaultRolesService],
+  exports: [
+    AuthorizationService,
+    AccessRepository,
+    DefaultRolesService,
+    RoleAssignmentService,
+  ],
 })
 export class AccessModule {}

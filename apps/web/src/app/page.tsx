@@ -1,115 +1,183 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ArrowRight, BarChart3, Bot, Building2, CalendarCheck2, Crown, PenTool, ScrollText, SquarePen, UserCog, type LucideIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { homeFor } from '@/shared/auth/roles';
 import { getSession } from '@/shared/auth/session';
-import { t, type MessageKey } from '@/shared/i18n/t';
+import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
-import { Logo } from '@/shared/ui/logo';
-import { Badge } from '@/shared/ui/badge';
+import { MarketingFooter } from '@/features/marketing/components/marketing-footer';
+import { MarketingHeader } from '@/features/marketing/components/marketing-header';
+import { MarketingShell } from '@/features/marketing/components/marketing-shell';
+import { ProductFrame } from '@/features/marketing/components/product-frame';
 
-const FEATURES: Array<{ icon: LucideIcon; title: MessageKey; body: MessageKey }> = [
-  { icon: CalendarCheck2, title: 'landing.f1.title', body: 'landing.f1.body' },
-  { icon: SquarePen, title: 'landing.f2.title', body: 'landing.f2.body' },
-  { icon: Building2, title: 'landing.f3.title', body: 'landing.f3.body' },
-  { icon: Bot, title: 'landing.f4.title', body: 'landing.f4.body' },
-  { icon: BarChart3, title: 'landing.f5.title', body: 'landing.f5.body' },
-  { icon: ScrollText, title: 'landing.f6.title', body: 'landing.f6.body' },
-];
+export const metadata: Metadata = {
+  title: t('app.name'),
+  description: t('landing.subtitle'),
+};
 
-const ROLES: Array<{ icon: LucideIcon; title: MessageKey; body: MessageKey }> = [
-  { icon: Crown, title: 'auth.persona.owner.title', body: 'auth.persona.owner.blurb' },
-  { icon: UserCog, title: 'auth.persona.manager.title', body: 'auth.persona.manager.blurb' },
-  { icon: PenTool, title: 'auth.persona.creator.title', body: 'auth.persona.creator.blurb' },
-  { icon: Building2, title: 'auth.persona.client.title', body: 'auth.persona.client.blurb' },
-];
+const MODULES = [
+  { title: 'landing.m1.title', body: 'landing.m1.body' },
+  { title: 'landing.m2.title', body: 'landing.m2.body' },
+  { title: 'landing.m3.title', body: 'landing.m3.body' },
+  { title: 'landing.m4.title', body: 'landing.m4.body' },
+  { title: 'landing.m5.title', body: 'landing.m5.body' },
+  { title: 'landing.m6.title', body: 'landing.m6.body' },
+] as const;
+
+const WORKFLOW_STEPS = [
+  'landing.workflow.step1',
+  'landing.workflow.step2',
+  'landing.workflow.step3',
+  'landing.workflow.step4',
+  'landing.workflow.step5',
+  'landing.workflow.step6',
+] as const;
+
+const PORTAL_POINTS = ['landing.portal.b1', 'landing.portal.b2', 'landing.portal.b3'] as const;
+
+const SECURITY = [
+  { title: 'landing.security.b1.title', body: 'landing.security.b1.body' },
+  { title: 'landing.security.b2.title', body: 'landing.security.b2.body' },
+  { title: 'landing.security.b3.title', body: 'landing.security.b3.body' },
+] as const;
 
 export default async function LandingPage() {
   const session = await getSession();
   if (session) redirect(homeFor(session.role));
 
   return (
-    <div className="grid-bg relative overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 size-[720px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-primary/18 blur-[140px]" />
-      <header className="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-        <Logo />
-        <nav className="flex items-center gap-2" aria-label={t('landing.nav.label')}>
-          <Button variant="ghost" asChild>
-            <Link href="/login">{t('landing.nav.signin')}</Link>
-          </Button>
-          <Button variant="primary" asChild>
-            <Link href="/register">{t('landing.cta.start')}</Link>
-          </Button>
-        </nav>
-      </header>
+    <MarketingShell>
+      <MarketingHeader />
 
-      <main id="main" className="relative">
-        <section className="mx-auto max-w-7xl px-6 pb-20 pt-14 text-center sm:pt-24">
-          <Badge tone="primary" className="mb-6 px-3.5 py-1 text-[13px]">
-            {t('landing.badge')}
-          </Badge>
-          <h1 className="mx-auto max-w-4xl text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl">
-            <span className="text-gradient">{t('landing.title')}</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted">{t('landing.subtitle')}</p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <Button variant="primary" size="lg" asChild>
-              <Link href="/register">
-                {t('landing.cta.start')}
-                <ArrowRight />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/login">{t('landing.cta.demo')}</Link>
-            </Button>
+      <main id="main">
+        {/* Hero: brand + one line + CTA + product plane */}
+        <section className="relative mx-auto grid max-w-6xl gap-12 px-6 pb-20 pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-end lg:gap-16 lg:pb-28 lg:pt-20">
+          <div className="marketing-rise max-w-xl">
+            <p className="wordmark mb-8 text-[13px] tracking-[0.32em] text-foreground">{t('landing.brand')}</p>
+            <h1 className="display text-balance text-4xl text-foreground sm:text-5xl lg:text-[3.35rem]">
+              {t('landing.title')}
+            </h1>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-muted">{t('landing.subtitle')}</p>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Button variant="primary" size="lg" asChild>
+                <Link href="/register">
+                  {t('landing.cta.start')}
+                  <ArrowRight />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/login">{t('landing.cta.demo')}</Link>
+              </Button>
+            </div>
+          </div>
+          <div className="marketing-rise marketing-rise-delay-2">
+            <p className="eyebrow mb-3">{t('landing.hero.aside')}</p>
+            <ProductFrame />
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-20">
-          <h2 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">{t('landing.features.title')}</h2>
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, body }) => (
-              <li key={title} className="card-surface card-hover p-6">
-                <span className="mb-4 grid size-11 place-items-center rounded-xl bg-primary/12 text-primary">
-                  <Icon className="size-5" />
-                </span>
-                <h3 className="text-lg font-semibold">{t(title)}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{t(body)}</p>
+        <div className="marketing-rule mx-auto max-w-6xl" aria-hidden />
+
+        {/* Modules */}
+        <section id="modules" className="marketing-stage mx-auto max-w-6xl px-6 py-20 lg:py-28">
+          <div className="max-w-2xl">
+            <p className="eyebrow">{t('landing.modules.eyebrow')}</p>
+            <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.modules.title')}</h2>
+            <p className="mt-4 text-muted">{t('landing.modules.body')}</p>
+          </div>
+          <ul className="mt-14 grid gap-px border border-border-soft bg-border-soft sm:grid-cols-2 lg:grid-cols-3">
+            {MODULES.map(({ title, body }, index) => (
+              <li key={title} className="bg-background p-6">
+                <p className="font-mono text-[11px] tracking-[0.18em] text-muted">
+                  {String(index + 1).padStart(2, '0')}
+                </p>
+                <h3 className="mt-3 text-lg text-foreground">{t(title)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{t(body)}</p>
               </li>
             ))}
           </ul>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('landing.roles.title')}</h2>
-            <p className="mt-3 text-muted">{t('landing.roles.subtitle')}</p>
+        {/* Workflow */}
+        <section id="workflow" className="marketing-stage border-t border-border-soft bg-surface/30">
+          <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
+            <div className="max-w-2xl">
+              <p className="eyebrow">{t('landing.workflow.eyebrow')}</p>
+              <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.workflow.title')}</h2>
+              <p className="mt-4 text-muted">{t('landing.workflow.body')}</p>
+            </div>
+            <ol className="mt-14 flex flex-col gap-0 border border-border-soft lg:flex-row">
+              {WORKFLOW_STEPS.map((key, index) => (
+                <li
+                  key={key}
+                  className="flex flex-1 items-center gap-3 border-border-soft px-4 py-4 lg:border-r lg:last:border-r-0 border-b last:border-b-0 lg:border-b-0"
+                >
+                  <span className="font-mono text-[11px] text-muted">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="text-sm text-foreground">{t(key)}</span>
+                </li>
+              ))}
+            </ol>
           </div>
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {ROLES.map(({ icon: Icon, title, body }) => (
-              <li key={title} className="card-surface p-6">
-                <Icon className="mb-4 size-6 text-primary" />
-                <h3 className="font-semibold">{t(title)}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">{t(body)}</p>
-              </li>
-            ))}
-          </ul>
         </section>
 
-        <section className="mx-auto max-w-4xl px-6 py-24 text-center">
-          <h2 className="text-balance text-4xl font-semibold tracking-tight">{t('landing.final.title')}</h2>
-          <div className="mt-8 flex justify-center gap-3">
-            <Button variant="primary" size="lg" asChild>
-              <Link href="/register">{t('landing.cta.start')}</Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/login">{t('landing.cta.demo')}</Link>
-            </Button>
+        {/* Portal */}
+        <section id="portal" className="marketing-stage mx-auto max-w-6xl px-6 py-20 lg:py-28">
+          <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <div>
+              <p className="eyebrow">{t('landing.portal.eyebrow')}</p>
+              <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.portal.title')}</h2>
+              <p className="mt-4 max-w-xl text-muted">{t('landing.portal.body')}</p>
+            </div>
+            <ul className="space-y-0 border border-border-soft">
+              {PORTAL_POINTS.map((key) => (
+                <li key={key} className="border-b border-border-soft px-5 py-4 text-sm text-foreground last:border-b-0">
+                  {t(key)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Security */}
+        <section id="security" className="marketing-stage border-t border-border-soft">
+          <div className="mx-auto max-w-6xl px-6 py-20 lg:py-28">
+            <div className="max-w-2xl">
+              <p className="eyebrow">{t('landing.security.eyebrow')}</p>
+              <h2 className="display mt-3 text-3xl text-foreground sm:text-4xl">{t('landing.security.title')}</h2>
+              <p className="mt-4 text-muted">{t('landing.security.body')}</p>
+            </div>
+            <ul className="mt-14 grid gap-px bg-border-soft sm:grid-cols-3">
+              {SECURITY.map(({ title, body }) => (
+                <li key={title} className="bg-background p-6">
+                  <h3 className="text-base text-foreground">{t(title)}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">{t(body)}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="marketing-stage border-t border-border-soft">
+          <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-24 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-xl">
+              <h2 className="display text-3xl text-foreground sm:text-4xl">{t('landing.final.title')}</h2>
+              <p className="mt-4 text-muted">{t('landing.final.body')}</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="primary" size="lg" asChild>
+                <Link href="/register">{t('landing.cta.start')}</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/login">{t('landing.cta.signin')}</Link>
+              </Button>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="relative border-t border-border-soft py-8 text-center text-sm text-muted">{t('landing.footer')}</footer>
-    </div>
+      <MarketingFooter />
+    </MarketingShell>
   );
 }

@@ -5,14 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity.dart';
+import '../../core/widgets/feedback.dart';
+import '../../core/widgets/page_scaffold.dart';
 import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/state_views.dart';
 import '../../features/access/application/access_controller.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/notifications/application/notification_delivery.dart';
+import '../../features/notifications/application/notifications_controller.dart';
+import '../../features/notifications/domain/app_notification.dart';
+import '../../features/notifications/presentation/notification_bell.dart';
+import '../../features/notifications/presentation/notification_links.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
+import 'search_action.dart';
 
 /// Signed-in frame: permission-filtered navigation, offline banner, notification delivery,
 /// and a guard that blocks destinations the member's roles do not grant.
@@ -30,6 +37,8 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  static const _shellActions = [SearchAction(), NotificationBell()];
+
   late final AppLifecycleListener _lifecycle;
   final _subscriptions = <StreamSubscription<Object?>>[];
   bool _deliveryStarted = false;
@@ -47,10 +56,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     _deliveryStarted = true;
     final delivery = ref.read(notificationDeliveryProvider);
     _subscriptions
-      ..add(delivery.foreground.listen((n) => _toast(n.title)))
-      ..add(delivery.opened.listen((_) {
-        if (mounted) context.go(AppRoutes.notifications);
-      }));
+      ..add(delivery.foreground.listen(_toast))
+      ..add(delivery.opened.listen(_openFromTray));
     delivery.start(l10n: AppLocalizations.of(context), locale: Localizations.localeOf(context).toLanguageTag());
   }
 
@@ -63,16 +70,30 @@ class _AppShellState extends ConsumerState<AppShell> {
     super.dispose();
   }
 
-  void _toast(String title) {
+  void _toast(AppNotification notification) {
     final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(title),
-          action: SnackBarAction(label: l10n.notificationsOpen, onPressed: () => context.go(AppRoutes.notifications)),
-        ),
-      );
+    showToast(
+      context,
+      notification.title,
+      action: SnackBarAction(label: l10n.notificationsOpen, onPressed: () => _open(notification)),
+    );
+  }
+
+  /// Tray taps carry the notification id; open its subject once the feed knows it.
+  Future<void> _openFromTray(String? id) async {
+    final feed = id == null ? null : await ref.read(notificationsProvider.future);
+    final notification = feed?.where((n) => n.id == id).firstOrNull;
+    if (!mounted) return;
+    if (notification == null) {
+      context.go(AppRoutes.notifications);
+    } else {
+      _open(notification);
+    }
+  }
+
+  void _open(AppNotification notification) {
+    if (!notification.isRead) ref.read(notificationsProvider.notifier).markRead(notification.id).ignore();
+    context.go(notificationLink(notification));
   }
 
   @override
@@ -89,7 +110,10 @@ class _AppShellState extends ConsumerState<AppShell> {
     ];
     // Off-tab routes (notifications, settings pages) highlight "More" when it exists.
     final selected = _selectedIndex(tabs) ?? (navigation.secondaryGroups.isNotEmpty ? tabs.length - 1 : null);
-    final body = Column(children: [const OfflineBanner(), Expanded(child: _guarded(navigation, access))]);
+    final body = ShellActions(
+      actions: _shellActions,
+      child: Column(children: [const OfflineBanner(), Expanded(child: _guarded(navigation, access))]),
+    );
     final l10n = AppLocalizations.of(context);
 
     if (tabs.length < 2) return Scaffold(body: body);

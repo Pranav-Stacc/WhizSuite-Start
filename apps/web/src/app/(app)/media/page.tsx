@@ -1,10 +1,9 @@
+import { AssetKinds, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { ImageIcon, Plus, UploadCloud } from 'lucide-react';
-import { AssetKinds } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -13,6 +12,7 @@ import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/na
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { SearchInput } from '@/shared/ui/search-input';
+import type { Client } from '@/features/clients/data/clients.repository';
 import { clientsById } from '@/features/clients/services/clients.service';
 import { AssetCard } from '@/features/media/components/asset-card';
 import { AssetDialog } from '@/features/media/components/asset-dialog';
@@ -29,13 +29,16 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function MediaPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.FILES_VIEW);
   const sp = await searchParams;
   const kind = AssetKinds.find((k) => k === param(sp, 'kind'));
   const clientId = param(sp, 'client');
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [assets, clients] = await Promise.all([listAssets(), clientsById()]);
+  const granted = await getPermissions();
+  const canUpload = granted.has(Permissions.FILES_UPLOAD);
+  const canDelete = granted.has(Permissions.FILES_DELETE);
+  const [assets, clients] = await Promise.all([listAssets(), loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>())]);
   const scoped = assets.filter((a) => (!clientId || a.clientId === clientId) && (!query || a.name.toLowerCase().includes(query) || a.tags.some((tag) => tag.includes(query))));
   const visible = scoped.filter((a) => !kind || a.kind === kind);
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, ...overrides });
@@ -57,7 +60,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
         actions={
           <>
             <PageGuide items={GUIDE} />
-            {isLiveMode ? (
+            {!canUpload ? null : isLiveMode ? (
               <AssetUploader clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
             ) : (
               <AssetDialog clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
@@ -90,14 +93,14 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
             icon={<ImageIcon />}
             title={t('media.empty.title')}
             body={t('media.empty.body')}
-            action={<EmptyAction filtered={Boolean(kind || clientId || query)} clearHref={BASE} createHref={link({ new: '1' })} createLabel={isLiveMode ? t('media.upload') : t('media.add')} />}
+            action={<EmptyAction filtered={Boolean(kind || clientId || query)} clearHref={BASE} createHref={canUpload ? link({ new: '1' }) : undefined} createLabel={isLiveMode ? t('media.upload') : t('media.add')} />}
           />
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visible.map((asset) => (
             <li key={asset.id}>
-              <AssetCard asset={asset} clientName={clients.get(asset.clientId)?.name} canDelete={ROLES_LEADERSHIP.includes(session.role) || asset.uploadedBy === session.userId} canDownload={isLiveMode} />
+              <AssetCard asset={asset} clientName={clients.get(asset.clientId)?.name} canDelete={canDelete} canDownload={isLiveMode} />
             </li>
           ))}
         </ul>

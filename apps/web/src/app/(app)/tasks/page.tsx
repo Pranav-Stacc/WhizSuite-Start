@@ -1,9 +1,8 @@
+import { Permissions, TaskStatuses } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { KanbanSquare, List, ListChecks, Plus } from 'lucide-react';
-import { TaskStatuses } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -41,7 +40,7 @@ function parseFilter(value: string | undefined): TaskFilter {
 }
 
 export default async function TasksPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  const session = await requirePermission(Permissions.TASKS_VIEW);
   const sp = await searchParams;
   const view = param(sp, 'view') === 'list' ? 'list' : 'board';
   const filter = parseFilter(param(sp, 'f'));

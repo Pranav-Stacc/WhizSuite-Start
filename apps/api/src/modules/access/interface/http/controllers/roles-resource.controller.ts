@@ -1,19 +1,32 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ErrorCodes, Permissions } from '@agency-os/contracts';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  Permissions,
+  ROLE_KIND_KEYS,
+  type RoleKind,
+} from '@agency-os/contracts';
+import {
+  CurrentUser,
+  type AuthenticatedUser,
+} from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
-import { ProblemDetailsException } from '../../../../../shared/errors/problem-details.exception';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
+import { RolesService } from '../../../application/services/roles.service';
 import { AccessRepository } from '../../../infrastructure/repositories/access.repository';
 import { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto';
 
@@ -22,12 +35,18 @@ import { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto';
 @Controller('v1/organizations/:organizationId/roles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class RolesResourceController {
-  constructor(private readonly access: AccessRepository) {}
+  constructor(private readonly roles: RolesService) {}
 
   @Get()
   @RequirePermissions(Permissions.ROLES_MANAGE)
-  list(@Param('organizationId') organizationId: string) {
-    return this.access.listRoles(requireOrganizationId(organizationId));
+  @ApiQuery({ name: 'kind', required: false, enum: ROLE_KIND_KEYS })
+  list(
+    @Param('organizationId') organizationId: string,
+    @Query('kind') kind?: RoleKind,
+  ) {
+    const filter =
+      kind && ROLE_KIND_KEYS.includes(kind) ? kind : undefined;
+    return this.roles.list(requireOrganizationId(organizationId), filter);
   }
 
   @Post()
@@ -35,31 +54,44 @@ export class RolesResourceController {
   create(
     @Param('organizationId') organizationId: string,
     @Body() dto: CreateRoleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.access.createRole(requireOrganizationId(organizationId), dto);
+    return this.roles.create(
+      requireOrganizationId(organizationId),
+      user.userId,
+      dto,
+    );
   }
 
   @Patch(':roleId')
   @RequirePermissions(Permissions.ROLES_MANAGE)
-  async update(
+  update(
     @Param('organizationId') organizationId: string,
-    @Param('roleId') roleId: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() dto: UpdateRoleDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    const orgId = requireOrganizationId(organizationId);
-    const role = await this.access.updateRole(orgId, roleId, dto);
-    if (!role) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Not Found',
-          status: 404,
-          code: ErrorCodes.NOT_FOUND,
-        },
-        404,
-      );
-    }
-    return role;
+    return this.roles.update(
+      requireOrganizationId(organizationId),
+      user.userId,
+      roleId,
+      dto,
+    );
+  }
+
+  @Delete(':roleId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RequirePermissions(Permissions.ROLES_MANAGE)
+  remove(
+    @Param('organizationId') organizationId: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.roles.remove(
+      requireOrganizationId(organizationId),
+      user.userId,
+      roleId,
+    );
   }
 }
 

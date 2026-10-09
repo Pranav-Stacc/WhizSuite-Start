@@ -7,6 +7,7 @@ export * from './auth/profile.js';
 export * from './notifications/notifications.js';
 export * from './work/projects.js';
 export * from './auth/permissions.js';
+export * from './auth/access.js';
 export * from './domain/statuses.js';
 export * from './schemas/forms.js';
 export * from './media/media.js';

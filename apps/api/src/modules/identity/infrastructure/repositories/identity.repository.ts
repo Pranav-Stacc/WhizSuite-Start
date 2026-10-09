@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Permissions } from '@agency-os/contracts';
+import { DEFAULT_MEMBERSHIP_ROLES } from '@agency-os/contracts';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 
 const MEMBERSHIP_ACTIVE = 'ACTIVE';
@@ -91,7 +91,7 @@ export class IdentityRepository {
     });
   }
 
-  /** Switches the membership type and replaces its role assignments with the given organisation-wide role. */
+  /** Switches the membership type and its system role; custom roles assigned to the member are kept. */
   changeMembershipType(
     organizationId: string,
     membershipId: string,
@@ -100,7 +100,7 @@ export class IdentityRepository {
   ) {
     return this.prisma.$transaction(async (tx) => {
       await tx.roleAssignment.deleteMany({
-        where: { organizationId, membershipId },
+        where: { organizationId, membershipId, role: { isSystem: true } },
       });
       await tx.roleAssignment.create({
         data: {
@@ -315,12 +315,12 @@ export class IdentityRepository {
       });
 
       const perms = await tx.permission.findMany({
-        where: { key: { in: Object.values(Permissions) } },
+        where: { key: { in: [...DEFAULT_MEMBERSHIP_ROLES.OWNER.permissions] } },
       });
       const ownerRole = await tx.role.create({
         data: {
           organizationId: organization.id,
-          name: 'Owner',
+          name: DEFAULT_MEMBERSHIP_ROLES.OWNER.name,
           isSystem: true,
           permissions: {
             create: perms.map((p) => ({

@@ -1,12 +1,11 @@
+import { type InvoiceStatus, InvoiceStatuses, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, FileText, Hourglass, Plus, Receipt } from 'lucide-react';
-import { InvoiceStatuses, type InvoiceStatus } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
@@ -39,7 +38,7 @@ function parseStatus(value: string | undefined): StatusFilter {
 }
 
 export default async function InvoicesPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.INVOICES_VIEW);
   const sp = await searchParams;
   if (param(sp, 'new') === '1') redirect(withQuery(NEW_PATH, sp, { new: undefined }));
 

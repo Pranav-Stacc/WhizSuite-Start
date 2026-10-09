@@ -1,8 +1,8 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Building2, Plus, Users } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -14,7 +14,7 @@ import { listDepartments } from '@/features/departments/services/departments.ser
 export const metadata: Metadata = { title: t('departments.title') };
 
 export default async function DepartmentsPage() {
-  await requireRole(ROLES_OWNER);
+  await requirePermission(Permissions.ORG_SETTINGS_MANAGE);
   const departments = await listDepartments();
   const headcount = departments.reduce((sum, d) => sum + d.headcount, 0);
 

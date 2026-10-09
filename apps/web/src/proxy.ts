@@ -16,7 +16,7 @@ function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
 /**
  * First-line gate: unauthenticated visitors never reach app routes, and live sessions get their
  * access token rotated here (the only server layer besides actions/route handlers that may set cookies).
- * Role checks happen server-side in the layouts (requireSession / requireRole).
+ * Permission checks happen server-side in pages and layouts (requireSession / requirePermission).
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

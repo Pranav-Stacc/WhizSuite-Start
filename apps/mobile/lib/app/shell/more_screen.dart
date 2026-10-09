@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_tokens.dart';
 import '../../core/widgets/fade_slide_in.dart';
+import '../../core/widgets/page_scaffold.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/surfaces.dart';
 import '../../features/access/application/access_controller.dart';
 import '../../features/auth/application/session_controller.dart';
-import '../../features/notifications/presentation/notification_bell.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/destinations.dart';
 
@@ -23,54 +24,83 @@ class MoreScreen extends ConsumerWidget {
     if (session == null) return const SizedBox.shrink();
     final groups = NavigationModel(session, ref.watch(accessPolicyProvider)).secondaryGroups;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.navMore), actions: const [NotificationBell()]),
+    return PageScaffold(
+      title: l10n.navMore,
       body: groups.isEmpty
           ? EmptyState(icon: Icons.apps_outlined, title: l10n.navMoreEmpty)
           : RefreshIndicator(
               onRefresh: () => ref.read(accessProvider.notifier).refresh(),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.all(tokens.lg),
+                padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.xxl * 2),
                 children: [
                   for (final (index, entry) in groups.entries.indexed)
                     FadeSlideIn(
                       index: index,
                       child: Padding(
-                        padding: EdgeInsets.only(bottom: tokens.xl),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Semantics(
-                              header: true,
-                              child: Text(
-                                entry.key.label(l10n).toUpperCase(),
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(letterSpacing: 1.6),
-                              ),
-                            ),
-                            SizedBox(height: tokens.sm),
-                            Card(
-                              child: Column(
-                                children: [
-                                  for (final (i, destination) in entry.value.indexed) ...[
-                                    if (i > 0) const Divider(),
-                                    ListTile(
-                                      leading: Icon(destination.icon),
-                                      title: Text(destination.label(l10n)),
-                                      trailing: const Icon(Icons.chevron_right),
-                                      onTap: () => context.go(destination.path),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ],
+                        padding: EdgeInsets.only(bottom: tokens.lg),
+                        child: SectionCard(
+                          title: entry.key.label(l10n),
+                          child: HairlineList(
+                            children: [
+                              for (final destination in entry.value)
+                                _DestinationRow(
+                                  icon: destination.icon,
+                                  label: destination.label(l10n),
+                                  onTap: () => context.go(destination.path),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _DestinationRow extends StatelessWidget {
+  const _DestinationRow({required this.icon, required this.label, required this.onTap});
+
+  static const _markSize = 32.0;
+  static const _minHeight = 48.0;
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(tokens.radius + 6),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: _minHeight),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.sm, vertical: tokens.xs + 2),
+          child: Row(
+            children: [
+              Container(
+                width: _markSize,
+                height: _markSize,
+                decoration: BoxDecoration(
+                  color: tokens.subtle,
+                  borderRadius: BorderRadius.circular(tokens.radius + 6),
+                  border: Border.all(color: tokens.border.withValues(alpha: 0.6)),
+                ),
+                child: Icon(icon, size: 16, color: tokens.secondary),
+              ),
+              SizedBox(width: tokens.md),
+              Expanded(child: Text(label, style: text.titleSmall)),
+              Icon(Icons.chevron_right, color: tokens.muted, size: 18),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -1,9 +1,8 @@
+import { Permissions, UserRoles } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Gauge, MailPlus, UserPlus, Users, UsersRound } from 'lucide-react';
-import { UserRoles } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -17,6 +16,8 @@ import { MemberCard } from '@/features/team/components/member-card';
 import type { Member } from '@/features/team/data/members.repository';
 import { listMembers } from '@/features/team/services/members.service';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
+import { isOwnerRole } from '@/features/roles/config';
+import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 
 export const metadata: Metadata = { title: t('team.title') };
 
@@ -42,12 +43,23 @@ function parseFilter(value: string | undefined): TeamFilter {
 }
 
 export default async function TeamPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_LEADERSHIP);
+  const session = await requirePermission(Permissions.MEMBERS_VIEW);
   const sp = await searchParams;
   const filter = parseFilter(param(sp, 'f'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [members, tasks] = await Promise.all([listMembers(), listTasks()]);
+  const [canManageRoles, canInvite, canRemove] = await Promise.all([
+    can(Permissions.ROLES_MANAGE),
+    can(Permissions.MEMBERS_INVITE),
+    can(Permissions.MEMBERS_DEACTIVATE),
+  ]);
+  const [members, tasks, roles] = await Promise.all([
+    listMembers(),
+    loadIf(Permissions.TASKS_VIEW, listTasks, []),
+    loadIf(Permissions.ROLES_MANAGE, listRoles, []),
+  ]);
+  const assignableRoles = canManageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : undefined;
+  const customRoles = canManageRoles ? roles.filter((role) => !role.isSystem).map(toRoleSummary) : [];
   const hours = openHoursByAssignee(tasks);
   const scoped = members.filter((m) => !query || `${m.name} ${m.email} ${m.title} ${m.skills.join(' ')}`.toLowerCase().includes(query));
   const visible = scoped.filter(PREDICATES[filter]);
@@ -58,7 +70,6 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   const totalOpen = active.reduce((acc, m) => acc + (hours.get(m.id) ?? 0), 0);
   const utilisation = totalCapacity > 0 ? Math.round((totalOpen / totalCapacity) * 100) : 0;
 
-  const canManage = ROLES_OWNER.includes(session.role);
   const hasFilters = filter !== 'all' || Boolean(query);
   const filterLabels: Record<TeamFilter, string> = {
     all: t('team.filter.all'),
@@ -76,15 +87,18 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
         actions={
           <>
             <PageGuide items={GUIDE} />
-            <InviteDialog
-              defaultOpen={param(sp, 'new') === '1'}
-              trigger={
-                <Button variant="primary">
-                  <UserPlus />
-                  {t('team.invite')}
-                </Button>
-              }
-            />
+            {canInvite ? (
+              <InviteDialog
+                defaultOpen={param(sp, 'new') === '1'}
+                customRoles={customRoles}
+                trigger={
+                  <Button variant="primary">
+                    <UserPlus />
+                    {t('team.invite')}
+                  </Button>
+                }
+              />
+            ) : null}
           </>
         }
       />
@@ -114,14 +128,14 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             icon={<Users />}
             title={t('team.empty.title')}
             body={t('team.empty.body')}
-            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={canManage ? `${BASE}?new=1` : undefined} createLabel={t('team.invite')} />}
+            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={canInvite ? `${BASE}?new=1` : undefined} createLabel={t('team.invite')} />}
           />
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((member) => (
             <li key={member.id}>
-              <MemberCard member={member} openHours={hours.get(member.id) ?? 0} isSelf={member.id === session.userId} canManage={canManage} />
+              <MemberCard member={member} openHours={hours.get(member.id) ?? 0} isSelf={member.id === session.userId} assignableRoles={assignableRoles} canRemove={canRemove} />
             </li>
           ))}
         </ul>

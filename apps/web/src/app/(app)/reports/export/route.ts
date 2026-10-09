@@ -1,11 +1,11 @@
-import { requireRole } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { Permissions } from '@agency-os/contracts';
+import { requirePermission } from '@/shared/auth/permissions';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { parseReportFilter } from '@/features/reports/filters';
 import { loadReport, metricsToCsv } from '@/features/reports/services/reports.service';
 
 export async function GET(request: Request): Promise<Response> {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.REPORTS_VIEW);
   const params = new URL(request.url).searchParams;
   const filter = parseReportFilter((key) => params.get(key) ?? undefined);
   const report = await loadReport(filter);

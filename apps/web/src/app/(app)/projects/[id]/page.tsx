@@ -1,10 +1,10 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock, Pencil, Plus, Wallet } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { dueInfo, formatDate, formatMoney, formatNumber } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
@@ -21,6 +21,7 @@ import { ProjectDialog } from '@/features/projects/components/project-dialog';
 import { getProject } from '@/features/projects/services/projects.service';
 import { TaskDialog } from '@/features/tasks/components/task-dialog';
 import { listTasks } from '@/features/tasks/services/tasks.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 import { listEntries } from '@/features/time/services/time.service';
 
@@ -37,19 +38,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProjectDetailPage({ params, searchParams }: PageProps) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.PROJECTS_VIEW);
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const project = await getProject(id);
   if (!project) notFound();
 
-  const [allClients, tasks, entries, content, members] = await Promise.all([listClients(), listTasks(), listEntries(), listContent(), membersById()]);
+  const [allClients, tasks, entries, content, members] = await Promise.all([
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.TASKS_VIEW, listTasks, []),
+    loadIf(Permissions.TIME_TRACK, listEntries, []),
+    loadIf(Permissions.CONTENT_VIEW, listContent, []),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
+  ]);
   const client = allClients.find((c) => c.id === project.clientId);
   const projectTasks = tasks.filter((x) => x.projectId === project.id);
   const doneCount = projectTasks.filter((x) => x.status === 'DONE').length;
   const progress = projectTasks.length ? Math.round((doneCount / projectTasks.length) * 100) : 0;
   const loggedHours = entries.filter((e) => e.projectId === project.id).reduce((total, e) => total + e.minutes, 0) / MINUTES_PER_HOUR;
   const clientContent = content.filter((c) => c.clientId === project.clientId).slice(0, 5);
-  const canManage = ROLES_LEADERSHIP.includes(session.role);
+  const canManage = await can(Permissions.PROJECTS_EDIT);
   const due = dueInfo(project.endDate, project.status === 'COMPLETED');
   const memberOptions = [...members.values()].filter((m) => m.status !== 'INVITED').map((m) => ({ id: m.id, name: m.name }));
   const projectOption = [{ id: project.id, name: project.name, clientName: client?.name }];

@@ -17,7 +17,7 @@ import { PlatformBadge } from '@/shared/ui/platform';
 import type { Platform } from '@agency-os/contracts';
 import { FORM_SCHEMAS, type FormSchemaKey } from './form-schemas';
 
-export type FieldType = 'text' | 'email' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'number' | 'color' | 'platforms' | 'checkbox';
+export type FieldType = 'text' | 'email' | 'textarea' | 'select' | 'date' | 'datetime-local' | 'number' | 'color' | 'platforms' | 'multiselect' | 'checkbox';
 
 export interface FieldDef {
   name: string;
@@ -160,7 +160,7 @@ export function FormDialog({ schema, title, description, submitLabel, fields, ac
               required={def.required}
               hint={def.hint}
               error={translateError(form.formState.errors[def.name]?.message as string | undefined)}
-              className={cn(def.span === 2 || def.type === 'textarea' || def.type === 'platforms' ? 'sm:col-span-2' : '')}
+              className={cn(def.span === 2 || def.type === 'textarea' || def.type === 'platforms' || def.type === 'multiselect' ? 'sm:col-span-2' : '')}
             >
               {renderControl(def, schema, form)}
             </Field>
@@ -213,7 +213,7 @@ function renderControl(def: FieldDef, schema: string, form: ReturnType<typeof us
       />
     );
   }
-  if (type === 'platforms') {
+  if (type === 'platforms' || type === 'multiselect') {
     return (
       <Controller
         control={form.control}
@@ -221,7 +221,7 @@ function renderControl(def: FieldDef, schema: string, form: ReturnType<typeof us
         render={({ field }) => {
           const value: string[] = field.value ?? [];
           return (
-            <div className="flex flex-wrap gap-2" role="group" aria-label={def.label}>
+            <div id={id} className="flex flex-wrap gap-2" role="group" aria-label={def.label}>
               {def.options?.map((o) => {
                 const active = value.includes(o.value);
                 return (
@@ -235,7 +235,7 @@ function renderControl(def: FieldDef, schema: string, form: ReturnType<typeof us
                       active ? 'border-primary bg-primary/12 text-primary' : 'border-border-soft bg-surface-2 text-muted hover:border-border',
                     )}
                   >
-                    <PlatformBadge platform={o.value as Platform} size="xs" />
+                    {type === 'platforms' ? <PlatformBadge platform={o.value as Platform} size="xs" /> : null}
                     {o.label}
                   </button>
                 );

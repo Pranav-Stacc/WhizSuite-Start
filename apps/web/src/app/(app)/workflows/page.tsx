@@ -1,14 +1,15 @@
+import { Permissions, RoleKinds } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Plus, Workflow } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
 import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
+import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 import { WorkflowCard } from '@/features/workflows/components/workflow-card';
 import { WorkflowDialog } from '@/features/workflows/components/workflow-dialog';
 import { listWorkflows } from '@/features/workflows/services/workflows.service';
@@ -24,9 +25,12 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function WorkflowsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.WORKFLOWS_MANAGE);
   const sp = await searchParams;
-  const workflows = await listWorkflows();
+  const [workflows, roles] = await Promise.all([listWorkflows(), listRoles().catch(() => [])]);
+  const workflowRoles = roles
+    .filter((role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem)
+    .map(toRoleSummary);
   const editWorkflow = param(sp, 'edit') ? workflows.find((w) => w.id === param(sp, 'edit')) : undefined;
   const newButton = (
     <Button variant="primary">
@@ -44,7 +48,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
         actions={
           <>
             <PageGuide items={GUIDE} />
-            <WorkflowDialog defaultOpen={param(sp, 'new') === '1'} trigger={newButton} />
+            <WorkflowDialog workflowRoles={workflowRoles} defaultOpen={param(sp, 'new') === '1'} trigger={newButton} />
           </>
         }
       />
@@ -63,7 +67,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
         </ul>
       )}
 
-      {editWorkflow ? <WorkflowDialog workflow={editWorkflow} defaultOpen /> : null}
+      {editWorkflow ? <WorkflowDialog workflow={editWorkflow} workflowRoles={workflowRoles} defaultOpen /> : null}
     </div>
   );
 }

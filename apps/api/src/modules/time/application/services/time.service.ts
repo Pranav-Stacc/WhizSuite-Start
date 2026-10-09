@@ -2,8 +2,8 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
+  Permissions,
   TIME_ENTRY_MINUTES_MAX,
-  type MembershipType,
   type RunningTimerDto,
   type TimeEntryDto,
 } from '@agency-os/contracts';
@@ -24,8 +24,8 @@ const DEFAULT_BILLABLE = true;
 const MS_PER_MINUTE = 60_000;
 /** A stopped timer always records at least this much time. */
 const MIN_TIMER_MINUTES = 1;
-/** Membership types that may remove other people's time entries. */
-const ENTRY_MODERATOR_TYPES: readonly MembershipType[] = ['OWNER', 'ADMIN'];
+/** Members who manage other people may also remove their time entries. */
+const ENTRY_MODERATOR_PERMISSION = Permissions.MEMBERS_EDIT;
 
 @Injectable()
 export class TimeService {
@@ -177,9 +177,8 @@ export class TimeService {
   ): Promise<void> {
     const record = await this.require(organizationId, id);
     const membershipId = await this.actorMembership(organizationId, actor);
-    const moderator = ENTRY_MODERATOR_TYPES.some(
-      (type) => type === actor.membershipType,
-    );
+    const moderator =
+      actor.permissions?.includes(ENTRY_MODERATOR_PERMISSION) ?? false;
     if (record.membershipId !== membershipId && !moderator) {
       throw problem(
         HttpStatus.FORBIDDEN,

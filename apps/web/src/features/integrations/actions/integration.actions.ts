@@ -1,9 +1,8 @@
 'use server';
 
-import { connectIntegrationSchema } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
+import { connectIntegrationSchema, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -14,18 +13,13 @@ import { PLATFORM_META } from '@/shared/ui/platform';
 import { integrationsRepository } from '../data/integrations.repository';
 import { connectedPlatforms } from '../services/integrations.service';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 /** Live channels are linked by the provider OAuth flow, never by typing a handle. */
 const oauthRequired = (): ActionResult => fail(t('integrations.oauthRequired'));
 
 export async function connectIntegrationAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INTEGRATIONS_MANAGE);
     if (isLiveMode) return oauthRequired();
     const parsed = parseInput(connectIntegrationSchema, raw);
     if (!parsed.ok) return parsed.result;
@@ -48,7 +42,7 @@ export async function connectIntegrationAction(id: string, raw: unknown): Promis
 
 export async function disconnectIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INTEGRATIONS_MANAGE);
     if (isLiveMode) return oauthRequired();
     const before = await integrationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
@@ -68,7 +62,7 @@ export async function disconnectIntegrationAction(id: string): Promise<ActionRes
 
 export async function syncIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INTEGRATIONS_MANAGE);
     if (isLiveMode) return oauthRequired();
     const before = await integrationsRepository.get(id);
     if (!before?.connected) return fail(t('toast.failed'));

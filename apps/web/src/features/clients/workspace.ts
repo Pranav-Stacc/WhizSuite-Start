@@ -1,14 +1,21 @@
-import type { UserRole } from '@agency-os/contracts';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { Permissions, type Permission } from '@agency-os/contracts';
 
 export const CLIENT_WORKSPACE_SECTIONS = ['overview', 'grid', 'calendar', 'messages', 'assets', 'invoices', 'integrations'] as const;
 export type ClientSection = (typeof CLIENT_WORKSPACE_SECTIONS)[number];
 
-const LEADERSHIP_SECTIONS: ReadonlySet<ClientSection> = new Set(['invoices']);
+/** Permission the API requires for the data each workspace section shows. */
+const SECTION_PERMISSION: Record<ClientSection, Permission> = {
+  overview: Permissions.CLIENTS_VIEW,
+  grid: Permissions.CONTENT_VIEW,
+  calendar: Permissions.CONTENT_VIEW,
+  messages: Permissions.INBOX_VIEW,
+  assets: Permissions.FILES_VIEW,
+  invoices: Permissions.INVOICES_VIEW,
+  integrations: Permissions.INTEGRATIONS_MANAGE,
+};
 
-export function clientSectionsFor(role: UserRole): ClientSection[] {
-  const leadership = ROLES_LEADERSHIP.includes(role);
-  return CLIENT_WORKSPACE_SECTIONS.filter((section) => leadership || !LEADERSHIP_SECTIONS.has(section));
+export function clientSectionsFor(granted: ReadonlySet<Permission>): ClientSection[] {
+  return CLIENT_WORKSPACE_SECTIONS.filter((section) => granted.has(SECTION_PERMISSION[section]));
 }
 
 export function clientSectionHref(clientId: string, section: ClientSection): string {

@@ -70,9 +70,31 @@ abstract final class ScopeTypes {
   static const String client = 'CLIENT';
   static const String project = 'PROJECT';
   static const String task = 'TASK';
+  static const String content = 'CONTENT';
   static const String self = 'SELF';
 
-  static const List<String> values = <String>[global, organization, workspace, department, team, client, project, task, self];
+  static const List<String> values = <String>[global, organization, workspace, department, team, client, project, task, content, self];
+}
+
+abstract final class AssignableScopeTypes {
+  static const String organization = 'ORGANIZATION';
+  static const String workspace = 'WORKSPACE';
+  static const String department = 'DEPARTMENT';
+  static const String team = 'TEAM';
+  static const String client = 'CLIENT';
+  static const String project = 'PROJECT';
+  static const String task = 'TASK';
+  static const String content = 'CONTENT';
+  static const String self = 'SELF';
+
+  static const List<String> values = <String>[organization, workspace, department, team, client, project, task, content, self];
+}
+
+abstract final class RoleKinds {
+  static const String access = 'ACCESS';
+  static const String workflow = 'WORKFLOW';
+
+  static const List<String> values = <String>[access, workflow];
 }
 
 abstract final class MembershipTypes {
@@ -326,3 +348,302 @@ abstract final class ThemeStatusColors {
 const Map<String, Object> defaultTheme = <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'};
 
 const List<Object> themePresets = <Object>[<String, Object>{'id': 'editorial', 'theme': <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'noir', 'theme': <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'mono', 'theme': <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'aurora', 'theme': <String, Object>{'bg': '#07050F', 'surface': '#110D1F', 'border': '#2C2150', 'primary': '#A78BFA', 'secondary': '#7DD3FC', 'fg': '#F6F5FF', 'muted': '#9A96B5', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'ocean', 'theme': <String, Object>{'bg': '#030B12', 'surface': '#0A1823', 'border': '#17344A', 'primary': '#38BDF8', 'secondary': '#22D3EE', 'fg': '#F2F8FC', 'muted': '#8CA3B3', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sunset', 'theme': <String, Object>{'bg': '#0D0705', 'surface': '#1A100C', 'border': '#4A2A1A', 'primary': '#FF8A3D', 'secondary': '#FFC247', 'fg': '#FFF7F0', 'muted': '#B09A8A', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'rose', 'theme': <String, Object>{'bg': '#0D0509', 'surface': '#1A0C13', 'border': '#4A1A2F', 'primary': '#FF4D8D', 'secondary': '#FF9AC1', 'fg': '#FFF4F8', 'muted': '#B18C9C', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'daylight', 'theme': <String, Object>{'bg': '#F4F7F5', 'surface': '#FFFFFF', 'border': '#CFE0D6', 'primary': '#0A9F4F', 'secondary': '#0F7A5A', 'fg': '#0B1513', 'muted': '#5D6B67', 'radius': 14, 'density': 'comfortable'}}];
+
+abstract final class LeadStages {
+  static const String newValue = 'NEW';
+  static const String contacted = 'CONTACTED';
+  static const String proposal = 'PROPOSAL';
+  static const String negotiation = 'NEGOTIATION';
+  static const String won = 'WON';
+  static const String lost = 'LOST';
+
+  static const List<String> values = <String>[newValue, contacted, proposal, negotiation, won, lost];
+}
+
+abstract final class ArticleCategories {
+  static const String sop = 'SOP';
+  static const String playbook = 'PLAYBOOK';
+  static const String template = 'TEMPLATE';
+  static const String policy = 'POLICY';
+  static const String onboarding = 'ONBOARDING';
+
+  static const List<String> values = <String>[sop, playbook, template, policy, onboarding];
+}
+
+abstract final class AssetKinds {
+  static const String image = 'image';
+  static const String video = 'video';
+  static const String document = 'document';
+
+  static const List<String> values = <String>[image, video, document];
+}
+
+abstract final class MediaAssetStatuses {
+  static const String pendingUpload = 'PENDING_UPLOAD';
+  static const String ready = 'READY';
+  static const String failed = 'FAILED';
+
+  static const List<String> values = <String>[pendingUpload, ready, failed];
+}
+
+abstract final class Visibilities {
+  static const String internal = 'INTERNAL';
+  static const String clientVisible = 'CLIENT_VISIBLE';
+
+  static const List<String> values = <String>[internal, clientVisible];
+}
+
+abstract final class CalendarSourceTypes {
+  static const String manual = 'MANUAL';
+  static const String content = 'CONTENT';
+  static const String task = 'TASK';
+  static const String meeting = 'MEETING';
+  static const String deadline = 'DEADLINE';
+
+  static const List<String> values = <String>[manual, content, task, meeting, deadline];
+}
+
+abstract final class CustomFieldEntityTypes {
+  static const String client = 'client';
+  static const String project = 'project';
+  static const String task = 'task';
+  static const String content = 'content';
+  static const String lead = 'lead';
+
+  static const List<String> values = <String>[client, project, task, content, lead];
+}
+
+abstract final class CustomFieldTypes {
+  static const String text = 'TEXT';
+  static const String number = 'NUMBER';
+  static const String date = 'DATE';
+  static const String select = 'SELECT';
+  static const String multiSelect = 'MULTI_SELECT';
+  static const String boolean = 'BOOLEAN';
+  static const String url = 'URL';
+
+  static const List<String> values = <String>[text, number, date, select, multiSelect, boolean, url];
+}
+
+abstract final class ReportStatuses {
+  static const String draft = 'DRAFT';
+  static const String ready = 'READY';
+  static const String sent = 'SENT';
+
+  static const List<String> values = <String>[draft, ready, sent];
+}
+
+abstract final class TemplateTypes {
+  static const String project = 'PROJECT';
+  static const String task = 'TASK';
+  static const String content = 'CONTENT';
+  static const String report = 'REPORT';
+  static const String message = 'MESSAGE';
+
+  static const List<String> values = <String>[project, task, content, report, message];
+}
+
+abstract final class TemplateScopes {
+  static const String organization = 'ORGANIZATION';
+  static const String client = 'CLIENT';
+
+  static const List<String> values = <String>[organization, client];
+}
+
+abstract final class IntegrationConnectionStatuses {
+  static const String pending = 'PENDING';
+  static const String connected = 'CONNECTED';
+  static const String disconnected = 'DISCONNECTED';
+  static const String error = 'ERROR';
+
+  static const List<String> values = <String>[pending, connected, disconnected, error];
+}
+
+abstract final class FeedbackThreadStatuses {
+  static const String open = 'OPEN';
+  static const String resolved = 'RESOLVED';
+
+  static const List<String> values = <String>[open, resolved];
+}
+
+abstract final class FeedbackSubjectTypes {
+  static const String content = 'CONTENT';
+  static const String client = 'CLIENT';
+
+  static const List<String> values = <String>[content, client];
+}
+
+abstract final class ApprovalStepRules {
+  static const String any = 'ANY';
+  static const String all = 'ALL';
+
+  static const List<String> values = <String>[any, all];
+}
+
+abstract final class ApiContentTypes {
+  static const String staticPost = 'STATIC_POST';
+  static const String reel = 'REEL';
+  static const String story = 'STORY';
+  static const String carousel = 'CAROUSEL';
+  static const String video = 'VIDEO';
+  static const String article = 'ARTICLE';
+
+  static const List<String> values = <String>[staticPost, reel, story, carousel, video, article];
+}
+
+abstract final class ContentCreatableStatuses {
+  static const String draft = 'DRAFT';
+  static const String inReview = 'IN_REVIEW';
+
+  static const List<String> values = <String>[draft, inReview];
+}
+
+abstract final class ContentReviewOutcomes {
+  static const String approved = 'APPROVED';
+  static const String changesRequested = 'CHANGES_REQUESTED';
+  static const String draft = 'DRAFT';
+
+  static const List<String> values = <String>[approved, changesRequested, draft];
+}
+
+const Map<String, List<String>> contentTransitions = <String, List<String>>{
+  'DRAFT': <String>['IN_REVIEW'],
+  'IN_REVIEW': <String>['APPROVED', 'CHANGES_REQUESTED', 'DRAFT'],
+  'CHANGES_REQUESTED': <String>['DRAFT', 'IN_REVIEW'],
+  'APPROVED': <String>['SCHEDULED', 'PUBLISHED', 'DRAFT'],
+  'SCHEDULED': <String>['APPROVED', 'PUBLISHED', 'DRAFT'],
+  'PUBLISHED': <String>[],
+};
+
+abstract final class InvoiceCreatableStatuses {
+  static const String draft = 'DRAFT';
+  static const String sent = 'SENT';
+
+  static const List<String> values = <String>[draft, sent];
+}
+
+const Map<String, List<String>> invoiceTransitions = <String, List<String>>{
+  'DRAFT': <String>['SENT', 'VOID'],
+  'SENT': <String>['PAID', 'VOID'],
+  'OVERDUE': <String>['PAID', 'VOID'],
+  'PAID': <String>[],
+  'VOID': <String>[],
+};
+
+abstract final class InboxConversationTypes {
+  static const String comment = 'COMMENT';
+  static const String dm = 'DM';
+  static const String mention = 'MENTION';
+
+  static const List<String> values = <String>[comment, dm, mention];
+}
+
+abstract final class InboxConversationStatuses {
+  static const String open = 'OPEN';
+  static const String replied = 'REPLIED';
+  static const String archived = 'ARCHIVED';
+
+  static const List<String> values = <String>[open, replied, archived];
+}
+
+abstract final class InboxPriorities {
+  static const String low = 'LOW';
+  static const String normal = 'NORMAL';
+  static const String high = 'HIGH';
+  static const String urgent = 'URGENT';
+
+  static const List<String> values = <String>[low, normal, high, urgent];
+}
+
+abstract final class InboxSentiments {
+  static const String positive = 'POSITIVE';
+  static const String neutral = 'NEUTRAL';
+  static const String negative = 'NEGATIVE';
+
+  static const List<String> values = <String>[positive, neutral, negative];
+}
+
+abstract final class InboxMessageDirections {
+  static const String inbound = 'INBOUND';
+  static const String outbound = 'OUTBOUND';
+
+  static const List<String> values = <String>[inbound, outbound];
+}
+
+const int resourceNameMinLength = 2;
+
+const int resourceNameMaxLength = 200;
+
+const int resourceKeyMaxLength = 100;
+
+const int resourceTextMaxLength = 2000;
+
+const int approvalStepsMax = 10;
+
+const int projectNameMaxLength = 200;
+
+const int projectTypeMaxLength = 60;
+
+const int contentTitleMaxLength = 200;
+
+const int contentCaptionMaxLength = 5000;
+
+const int contentPillarMaxLength = 100;
+
+const int contentHashtagMaxLength = 100;
+
+const int contentCtaUrlMaxLength = 2048;
+
+const int contentHashtagsMaxDefault = 30;
+
+const String hashtagPattern = '^#?[^\\s#]+\$';
+
+const int invoiceNumberMaxLength = 40;
+
+const int invoiceLinesMaxDefault = 100;
+
+const int invoiceLineDescriptionMaxLength = 500;
+
+const int invoiceLineQuantityMax = 100000;
+
+const int invoiceTaxRateMax = 100;
+
+const int basisPointsPerPercent = 100;
+
+const int leadTextMaxLength = 200;
+
+const int leadNextStepMaxLength = 500;
+
+const int articleTitleMaxLength = 200;
+
+const int articleBodyMaxLength = 50000;
+
+const int timeEntryMinutesMax = 1440;
+
+const int timeEntryNoteMaxLength = 1000;
+
+const int inboxHandleMaxLength = 200;
+
+const int inboxMessageMaxLength = 5000;
+
+const int feedbackCommentMaxLengthDefault = 2000;
+
+const int mediaFilenameMaxLength = 255;
+
+const int roleNameMaxLength = 60;
+
+const int roleDescriptionMaxLength = 280;
+
+const int memberRolesMax = 10;
+
+const String workflowStageSeparator = ',';
+
+const int minWorkflowStages = 2;
+
+const int maxWorkflowStages = 20;
+
+const int maxWorkflowSlaHours = 720;
+
+const int maxWorkflowStageLength = 80;
+
+const int maxAutomationRunDetailLength = 500;

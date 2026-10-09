@@ -16,6 +16,8 @@ const output = resolve(here, '../../../apps/mobile/lib/core/contracts/contracts.
 const EXPORTS = [
   'Permissions',
   'ScopeTypes',
+  'AssignableScopeTypes',
+  'RoleKinds',
   'MembershipTypes',
   'ErrorCodes',
   'NotificationTypeKeys',
@@ -53,6 +55,71 @@ const EXPORTS = [
   'ThemeStatusColors',
   'DEFAULT_THEME',
   'THEME_PRESETS',
+  'LeadStages',
+  'ArticleCategories',
+  'AssetKinds',
+  'MediaAssetStatuses',
+  'Visibilities',
+  'CalendarSourceTypes',
+  'CustomFieldEntityTypes',
+  'CustomFieldTypes',
+  'ReportStatuses',
+  'TemplateTypes',
+  'TemplateScopes',
+  'IntegrationConnectionStatuses',
+  'FeedbackThreadStatuses',
+  'FeedbackSubjectTypes',
+  'ApprovalStepRules',
+  'ApiContentTypes',
+  'ContentCreatableStatuses',
+  'ContentReviewOutcomes',
+  'CONTENT_TRANSITIONS',
+  'InvoiceCreatableStatuses',
+  'INVOICE_TRANSITIONS',
+  'InboxConversationTypes',
+  'InboxConversationStatuses',
+  'InboxPriorities',
+  'InboxSentiments',
+  'InboxMessageDirections',
+  'RESOURCE_NAME_MIN_LENGTH',
+  'RESOURCE_NAME_MAX_LENGTH',
+  'RESOURCE_KEY_MAX_LENGTH',
+  'RESOURCE_TEXT_MAX_LENGTH',
+  'APPROVAL_STEPS_MAX',
+  'PROJECT_NAME_MAX_LENGTH',
+  'PROJECT_TYPE_MAX_LENGTH',
+  'CONTENT_TITLE_MAX_LENGTH',
+  'CONTENT_CAPTION_MAX_LENGTH',
+  'CONTENT_PILLAR_MAX_LENGTH',
+  'CONTENT_HASHTAG_MAX_LENGTH',
+  'CONTENT_CTA_URL_MAX_LENGTH',
+  'CONTENT_HASHTAGS_MAX_DEFAULT',
+  'HASHTAG_PATTERN',
+  'INVOICE_NUMBER_MAX_LENGTH',
+  'INVOICE_LINES_MAX_DEFAULT',
+  'INVOICE_LINE_DESCRIPTION_MAX_LENGTH',
+  'INVOICE_LINE_QUANTITY_MAX',
+  'INVOICE_TAX_RATE_MAX',
+  'BASIS_POINTS_PER_PERCENT',
+  'LEAD_TEXT_MAX_LENGTH',
+  'LEAD_NEXT_STEP_MAX_LENGTH',
+  'ARTICLE_TITLE_MAX_LENGTH',
+  'ARTICLE_BODY_MAX_LENGTH',
+  'TIME_ENTRY_MINUTES_MAX',
+  'TIME_ENTRY_NOTE_MAX_LENGTH',
+  'INBOX_HANDLE_MAX_LENGTH',
+  'INBOX_MESSAGE_MAX_LENGTH',
+  'FEEDBACK_COMMENT_MAX_LENGTH_DEFAULT',
+  'MEDIA_FILENAME_MAX_LENGTH',
+  'ROLE_NAME_MAX_LENGTH',
+  'ROLE_DESCRIPTION_MAX_LENGTH',
+  'MEMBER_ROLES_MAX',
+  'WORKFLOW_STAGE_SEPARATOR',
+  'MIN_WORKFLOW_STAGES',
+  'MAX_WORKFLOW_STAGES',
+  'MAX_WORKFLOW_SLA_HOURS',
+  'MAX_WORKFLOW_STAGE_LENGTH',
+  'MAX_AUTOMATION_RUN_DETAIL_LENGTH',
 ];
 
 /** Dart reserved words plus the generated `values` member. */
@@ -102,14 +169,24 @@ function literal(value) {
 }
 
 const allStrings = (values) => values.every((v) => typeof v === 'string');
+const allStringLists = (values) => values.every((v) => Array.isArray(v) && allStrings(v));
+
+function emitStringListMap(name, value) {
+  const entries = Object.entries(value).map(
+    ([k, list]) => `  ${quote(k)}: <String>[${list.map(quote).join(', ')}],`,
+  );
+  return [`const Map<String, List<String>> ${camel(name)} = <String, List<String>>{`, ...entries, '};'].join('\n');
+}
 
 function emit(name, value) {
+  if (value instanceof RegExp) return `const String ${camel(name)} = ${quote(value.source)};`;
   if (Array.isArray(value)) {
     return allStrings(value)
       ? emitClass(name, value.map((v) => [v, v]))
       : `const List<Object> ${camel(name)} = ${literal(value)};`;
   }
   if (value && typeof value === 'object') {
+    if (allStringLists(Object.values(value))) return emitStringListMap(name, value);
     return allStrings(Object.values(value))
       ? emitClass(name, Object.entries(value))
       : `const Map<String, Object> ${camel(name)} = ${literal(value)};`;

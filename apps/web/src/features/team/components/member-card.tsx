@@ -1,5 +1,5 @@
 import { Clock, Mail, UserMinus } from 'lucide-react';
-import { UserRoles } from '@agency-os/contracts';
+import { UserRoles, type AccessRoleSummary } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { formatDate } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -10,6 +10,7 @@ import { StatusMenu } from '@/shared/ui/status-menu';
 import { changeMemberRoleAction, removeMemberAction } from '../actions/member.actions';
 import { ASSIGNABLE_ROLES, NEAR_CAPACITY_THRESHOLD, OVERLOAD_THRESHOLD } from '../config';
 import type { Member, MemberRole } from '../data/members.repository';
+import { AssignRolesDialog } from './assign-roles-dialog';
 
 const ROLE_TONE: Record<MemberRole, BadgeTone> = {
   [UserRoles.OWNER]: 'primary',
@@ -27,7 +28,9 @@ interface MemberCardProps {
   member: Member;
   openHours: number;
   isSelf: boolean;
-  canManage: boolean;
+  /** Roles the viewer may grant; present only when they hold the role-management permission. */
+  assignableRoles?: AccessRoleSummary[];
+  canRemove: boolean;
 }
 
 function workloadTone(ratio: number): 'primary' | 'warning' | 'danger' {
@@ -36,11 +39,13 @@ function workloadTone(ratio: number): 'primary' | 'warning' | 'danger' {
   return 'primary';
 }
 
-export function MemberCard({ member, openHours, isSelf, canManage }: MemberCardProps) {
+export function MemberCard({ member, openHours, isSelf, assignableRoles, canRemove }: MemberCardProps) {
   const invited = member.status === 'INVITED';
   const ratio = member.capacityHours > 0 ? openHours / member.capacityHours : 0;
   const protectedMember = member.role === UserRoles.OWNER || isSelf;
   const roleLabel = t(`shell.role.${member.role}`);
+  const canManageRoles = assignableRoles !== undefined && !protectedMember && !invited;
+  const showRemove = canRemove && !protectedMember;
 
   return (
     <article className="card-surface flex h-full flex-col gap-4 p-5">
@@ -77,6 +82,16 @@ export function MemberCard({ member, openHours, isSelf, canManage }: MemberCardP
         </div>
       )}
 
+      {member.roles.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5" aria-label={t('team.roles.assigned')}>
+          {member.roles.map((role) => (
+            <li key={role.id}>
+              <Badge tone={role.isSystem ? 'neutral' : 'info'}>{role.name}</Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {member.skills.length > 0 ? (
         <ul className="flex flex-wrap gap-1.5" aria-label={t('team.skills')}>
           {member.skills.map((skill) => (
@@ -89,22 +104,27 @@ export function MemberCard({ member, openHours, isSelf, canManage }: MemberCardP
 
       <footer className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
         <span className="text-xs text-muted">{invited ? t('team.pending') : t('team.joined', { date: formatDate(member.joinedAt) })}</span>
-        {canManage && !protectedMember ? (
-          <div className="flex items-center gap-2">
-            {invited ? null : (
-              <StatusMenu
-                current={member.role}
-                label={t('team.role.change')}
-                options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: t(`shell.role.${role}`), color: ROLE_COLOR[role] }))}
-                action={changeMemberRoleAction.bind(null, member.id)}
+        {canManageRoles || showRemove ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {canManageRoles && assignableRoles ? (
+              <>
+                <StatusMenu
+                  current={member.role}
+                  label={t('team.role.change')}
+                  options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: t(`shell.role.${role}`), color: ROLE_COLOR[role] }))}
+                  action={changeMemberRoleAction.bind(null, member.id)}
+                />
+                <AssignRolesDialog member={member} assignable={assignableRoles} />
+              </>
+            ) : null}
+            {showRemove ? (
+              <ConfirmButton
+                action={removeMemberAction.bind(null, member.id)}
+                label={invited ? t('team.invite.revoke') : t('team.remove')}
+                icon={<UserMinus />}
+                size="sm"
               />
-            )}
-            <ConfirmButton
-              action={removeMemberAction.bind(null, member.id)}
-              label={invited ? t('team.invite.revoke') : t('team.remove')}
-              icon={<UserMinus />}
-              size="sm"
-            />
+            ) : null}
           </div>
         ) : null}
       </footer>

@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { BadgeDollarSign, KanbanSquare, List, Percent, Plus, Target, Trophy, TrendingUp } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { ActionButton } from '@/shared/ui/action-button';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
@@ -44,7 +44,7 @@ function parseFilter(value: string | undefined): LeadFilter {
 const isOpen = (lead: Lead): boolean => lead.stage !== 'WON' && lead.stage !== 'LOST';
 
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_LEADERSHIP);
+  const session = await requirePermission(Permissions.LEADS_VIEW);
   const sp = await searchParams;
   const view = param(sp, 'view') === 'list' ? 'list' : 'board';
   const filter = parseFilter(param(sp, 'f'));

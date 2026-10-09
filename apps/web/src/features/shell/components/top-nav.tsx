@@ -3,16 +3,17 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
-import type { UserRole } from '@agency-os/contracts';
+import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
-import { isActivePath, primaryNavForRole, secondaryGroupsForRole } from '@/shared/navigation/nav-config';
+import { isActivePath, primaryNav, secondaryGroups } from '@/shared/navigation/nav-config';
 import { Menu } from '@/shared/ui/overlays';
 
 /** Flat editorial navigation: uppercase text links, everything else tucked under "More". */
-export function TopNav({ role, badges }: { role: UserRole; badges: Record<string, number> }) {
+export function TopNav({ permissions, badges }: { permissions: Permission[]; badges: Record<string, number> }) {
   const pathname = usePathname();
-  const primary = primaryNavForRole(role);
-  const secondary = secondaryGroupsForRole(role);
+  const granted = new Set(permissions);
+  const primary = primaryNav(granted);
+  const secondary = secondaryGroups(granted);
   const moreActive = secondary.some((group) => group.items.some((item) => isActivePath(pathname, item.href)));
   const moreBadge = secondary.reduce((acc, group) => acc + group.items.reduce((sum, item) => sum + (badges[item.href] ?? 0), 0), 0);
 

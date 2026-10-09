@@ -5,11 +5,11 @@ import {
   MediaDownloadDispositions,
   createAssetSchema,
   presignMediaUploadSchema,
+  Permissions,
   type MediaDownloadDisposition,
 } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
+import { authorize } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -28,15 +28,10 @@ export interface UploadTicket {
   headers: Record<string, string>;
 }
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function createAssetAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.FILES_UPLOAD);
     const parsed = parseInput(createAssetSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -61,7 +56,7 @@ export async function createAssetAction(raw: unknown): Promise<ActionResult> {
 /** Step 1 of an upload: registers the asset and returns a short-lived URL the browser PUTs the file to. */
 export async function requestUploadAction(raw: unknown): Promise<ActionResult<UploadTicket>> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.FILES_UPLOAD);
     if (!isLiveMode) return fail(t('media.upload.unavailable'));
     const parsed = parseInput(presignMediaUploadSchema, raw);
     if (!parsed.ok) return parsed.result;
@@ -73,7 +68,7 @@ export async function requestUploadAction(raw: unknown): Promise<ActionResult<Up
 /** Step 2 of an upload: the API verifies the object landed in storage and marks the asset ready. */
 export async function completeUploadAction(assetId: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.FILES_UPLOAD);
     const id = assetIdSchema.safeParse(assetId);
     if (!id.success) return fail(t('toast.invalid'));
     await completeUpload(id.data);
@@ -87,7 +82,7 @@ export async function assetDownloadUrlAction(
   disposition: MediaDownloadDisposition,
 ): Promise<ActionResult<{ url: string }>> {
   return guarded(async () => {
-    await requireSession();
+    await authorize(Permissions.FILES_VIEW);
     const id = assetIdSchema.safeParse(assetId);
     const mode = dispositionSchema.safeParse(disposition);
     if (!id.success || !mode.success) return fail(t('toast.invalid'));
@@ -98,7 +93,7 @@ export async function assetDownloadUrlAction(
 
 export async function deleteAssetAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.FILES_DELETE);
     const asset = await mediaRepository.get(id);
     if (!asset) return fail(t('toast.failed'));
     await mediaRepository.remove(id);

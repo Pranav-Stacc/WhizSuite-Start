@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   AutomationActions,
   AutomationTriggers,
+  MAX_AUTOMATION_RUN_DETAIL_LENGTH,
   type AutomationAction,
   type AutomationTrigger,
 } from '@agency-os/contracts';
@@ -16,7 +17,6 @@ import {
 
 const NAME_MIN = 2;
 const NAME_MAX = 200;
-const DETAIL_MAX = 500;
 
 export class CreateAutomationDto {
   @ApiProperty()
@@ -80,6 +80,6 @@ export class RunAutomationDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
-  @MaxLength(DETAIL_MAX)
+  @MaxLength(MAX_AUTOMATION_RUN_DETAIL_LENGTH)
   detail?: string;
 }

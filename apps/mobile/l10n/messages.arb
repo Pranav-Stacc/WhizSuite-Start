@@ -1,0 +1,55 @@
+{
+  "navMessages": "Messages",
+  "messagesSearchHint": "Search conversations",
+  "messagesEmpty": "No conversations yet",
+  "messagesEmptyBody": "Start a conversation with a client, or wait for them to message you.",
+  "messagesEmptyPortalBody": "Message your agency when you have a question or feedback.",
+  "messagesSelectTitle": "Select a conversation",
+  "messagesSelectBody": "Pick a thread from the list to read and reply.",
+  "messagesThreadCount": "{count, plural, =0{No threads} =1{1 thread} other{{count} threads}}",
+  "@messagesThreadCount": { "placeholders": { "count": { "type": "int" } } },
+  "messagesNew": "New conversation",
+  "messagesNewPortal": "Message agency",
+  "messagesNewTitle": "New conversation",
+  "messagesNewPortalTitle": "Message your agency",
+  "messagesClientFilter": "Client",
+  "messagesClientLabel": "Client",
+  "messagesFirstMessageLabel": "Message",
+  "messagesSend": "Send",
+  "messagesComposerHint": "Write a message…",
+  "messagesResolve": "Resolve",
+  "messagesReopen": "Reopen",
+  "messagesReopenHint": "This conversation is resolved. Sending a message will reopen it.",
+  "messagesResolvedToast": "Conversation resolved",
+  "messagesReopenedToast": "Conversation reopened",
+  "messagesOpenPost": "Open post",
+  "messagesReadOnly": "You can read this conversation but not reply.",
+  "messagesNoMessages": "No messages yet",
+  "messagesNoMessagesBody": "Send the first message to start the conversation.",
+  "messagesPreviewUnavailable": "Preview unavailable",
+  "messagesPreview": "{author}: {body}",
+  "@messagesPreview": {
+    "placeholders": {
+      "author": { "type": "String" },
+      "body": { "type": "String" }
+    }
+  },
+  "messagesMessageLabel": "{author}, {when}: {body}",
+  "@messagesMessageLabel": {
+    "placeholders": {
+      "author": { "type": "String" },
+      "when": { "type": "String" },
+      "body": { "type": "String" }
+    }
+  },
+  "messagesSending": "Sending…",
+  "messagesToday": "Today",
+  "messagesYesterday": "Yesterday",
+  "messagesYou": "You",
+  "messagesAgency": "Agency",
+  "messagesAgencyConversation": "Your agency",
+  "messagesClientConversation": "Client",
+  "messagesContentConversation": "Content feedback",
+  "messagesStatus": "{status, select, OPEN{Open} RESOLVED{Resolved} other{{status}}}",
+  "@messagesStatus": { "placeholders": { "status": { "type": "String" } } }
+}

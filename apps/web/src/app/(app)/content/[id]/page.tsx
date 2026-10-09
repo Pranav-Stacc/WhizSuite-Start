@@ -1,13 +1,13 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CalendarClock, Pencil } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { FormDialog } from '@/shared/forms/form-dialog';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
 import { formatDateTime, relativeTime, toDateTimeLocal } from '@/shared/lib/format';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
@@ -23,9 +23,10 @@ import { ContentComposer } from '@/features/content/components/content-composer'
 import { PostPreview } from '@/features/content/components/post-preview';
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
 import { eventsFor, getPost } from '@/features/content/services/content.service';
-import { canApprove, canDeleteContent, isEditable } from '@/features/content/workflow';
+import { isEditable } from '@/features/content/workflow';
 import { DEFAULT_CLIENT_COLOR } from '@/features/clients/config';
 import { listAssets } from '@/features/media/services/media.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 
 interface PageProps {
@@ -39,16 +40,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ContentDetailPage({ params, searchParams }: PageProps) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CONTENT_VIEW);
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const post = await getPost(id);
   if (!post) notFound();
 
-  const [events, clients, members, assets] = await Promise.all([eventsFor(post.id), listClients(), membersById(), listAssets()]);
+  const granted = await getPermissions();
+  const [events, clients, members, assets] = await Promise.all([
+    eventsFor(post.id),
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
+    loadIf(Permissions.FILES_VIEW, listAssets, []),
+  ]);
   const client = clients.find((c) => c.id === post.clientId);
   const author = members.get(post.authorId);
-  const approver = canApprove(session.role);
-  const editable = isEditable(post.status);
+  const approver = granted.has(Permissions.APPROVALS_APPROVE);
+  const editable = isEditable(post.status) && granted.has(Permissions.CONTENT_EDIT);
+  const canDelete = granted.has(Permissions.CONTENT_DELETE);
   const previewPlatform = post.platforms.find((p) => p === param(sp, 'platform')) ?? post.platforms[0];
   const base = `/content/${post.id}`;
 
@@ -111,7 +119,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                 }
               />
             ) : null}
-            {canDeleteContent(session, post) ? <ConfirmButton action={deleteContentAction.bind(null, post.id)} label={t('content.delete')} redirectTo="/content" /> : null}
+            {canDelete ? <ConfirmButton action={deleteContentAction.bind(null, post.id)} label={t('content.delete')} redirectTo="/content" /> : null}
           </div>
         </header>
       </div>

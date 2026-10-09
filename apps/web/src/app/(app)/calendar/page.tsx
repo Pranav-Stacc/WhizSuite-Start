@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Plus } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
@@ -27,7 +27,7 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CONTENT_VIEW);
   const sp = await searchParams;
   const { year, month } = parseMonth(param(sp, 'm'));
   const view = param(sp, 'view') === 'agenda' ? 'agenda' : 'month';

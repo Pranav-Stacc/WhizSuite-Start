@@ -2,18 +2,18 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { UserRole } from '@agency-os/contracts';
+import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
-import { groupsForRole, isActivePath } from '@/shared/navigation/nav-config';
+import { allowedGroups, isActivePath } from '@/shared/navigation/nav-config';
 
 /** Client workspaces render their own section tabs, so module tabs step aside there. */
 const CLIENT_WORKSPACE = /^\/clients\/[^/]+/;
 
 /** Second bar: the sibling pages of whichever module you are in, so any related screen is one click away. */
-export function ModuleTabs({ role, badges }: { role: UserRole; badges: Record<string, number> }) {
+export function ModuleTabs({ permissions, badges }: { permissions: Permission[]; badges: Record<string, number> }) {
   const pathname = usePathname();
   if (CLIENT_WORKSPACE.test(pathname)) return null;
-  const group = groupsForRole(role).find((g) => g.items.some((item) => isActivePath(pathname, item.href)));
+  const group = allowedGroups(new Set(permissions)).find((g) => g.items.some((item) => isActivePath(pathname, item.href)));
   if (!group || group.items.length < 2) return null;
 
   return (

@@ -1,6 +1,7 @@
 'use server';
 
-import { ApprovalActions, UserRoles, messageSchema, type ApprovalAction, type ContentReviewOutcome } from '@agency-os/contracts';
+import { ApprovalActions, Permissions, UserRoles, messageSchema, type ApprovalAction, type ContentReviewOutcome } from '@agency-os/contracts';
+import { ForbiddenError, authorize } from '@/shared/auth/permissions';
 import { requireSession, type Session } from '@/shared/auth/session';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -9,7 +10,6 @@ import { t } from '@/shared/i18n/t';
 import { postClientThreadMessage } from '@/shared/api/live/feedback';
 import { reviewContent } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { contentRepository, type ContentEvent } from '@/features/content/data/content.repository';
 import { recordContentEvent } from '@/features/content/services/content.service';
@@ -21,7 +21,7 @@ const DECISION_EVENT: Record<ApprovalAction, ContentEvent['kind']> = { APPROVED:
 
 async function requireClient(): Promise<Session & { clientId: string }> {
   const session = await requireSession();
-  if (session.role !== UserRoles.CLIENT || !session.clientId) throw new Error('forbidden');
+  if (session.role !== UserRoles.CLIENT || !session.clientId) throw new ForbiddenError();
   return { ...session, clientId: session.clientId };
 }
 
@@ -83,8 +83,8 @@ export async function clientCommentContentAction(id: string, raw: unknown): Prom
 
 export async function replyToClientAction(clientId: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await requireSession();
-    if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
+    const session = await authorize(Permissions.FEEDBACK_CREATE);
+    if (session.role === UserRoles.CLIENT) throw new ForbiddenError();
     const parsed = parseInput(messageSchema, raw);
     if (!parsed.ok) return parsed.result;
     const message = isLiveMode

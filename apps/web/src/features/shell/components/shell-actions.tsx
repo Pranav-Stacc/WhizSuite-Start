@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { Bell, Check, LogOut, Plus, Repeat, Settings } from 'lucide-react';
-import type { UserRole } from '@agency-os/contracts';
+import type { Permission, UserRole } from '@agency-os/contracts';
 import { PERSONAS } from '@/shared/auth/roles';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
@@ -16,8 +16,9 @@ import { Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Menu, Popover, Tooltip } from '@/shared/ui/overlays';
 
-export function QuickCreate({ role }: { role: UserRole }) {
-  const actions = QUICK_CREATE.filter((a) => a.roles.includes(role));
+export function QuickCreate({ permissions }: { permissions: Permission[] }) {
+  const granted = new Set(permissions);
+  const actions = QUICK_CREATE.filter((a) => granted.has(a.permission));
   if (actions.length === 0) return null;
   return (
     <Menu.Root>

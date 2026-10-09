@@ -1,10 +1,10 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { CheckCircle2 } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
 import { initials } from '@/shared/lib/format';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { FilterSelect } from '@/shared/ui/filter-select';
 import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
@@ -18,7 +18,7 @@ import { OpenPostButton, PlannerDrawerProvider } from '@/features/content/compon
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
 import { eventsFor, listContent } from '@/features/content/services/content.service';
 import { loadPlanner } from '@/features/content/services/planner.service';
-import { canApprove, isEditable } from '@/features/content/workflow';
+import { isEditable } from '@/features/content/workflow';
 
 export const metadata: Metadata = { title: t('approvals.title') };
 
@@ -30,10 +30,10 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function ApprovalsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  const session = await requirePermission(Permissions.APPROVALS_VIEW);
   const sp = await searchParams;
   const clientId = param(sp, 'client');
-  const approver = canApprove(session.role);
+  const approver = await can(Permissions.APPROVALS_APPROVE);
 
   const [all, clients] = await Promise.all([listContent(), clientsById()]);
   const posts = all.filter((p) => p.status !== 'PUBLISHED' && (!clientId || p.clientId === clientId));

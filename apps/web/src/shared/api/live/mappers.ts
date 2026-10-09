@@ -1,16 +1,5 @@
 import 'server-only';
-import {
-  ArticleCategories,
-  AutomationActions,
-  AutomationTriggers,
-  ContentStatuses,
-  ContentTypes,
-  LeadStages,
-  Platforms,
-  type ApiContentType,
-  type ContentType,
-  type Platform,
-} from '@agency-os/contracts';
+import { type ApiContentType, ArticleCategories, AutomationActions, AutomationTriggers, ContentStatuses, type ContentType, ContentTypes, LeadStages, MediaAssetStatuses, type NotificationData, type Platform, Platforms } from '@agency-os/contracts';
 import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
@@ -28,11 +17,11 @@ import type { Project } from '@/features/projects/data/projects.repository';
 import type { Task } from '@/features/tasks/data/tasks.repository';
 import type { TimeEntry } from '@/features/time/data/time.repository';
 import type { Workflow } from '@/features/workflows/data/workflows.repository';
-import { MediaAssetStatuses, UserRoles, type NotificationData } from '@agency-os/contracts';
 import { assetKindFromMimeType } from '@/features/media/utils/asset-kind';
 import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
 import { HEALTH_BASELINE } from '@/features/clients/config';
 import { NOTIFICATION_EVENTS, NOTIFICATIONS_HREF } from '@/features/notifications/config';
+import { MEMBERSHIP_TO_ROLE } from '@/shared/auth/roles';
 import { t } from '@/shared/i18n/t';
 import { defaultWorkspaceId } from './workspace';
 import { hueFromId, iso, num, str } from './utils';
@@ -84,7 +73,9 @@ export function clientFromApi(raw: Raw): Client {
   const contacts = Array.isArray(raw.contacts) ? (raw.contacts as Raw[]) : [];
   const primaryContact = contacts.find((c) => c.isPrimary) ?? contacts[0];
   const retainers = Array.isArray(raw.retainers) ? (raw.retainers as Raw[]) : [];
-  const retainerMinor = retainers.reduce((sum, r) => sum + num(r, 'amountMinor'), 0);
+  const retainerMinor = retainers
+    .filter((r) => r.status === 'ACTIVE')
+    .reduce((sum, r) => sum + num(r, 'feeMinor'), 0);
   return {
     id,
     name: str(raw, 'displayName') || str(raw, 'name'),
@@ -459,11 +450,29 @@ export function automationFromApi(raw: Raw): Automation {
   };
 }
 
+function workflowStagesFromApi(raw: Raw): Workflow['stages'] {
+  if (!Array.isArray(raw.stages)) return [];
+  const stages: Workflow['stages'] = [];
+  for (const entry of raw.stages) {
+    if (typeof entry === 'string') {
+      stages.push({ name: entry, assigneeRoleId: null });
+      continue;
+    }
+    if (!entry || typeof entry !== 'object') continue;
+    const row = entry as Raw;
+    const name = str(row, 'name');
+    if (!name) continue;
+    const assigneeRoleId = row.assigneeRoleId ? str(row, 'assigneeRoleId') : null;
+    stages.push({ name, assigneeRoleId: assigneeRoleId || null });
+  }
+  return stages;
+}
+
 export function workflowFromApi(raw: Raw): Workflow {
   return {
     id: str(raw, 'id'),
     name: str(raw, 'name'),
-    stages: Array.isArray(raw.stages) ? raw.stages.filter((s): s is string => typeof s === 'string') : [],
+    stages: workflowStagesFromApi(raw),
     requiresClientApproval: raw.requiresClientApproval === true,
     slaHours: num(raw, 'slaHours'),
     active: raw.active === true,
@@ -497,13 +506,17 @@ export function automationRunFromApi(raw: Raw): AutomationRun {
 }
 
 export function memberFromApi(raw: Raw): Member {
-  const role = asStatus(raw.membershipType, ['OWNER', 'ADMIN', 'MEMBER', 'CLIENT'] as const, 'MEMBER');
-  const mapped: MemberRole = role === 'OWNER' ? UserRoles.OWNER : role === 'ADMIN' ? UserRoles.MANAGER : UserRoles.CREATOR;
+  const membershipType = asStatus(raw.membershipType, ['OWNER', 'ADMIN', 'MEMBER', 'CLIENT'] as const, 'MEMBER');
+  const mapped = MEMBERSHIP_TO_ROLE[membershipType] as MemberRole;
+  const roles = Array.isArray(raw.roles) ? (raw.roles as Raw[]) : [];
   return {
     id: str(raw, 'id') || str(raw, 'membershipId'),
     name: str(raw, 'name') || str(raw, 'email'),
     email: str(raw, 'email'),
     role: mapped,
+    roles: roles
+      .map((r) => roleSummaryFromApi(r))
+      .filter((r) => r.id),
     title: str(raw, 'title'),
     capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
     skills: [],
@@ -537,6 +550,19 @@ export function timeEntryToApi(input: Partial<TimeEntry>): Raw {
   return body;
 }
 
+function roleSummaryFromApi(raw: Raw) {
+  const scopes = Array.isArray(raw.defaultScopeTypes)
+    ? raw.defaultScopeTypes.filter((s): s is string => typeof s === 'string')
+    : ['ORGANIZATION'];
+  return {
+    id: str(raw, 'id'),
+    name: str(raw, 'name'),
+    isSystem: raw.isSystem === true,
+    kind: str(raw, 'kind') === 'WORKFLOW' ? ('WORKFLOW' as const) : ('ACCESS' as const),
+    defaultScopeTypes: (scopes.length > 0 ? scopes : ['ORGANIZATION']) as AgencyRole['defaultScopeTypes'],
+  };
+}
+
 export function roleFromApi(raw: Raw): AgencyRole {
   const permissions = Array.isArray(raw.permissions) ? (raw.permissions as Raw[]) : [];
   const keys = permissions
@@ -546,11 +572,14 @@ export function roleFromApi(raw: Raw): AgencyRole {
     })
     .filter(Boolean);
   const assignments = Array.isArray(raw.assignments) ? raw.assignments : [];
+  const summary = roleSummaryFromApi(raw);
   return {
-    id: str(raw, 'id'),
-    name: str(raw, 'name'),
+    id: summary.id,
+    name: summary.name,
     description: str(raw, 'description'),
-    isSystem: Boolean(raw.isSystem),
+    isSystem: summary.isSystem,
+    kind: summary.kind,
+    defaultScopeTypes: summary.defaultScopeTypes,
     permissionKeys: keys,
     memberCount: assignments.length,
   };
@@ -560,7 +589,9 @@ export function roleToApi(input: Partial<AgencyRole>): Raw {
   return {
     name: input.name,
     description: input.description,
-    permissionKeys: input.permissionKeys ?? [],
+    kind: input.kind,
+    permissionKeys: input.permissionKeys,
+    defaultScopeTypes: input.defaultScopeTypes,
   };
 }
 

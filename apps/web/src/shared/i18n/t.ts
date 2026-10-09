@@ -10,6 +10,7 @@ import { moneyMessages } from './messages/money';
 import { agencyMessages } from './messages/agency';
 import { portalMessages } from './messages/portal';
 import { plannerMessages } from './messages/planner';
+import { legalMessages } from './messages/legal';
 
 export const messages = {
   ...common,
@@ -24,6 +25,7 @@ export const messages = {
   ...agencyMessages,
   ...portalMessages,
   ...plannerMessages,
+  ...legalMessages,
 } as const;
 
 export type MessageKey = keyof typeof messages;

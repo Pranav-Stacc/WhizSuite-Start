@@ -1,8 +1,7 @@
 'use server';
 
-import { TaskStatuses, createTaskSchema, type TaskStatus } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
+import { TaskStatuses, createTaskSchema, type TaskStatus, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -14,11 +13,6 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { getProject } from '@/features/projects/services/projects.service';
 import { tasksRepository, type Task } from '../data/tasks.repository';
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_STAFF.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 async function notifyAssignee(task: Task, previousAssignee: string | undefined, actorId: string): Promise<void> {
   if (task.assigneeId && task.assigneeId !== previousAssignee && task.assigneeId !== actorId) {
@@ -28,7 +22,7 @@ async function notifyAssignee(task: Task, previousAssignee: string | undefined, 
 
 export async function createTaskAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.TASKS_CREATE);
     const parsed = parseInput(createTaskSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -56,7 +50,7 @@ export async function createTaskAction(raw: unknown): Promise<ActionResult> {
 
 export async function updateTaskAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.TASKS_EDIT);
     const parsed = parseInput(createTaskSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -93,7 +87,7 @@ export async function updateTaskAction(id: string, raw: unknown): Promise<Action
 
 export async function moveTaskAction(id: string, status: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.TASKS_TRANSITION);
     if (!TaskStatuses.includes(status as TaskStatus)) return fail(t('toast.failed'));
     const before = await tasksRepository.get(id);
     if (!before) return fail(t('toast.failed'));
@@ -107,7 +101,7 @@ export async function moveTaskAction(id: string, status: string): Promise<Action
 
 export async function deleteTaskAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.TASKS_DELETE);
     const before = await tasksRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await tasksRepository.remove(id);

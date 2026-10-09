@@ -67,7 +67,28 @@ export const ScopeTypes = {
   CLIENT: 'CLIENT',
   PROJECT: 'PROJECT',
   TASK: 'TASK',
+  CONTENT: 'CONTENT',
   SELF: 'SELF',
 } as const;
 
 export type ScopeType = (typeof ScopeTypes)[keyof typeof ScopeTypes];
+
+/** Scope types agencies may put on role assignments (excludes platform-only GLOBAL). */
+export const AssignableScopeTypes = {
+  ORGANIZATION: ScopeTypes.ORGANIZATION,
+  WORKSPACE: ScopeTypes.WORKSPACE,
+  DEPARTMENT: ScopeTypes.DEPARTMENT,
+  TEAM: ScopeTypes.TEAM,
+  CLIENT: ScopeTypes.CLIENT,
+  PROJECT: ScopeTypes.PROJECT,
+  TASK: ScopeTypes.TASK,
+  CONTENT: ScopeTypes.CONTENT,
+  SELF: ScopeTypes.SELF,
+} as const;
+
+export type AssignableScopeType =
+  (typeof AssignableScopeTypes)[keyof typeof AssignableScopeTypes];
+
+export const ASSIGNABLE_SCOPE_TYPE_KEYS = Object.values(
+  AssignableScopeTypes,
+) as [AssignableScopeType, ...AssignableScopeType[]];

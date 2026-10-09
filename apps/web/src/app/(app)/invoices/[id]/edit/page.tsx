@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { fromMinorUnits, toDateKey } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { BackLink } from '@/shared/ui/back-link';
 import { PageHeader } from '@/shared/ui/page-header';
 import { listClients } from '@/features/clients/services/clients.service';
@@ -15,7 +15,7 @@ import { getInvoice } from '@/features/invoices/services/invoices.service';
 export const metadata: Metadata = { title: t('invoices.edit') };
 
 export default async function EditInvoicePage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole(ROLES_LEADERSHIP);
+  await requirePermission(Permissions.INVOICES_CREATE);
   const { id } = await params;
   const invoice = await getInvoice(id);
   if (!invoice) notFound();

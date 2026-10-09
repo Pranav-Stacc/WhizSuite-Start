@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LayoutGrid, Menu as MenuIcon } from 'lucide-react';
-import type { UserRole } from '@agency-os/contracts';
+import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { HOME_ITEM, groupsForRole, isActivePath } from '@/shared/navigation/nav-config';
+import { HOME_ITEM, allowedGroups, isActivePath } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { Sheet } from '@/shared/ui/overlays';
 
@@ -17,10 +17,10 @@ const DOCK_HREFS = ['/dashboard', '/tasks', '/content', '/approvals'];
 type Badges = Record<string, number>;
 
 /** Hamburger + full menu sheet used below the `lg` breakpoint. Also opened by the bottom dock's "More". */
-export function MobileMenu({ role, badges }: { role: UserRole; badges: Badges }) {
+export function MobileMenu({ permissions, badges }: { permissions: Permission[]; badges: Badges }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const groups = groupsForRole(role);
+  const groups = allowedGroups(new Set(permissions));
   const HomeIcon = HOME_ITEM.icon;
 
   useEffect(() => {
@@ -74,9 +74,9 @@ export function MobileMenu({ role, badges }: { role: UserRole; badges: Badges })
 }
 
 /** Thumb-reach bottom dock for phones: the four most used pages plus the full menu. */
-export function MobileDock({ role, badges }: { role: UserRole; badges: Badges }) {
+export function MobileDock({ permissions, badges }: { permissions: Permission[]; badges: Badges }) {
   const pathname = usePathname();
-  const dock = [HOME_ITEM, ...groupsForRole(role).flatMap((g) => g.items)].filter((item) => DOCK_HREFS.includes(item.href));
+  const dock = [HOME_ITEM, ...allowedGroups(new Set(permissions)).flatMap((g) => g.items)].filter((item) => DOCK_HREFS.includes(item.href));
   return (
     <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden print:hidden">
       <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-md border border-border-soft p-1">

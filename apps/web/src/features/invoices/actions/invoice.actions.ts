@@ -1,8 +1,7 @@
 'use server';
 
-import { InvoiceStatuses, canTransitionInvoice, createInvoiceSchema, type CreateInvoiceInput, type InvoiceStatus } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { InvoiceStatuses, canTransitionInvoice, createInvoiceSchema, type CreateInvoiceInput, type InvoiceStatus, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -14,11 +13,6 @@ import { invoicesRepository } from '../data/invoices.repository';
 import { isDraft } from '../lifecycle';
 import { nextInvoiceNumber } from '../services/invoices.service';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 function toInvoiceFields(input: CreateInvoiceInput) {
   return {
@@ -32,7 +26,7 @@ function toInvoiceFields(input: CreateInvoiceInput) {
 /** Creates a draft, or sends it straight away when `send` is true. Returns the invoice page to open. */
 export async function createInvoiceAction(raw: unknown, send: boolean): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INVOICES_CREATE);
     const parsed = parseInput(createInvoiceSchema, raw);
     if (!parsed.ok) return parsed.result;
     if (!(await getClient(parsed.data.clientId))) return fail(t('toast.failed'), { clientId: 'validation.required' });
@@ -52,7 +46,7 @@ export async function createInvoiceAction(raw: unknown, send: boolean): Promise<
 
 export async function updateInvoiceAction(id: string, raw: unknown, send: boolean): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INVOICES_CREATE);
     const parsed = parseInput(createInvoiceSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await invoicesRepository.get(id);
@@ -70,7 +64,7 @@ export async function updateInvoiceAction(id: string, raw: unknown, send: boolea
 
 export async function setInvoiceStatusAction(id: string, status: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INVOICES_CREATE);
     if (!InvoiceStatuses.includes(status as InvoiceStatus)) return fail(t('toast.failed'));
     const target = status as InvoiceStatus;
     const before = await invoicesRepository.get(id);
@@ -94,7 +88,7 @@ export async function setInvoiceStatusAction(id: string, status: string): Promis
 
 export async function deleteInvoiceAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.INVOICES_CREATE);
     const before = await invoicesRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     if (!isDraft(before.status)) return fail(t('invoices.locked'));

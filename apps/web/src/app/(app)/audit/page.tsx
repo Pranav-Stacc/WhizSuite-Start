@@ -1,10 +1,10 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CalendarRange, Download, ScrollText, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { humanizeKey } from '@/shared/lib/format';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -30,7 +30,7 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requireRole(ROLES_OWNER);
+  await requirePermission(Permissions.AUDIT_VIEW);
   const sp = await searchParams;
   const filter = parseAuditFilter((key) => param(sp, key));
   const [rows, facets] = await Promise.all([filterAudit(filter), auditFacets()]);

@@ -1,9 +1,9 @@
+import { ContentStatuses, Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { initials } from '@/shared/lib/format';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import { getClient } from '@/features/clients/services/clients.service';
@@ -14,14 +14,13 @@ import { PhoneGrid } from '@/features/content/components/planner/phone-grid';
 import { NewPostButton, PlannerDrawerProvider } from '@/features/content/components/planner/planner-drawer';
 import { loadPlanner } from '@/features/content/services/planner.service';
 import { UploadDropzone } from '@/features/media/components/upload-dropzone';
-import { ContentStatuses } from '@agency-os/contracts';
 
 export const metadata = { title: t('clients.workspace.grid') };
 
 const READY = 'READY';
 
 export default async function ClientGridPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CONTENT_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
   const planner = await loadPlanner(client.id);

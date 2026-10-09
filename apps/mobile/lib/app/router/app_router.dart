@@ -9,6 +9,7 @@ import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/notifications/presentation/preferences_screen.dart';
 import '../../features/settings/presentation/appearance_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
+import '../feature_registry.dart';
 import '../navigation/app_routes.dart';
 import '../shell/app_shell.dart';
 import '../shell/home_screen.dart';
@@ -48,6 +49,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           _page(AppRoutes.home, const HomeScreen()),
           _page(AppRoutes.more, const MoreScreen()),
+          for (final module in featureModules) ...module.routes,
           GoRoute(path: AppRoutes.notifications, builder: (_, _) => const NotificationsScreen()),
           GoRoute(
             path: AppRoutes.settings,

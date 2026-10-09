@@ -1,10 +1,9 @@
+import { Permissions, Platforms } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Inbox, MessageCircle, MessageSquareDashed } from 'lucide-react';
-import { Platforms } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t, type MessageKey } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
 import { FilterSelect } from '@/shared/ui/filter-select';
@@ -38,7 +37,7 @@ function parseStatus(value: string | undefined): StatusFilter {
 }
 
 export default async function InboxPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  const session = await requirePermission(Permissions.INBOX_VIEW);
   const sp = await searchParams;
   const status = parseStatus(param(sp, 'status'));
   const clientId = param(sp, 'client');

@@ -12,6 +12,7 @@ class AppConfig {
     required this.androidNotificationChannelId,
     required this.pageSize,
     required this.accessRefreshInterval,
+    required this.defaultCurrency,
   });
 
   factory AppConfig.fromEnvironment() {
@@ -23,6 +24,7 @@ class AppConfig {
     const channelId = String.fromEnvironment('PUSH_ANDROID_CHANNEL_ID');
     const pageSize = int.fromEnvironment('PAGE_SIZE');
     const accessRefreshSeconds = int.fromEnvironment('ACCESS_REFRESH_INTERVAL_SECONDS');
+    const defaultCurrency = String.fromEnvironment('DEFAULT_CURRENCY');
 
     final problems = <String>[
       if (Uri.tryParse(apiBaseUrl)?.hasAuthority != true) 'API_BASE_URL',
@@ -32,6 +34,7 @@ class AppConfig {
       if (channelId.isEmpty) 'PUSH_ANDROID_CHANNEL_ID',
       if (pageSize <= 0) 'PAGE_SIZE',
       if (accessRefreshSeconds <= 0) 'ACCESS_REFRESH_INTERVAL_SECONDS',
+      if (!_currencyCode.hasMatch(defaultCurrency)) 'DEFAULT_CURRENCY',
     ];
     if (problems.isNotEmpty) {
       throw StateError(
@@ -49,8 +52,11 @@ class AppConfig {
       androidNotificationChannelId: channelId,
       pageSize: pageSize,
       accessRefreshInterval: const Duration(seconds: accessRefreshSeconds),
+      defaultCurrency: defaultCurrency,
     );
   }
+
+  static final _currencyCode = RegExp(r'^[A-Z]{3}$');
 
   final Uri apiBaseUrl;
   final Uri realtimeUrl;
@@ -60,6 +66,9 @@ class AppConfig {
   final String androidNotificationChannelId;
   final int pageSize;
   final Duration accessRefreshInterval;
+
+  /// ISO 4217 code used when a money value arrives without its own currency.
+  final String defaultCurrency;
 }
 
 /// Overridden in `main` with the validated configuration.

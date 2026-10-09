@@ -1,0 +1,32 @@
+{
+  "navSearch": "Search",
+  "searchTitle": "Search",
+  "searchPlaceholder": "Search clients, projects, tasks…",
+  "searchMinChars": "Type at least {count} characters to search",
+  "@searchMinChars": { "placeholders": { "count": { "type": "int" } } },
+  "searchEmpty": "No results",
+  "searchEmptyBody": "Nothing matched “{query}”. Try a different name or keyword.",
+  "@searchEmptyBody": { "placeholders": { "query": { "type": "String" } } },
+  "searchIdleTitle": "Search the workspace",
+  "searchIdleBody": "Find clients, projects, tasks, leads and content in one place.",
+  "searchResultsCount": "{count, plural, =1{1 result} other{{count} results}}",
+  "@searchResultsCount": { "placeholders": { "count": { "type": "int" } } },
+  "searchGroupCount": "{count}",
+  "@searchGroupCount": { "placeholders": { "count": { "type": "int" } } },
+  "searchGroupClients": "Clients",
+  "searchGroupProjects": "Projects",
+  "searchGroupTasks": "Tasks",
+  "searchGroupLeads": "Leads",
+  "searchGroupContent": "Content",
+  "searchGroupInvoices": "Invoices",
+  "searchGroupApprovals": "Approvals",
+  "searchResultAria": "{type}: {title}",
+  "@searchResultAria": {
+    "placeholders": {
+      "type": { "type": "String" },
+      "title": { "type": "String" }
+    }
+  },
+  "searchStatus": "{status, select, ONBOARDING{Onboarding} ACTIVE{Active} PAUSED{Paused} CHURNED{Churned} PLANNING{Planning} ON_HOLD{On hold} COMPLETED{Completed} TODO{To do} IN_PROGRESS{In progress} IN_REVIEW{In review} DONE{Done} DRAFT{Draft} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
+  "@searchStatus": { "placeholders": { "status": { "type": "String" } } }
+}

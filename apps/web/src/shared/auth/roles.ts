@@ -1,5 +1,20 @@
-import { UserRoles, type UserRole } from '@agency-os/contracts';
+import { UserRoles, type MembershipType, type UserRole } from '@agency-os/contracts';
 import type { MessageKey } from '@/shared/i18n/t';
+
+/** The workspace persona (layout and home page) each API membership type maps to. */
+export const MEMBERSHIP_TO_ROLE: Record<MembershipType, UserRole> = {
+  OWNER: UserRoles.OWNER,
+  ADMIN: UserRoles.MANAGER,
+  MEMBER: UserRoles.CREATOR,
+  CLIENT: UserRoles.CLIENT,
+};
+
+export const ROLE_TO_MEMBERSHIP: Record<UserRole, MembershipType> = {
+  [UserRoles.OWNER]: 'OWNER',
+  [UserRoles.MANAGER]: 'ADMIN',
+  [UserRoles.CREATOR]: 'MEMBER',
+  [UserRoles.CLIENT]: 'CLIENT',
+};
 
 export interface Persona {
   role: UserRole;
@@ -53,15 +68,6 @@ export const PERSONAS: Persona[] = [
 
 export function homeFor(role: UserRole): string {
   return role === UserRoles.CLIENT ? '/portal' : '/dashboard';
-}
-
-export function isStaff(role: UserRole): boolean {
-  return role !== UserRoles.CLIENT;
-}
-
-/** Roles that may manage money, people and automation. */
-export function isLeadership(role: UserRole): boolean {
-  return role === UserRoles.OWNER || role === UserRoles.MANAGER;
 }
 
 export function personaByEmail(email: string): Persona | undefined {

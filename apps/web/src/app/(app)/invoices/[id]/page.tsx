@@ -1,10 +1,10 @@
+import { canTransitionInvoice, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Ban, CheckCircle2, Pencil, Send } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
 import { ActionButton } from '@/shared/ui/action-button';
 import { Button } from '@/shared/ui/button';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
@@ -13,7 +13,6 @@ import { PrintButton } from '@/shared/ui/print-button';
 import { getClient } from '@/features/clients/services/clients.service';
 import { deleteInvoiceAction, setInvoiceStatusAction } from '@/features/invoices/actions/invoice.actions';
 import { InvoiceDocument } from '@/features/invoices/components/invoice-document';
-import { canTransitionInvoice } from '@agency-os/contracts';
 import { isDraft } from '@/features/invoices/lifecycle';
 import { getInvoice } from '@/features/invoices/services/invoices.service';
 
@@ -29,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function InvoiceDetailPage({ params }: PageProps) {
-  const session = await requireRole(ROLES_LEADERSHIP);
+  const session = await requirePermission(Permissions.INVOICES_VIEW);
   const { id } = await params;
   const invoice = await getInvoice(id);
   if (!invoice) notFound();

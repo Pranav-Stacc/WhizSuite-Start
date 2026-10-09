@@ -1,13 +1,12 @@
+import { type ContentStatus, Permissions } from '@agency-os/contracts';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ContentStatus } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
 import { t } from '@/shared/i18n/t';
 import { initials, toDateKey } from '@/shared/lib/format';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { SectionHeading } from '@/shared/ui/section-heading';
 import { MonthGrid } from '@/features/calendar/components/calendar-views';
@@ -25,7 +24,7 @@ import { WorkflowActions } from '@/features/content/components/workflow-actions'
 import type { Post } from '@/features/content/data/content.repository';
 import { eventsFor, eventsForMany } from '@/features/content/services/content.service';
 import { loadPlanner } from '@/features/content/services/planner.service';
-import { canApprove, isEditable } from '@/features/content/workflow';
+import { isEditable } from '@/features/content/workflow';
 
 export const metadata = { title: t('clients.workspace.calendar') };
 
@@ -60,7 +59,7 @@ function sheetColumns(posts: Post[], ref: MonthRef, hideEmpty: boolean, notes: M
 }
 
 export default async function ClientCalendarPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  const session = await requirePermission(Permissions.CONTENT_VIEW);
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const client = await getClient(id);
   if (!client) notFound();
@@ -78,7 +77,7 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
   const monthPosts = filtered.filter((p) => inMonth(p, ref));
   const prev = shiftMonth(ref, -1);
   const next = shiftMonth(ref, 1);
-  const approver = canApprove(session.role);
+  const approver = await can(Permissions.APPROVALS_APPROVE);
 
   const viewNav = (
     <nav aria-label={t('sheet.views')} className="flex items-center gap-5">

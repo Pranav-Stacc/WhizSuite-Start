@@ -12,6 +12,7 @@ import { OutboxService } from '../../../../shared/events/outbox.service';
 import { EmailService } from '../../../../shared/notifications/email.service';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
+import { RoleAssignmentService } from '../../../access/application/services/role-assignment.service';
 import type { InvitableMembershipType } from '../../../access/config/default-roles';
 import { ClientsService } from '../../../clients/application/services/clients.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
@@ -56,6 +57,7 @@ export class InvitationsService {
     private readonly email: EmailService,
     private readonly config: ConfigService<AppConfig, true>,
     private readonly defaultRoles: DefaultRolesService,
+    private readonly roleAssignment: RoleAssignmentService,
     private readonly clients: ClientsService,
     private readonly auth: AuthService,
   ) {}
@@ -89,6 +91,12 @@ export class InvitationsService {
           ErrorCodes.VALIDATION_FAILED,
         );
       await this.clients.get(organizationId, clientId);
+    }
+    if (input.roleIds?.length) {
+      await this.roleAssignment.requireAssignableRoles(
+        organizationId,
+        input.roleIds,
+      );
     }
 
     const token = randomBytes(TOKEN_BYTES).toString('hex');
@@ -234,8 +242,12 @@ export class InvitationsService {
       );
     }
     const membershipType = invitation.membershipType as InvitableMembershipType;
-    const roleIds = invitation.roleIds.length
-      ? invitation.roleIds
+    const chosenRoleIds = await this.roleAssignment.existingAssignableRoleIds(
+      invitation.organizationId,
+      invitation.roleIds,
+    );
+    const roleIds = chosenRoleIds.length
+      ? chosenRoleIds
       : [
           await this.defaultRoles.roleIdFor(
             invitation.organizationId,

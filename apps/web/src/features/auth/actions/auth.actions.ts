@@ -11,7 +11,16 @@ import {
 } from '@agency-os/contracts';
 import { ApiError, apiFetch } from '@/shared/api/api-client';
 import { isLiveMode } from '@/shared/config/env';
-import { DEMO_ORG_ID, DEMO_ORG_NAME, DEMO_PASSWORD, homeFor, personaByEmail, personaByRole, type Persona } from '@/shared/auth/roles';
+import {
+  DEMO_ORG_ID,
+  DEMO_ORG_NAME,
+  DEMO_PASSWORD,
+  MEMBERSHIP_TO_ROLE,
+  homeFor,
+  personaByEmail,
+  personaByRole,
+  type Persona,
+} from '@/shared/auth/roles';
 import { endSession, getSession, startSession, type Session } from '@/shared/auth/session';
 import { fail, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -25,13 +34,6 @@ interface AuthResponse {
   accessToken: string;
   refreshToken: string;
 }
-
-const MEMBERSHIP_TO_ROLE: Record<MembershipType, UserRole> = {
-  OWNER: UserRoles.OWNER,
-  ADMIN: UserRoles.MANAGER,
-  MEMBER: UserRoles.CREATOR,
-  CLIENT: UserRoles.CLIENT,
-};
 
 interface AccessClaims {
   membershipType?: MembershipType;

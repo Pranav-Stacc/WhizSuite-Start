@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/fade_slide_in.dart';
@@ -88,46 +88,6 @@ class AuthSwitchLink extends StatelessWidget {
           child: Text(action, style: const TextStyle(fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
         ),
       ],
-    );
-  }
-}
-
-/// Inline error banner for form submission failures.
-class FormErrorBanner extends StatelessWidget {
-  const FormErrorBanner({required this.message, super.key});
-
-  final String? message;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final error = Theme.of(context).colorScheme.error;
-    return AnimatedSize(
-      duration: AppMotion.medium,
-      curve: AppMotion.standard,
-      child: message == null
-          ? const SizedBox(width: double.infinity)
-          : Padding(
-              padding: EdgeInsets.only(bottom: tokens.lg),
-              child: Semantics(
-                liveRegion: true,
-                child: Container(
-                  padding: EdgeInsets.all(tokens.md),
-                  decoration: BoxDecoration(
-                    color: error.withValues(alpha: 0.08),
-                    border: Border.all(color: error.withValues(alpha: 0.4)),
-                    borderRadius: tokens.borderRadius,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: error, size: 18),
-                      SizedBox(width: tokens.sm),
-                      Expanded(child: Text(message!, style: TextStyle(color: tokens.fg))),
-                    ],
-                  ),
-                ),
-              ),
-            ),
     );
   }
 }

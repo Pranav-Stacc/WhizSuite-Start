@@ -1,14 +1,16 @@
+import { Permissions, RoleKinds } from '@agency-os/contracts';
 import type { Metadata } from 'next';
-import { Shield, Users } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { Lock, Shield, Trash2, Users } from 'lucide-react';
+import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { humanizeKey } from '@/shared/lib/format';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
 import { Badge } from '@/shared/ui/badge';
 import { Card } from '@/shared/ui/card';
+import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { PageHeader } from '@/shared/ui/page-header';
 import { StatCard, StatGrid } from '@/shared/ui/stat-card';
-import { CreateRoleDialog } from '@/features/roles/components/create-role-dialog';
+import { deleteRoleAction } from '@/features/roles/actions/role.actions';
+import { RoleDialog } from '@/features/roles/components/role-dialog';
 import { listRoles } from '@/features/roles/services/roles.service';
 import { listPermissionCatalog } from '@/features/roles/services/permissions.service';
 
@@ -17,32 +19,43 @@ export const metadata: Metadata = { title: t('roles.title') };
 const PERMISSIONS_SHOWN = 8;
 
 export default async function RolesPage() {
-  await requireRole(ROLES_OWNER);
+  await requirePermission(Permissions.ROLES_MANAGE);
   const [roles, permissions] = await Promise.all([listRoles(), listPermissionCatalog()]);
   const customCount = roles.filter((r) => !r.isSystem).length;
+  const sorted = [...roles].sort((a, b) => Number(b.isSystem) - Number(a.isSystem) || a.name.localeCompare(b.name));
 
   return (
     <div>
-      <PageHeader title={t('roles.title')} description={t('roles.description')} actions={<CreateRoleDialog permissions={permissions} />} />
+      <PageHeader title={t('roles.title')} description={t('roles.description')} actions={<RoleDialog permissions={permissions} />} />
       <StatGrid cols={3}>
         <StatCard label={t('roles.stat.total')} value={roles.length} icon={<Shield />} />
         <StatCard label={t('roles.stat.custom')} value={customCount} icon={<Shield />} />
         <StatCard label={t('roles.stat.permissions')} value={permissions.length} icon={<Users />} />
       </StatGrid>
       <ul className="mt-4 grid gap-3 lg:grid-cols-2">
-        {roles.map((role) => (
+        {sorted.map((role) => (
           <li key={role.id}>
-            <Card className="p-4">
+            <Card className="flex h-full flex-col p-4">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{role.name}</h3>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="truncate font-semibold">{role.name}</h3>
                     {role.isSystem ? <Badge tone="neutral">{t('roles.system')}</Badge> : null}
+                    <Badge tone={role.kind === RoleKinds.WORKFLOW ? 'violet' : 'primary'}>
+                      {role.kind === RoleKinds.WORKFLOW ? t('roles.kind.workflow') : t('roles.kind.access')}
+                    </Badge>
                   </div>
-                  <p className="mt-1 text-sm text-muted">{role.description || t('roles.noDescription')}</p>
+                  <p className="mt-1 text-sm text-muted">{role.description || (role.isSystem ? t('roles.system.hint') : t('roles.noDescription'))}</p>
                 </div>
                 <Badge tone="primary">{t('roles.members', { count: role.memberCount })}</Badge>
               </div>
+              <ul className="mt-2 flex flex-wrap gap-1">
+                {role.defaultScopeTypes.map((scope) => (
+                  <li key={scope} className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted">
+                    {humanizeKey(scope)}
+                  </li>
+                ))}
+              </ul>
               <p className="mt-3 text-xs text-muted">{t('roles.permissionCount', { count: role.permissionKeys.length })}</p>
               <ul className="mt-2 flex flex-wrap gap-1">
                 {role.permissionKeys.slice(0, PERMISSIONS_SHOWN).map((key) => (
@@ -54,6 +67,23 @@ export default async function RolesPage() {
                   <li className="px-1 text-[11px] text-muted">{t('roles.morePermissions', { count: role.permissionKeys.length - PERMISSIONS_SHOWN })}</li>
                 ) : null}
               </ul>
+              <div className="mt-auto flex items-center justify-end gap-2 pt-3">
+                {role.isSystem ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] text-muted">
+                    <Lock className="size-3.5" aria-hidden />
+                    {t('roles.system.readOnly')}
+                  </span>
+                ) : (
+                  <>
+                    <RoleDialog permissions={permissions} role={role} />
+                    {role.memberCount > 0 ? (
+                      <span className="text-[11px] text-muted">{t('roles.inUse', { count: role.memberCount })}</span>
+                    ) : (
+                      <ConfirmButton action={deleteRoleAction.bind(null, role.id)} label={t('roles.delete')} icon={<Trash2 className="size-4" />} size="sm" />
+                    )}
+                  </>
+                )}
+              </div>
             </Card>
           </li>
         ))}

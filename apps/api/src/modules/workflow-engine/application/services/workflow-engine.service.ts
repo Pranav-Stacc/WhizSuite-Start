@@ -8,6 +8,7 @@ import { AuditService } from '../../../audit/application/services/audit.service'
 import type {
   CreateWorkflowDto,
   UpdateWorkflowDto,
+  WorkflowStageDto,
 } from '../../interface/http/dto/workflow.dto';
 
 const ENTITY_TYPE = 'workflowDefinition';
@@ -15,6 +16,11 @@ const ENTITY_TYPE = 'workflowDefinition';
 type DefinitionRow = NonNullable<
   Awaited<ReturnType<WorkflowEngineRepository['findDefinition']>>
 >;
+
+export type WorkflowStageView = {
+  name: string;
+  assigneeRoleId: string | null;
+};
 
 const stateKey = (name: string, idx: number) =>
   `${
@@ -24,17 +30,30 @@ const stateKey = (name: string, idx: number) =>
       .replace(/^_|_$/g, '') || 'stage'
   }_${idx}`;
 
+function stageGuards(assigneeRoleId?: string | null) {
+  return assigneeRoleId ? { assigneeRoleId } : undefined;
+}
+
+function readAssigneeRoleId(guards: unknown): string | null {
+  if (!guards || typeof guards !== 'object' || Array.isArray(guards)) {
+    return null;
+  }
+  const value = (guards as { assigneeRoleId?: unknown }).assigneeRoleId;
+  return typeof value === 'string' && value ? value : null;
+}
+
 /** A linear pipeline: each stage moves forward to the next one. */
-function linearVersion(stages: string[]): VersionInput {
-  const keys = stages.map(stateKey);
+function linearVersion(stages: WorkflowStageDto[]): VersionInput {
+  const keys = stages.map((stage, idx) => stateKey(stage.name, idx));
   return {
     publish: true,
-    states: stages.map((name, idx) => ({
+    states: stages.map((stage, idx) => ({
       key: keys[idx],
-      name,
+      name: stage.name,
       order: idx,
       isInitial: idx === 0,
       isTerminal: idx === stages.length - 1,
+      guards: stageGuards(stage.assigneeRoleId),
     })),
     transitions: keys
       .slice(1)
@@ -42,8 +61,18 @@ function linearVersion(stages: string[]): VersionInput {
   };
 }
 
+function toStages(
+  states: Array<{ name: string; guards: unknown }>,
+): WorkflowStageView[] {
+  return states.map((state) => ({
+    name: state.name,
+    assigneeRoleId: readAssigneeRoleId(state.guards),
+  }));
+}
+
 function toDto(row: DefinitionRow) {
   const [latest] = row.versions;
+  const stages = latest ? toStages(latest.states) : [];
   return {
     id: row.id,
     name: row.name,
@@ -54,14 +83,21 @@ function toDto(row: DefinitionRow) {
     version: latest?.version ?? null,
     versionId: latest?.id ?? null,
     versionStatus: latest?.status ?? null,
-    stages: latest?.states.map((s) => s.name) ?? [],
+    stages,
+    /** Convenience for older clients that expect stage name strings. */
+    stageNames: stages.map((stage) => stage.name),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
-const sameStages = (a: string[], b: string[]) =>
-  a.length === b.length && a.every((s, i) => s === b[i]);
+const sameStages = (a: WorkflowStageView[], b: WorkflowStageDto[]) =>
+  a.length === b.length &&
+  a.every(
+    (stage, i) =>
+      stage.name === b[i]?.name &&
+      (stage.assigneeRoleId ?? null) === (b[i]?.assigneeRoleId ?? null),
+  );
 
 @Injectable()
 export class WorkflowEngineService {
@@ -127,7 +163,7 @@ export class WorkflowEngineService {
   ) {
     const before = await this.get(organizationId, id);
     const { stages, ...settings } = input;
-    if (stages && !sameStages(stages, before.stages)) {
+    if (stages && !sameStages(before.stages, stages)) {
       await this.repository.createVersion(
         organizationId,
         id,

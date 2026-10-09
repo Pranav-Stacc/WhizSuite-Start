@@ -1,9 +1,9 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { requireRole } from '@/shared/auth/session';
+import { getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { ClientWorkspaceNav } from '@/features/clients/components/client-workspace-nav';
 import { getClient } from '@/features/clients/services/clients.service';
 import { clientSectionsFor } from '@/features/clients/workspace';
@@ -19,13 +19,13 @@ export async function generateMetadata({ params }: Omit<LayoutProps, 'children'>
 }
 
 export default async function ClientWorkspaceLayout({ params, children }: LayoutProps) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.CLIENTS_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
 
   return (
     <div>
-      <ClientWorkspaceNav clientId={client.id} clientName={client.name} sections={clientSectionsFor(session.role)} />
+      <ClientWorkspaceNav clientId={client.id} clientName={client.name} sections={clientSectionsFor(await getPermissions())} />
       {children}
     </div>
   );

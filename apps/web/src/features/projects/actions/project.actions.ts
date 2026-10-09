@@ -1,8 +1,7 @@
 'use server';
 
-import { createProjectSchema } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { createProjectSchema, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -15,15 +14,10 @@ import { projectsRepository } from '../data/projects.repository';
 const MINOR_UNITS_PER_RUPEE = 100;
 const DEFAULT_PROJECT_TYPE = 'Campaign';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
 
 export async function createProjectAction(raw: unknown): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    const session = await authorize();
+    const session = await authorize(Permissions.PROJECTS_CREATE);
     const parsed = parseInput(createProjectSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;
@@ -48,7 +42,7 @@ export async function createProjectAction(raw: unknown): Promise<ActionResult<{ 
 
 export async function updateProjectAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.PROJECTS_EDIT);
     const parsed = parseInput(createProjectSchema, raw);
     if (!parsed.ok) return parsed.result;
     const input = parsed.data;

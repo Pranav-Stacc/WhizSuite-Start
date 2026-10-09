@@ -1,8 +1,7 @@
 'use server';
 
-import { createWorkflowSchema, parseWorkflowStages, type CreateWorkflowInput } from '@agency-os/contracts';
-import { requireSession } from '@/shared/auth/session';
-import { ROLES_LEADERSHIP } from '@/shared/navigation/nav-config';
+import { createWorkflowSchema, type CreateWorkflowInput, Permissions } from '@agency-os/contracts';
+import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
@@ -10,16 +9,13 @@ import { t } from '@/shared/i18n/t';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { workflowsRepository } from '../data/workflows.repository';
 
-async function authorize() {
-  const session = await requireSession();
-  if (!ROLES_LEADERSHIP.includes(session.role)) throw new Error('forbidden');
-  return session;
-}
-
 function toWorkflowFields(input: CreateWorkflowInput) {
   return {
     name: input.name,
-    stages: parseWorkflowStages(input.stages),
+    stages: input.stages.map((stage) => ({
+      name: stage.name,
+      assigneeRoleId: stage.assigneeRoleId ?? null,
+    })),
     slaHours: input.slaHours,
     requiresClientApproval: input.requiresClientApproval,
   };
@@ -27,7 +23,7 @@ function toWorkflowFields(input: CreateWorkflowInput) {
 
 export async function createWorkflowAction(raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.WORKFLOWS_MANAGE);
     const parsed = parseInput(createWorkflowSchema, raw);
     if (!parsed.ok) return parsed.result;
     const workflow = await workflowsRepository.create({ ...toWorkflowFields(parsed.data), active: true });
@@ -39,7 +35,7 @@ export async function createWorkflowAction(raw: unknown): Promise<ActionResult> 
 
 export async function updateWorkflowAction(id: string, raw: unknown): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.WORKFLOWS_MANAGE);
     const parsed = parseInput(createWorkflowSchema, raw);
     if (!parsed.ok) return parsed.result;
     const before = await workflowsRepository.get(id);
@@ -53,7 +49,7 @@ export async function updateWorkflowAction(id: string, raw: unknown): Promise<Ac
 
 export async function toggleWorkflowAction(id: string, active: boolean): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.WORKFLOWS_MANAGE);
     const before = await workflowsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await workflowsRepository.update(id, { active });
@@ -72,11 +68,11 @@ export async function toggleWorkflowAction(id: string, active: boolean): Promise
 
 export async function deleteWorkflowAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
-    await authorize();
+    await authorize(Permissions.WORKFLOWS_MANAGE);
     const before = await workflowsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await workflowsRepository.remove(id);
-    await recordAudit({ action: 'workflow.deleted', entityType: 'workflow', entityId: id, entityLabel: before.name, summary: 'Deleted approval workflow' });
+    await recordAudit({ action: 'workflow.deleted', entityType: 'workflow', entityId: id, entityLabel: before.name, summary: 'Deleted workflow' });
     await refreshData('workflows');
     return succeed(undefined, t('workflows.deleted'));
   });

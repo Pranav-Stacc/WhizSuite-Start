@@ -1,12 +1,12 @@
-import { requireRole } from '@/shared/auth/session';
-import { ROLES_OWNER } from '@/shared/navigation/nav-config';
+import { Permissions } from '@agency-os/contracts';
+import { requirePermission } from '@/shared/auth/permissions';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { parseAuditFilter } from '@/features/audit/filters';
 import { auditToCsv } from '@/features/audit/utils/export';
 import { filterAudit } from '@/features/audit/services/audit-query.service';
 
 export async function GET(request: Request): Promise<Response> {
-  await requireRole(ROLES_OWNER);
+  await requirePermission(Permissions.AUDIT_VIEW);
   const params = new URL(request.url).searchParams;
   const filter = parseAuditFilter((key) => params.get(key) ?? undefined);
   const rows = await filterAudit(filter);

@@ -1,11 +1,11 @@
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, Pencil } from 'lucide-react';
-import { requireRole } from '@/shared/auth/session';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatDate } from '@/shared/lib/format';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Avatar } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -28,13 +28,13 @@ export async function generateMetadata({ params }: Pick<PageProps, 'params'>): P
 }
 
 export default async function ArticlePage({ params, searchParams }: PageProps) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.ORG_VIEW);
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const article = await getArticle(id);
   if (!article) notFound();
 
-  const author = await memberName(article.authorId);
-  const canWrite = ROLES_LEADERSHIP.includes(session.role);
+  const author = await loadIf(Permissions.MEMBERS_VIEW, () => memberName(article.authorId), undefined);
+  const canWrite = await can(Permissions.ORG_SETTINGS_MANAGE);
   const { icon: Icon, tone } = CATEGORY_META[article.category];
   const blocks = parseArticleBody(article.body);
 

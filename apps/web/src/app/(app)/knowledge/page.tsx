@@ -1,9 +1,8 @@
+import { ArticleCategories, type ArticleCategory, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { BookOpen, Plus } from 'lucide-react';
-import { ArticleCategories, type ArticleCategory } from '@agency-os/contracts';
-import { requireRole } from '@/shared/auth/session';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
-import { ROLES_LEADERSHIP, ROLES_STAFF } from '@/shared/navigation/nav-config';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
 import { EmptyState } from '@/shared/ui/feedback';
@@ -14,6 +13,7 @@ import { SearchInput } from '@/shared/ui/search-input';
 import { ArticleCard } from '@/features/knowledge/components/article-card';
 import { ArticleDialog } from '@/features/knowledge/components/article-dialog';
 import { listArticles } from '@/features/knowledge/services/knowledge.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 
 export const metadata: Metadata = { title: t('knowledge.title') };
@@ -31,15 +31,15 @@ function parseCategory(value: string | undefined): ArticleCategory | undefined {
 }
 
 export default async function KnowledgePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const session = await requireRole(ROLES_STAFF);
+  await requirePermission(Permissions.ORG_VIEW);
   const sp = await searchParams;
   const category = parseCategory(param(sp, 'f'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [articles, members] = await Promise.all([listArticles(), membersById()]);
+  const [articles, members] = await Promise.all([listArticles(), loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>())]);
   const scoped = articles.filter((a) => !query || `${a.title} ${a.body}`.toLowerCase().includes(query));
   const visible = category ? scoped.filter((a) => a.category === category) : scoped;
-  const canWrite = ROLES_LEADERSHIP.includes(session.role);
+  const canWrite = await can(Permissions.ORG_SETTINGS_MANAGE);
   const hasFilters = Boolean(category) || Boolean(query);
 
   return (
