@@ -324,6 +324,7 @@ export class MediaRepository {
     id: string,
     data: {
       name?: string;
+      path?: string;
       visibility?: string;
       description?: string | null;
     },
@@ -331,6 +332,21 @@ export class MediaRepository {
     await this.prisma.mediaFolder.updateMany({
       where: { id, organizationId },
       data,
+    });
+  }
+
+  /** Descendants whose materialized path sits under `prefix/` (not the prefix folder itself). */
+  listFolderDescendants(
+    organizationId: string,
+    prefix: string,
+  ): Promise<MediaFolderRecord[]> {
+    return this.prisma.mediaFolder.findMany({
+      where: {
+        organizationId,
+        path: { startsWith: `${prefix}/` },
+      },
+      orderBy: { path: 'asc' },
+      select: FOLDER_SELECT,
     });
   }
 

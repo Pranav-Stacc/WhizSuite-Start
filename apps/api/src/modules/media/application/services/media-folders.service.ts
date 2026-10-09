@@ -59,21 +59,32 @@ export class MediaFoldersService {
     actorId: string,
     input: CreateMediaFolderInput,
   ): Promise<MediaFolderDto> {
-    const clientId = input.clientId ?? null;
-    if (clientId && !TenantContext.canAccessClient(clientId))
-      throw notFound('Client not found');
-
+    let clientId = input.clientId ?? null;
     let parentPath: string | null = null;
+    let projectId = input.projectId ?? null;
+    let calendarItemId = input.calendarItemId ?? null;
+
     if (input.parentId) {
       const parent = await this.repository.findFolder(
         organizationId,
         input.parentId,
       );
       if (!parent) throw notFound('Parent folder not found');
+      if (!TenantContext.canAccessClient(parent.clientId))
+        throw notFound('Parent folder not found');
       parentPath = parent.path;
+      clientId = parent.clientId ?? clientId;
+      projectId = parent.projectId ?? projectId;
+      calendarItemId = parent.calendarItemId ?? calendarItemId;
     }
 
-    const path = joinPath(parentPath, input.name);
+    if (clientId && !TenantContext.canAccessClient(clientId))
+      throw notFound('Client not found');
+
+    // Root folders for a client share the same path prefix as ensure-client trees.
+    const rootPrefix =
+      !parentPath && clientId ? `/clients/${clientId}` : parentPath;
+    const path = joinPath(rootPrefix, input.name);
     const existing = await this.repository.findFolderByPath(
       organizationId,
       path,
@@ -92,8 +103,8 @@ export class MediaFoldersService {
       path,
       parentId: input.parentId,
       clientId,
-      projectId: input.projectId,
-      calendarItemId: input.calendarItemId,
+      projectId,
+      calendarItemId,
       visibility: input.visibility,
       description: input.description,
     });
@@ -117,7 +128,42 @@ export class MediaFoldersService {
     input: UpdateMediaFolderInput,
   ): Promise<MediaFolderDto> {
     const before = await this.get(organizationId, id);
-    await this.repository.updateFolder(organizationId, id, input);
+    const existing = await this.repository.findFolder(organizationId, id);
+    if (!existing) throw notFound();
+
+    let nextPath = existing.path;
+    if (input.name && input.name.trim() !== existing.name) {
+      const parentPath = existing.path.includes('/')
+        ? existing.path.slice(0, existing.path.lastIndexOf('/')) || null
+        : null;
+      nextPath = joinPath(parentPath === '/' ? null : parentPath, input.name);
+      const clash = await this.repository.findFolderByPath(
+        organizationId,
+        nextPath,
+      );
+      if (clash && clash.id !== id) {
+        throw problem(
+          409,
+          'Conflict',
+          ErrorCodes.CONFLICT,
+          'A folder already exists at this path',
+        );
+      }
+      const descendants = await this.repository.listFolderDescendants(
+        organizationId,
+        existing.path,
+      );
+      for (const child of descendants) {
+        await this.repository.updateFolder(organizationId, child.id, {
+          path: `${nextPath}${child.path.slice(existing.path.length)}`,
+        });
+      }
+    }
+
+    await this.repository.updateFolder(organizationId, id, {
+      ...input,
+      ...(nextPath !== existing.path ? { path: nextPath } : {}),
+    });
     await this.audit.record({
       organizationId,
       actorId,
@@ -126,7 +172,7 @@ export class MediaFoldersService {
       entityType: ENTITY,
       entityId: id,
       before,
-      after: input,
+      after: { ...input, path: nextPath },
     });
     return this.get(organizationId, id);
   }

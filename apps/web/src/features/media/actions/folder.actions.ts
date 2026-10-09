@@ -7,7 +7,7 @@ import { guarded, parseInput } from '@/shared/data/action-utils';
 import { refreshData } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { recordAudit } from '@/features/audit/services/audit.service';
-import { createFolder, ensureClientFolders } from '../services/folders.service';
+import { createFolder, deleteFolder, ensureClientFolders } from '../services/folders.service';
 
 export async function ensureClientFoldersAction(clientId: string): Promise<ActionResult> {
   return guarded(async () => {
@@ -26,8 +26,8 @@ export async function createFolderAction(raw: unknown): Promise<ActionResult> {
     if (!parsed.ok) return parsed.result;
     const folder = await createFolder({
       name: parsed.data.name,
-      parentId: parsed.data.parentId,
-      clientId: parsed.data.clientId,
+      parentId: parsed.data.parentId || undefined,
+      clientId: parsed.data.clientId || undefined,
       visibility: parsed.data.visibility,
     });
     await recordAudit({
@@ -39,5 +39,22 @@ export async function createFolderAction(raw: unknown): Promise<ActionResult> {
     });
     await refreshData('media');
     return succeed(undefined, t('clients.assets.folderCreated'));
+  });
+}
+
+export async function deleteFolderAction(folderId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    await authorize(Permissions.FILES_DELETE);
+    if (!folderId) return fail(t('toast.invalid'));
+    await deleteFolder(folderId);
+    await recordAudit({
+      action: 'media.folder.deleted',
+      entityType: 'media_folder',
+      entityId: folderId,
+      entityLabel: folderId,
+      summary: 'Deleted media folder',
+    });
+    await refreshData('media');
+    return succeed(undefined, t('clients.assets.folderDeleted'));
   });
 }

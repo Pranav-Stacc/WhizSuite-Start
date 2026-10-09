@@ -41,3 +41,10 @@ export async function createFolder(input: CreateMediaFolderInput): Promise<Media
     body: input,
   });
 }
+
+export async function deleteFolder(folderId: string): Promise<void> {
+  const organizationId = await orgId();
+  await apiFetch<void>(`${orgPath(organizationId, 'media/folders')}/${folderId}`, {
+    method: 'DELETE',
+  });
+}

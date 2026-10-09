@@ -36,12 +36,13 @@ export function NewFolderDialog({
   parentId?: string;
   trigger: ReactNode;
 }) {
+  const title = parentId ? t('clients.assets.newSubfolder') : t('clients.assets.newFolder');
   return (
     <FormDialog
       schema="mediaFolder"
-      title={t('clients.assets.newFolder')}
+      title={title}
       trigger={trigger}
-      submitLabel={t('clients.assets.newFolder')}
+      submitLabel={title}
       defaults={{ clientId, parentId: parentId ?? '', name: '', visibility: 'INTERNAL' }}
       action={createFolderAction}
       fields={[
