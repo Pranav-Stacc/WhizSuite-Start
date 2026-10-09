@@ -20,10 +20,7 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.enableCors({
-    origin: config
-      .get('CORS_ORIGINS')
-      .split(',')
-      .map((o: string) => o.trim()),
+    origin: config.get('CORS_ORIGINS').split(',').map((o: string) => o.trim()),
     credentials: true,
   });
 
@@ -39,18 +36,12 @@ async function bootstrap() {
 
   const swagger = new DocumentBuilder()
     .setTitle('Agency OS API')
-    .setDescription(
-      'Social Media Agency Operating System — modular monolith API',
-    )
+    .setDescription('Social Media Agency Operating System — modular monolith API')
     .setVersion('1.0')
     .addBearerAuth()
     .addApiKey({ type: 'apiKey', name: 'x-organization-id', in: 'header' })
     .build();
-  SwaggerModule.setup(
-    `${apiPrefix}/docs`,
-    app,
-    SwaggerModule.createDocument(app, swagger),
-  );
+  SwaggerModule.setup(`${apiPrefix}/docs`, app, SwaggerModule.createDocument(app, swagger));
 
   await app.listen(port);
   app.get(Logger).log(`API listening on http://localhost:${port}/${apiPrefix}`);

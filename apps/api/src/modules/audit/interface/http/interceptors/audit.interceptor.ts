@@ -21,7 +21,7 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const user = req.user;
+    const user = req.user as AuthenticatedUser | undefined;
     const orgId = TenantContext.getOrganizationId() ?? user?.organizationId;
 
     return next.handle().pipe(

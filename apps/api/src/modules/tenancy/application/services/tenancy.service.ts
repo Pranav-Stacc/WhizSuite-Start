@@ -69,7 +69,7 @@ export class TenancyService {
       action: 'workspace.create',
       entityType: 'workspace',
       entityId: workspace.id,
-      after: workspace,
+      after: workspace as unknown as Record<string, unknown>,
     });
 
     return workspace;
@@ -88,7 +88,7 @@ export class TenancyService {
       action: 'department.create',
       entityType: 'department',
       entityId: department.id,
-      after: department,
+      after: department as unknown as Record<string, unknown>,
     });
     return department;
   }
@@ -110,7 +110,7 @@ export class TenancyService {
       action: 'team.create',
       entityType: 'team',
       entityId: team.id,
-      after: team,
+      after: team as unknown as Record<string, unknown>,
     });
     return team;
   }

@@ -60,7 +60,7 @@ export class FeedbackService {
       action: 'feedback/threads.create',
       entityType: 'feedbackThread',
       entityId: (item as { id: string }).id,
-      after: item,
+      after: item as Record<string, unknown>,
     });
     return item;
   }
@@ -105,9 +105,7 @@ export class FeedbackService {
     rawBody: string,
   ): Promise<FeedbackCommentDto> {
     const body = rawBody.trim();
-    const maxLength = this.config.get('FEEDBACK_COMMENT_MAX_LENGTH', {
-      infer: true,
-    });
+    const maxLength = this.config.get('FEEDBACK_COMMENT_MAX_LENGTH', { infer: true });
     if (body.length === 0 || body.length > maxLength) {
       throw problem(
         HttpStatus.BAD_REQUEST,

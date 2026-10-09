@@ -34,9 +34,6 @@ export class TenantContext {
   }
 
   static getCorrelationId(): string {
-    return (
-      storage.getStore()?.correlationId ??
-      '00000000-0000-0000-0000-000000000000'
-    );
+    return storage.getStore()?.correlationId ?? '00000000-0000-0000-0000-000000000000';
   }
 }

@@ -19,23 +19,14 @@ export class EngagementService {
     const item = await this.repository.findById(organizationId, id);
     if (!item) {
       throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Not Found',
-          status: 404,
-          code: ErrorCodes.NOT_FOUND,
-        },
+        { type: 'about:blank', title: 'Not Found', status: 404, code: ErrorCodes.NOT_FOUND },
         404,
       );
     }
     return item;
   }
 
-  async create(
-    organizationId: string,
-    actorId: string,
-    data: Record<string, unknown>,
-  ) {
+  async create(organizationId: string, actorId: string, data: Record<string, unknown>) {
     const item = await this.repository.create(organizationId, data);
     await this.audit.record({
       organizationId,
@@ -44,17 +35,12 @@ export class EngagementService {
       action: 'inbox/conversations.create',
       entityType: 'inboxConversation',
       entityId: (item as { id: string }).id,
-      after: item,
+      after: item as Record<string, unknown>,
     });
     return item;
   }
 
-  async update(
-    organizationId: string,
-    actorId: string,
-    id: string,
-    data: Record<string, unknown>,
-  ) {
+  async update(organizationId: string, actorId: string, id: string, data: Record<string, unknown>) {
     await this.get(organizationId, id);
     await this.repository.update(organizationId, id, data);
     await this.audit.record({

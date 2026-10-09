@@ -29,12 +29,7 @@ export class ApprovalsRepository {
       subjectId: string;
       subjectVersion: string;
       requestedById: string;
-      steps: Array<{
-        name: string;
-        order: number;
-        rule: string;
-        approverSpec: Record<string, unknown>;
-      }>;
+      steps: Array<{ name: string; order: number; rule: string; approverSpec: Record<string, unknown> }>;
     },
   ) {
     return this.prisma.approvalRequest.create({

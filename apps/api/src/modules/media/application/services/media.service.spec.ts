@@ -58,12 +58,8 @@ function setup() {
       headers: { 'content-type': 'image/png' },
       expiresInSeconds: 900,
     }),
-    createPresignedDownload: jest
-      .fn()
-      .mockResolvedValue({ url: 'https://s3/get', expiresInSeconds: 300 }),
-    getObjectMetadata: jest
-      .fn()
-      .mockResolvedValue({ sizeBytes: SIZE, contentType: 'image/png' }),
+    createPresignedDownload: jest.fn().mockResolvedValue({ url: 'https://s3/get', expiresInSeconds: 300 }),
+    getObjectMetadata: jest.fn().mockResolvedValue({ sizeBytes: SIZE, contentType: 'image/png' }),
     deleteObjects: jest.fn(),
   };
   const audit = { record: jest.fn() };
@@ -80,9 +76,7 @@ function setup() {
 async function expectProblem(promise: Promise<unknown>, code: string) {
   const error = await promise.catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ProblemDetailsException);
-  expect(
-    JSON.stringify((error as ProblemDetailsException).getResponse()),
-  ).toContain(code);
+  expect(JSON.stringify((error as ProblemDetailsException).getResponse())).toContain(code);
 }
 
 describe('MediaService', () => {
@@ -90,11 +84,7 @@ describe('MediaService', () => {
     it('rejects disallowed file types', async () => {
       const { service, storage } = setup();
       await expectProblem(
-        service.createPresignedUpload(ORG, ACTOR, {
-          filename: 'a.exe',
-          mimeType: 'application/x-msdownload',
-          sizeBytes: SIZE,
-        }),
+        service.createPresignedUpload(ORG, ACTOR, { filename: 'a.exe', mimeType: 'application/x-msdownload', sizeBytes: SIZE }),
         ErrorCodes.MEDIA_TYPE_NOT_ALLOWED,
       );
       expect(storage.createPresignedUpload).not.toHaveBeenCalled();
@@ -103,11 +93,7 @@ describe('MediaService', () => {
     it('rejects files over the size limit', async () => {
       const { service } = setup();
       await expectProblem(
-        service.createPresignedUpload(ORG, ACTOR, {
-          filename: 'a.png',
-          mimeType: 'image/png',
-          sizeBytes: 11 * SIZE,
-        }),
+        service.createPresignedUpload(ORG, ACTOR, { filename: 'a.png', mimeType: 'image/png', sizeBytes: 11 * SIZE }),
         ErrorCodes.MEDIA_TOO_LARGE,
       );
     });
@@ -119,24 +105,16 @@ describe('MediaService', () => {
         mimeType: 'IMAGE/PNG',
         sizeBytes: SIZE,
       });
-      expect(result).toMatchObject({
-        method: 'PUT',
-        uploadUrl: 'https://s3/upload',
-        asset: { sizeBytes: SIZE },
-      });
+      expect(result).toMatchObject({ method: 'PUT', uploadUrl: 'https://s3/upload', asset: { sizeBytes: SIZE } });
       expect(() => JSON.stringify(result)).not.toThrow();
-      expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'media/assets.presign' }),
-      );
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'media/assets.presign' }));
     });
   });
 
   describe('completeUpload', () => {
     it('marks the asset READY when the object exists with the expected size', async () => {
       const { service, repository } = setup();
-      repository.findById
-        .mockResolvedValueOnce(asset())
-        .mockResolvedValueOnce(asset({ status: 'READY' }));
+      repository.findById.mockResolvedValueOnce(asset()).mockResolvedValueOnce(asset({ status: 'READY' }));
       const result = await service.completeUpload(ORG, ACTOR, ASSET_ID);
       expect(repository.setStatus).toHaveBeenCalledWith(ORG, ASSET_ID, 'READY');
       expect(result.status).toBe('READY');
@@ -145,28 +123,15 @@ describe('MediaService', () => {
     it('fails with MEDIA_UPLOAD_INCOMPLETE when the object is missing', async () => {
       const { service, storage, repository } = setup();
       storage.getObjectMetadata.mockResolvedValue(null);
-      await expectProblem(
-        service.completeUpload(ORG, ACTOR, ASSET_ID),
-        ErrorCodes.MEDIA_UPLOAD_INCOMPLETE,
-      );
+      await expectProblem(service.completeUpload(ORG, ACTOR, ASSET_ID), ErrorCodes.MEDIA_UPLOAD_INCOMPLETE);
       expect(repository.setStatus).not.toHaveBeenCalled();
     });
 
     it('marks FAILED and deletes the object on size mismatch', async () => {
       const { service, storage, repository } = setup();
-      storage.getObjectMetadata.mockResolvedValue({
-        sizeBytes: SIZE + 1,
-        contentType: 'image/png',
-      });
-      await expectProblem(
-        service.completeUpload(ORG, ACTOR, ASSET_ID),
-        ErrorCodes.MEDIA_UPLOAD_INCOMPLETE,
-      );
-      expect(repository.setStatus).toHaveBeenCalledWith(
-        ORG,
-        ASSET_ID,
-        'FAILED',
-      );
+      storage.getObjectMetadata.mockResolvedValue({ sizeBytes: SIZE + 1, contentType: 'image/png' });
+      await expectProblem(service.completeUpload(ORG, ACTOR, ASSET_ID), ErrorCodes.MEDIA_UPLOAD_INCOMPLETE);
+      expect(repository.setStatus).toHaveBeenCalledWith(ORG, ASSET_ID, 'FAILED');
       expect(storage.deleteObjects).toHaveBeenCalledWith([KEY]);
     });
   });
@@ -174,18 +139,13 @@ describe('MediaService', () => {
   describe('createDownloadUrl', () => {
     it('refuses assets that are not READY', async () => {
       const { service } = setup();
-      await expectProblem(
-        service.createDownloadUrl(ORG, ACTOR, ASSET_ID, 'inline'),
-        ErrorCodes.MEDIA_NOT_READY,
-      );
+      await expectProblem(service.createDownloadUrl(ORG, ACTOR, ASSET_ID, 'inline'), ErrorCodes.MEDIA_NOT_READY);
     });
 
     it('returns a signed url for READY assets', async () => {
       const { service, repository } = setup();
       repository.findById.mockResolvedValue(asset({ status: 'READY' }));
-      await expect(
-        service.createDownloadUrl(ORG, ACTOR, ASSET_ID, 'attachment'),
-      ).resolves.toEqual({
+      await expect(service.createDownloadUrl(ORG, ACTOR, ASSET_ID, 'attachment')).resolves.toEqual({
         url: 'https://s3/get',
         expiresInSeconds: 300,
       });
@@ -197,19 +157,9 @@ describe('MediaService', () => {
 
     it('adds preview urls only for ready images and videos, in one batch', async () => {
       const { service, repository } = setup();
-      repository.list.mockResolvedValue([
-        asset({ status: 'READY' }),
-        asset({ id: PDF_ID, status: 'READY', mimeType: 'application/pdf' }),
-      ]);
+      repository.list.mockResolvedValue([asset({ status: 'READY' }), asset({ id: PDF_ID, status: 'READY', mimeType: 'application/pdf' })]);
       repository.findForEmbedding.mockResolvedValue([
-        {
-          id: ASSET_ID,
-          name: 'photo.png',
-          mimeType: 'image/png',
-          status: 'READY',
-          currentVersion: 1,
-          versions: [{ version: 1, storageKey: KEY }],
-        },
+        { id: ASSET_ID, name: 'photo.png', mimeType: 'image/png', status: 'READY', currentVersion: 1, versions: [{ version: 1, storageKey: KEY }] },
       ]);
 
       const result = await service.list(ORG);
@@ -224,9 +174,7 @@ describe('MediaService', () => {
 
     it('skips the query for an empty list', async () => {
       const { service, repository } = setup();
-      await expect(service.resolveForEmbedding(ORG, [])).resolves.toEqual(
-        new Map(),
-      );
+      await expect(service.resolveForEmbedding(ORG, [])).resolves.toEqual(new Map());
       expect(repository.findForEmbedding).not.toHaveBeenCalled();
     });
 
@@ -254,22 +202,12 @@ describe('MediaService', () => {
         },
       ]);
 
-      const result = await service.resolveForEmbedding(ORG, [
-        ASSET_ID,
-        PENDING_ID,
-        ASSET_ID,
-      ]);
+      const result = await service.resolveForEmbedding(ORG, [ASSET_ID, PENDING_ID, ASSET_ID]);
 
       expect(repository.findForEmbedding).toHaveBeenCalledTimes(1);
-      expect(repository.findForEmbedding).toHaveBeenCalledWith(ORG, [
-        ASSET_ID,
-        PENDING_ID,
-      ]);
+      expect(repository.findForEmbedding).toHaveBeenCalledWith(ORG, [ASSET_ID, PENDING_ID]);
       expect(storage.createPresignedDownload).toHaveBeenCalledTimes(1);
-      expect(storage.createPresignedDownload).toHaveBeenCalledWith(KEY, {
-        filename: 'photo.png',
-        disposition: 'inline',
-      });
+      expect(storage.createPresignedDownload).toHaveBeenCalledWith(KEY, { filename: 'photo.png', disposition: 'inline' });
       expect(result.get(ASSET_ID)).toEqual({
         assetId: ASSET_ID,
         name: 'photo.png',
@@ -287,9 +225,7 @@ describe('MediaService', () => {
       await service.remove(ORG, ACTOR, ASSET_ID);
       expect(repository.softDelete).toHaveBeenCalledWith(ORG, ASSET_ID);
       expect(storage.deleteObjects).toHaveBeenCalledWith([KEY]);
-      expect(audit.record).toHaveBeenCalledWith(
-        expect.objectContaining({ action: 'media/assets.delete' }),
-      );
+      expect(audit.record).toHaveBeenCalledWith(expect.objectContaining({ action: 'media/assets.delete' }));
     });
   });
 });

@@ -27,8 +27,5 @@ export function problem(
   code: ErrorCode,
   detail?: string,
 ): ProblemDetailsException {
-  return new ProblemDetailsException(
-    { type: 'about:blank', title, status, code, detail },
-    status,
-  );
+  return new ProblemDetailsException({ type: 'about:blank', title, status, code, detail }, status);
 }

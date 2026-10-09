@@ -14,20 +14,13 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
-import {
-  CurrentUser,
-  type AuthenticatedUser,
-} from '../../../../../shared/auth/current-user.decorator';
+import { CurrentUser, type AuthenticatedUser } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { MediaService } from '../../../application/services/media.service';
-import {
-  MediaDownloadQueryDto,
-  PresignMediaUploadDto,
-  UpdateMediaAssetDto,
-} from '../dto/media.dto';
+import { MediaDownloadQueryDto, PresignMediaUploadDto, UpdateMediaAssetDto } from '../dto/media.dto';
 
 @ApiTags('media')
 @ApiBearerAuth()
@@ -49,11 +42,7 @@ export class MediaResourceController {
     @Body() body: PresignMediaUploadDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.createPresignedUpload(
-      requireOrganizationId(organizationId),
-      user.userId,
-      body,
-    );
+    return this.service.createPresignedUpload(requireOrganizationId(organizationId), user.userId, body);
   }
 
   @Post(':id/complete')
@@ -64,19 +53,12 @@ export class MediaResourceController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.completeUpload(
-      requireOrganizationId(organizationId),
-      user.userId,
-      id,
-    );
+    return this.service.completeUpload(requireOrganizationId(organizationId), user.userId, id);
   }
 
   @Get(':id')
   @RequirePermissions(Permissions.FILES_VIEW)
-  getOne(
-    @Param('organizationId') organizationId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  getOne(@Param('organizationId') organizationId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.service.get(requireOrganizationId(organizationId), id);
   }
 
@@ -104,12 +86,7 @@ export class MediaResourceController {
     @Body() body: UpdateMediaAssetDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.update(
-      requireOrganizationId(organizationId),
-      user.userId,
-      id,
-      body,
-    );
+    return this.service.update(requireOrganizationId(organizationId), user.userId, id, body);
   }
 
   @Delete(':id')
@@ -120,10 +97,6 @@ export class MediaResourceController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.remove(
-      requireOrganizationId(organizationId),
-      user.userId,
-      id,
-    );
+    return this.service.remove(requireOrganizationId(organizationId), user.userId, id);
   }
 }

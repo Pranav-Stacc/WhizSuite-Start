@@ -9,10 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
-import {
-  CurrentUser,
-  type AuthenticatedUser,
-} from '../../../../../shared/auth/current-user.decorator';
+import { CurrentUser, type AuthenticatedUser } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
@@ -30,7 +27,8 @@ export class OrganizationsController {
   @Get('current')
   @RequirePermissions(Permissions.ORG_VIEW)
   getCurrent(@Headers('x-organization-id') orgHeader?: string) {
-    const orgId = orgHeader ?? TenantContext.getOrganizationId() ?? undefined;
+    const orgId =
+      orgHeader ?? TenantContext.getOrganizationId() ?? undefined;
     if (!orgId) return this.tenancy.requireOrgFromContext();
     return this.tenancy.getOrganization(orgId);
   }

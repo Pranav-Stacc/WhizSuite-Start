@@ -12,6 +12,6 @@ export interface AuthenticatedUser {
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthenticatedUser | undefined => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    return request.user;
+    return request.user as AuthenticatedUser | undefined;
   },
 );

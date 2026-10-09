@@ -15,15 +15,7 @@ export class AiController {
 
   @Post('caption')
   @RequirePermissions(Permissions.CONTENT_CREATE)
-  caption(
-    @Body()
-    body: {
-      topic: string;
-      tone?: string;
-      platform?: string;
-      maxLength?: number;
-    },
-  ) {
+  caption(@Body() body: { topic: string; tone?: string; platform?: string; maxLength?: number }) {
     return this.service.generateCaption(body);
   }
 
