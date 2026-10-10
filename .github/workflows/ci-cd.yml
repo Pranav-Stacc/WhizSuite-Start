@@ -145,12 +145,17 @@ jobs:
         run: |
           set -euo pipefail
 
+          # --max-items prints a NextToken line ("None"); take the first token only.
+          amplify_text() {
+            aws "$@" --output text | awk 'NF { print $1; exit }'
+          }
+
           wait_for_job() {
             local job_id=$1
             echo "Waiting for Amplify job $job_id"
             for _ in $(seq 1 120); do
-              status=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$job_id" \
-                --query job.summary.status --output text)
+              status=$(amplify_text amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$job_id" \
+                --query job.summary.status)
               case "$status" in PENDING|PROVISIONING|RUNNING) sleep 15 ;; *) break ;; esac
             done
             echo "Amplify job status: $status"
@@ -158,14 +163,13 @@ jobs:
           }
 
           find_job_for_commit() {
-            aws amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-items 10 \
-              --query "jobSummaries[?commitId=='$SHA'].jobId | [0]" --output text
+            amplify_text amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-results 10 \
+              --query "jobSummaries[?commitId=='$SHA'].jobId | [0]"
           }
 
           find_active_job() {
-            aws amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-items 5 \
-              --query "jobSummaries[?status=='PENDING' || status=='PROVISIONING' || status=='RUNNING'].jobId | [0]" \
-              --output text
+            amplify_text amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-results 5 \
+              --query "jobSummaries[?status=='PENDING' || status=='PROVISIONING' || status=='RUNNING'].jobId | [0]"
           }
 
           # Amplify may auto-build on push; reuse an in-flight job for this commit.
