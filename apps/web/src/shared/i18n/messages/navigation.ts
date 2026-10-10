@@ -87,7 +87,6 @@ export const navigation = {
   'workspace.switch': 'Switch workspace',
   'workspace.main': 'Workspace',
   'workspace.crm': 'CRM',
-  'workspace.finance': 'Finance',
   'workspace.current': 'Current',
   'shell.skip': 'Skip to content',
   'shell.menu': 'Menu',

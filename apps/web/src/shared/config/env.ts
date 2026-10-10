@@ -4,7 +4,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   APP_DATA_MODE: z.enum(['demo', 'live']).default('demo'),
   API_BASE_URL: z.string().url().default('http://localhost:3001/api'),
-  /** Root host for agency subdomains, e.g. `whizsuite.com` → `crm.{slug}.whizsuite.com`. Empty = single-host local mode. */
+  /** Root host for agency subdomains, e.g. `whizsuite.com` → `crm-{slug}.whizsuite.com`. Empty = single-host local mode. */
   APP_ROOT_DOMAIN: z
     .string()
     .optional()

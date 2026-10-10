@@ -1,5 +1,5 @@
 /** Product surface for staff apps — maps to subdomain when APP_ROOT_DOMAIN is set. */
-export const WorkspaceModules = ['main', 'crm', 'finance'] as const;
+export const WorkspaceModules = ['main', 'crm'] as const;
 export type WorkspaceModule = (typeof WorkspaceModules)[number];
 
 export const WORKSPACE_MODULE_COOKIE = 'ao_workspace_module';
@@ -21,15 +21,13 @@ export const SHARED_PATH_PREFIXES = [
 /**
  * Which staff app owns a path. Unlisted paths stay on main.
  * CRM = lead gen / pipeline only; converted accounts live on Main as Clients.
- * Finance = money; Main = clients + delivery + agency ops.
+ * Finance (invoices, reports, time) lives on Main — only CRM is a separate surface.
  */
 const CRM_PREFIXES = ['/leads'] as const;
-const FINANCE_PREFIXES = ['/invoices', '/reports', '/time'] as const;
 
 export function moduleForPath(pathname: string): WorkspaceModule {
   const path = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
   if (CRM_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return 'crm';
-  if (FINANCE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) return 'finance';
   return 'main';
 }
 
@@ -44,8 +42,6 @@ export function homePathForModule(module: WorkspaceModule): string {
   switch (module) {
     case 'crm':
       return '/leads';
-    case 'finance':
-      return '/invoices';
     default:
       return '/dashboard';
   }
@@ -53,9 +49,8 @@ export function homePathForModule(module: WorkspaceModule): string {
 
 /** Nav group ids visible on each product surface. */
 export const MODULE_NAV_GROUPS: Record<WorkspaceModule, readonly string[]> = {
-  main: ['work', 'content', 'clients', 'automate', 'agency'],
+  main: ['work', 'content', 'clients', 'money', 'automate', 'agency'],
   crm: ['clients'],
-  finance: ['money', 'work'],
 };
 
 /** Primary top-bar hrefs per module. */
@@ -64,12 +59,10 @@ export const MODULE_PRIMARY_HREFS: Record<WorkspaceModule, readonly string[]> = 
   // Agency (/team) replaces Assets (/media) on the primary bar; media stays under Content → More.
   main: ['/dashboard', '/clients', '/content', '/calendar', '/chat', '/agent', '/team'],
   crm: ['/leads'],
-  finance: ['/invoices', '/reports', '/time'],
 };
 
-/** Client workspace tabs — accounts live on Main after CRM conversion; Finance keeps money tabs. */
+/** Client workspace tabs — accounts + finance tabs live on Main after CRM conversion. */
 export const MODULE_CLIENT_SECTIONS: Record<WorkspaceModule, readonly string[]> = {
-  main: ['overview', 'brand', 'grid', 'calendar', 'messages', 'assets', 'integrations'],
+  main: ['overview', 'brand', 'grid', 'calendar', 'messages', 'assets', 'agreements', 'invoices', 'integrations'],
   crm: [],
-  finance: ['overview', 'agreements', 'invoices'],
 };

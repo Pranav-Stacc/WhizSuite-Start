@@ -1,6 +1,16 @@
 name: Publish to iOS App Store
 
 on:
+  workflow_call:
+    inputs:
+      track:
+        required: false
+        type: string
+        default: beta
+      bootstrap_certs:
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       track:

@@ -57,7 +57,7 @@ jobs:
           BRANCH: ${{ vars.AMPLIFY_BRANCH }}
         run: |
           set -euo pipefail
-          # Apex + www + wildcard (*) — required for test/crm-test/finance-test agency hosts (ADR 0009).
+          # Apex + www + wildcard (*) — required for test/crm-test agency hosts (ADR 0009).
           subdomain_settings="prefix=,branchName=$BRANCH prefix=www,branchName=$BRANCH prefix=*,branchName=$BRANCH"
 
           existing=$(aws amplify list-domain-associations --app-id "$APP_ID" \

@@ -41,9 +41,9 @@ function rootDomain(): string | undefined {
 }
 
 /**
- * First-line gate: auth, token rotation, and CRM/Finance subdomain routing.
+ * First-line gate: auth, token rotation, and CRM subdomain routing.
  * When APP_ROOT_DOMAIN is set, paths owned by another module redirect to
- * `crm.{slug}.…` / `finance.{slug}.…` / `{slug}.…`.
+ * `crm-{slug}.…` / `{slug}.…`. Legacy `finance-{slug}` hosts hop onto main.
  */
 export async function proxy(request: NextRequest) {
   const pathname = normalizePath(request.nextUrl.pathname);
@@ -57,12 +57,13 @@ export async function proxy(request: NextRequest) {
   const host = parseWorkspaceHost(request.headers.get('host'), root);
   const pathModule = moduleForPath(pathname);
 
-  // Staff must live on {slug}.root / crm-{slug}.root / finance-{slug}.root — never apex/www alone.
+  // Staff must live on {slug}.root / crm-{slug}.root — never apex/www alone.
   if (root && session.orgSlug && !isSharedPath(pathname)) {
     const onWrongOrg = host.subdomainMode && host.orgSlug !== null && host.orgSlug !== session.orgSlug;
     const onApexOrWww = !host.subdomainMode;
     const onWrongModule = host.subdomainMode && pathModule !== host.module;
-    if (onApexOrWww || onWrongOrg || onWrongModule) {
+    const onLegacyFinance = Boolean(host.legacyFinanceHost);
+    if (onApexOrWww || onWrongOrg || onWrongModule || onLegacyFinance) {
       const target = workspaceHref({
         module: pathModule,
         orgSlug: session.orgSlug,

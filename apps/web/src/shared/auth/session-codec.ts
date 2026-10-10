@@ -12,7 +12,7 @@ export interface Session {
   role: UserRole;
   orgId: string;
   orgName: string;
-  /** Platform-unique agency slug — powers `{slug}.whizsuite.com` / `crm.{slug}.…`. */
+  /** Platform-unique agency slug — powers `{slug}.whizsuite.com` / `crm-{slug}.…`. */
   orgSlug?: string;
   clientId?: string;
   accessToken?: string;

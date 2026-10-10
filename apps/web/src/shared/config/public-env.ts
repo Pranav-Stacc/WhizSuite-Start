@@ -1,6 +1,6 @@
 /** Browser-visible Firebase / Google settings (NEXT_PUBLIC_* only). */
 export const publicEnv = {
-  /** Same value as APP_ROOT_DOMAIN — needed for CRM/Finance subdomain links in the shell. */
+  /** Same value as APP_ROOT_DOMAIN — needed for CRM subdomain links in the shell. */
   appRootDomain: process.env.NEXT_PUBLIC_APP_ROOT_DOMAIN?.trim() ?? '',
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '',
   firebase: {

@@ -155,13 +155,6 @@ export function allowedGroups(granted: ReadonlySet<Permission>, module: Workspac
   const allowedIds = new Set(MODULE_NAV_GROUPS[module]);
   return NAV_GROUPS.filter((group) => allowedIds.has(group.id))
     .map((group) => {
-      // Finance reuses the Work group only for Time — strip tasks/projects/calendar.
-      if (module === 'finance' && group.id === 'work') {
-        return {
-          ...group,
-          items: group.items.filter((item) => item.href === '/time' && isAllowed(item, granted)),
-        };
-      }
       // CRM is lead-gen only; Clients / Inbox stay on Main after conversion.
       if (module === 'crm' && group.id === 'clients') {
         return {

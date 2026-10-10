@@ -22,7 +22,7 @@ import { NotificationsBell, QuickCreate, UserMenu } from './shell-actions';
 import { TopNav } from './top-nav';
 import { WorkspaceSwitcher } from './workspace-switcher';
 
-/** Staff workspace chrome: product surface (main / CRM / Finance) + module tabs. */
+/** Staff workspace chrome: product surface (main / CRM) + module tabs. Finance lives on main. */
 export async function AppShell({ session, children }: { session: Session; children: ReactNode }) {
   const granted = await getPermissions();
   const workspace = await getWorkspaceContext();
@@ -52,7 +52,6 @@ export async function AppShell({ session, children }: { session: Session; childr
             module={workspace.module}
             orgSlug={session.orgSlug}
             canCrm={granted.has(Permissions.LEADS_VIEW)}
-            canFinance={granted.has(Permissions.INVOICES_VIEW) || granted.has(Permissions.REPORTS_VIEW)}
           />
           {session.demo ? (
             <Badge tone="warning" title={t('common.demoBanner')} className="hidden md:inline-flex">

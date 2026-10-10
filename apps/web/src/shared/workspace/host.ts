@@ -9,6 +9,8 @@ export interface WorkspaceHost {
   subdomainMode: boolean;
   /** Hostname without port. */
   hostname: string;
+  /** True when host used the retired `finance-{slug}` prefix (redirect onto main). */
+  legacyFinanceHost?: boolean;
 }
 
 function stripPort(host: string): string {
@@ -22,13 +24,13 @@ function isModule(value: string): value is WorkspaceModule {
 /**
  * Parses agency hosts under APP_ROOT_DOMAIN.
  *
- * Amplify TLS only covers one wildcard level (`*.whizsuite.com`), so product
- * surfaces use a single label:
- * - `{slug}.whizsuite.com` → main
+ * Amplify TLS only covers one wildcard level (`*.whizsuite.com`), so CRM uses a
+ * single-label prefix (not nested `crm.{slug}`):
+ * - `{slug}.whizsuite.com` → main (includes Finance)
  * - `crm-{slug}.whizsuite.com` → CRM
- * - `finance-{slug}.whizsuite.com` → Finance
  *
- * Nested `crm.{slug}.root` is still accepted if present.
+ * Legacy `finance-{slug}` hosts collapse onto main. Nested `crm.{slug}.root` is
+ * still accepted if present.
  */
 export function parseWorkspaceHost(hostHeader: string | null, rootDomain: string | undefined): WorkspaceHost {
   const hostname = stripPort(hostHeader ?? 'localhost');
@@ -55,8 +57,31 @@ export function parseWorkspaceHost(hostHeader: string | null, rootDomain: string
     return { module: parts[0], orgSlug: parts[1] ?? null, subdomainMode: true, hostname };
   }
 
+  // Nested legacy: finance.workplace.whizsuite.com → main
+  if (parts.length === 2 && parts[0] === 'finance') {
+    return {
+      module: 'main',
+      orgSlug: parts[1] ?? null,
+      subdomainMode: true,
+      hostname,
+      legacyFinanceHost: true,
+    };
+  }
+
   if (parts.length === 1) {
     const label = parts[0] ?? '';
+
+    // Retired finance surface — strip prefix and land on main.
+    if (label.startsWith('finance-') && label.length > 'finance-'.length) {
+      return {
+        module: 'main',
+        orgSlug: label.slice('finance-'.length),
+        subdomainMode: true,
+        hostname,
+        legacyFinanceHost: true,
+      };
+    }
+
     for (const module of WorkspaceModules) {
       if (module === 'main') continue;
       const prefix = `${module}-`;

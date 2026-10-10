@@ -4817,13 +4817,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String portalKpiFilesCaption(int count) {
-    return intl.Intl.pluralLogic(
+    String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      zero: 'Nothing shared yet',
-      one: '1 file',
       other: '$count files',
+      one: '1 file',
+      zero: 'Nothing shared yet',
     );
+    return '$_temp0';
   }
 
   @override

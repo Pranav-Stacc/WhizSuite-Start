@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Building2, ChevronDown, Landmark, Users } from 'lucide-react';
+import { Building2, ChevronDown, Users } from 'lucide-react';
 import { publicEnv } from '@/shared/config/public-env';
 import { t } from '@/shared/i18n/t';
 import { workspaceHref } from '@/shared/workspace/host';
@@ -14,33 +14,27 @@ import {
 import { Menu } from '@/shared/ui/overlays';
 import { prepareWorkspaceHopAction, switchWorkspaceModuleAction } from '../actions/workspace.actions';
 
-const MODULES: Array<{ id: WorkspaceModule; icon: typeof Building2; labelKey: 'workspace.main' | 'workspace.crm' | 'workspace.finance' }> = [
+const MODULES: Array<{ id: WorkspaceModule; icon: typeof Building2; labelKey: 'workspace.main' | 'workspace.crm' }> = [
   { id: 'main', icon: Building2, labelKey: 'workspace.main' },
   { id: 'crm', icon: Users, labelKey: 'workspace.crm' },
-  { id: 'finance', icon: Landmark, labelKey: 'workspace.finance' },
 ];
 
 interface WorkspaceSwitcherProps {
   module: WorkspaceModule;
   orgSlug?: string;
-  /** Permissions gate — hide CRM/Finance entries the member cannot open. */
+  /** Permissions gate — hide CRM when the member cannot open leads. */
   canCrm: boolean;
-  canFinance: boolean;
 }
 
-/** Jumps between main / CRM / Finance product surfaces (subdomain or local cookie). */
-export function WorkspaceSwitcher({ module, orgSlug, canCrm, canFinance }: WorkspaceSwitcherProps) {
+/** Jumps between main and CRM product surfaces (subdomain or local cookie). Finance stays on main. */
+export function WorkspaceSwitcher({ module, orgSlug, canCrm }: WorkspaceSwitcherProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const root = publicEnv.appRootDomain;
   const current = MODULES.find((m) => m.id === module) ?? MODULES[0]!;
   const CurrentIcon = current.icon;
 
-  const visible = MODULES.filter((m) => {
-    if (m.id === 'crm') return canCrm;
-    if (m.id === 'finance') return canFinance;
-    return true;
-  });
+  const visible = MODULES.filter((m) => (m.id === 'crm' ? canCrm : true));
 
   const go = (next: WorkspaceModule) => {
     if (next === module) return;

@@ -775,7 +775,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickCreateEmpty.
   ///
   /// In en, this message translates to:
-  /// **'You don't have permission to create anything yet.'**
+  /// **'You don\'t have permission to create anything yet.'**
   String get quickCreateEmpty;
 
   /// No description provided for @quickCreateTask.
@@ -3005,114 +3005,225 @@ abstract class AppLocalizations {
   String get clientManageCompose;
 
   /// No description provided for @clientManageAgreements.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreements'**
   String get clientManageAgreements;
 
   /// No description provided for @clientManageAgreementsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Contracts, NDAs and signatures'**
   String get clientManageAgreementsBody;
 
   /// No description provided for @clientManageGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Content grid'**
   String get clientManageGrid;
 
   /// No description provided for @clientManageGridBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram-style feed planner'**
   String get clientManageGridBody;
 
   /// No description provided for @clientTabAgreements.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreements'**
   String get clientTabAgreements;
 
   /// No description provided for @agreementsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No agreements yet'**
   String get agreementsEmptyTitle;
 
   /// No description provided for @agreementsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an NDA, MSA or SOW and upload the signed PDF when ready.'**
   String get agreementsEmptyBody;
 
   /// No description provided for @agreementsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New agreement'**
   String get agreementsNew;
 
   /// No description provided for @agreementsNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a draft contract for this client. You can upload a PDF and collect a signature next.'**
   String get agreementsNewHint;
 
   /// No description provided for @agreementsTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
   String get agreementsTitleLabel;
 
   /// No description provided for @agreementsTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
   String get agreementsTypeLabel;
 
   /// No description provided for @agreementsTypeNda.
+  ///
+  /// In en, this message translates to:
+  /// **'NDA'**
   String get agreementsTypeNda;
 
   /// No description provided for @agreementsTypeMsa.
+  ///
+  /// In en, this message translates to:
+  /// **'MSA'**
   String get agreementsTypeMsa;
 
   /// No description provided for @agreementsTypeSow.
+  ///
+  /// In en, this message translates to:
+  /// **'SOW'**
   String get agreementsTypeSow;
 
   /// No description provided for @agreementsTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
   String get agreementsTypeOther;
 
   /// No description provided for @agreementsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
   String get agreementsStart;
 
   /// No description provided for @agreementsEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
   String get agreementsEnd;
 
   /// No description provided for @agreementsStatTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
   String get agreementsStatTotal;
 
   /// No description provided for @agreementsStatSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed'**
   String get agreementsStatSigned;
 
   /// No description provided for @agreementsStatDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts'**
   String get agreementsStatDraft;
 
   /// No description provided for @agreementsDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
   String get agreementsDownload;
 
   /// No description provided for @agreementsDownloadStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening agreement…'**
   String get agreementsDownloadStarted;
 
   /// No description provided for @agreementsUploadPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload PDF'**
   String get agreementsUploadPdf;
 
   /// No description provided for @agreementsPdfUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF uploaded'**
   String get agreementsPdfUploaded;
 
   /// No description provided for @agreementsSign.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign'**
   String get agreementsSign;
 
   /// No description provided for @agreementsSignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign agreement'**
   String get agreementsSignTitle;
 
   /// No description provided for @agreementsSignHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your full legal name to sign. A snapshot of the PDF is locked at signing time.'**
   String get agreementsSignHint;
 
   /// No description provided for @agreementsSignerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
   String get agreementsSignerName;
 
   /// No description provided for @agreementsMarkSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark signed'**
   String get agreementsMarkSigned;
 
   /// No description provided for @agreementsSignedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreement signed'**
   String get agreementsSignedToast;
 
   /// No description provided for @agreementsCreatedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreement created'**
   String get agreementsCreatedToast;
 
   /// No description provided for @agreementsStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
   String get agreementsStatusDraft;
 
   /// No description provided for @agreementsStatusSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
   String get agreementsStatusSent;
 
   /// No description provided for @agreementsStatusSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed'**
   String get agreementsStatusSigned;
 
   /// No description provided for @agreementsStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
   String get agreementsStatusActive;
 
   /// No description provided for @agreementsStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
   String get agreementsStatusExpired;
 
   /// No description provided for @agreementsStatusVoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Void'**
   String get agreementsStatusVoid;
 
   /// No description provided for @clientProjectsEmpty.
@@ -8387,7 +8498,7 @@ abstract class AppLocalizations {
   /// No description provided for @navTeam.
   ///
   /// In en, this message translates to:
-  /// **'Team'**
+  /// **'Agency'**
   String get navTeam;
 
   /// No description provided for @teamTabMembers.
@@ -9407,7 +9518,7 @@ abstract class AppLocalizations {
   /// No description provided for @workflowStagesTooFew.
   ///
   /// In en, this message translates to:
-  /// **'Add at least {min} stages'**
+  /// **'Add at least {min} stage(s)'**
   String workflowStagesTooFew(int min);
 
   /// No description provided for @workflowStagesTooMany.

@@ -21,7 +21,7 @@ export async function switchWorkspaceModuleAction(module: WorkspaceModule): Prom
 }
 
 /**
- * Before hopping to crm-{slug} / finance-{slug}, re-emit ao_session with Domain=.whizsuite.com
+ * Before hopping to crm-{slug}, re-emit ao_session with Domain=.whizsuite.com
  * so a host-only cookie from an older login is upgraded for SSO.
  */
 export async function prepareWorkspaceHopAction(): Promise<boolean> {

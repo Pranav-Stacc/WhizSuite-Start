@@ -9,7 +9,7 @@ import type { WorkspaceModule } from '@/shared/workspace/modules';
 import { ModuleLink } from '@/shared/workspace/module-link';
 import { Menu } from '@/shared/ui/overlays';
 
-/** Flat editorial navigation scoped to the active product surface (main / CRM / Finance). */
+/** Flat editorial navigation scoped to the active product surface (main / CRM). */
 export function TopNav({
   permissions,
   badges,
