@@ -28,9 +28,12 @@ jobs:
     outputs:
       api: ${{ steps.filter.outputs.api }}
       mobile: ${{ steps.filter.outputs.mobile }}
-      mobile_version: ${{ steps.filter.outputs.mobile_version }}
+      # True only when the `version:` line in pubspec.yaml changes (not assets/deps edits).
+      mobile_version_bumped: ${{ steps.version.outputs.changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -46,8 +49,34 @@ jobs:
             mobile:
               - 'apps/mobile/**'
               - '.github/workflows/publish-ios-app-store.yml'
-            mobile_version:
-              - 'apps/mobile/pubspec.yaml'
+      - name: Detect pubspec version bump
+        id: version
+        run: |
+          set -euo pipefail
+          pubspec=apps/mobile/pubspec.yaml
+          read_version() { awk '/^version:/{print; exit}' "$1"; }
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+            before="${{ github.event.before }}"
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git show "$before:$pubspec" > /tmp/pubspec.before.yaml
+            before_ver=$(read_version /tmp/pubspec.before.yaml)
+            after_ver=$(read_version "$pubspec")
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$before_ver" != "$after_ver" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Pubspec version bumped: $before_ver -> $after_ver"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Pubspec version unchanged ($after_ver); skipping iOS publish"
+          fi
 
   # Backend / shared packages only — web builds on Amplify automatically.
   verify:
@@ -136,7 +165,7 @@ jobs:
             --query '[StandardOutputContent, StandardErrorContent]' --output text
           test "$status" = "Success"
 
-  # iOS only when pubspec version/build number changes — not on every mobile code push.
+  # iOS only when the `version:` line in pubspec.yaml changes (e.g. 1.0.0+2 -> 1.0.0+3).
   # Web is not deployed here — Amplify auto-builds on push.
   deploy-ios:
     needs: [changes]
@@ -144,7 +173,7 @@ jobs:
       github.event_name != 'pull_request'
       && github.ref == 'refs/heads/main'
       && (
-        needs.changes.outputs.mobile_version == 'true'
+        needs.changes.outputs.mobile_version_bumped == 'true'
         || (github.event_name == 'workflow_dispatch' && inputs.force_ios)
       )
     uses: ./.github/workflows/publish-ios-app-store.yml
