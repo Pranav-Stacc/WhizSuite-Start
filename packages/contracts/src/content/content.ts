@@ -111,6 +111,11 @@ export type ContentReorderInput = z.infer<typeof contentReorderSchema>;
 
 export const contentTransitionSchema = z.object({
   toStatus: z.enum(ContentStatuses),
+  /**
+   * When moving to PUBLISHED: true (default) queues live Meta publish;
+   * false only updates status (post already published outside the app).
+   */
+  livePublish: z.boolean().optional(),
 });
 export type ContentTransitionInput = z.infer<typeof contentTransitionSchema>;
 

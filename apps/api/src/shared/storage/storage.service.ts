@@ -115,12 +115,16 @@ export class StorageService {
 
   async createPresignedDownload(
     storageKey: string,
-    options: { filename: string; disposition: MediaDownloadDisposition },
+    options: {
+      filename: string;
+      disposition: MediaDownloadDisposition;
+      /** Override default download TTL (e.g. Meta must fetch media during publish). */
+      expiresInSeconds?: number;
+    },
   ) {
-    const expiresInSeconds = this.config.get(
-      'STORAGE_DOWNLOAD_URL_TTL_SECONDS',
-      { infer: true },
-    );
+    const expiresInSeconds: number =
+      options.expiresInSeconds ??
+      this.config.get('STORAGE_DOWNLOAD_URL_TTL_SECONDS', { infer: true });
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: storageKey,

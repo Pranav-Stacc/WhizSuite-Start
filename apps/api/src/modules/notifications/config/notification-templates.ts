@@ -63,6 +63,16 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: '{title}',
     actionLabel: 'Open chat',
   },
+  [NotificationTypeKeys.SOCIAL_POST_PUBLISHED]: {
+    subject: 'Post published',
+    body: '"{title}" was published to Instagram.',
+    actionLabel: 'View content',
+  },
+  [NotificationTypeKeys.SOCIAL_POST_FAILED]: {
+    subject: 'Publish failed',
+    body: '"{title}" failed to publish. Check Integrations and try again.',
+    actionLabel: 'View content',
+  },
 };
 
 const PLACEHOLDER = /\{(\w+)\}/g;

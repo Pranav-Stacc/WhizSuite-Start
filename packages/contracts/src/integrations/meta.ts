@@ -9,6 +9,14 @@ export const META_OAUTH_SCOPES = [
   'pages_read_engagement',
   'instagram_basic',
   'instagram_content_publish',
+  /** Needed to list business owned/client pages for System-user (BISU) tokens. */
+  'business_management',
+] as const;
+
+/** Minimum scopes required to resolve a Page / Instagram professional account. */
+export const META_REQUIRED_ASSET_SCOPES = [
+  'pages_show_list',
+  'instagram_basic',
 ] as const;
 
 export const metaOAuthStartSchema = z.object({

@@ -152,6 +152,7 @@ export class SocialResourceController {
       user.userId,
       contentId,
       dto.toStatus,
+      { livePublish: dto.livePublish },
     );
   }
 

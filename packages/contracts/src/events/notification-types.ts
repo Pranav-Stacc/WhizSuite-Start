@@ -10,6 +10,8 @@ export const NotificationTypeKeys = {
   APPROVAL_REQUESTED: 'approval.requested',
   CHAT_MESSAGE: 'chat.message',
   CHAT_MENTION: 'chat.mention',
+  SOCIAL_POST_PUBLISHED: 'social_post.published',
+  SOCIAL_POST_FAILED: 'social_post.failed',
 } as const;
 
 export type NotificationTypeKey =

@@ -44,7 +44,8 @@ async function beginAuthenticatedSession(session: Session): Promise<void> {
 /** Prefer `{slug}.{APP_ROOT_DOMAIN}` so Main/CRM/Finance SSO cookies apply. */
 function redirectAfterAuth(session: Session): never {
   const path = homeFor(session.role);
-  const root = env.APP_ROOT_DOMAIN?.trim();
+  const root =
+    env.APP_ROOT_DOMAIN?.trim() || process.env.NEXT_PUBLIC_APP_ROOT_DOMAIN?.trim() || undefined;
   if (root && session.orgSlug) {
     redirect(
       workspaceHref({

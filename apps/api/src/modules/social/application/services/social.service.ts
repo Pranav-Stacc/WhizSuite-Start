@@ -234,6 +234,18 @@ export class SocialService {
       before: toContentSnapshot(before),
       after: toContentSnapshot(after),
     });
+
+    const scheduledChanged =
+      changes.scheduledAt !== undefined &&
+      (before.scheduledAt?.getTime() ?? null) !==
+        (after.scheduledAt?.getTime() ?? null);
+    if (after.status === 'SCHEDULED' && scheduledChanged && after.scheduledAt) {
+      await this.repository.transaction(async (tx) => {
+        await this.repository.cancelQueuedPublishJobs(tx, organizationId, id);
+      });
+      await this.enqueueLivePublish(organizationId, after, 'SCHEDULED');
+    }
+
     return replacedMedia
       ? toContentItemDto(after, replacedMedia)
       : this.toDto(organizationId, after);
@@ -327,6 +339,7 @@ export class SocialService {
     actorId: string,
     contentId: string,
     toStatus: ContentStatus,
+    options?: { livePublish?: boolean },
   ): Promise<ContentItemDto> {
     const before = await this.findOrThrow(organizationId, contentId);
     if (!canTransitionContent(before.status as ContentStatus, toStatus)) {
@@ -334,7 +347,25 @@ export class SocialService {
         `Content cannot move from ${before.status} to ${toStatus}`,
       );
     }
+
+    const livePublish = options?.livePublish !== false;
+    if (toStatus === 'SCHEDULED' || (toStatus === 'PUBLISHED' && livePublish)) {
+      await this.enqueueLivePublish(organizationId, before, toStatus);
+    }
+
     const after = await this.repository.transaction(async (tx) => {
+      const leavingScheduleWithoutLive =
+        before.status === 'SCHEDULED' &&
+        (toStatus === 'APPROVED' ||
+          toStatus === 'DRAFT' ||
+          (toStatus === 'PUBLISHED' && !livePublish));
+      if (leavingScheduleWithoutLive) {
+        await this.repository.cancelQueuedPublishJobs(
+          tx,
+          organizationId,
+          contentId,
+        );
+      }
       const updated = await this.repository.updateContentIfVersion(
         tx,
         organizationId,
@@ -378,6 +409,68 @@ export class SocialService {
       },
     );
     return this.toDto(organizationId, after);
+  }
+
+  /**
+   * Create Instagram variants for connected Meta accounts and queue live publish jobs.
+   * SCHEDULED → run at content.scheduledAt; PUBLISHED → run immediately.
+   */
+  private async enqueueLivePublish(
+    organizationId: string,
+    content: ContentItemRecord,
+    toStatus: 'SCHEDULED' | 'PUBLISHED',
+  ): Promise<void> {
+    const platforms = (content.platforms ?? []).map((p) => p.toLowerCase());
+    const publishPlatforms = platforms.filter((p) => p === 'instagram');
+    if (publishPlatforms.length === 0) {
+      throw unprocessable(
+        'Select Instagram and connect Meta under Integrations to auto-publish. (Facebook live publish is next.)',
+      );
+    }
+
+    const scheduledFor =
+      toStatus === 'PUBLISHED'
+        ? new Date()
+        : content.scheduledAt
+          ? new Date(content.scheduledAt)
+          : null;
+    if (!scheduledFor || Number.isNaN(scheduledFor.getTime())) {
+      throw unprocessable('Set a publish date and time before scheduling');
+    }
+
+    const { variantIds, jobIds } =
+      await this.repository.ensureVariantsAndEnqueuePublish({
+        organizationId,
+        contentItemId: content.id,
+        clientId: content.clientId,
+        platforms: publishPlatforms,
+        caption: content.caption,
+        contentType: content.contentType,
+        scheduledFor,
+        bumpQueuedToNow: toStatus === 'PUBLISHED',
+      });
+
+    if (variantIds.length === 0) {
+      throw unprocessable(
+        'No connected Instagram account for this client. Connect Meta under Integrations first.',
+      );
+    }
+
+    if (jobIds.length > 0) {
+      await this.outbox.write({
+        type: DomainEventTypes.CONTENT_SCHEDULED,
+        version: 1,
+        organizationId,
+        payload: {
+          contentId: content.id,
+          variantIds,
+          jobIds,
+          scheduledAt: scheduledFor.toISOString(),
+          mode: toStatus === 'PUBLISHED' ? 'IMMEDIATE' : 'SCHEDULED',
+        },
+        actor: { id: '00000000-0000-0000-0000-000000000000', type: 'system' },
+      });
+    }
   }
 
   async scheduleVariant(

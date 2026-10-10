@@ -34,6 +34,16 @@ export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
     title: 'notifications.event.chatMention',
     href: (data) => (data.roomId ? `/chat?room=${data.roomId}` : '/chat'),
   },
+  [NotificationTypeKeys.SOCIAL_POST_PUBLISHED]: {
+    kind: 'system',
+    title: 'notifications.event.socialPostPublished',
+    href: contentHref,
+  },
+  [NotificationTypeKeys.SOCIAL_POST_FAILED]: {
+    kind: 'system',
+    title: 'notifications.event.socialPostFailed',
+    href: contentHref,
+  },
 };
 
 export const NOTIFICATIONS_HREF = '/notifications';

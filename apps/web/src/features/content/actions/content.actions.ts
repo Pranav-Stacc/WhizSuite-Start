@@ -145,7 +145,11 @@ export async function updateContentAction(id: string, raw: unknown): Promise<Act
 }
 
 /** Moves a post along the workflow (board drag, detail buttons). Enforces transition + role rules. */
-export async function moveContentAction(id: string, target: string): Promise<ActionResult> {
+export async function moveContentAction(
+  id: string,
+  target: string,
+  options?: { livePublish?: boolean },
+): Promise<ActionResult> {
   return guarded(async () => {
     const session = await authorize(Permissions.CONTENT_EDIT);
     if (!ContentStatuses.includes(target as ContentStatus)) return fail(t('toast.failed'));
@@ -157,14 +161,23 @@ export async function moveContentAction(id: string, target: string): Promise<Act
     if (check === 'forbidden') return fail(t('content.error.forbidden'));
     if (check === 'needsSchedule') return fail(t('content.error.needsSchedule'));
 
-    if (isLiveMode) await transitionContent(id, target);
+    const livePublish = options?.livePublish;
+    if (isLiveMode) await transitionContent(id, target, livePublish === undefined ? undefined : { livePublish });
     else await contentRepository.update(id, { status: target as ContentStatus, updatedAt: new Date().toISOString() });
     if (target === 'IN_REVIEW') {
       await logEvent(id, 'submitted', session, t('content.event.submitted'));
       await notifyApprovers(post, session);
     }
     if (target === 'SCHEDULED') await logEvent(id, 'scheduled', session, t('content.event.scheduled'));
-    if (target === 'PUBLISHED') await logEvent(id, 'published', session, t('content.event.published'));
+    if (target === 'PUBLISHED') {
+      const live = livePublish !== false;
+      await logEvent(
+        id,
+        'published',
+        session,
+        live ? t('content.event.publishedLive') : t('content.event.publishedManual'),
+      );
+    }
     await recordAudit({
       action: 'content.status_changed',
       entityType: 'content',

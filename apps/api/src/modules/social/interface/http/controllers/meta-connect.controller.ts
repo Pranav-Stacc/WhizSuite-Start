@@ -26,6 +26,11 @@ class BeginMetaConnectDto {
   platform: 'instagram' | 'facebook' = 'instagram';
 }
 
+class DisconnectMetaDto {
+  @IsUUID()
+  socialAccountId!: string;
+}
+
 @ApiTags('integrations')
 @ApiBearerAuth()
 @Controller('v1/organizations/:organizationId/integrations/meta')
@@ -45,6 +50,20 @@ export class MetaConnectController {
       actorId: user.userId,
       clientId: body.clientId,
       platform: body.platform,
+    });
+  }
+
+  @Post('disconnect')
+  @RequirePermissions(Permissions.INTEGRATIONS_MANAGE)
+  disconnect(
+    @Param('organizationId') organizationId: string,
+    @Body() body: DisconnectMetaDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.metaOauth.disconnectAccount({
+      organizationId: requireOrganizationId(organizationId),
+      actorId: user.userId,
+      socialAccountId: body.socialAccountId,
     });
   }
 }

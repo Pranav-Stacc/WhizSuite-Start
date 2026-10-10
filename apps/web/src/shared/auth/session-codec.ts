@@ -50,3 +50,17 @@ export const sessionCookieOptions = {
   maxAge: env.SESSION_TTL_SECONDS,
   ...(env.SESSION_COOKIE_DOMAIN ? { domain: env.SESSION_COOKIE_DOMAIN } : {}),
 };
+
+/** Clears host-only and Domain-scoped session cookies (browsers treat them as distinct). */
+export function clearSessionCookie(jar: unknown): void {
+  const cookies = jar as {
+    delete: {
+      (name: string): unknown;
+      (options: { name: string; path?: string; domain?: string }): unknown;
+    };
+  };
+  cookies.delete(SESSION_COOKIE);
+  if (env.SESSION_COOKIE_DOMAIN) {
+    cookies.delete({ name: SESSION_COOKIE, path: '/', domain: env.SESSION_COOKIE_DOMAIN });
+  }
+}

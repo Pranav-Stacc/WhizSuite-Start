@@ -17,3 +17,12 @@ export async function beginMetaConnect(input: {
     },
   );
 }
+
+export async function disconnectMetaAccount(socialAccountId: string): Promise<void> {
+  const session = await getSession();
+  if (!session?.orgId) throw new Error('Not signed in');
+  await apiFetch(orgPath(session.orgId, 'integrations/meta/disconnect'), {
+    method: 'POST',
+    body: { socialAccountId },
+  });
+}

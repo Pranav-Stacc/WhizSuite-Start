@@ -12,7 +12,7 @@ import {
   type WorkspaceModule,
 } from '@/shared/workspace/modules';
 import { Menu } from '@/shared/ui/overlays';
-import { switchWorkspaceModuleAction } from '../actions/workspace.actions';
+import { prepareWorkspaceHopAction, switchWorkspaceModuleAction } from '../actions/workspace.actions';
 
 const MODULES: Array<{ id: WorkspaceModule; icon: typeof Building2; labelKey: 'workspace.main' | 'workspace.crm' | 'workspace.finance' }> = [
   { id: 'main', icon: Building2, labelKey: 'workspace.main' },
@@ -45,7 +45,10 @@ export function WorkspaceSwitcher({ module, orgSlug, canCrm, canFinance }: Works
   const go = (next: WorkspaceModule) => {
     if (next === module) return;
     if (root && orgSlug) {
-      window.location.href = workspaceHref({ module: next, orgSlug, rootDomain: root });
+      start(async () => {
+        await prepareWorkspaceHopAction();
+        window.location.href = workspaceHref({ module: next, orgSlug, rootDomain: root });
+      });
       return;
     }
     start(async () => {

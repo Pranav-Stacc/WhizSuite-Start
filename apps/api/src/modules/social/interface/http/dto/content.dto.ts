@@ -3,6 +3,7 @@ import { Transform } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsISO8601,
@@ -241,6 +242,15 @@ export class TransitionContentDto implements ContentTransitionInput {
   @ApiProperty({ enum: ContentStatuses })
   @IsIn(ContentStatuses)
   toStatus!: ContentStatus;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'When toStatus is PUBLISHED: true (default) queues live Instagram publish; false only marks status.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  livePublish?: boolean;
 }
 
 export class ReviewContentDto {

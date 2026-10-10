@@ -20,7 +20,8 @@ function parseModuleCookie(raw: string | undefined): WorkspaceModule | null {
  */
 export const getWorkspaceContext = cache(async (): Promise<WorkspaceHost & { rootDomain: string | null }> => {
   const host = (await headers()).get('host');
-  const rootDomain = env.APP_ROOT_DOMAIN || undefined;
+  const rootDomain =
+    env.APP_ROOT_DOMAIN || process.env.NEXT_PUBLIC_APP_ROOT_DOMAIN?.trim() || undefined;
   const parsed = parseWorkspaceHost(host, rootDomain);
 
   if (parsed.subdomainMode) {

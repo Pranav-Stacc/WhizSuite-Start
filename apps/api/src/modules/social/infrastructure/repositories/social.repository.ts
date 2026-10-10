@@ -251,6 +251,51 @@ export class SocialRepository {
     });
   }
 
+  async cancelQueuedPublishJobsForAccount(
+    organizationId: string,
+    accountId: string,
+  ): Promise<void> {
+    await this.prisma.publishJob.updateMany({
+      where: {
+        organizationId,
+        status: PUBLISH_JOB_QUEUED,
+        variant: { channel: { accountId } },
+      },
+      data: { status: PUBLISH_JOB_CANCELLED },
+    });
+  }
+
+  findAccountById(organizationId: string, accountId: string) {
+    return this.prisma.socialAccount.findFirst({
+      where: { id: accountId, organizationId },
+    });
+  }
+
+  async markAccountDisconnected(organizationId: string, accountId: string) {
+    return this.prisma.socialAccount.updateMany({
+      where: { id: accountId, organizationId },
+      data: {
+        status: 'DISCONNECTED',
+        publishingPaused: true,
+      },
+    });
+  }
+
+  countConnectedAccountsForConnection(
+    organizationId: string,
+    connectionId: string,
+    excludeAccountId?: string,
+  ) {
+    return this.prisma.socialAccount.count({
+      where: {
+        organizationId,
+        connectionId,
+        status: 'CONNECTED',
+        ...(excludeAccountId ? { id: { not: excludeAccountId } } : {}),
+      },
+    });
+  }
+
   /** Sets grid_position = index for every id in one statement; returns how many live rows of the client matched. */
   applyGridOrder(
     tx: SocialTx,
@@ -296,6 +341,165 @@ export class SocialRepository {
         status: PUBLISH_JOB_QUEUED,
         idempotencyKey: `publish:${variantId}:${scheduledFor.toISOString()}`,
       },
+    });
+  }
+
+  /**
+   * Ensure one ContentVariant per connected account channel for the content's
+   * platforms, then queue publish jobs for the given time.
+   */
+  async ensureVariantsAndEnqueuePublish(input: {
+    organizationId: string;
+    contentItemId: string;
+    clientId: string;
+    platforms: string[];
+    caption: string | null;
+    contentType: string;
+    scheduledFor: Date;
+    /** When true, move existing QUEUED jobs to scheduledFor (immediate publish). */
+    bumpQueuedToNow?: boolean;
+  }): Promise<{ variantIds: string[]; jobIds: string[] }> {
+    const platforms = [
+      ...new Set(
+        input.platforms.map((p) => p.toLowerCase()).filter(Boolean),
+      ),
+    ];
+    if (platforms.length === 0) {
+      return { variantIds: [], jobIds: [] };
+    }
+
+    const accounts = await this.prisma.socialAccount.findMany({
+      where: {
+        organizationId: input.organizationId,
+        clientId: input.clientId,
+        platform: { in: platforms },
+        status: 'CONNECTED',
+        publishingPaused: false,
+      },
+      include: { channels: true },
+    });
+
+    const variantIds: string[] = [];
+    const jobIds: string[] = [];
+
+    for (const account of accounts) {
+      const channel =
+        account.channels.find((c) => c.channelType === 'FEED') ??
+        account.channels[0];
+      if (!channel) continue;
+
+      const existing = await this.prisma.contentVariant.findUnique({
+        where: {
+          contentItemId_channelId: {
+            contentItemId: input.contentItemId,
+            channelId: channel.id,
+          },
+        },
+      });
+
+      if (existing?.publishStatus === 'PUBLISHED') {
+        continue;
+      }
+
+      const variant = existing
+        ? await this.prisma.contentVariant.update({
+            where: { id: existing.id },
+            data: {
+              caption: input.caption ?? existing.caption,
+              format: input.contentType,
+              scheduledAt: input.scheduledFor,
+              publishStatus: 'SCHEDULED',
+            },
+          })
+        : await this.prisma.contentVariant.create({
+            data: {
+              organizationId: input.organizationId,
+              contentItemId: input.contentItemId,
+              channelId: channel.id,
+              caption: input.caption,
+              format: input.contentType,
+              scheduledAt: input.scheduledFor,
+              publishStatus: 'SCHEDULED',
+            },
+          });
+
+      variantIds.push(variant.id);
+
+      if (input.bumpQueuedToNow) {
+        const bumped = await this.prisma.publishJob.updateMany({
+          where: {
+            organizationId: input.organizationId,
+            variantId: variant.id,
+            status: PUBLISH_JOB_QUEUED,
+          },
+          data: { scheduledFor: input.scheduledFor },
+        });
+        if (bumped.count > 0) {
+          continue;
+        }
+      }
+
+      const idempotencyKey = `publish:${variant.id}:${input.scheduledFor.toISOString()}`;
+      try {
+        const job = await this.prisma.publishJob.create({
+          data: {
+            organizationId: input.organizationId,
+            variantId: variant.id,
+            scheduledFor: input.scheduledFor,
+            status: PUBLISH_JOB_QUEUED,
+            idempotencyKey,
+          },
+        });
+        jobIds.push(job.id);
+      } catch (error) {
+        // Unique idempotency key — already queued for this slot.
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return { variantIds, jobIds };
+  }
+
+  findPublishJobForWorker(jobId: string) {
+    return this.prisma.publishJob.findFirst({
+      where: { id: jobId },
+      include: {
+        variant: {
+          include: {
+            contentItem: {
+              include: {
+                media: {
+                  orderBy: { position: 'asc' },
+                  select: { mediaAssetId: true, position: true },
+                },
+              },
+            },
+            channel: {
+              include: {
+                account: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  listDuePublishJobs(take: number) {
+    return this.prisma.publishJob.findMany({
+      where: {
+        status: PUBLISH_JOB_QUEUED,
+        scheduledFor: { lte: new Date() },
+      },
+      take,
+      orderBy: { scheduledFor: 'asc' },
+      select: { id: true, organizationId: true },
     });
   }
 

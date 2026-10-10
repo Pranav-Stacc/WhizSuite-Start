@@ -13,3 +13,13 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 deploy/.image-tag
+deploy/_tmp*
+*.bak
+
+# Mobile / Android local build output
+apps/mobile/android/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/**/build/
+apps/mobile/.dart_tool/
+apps/mobile/build/

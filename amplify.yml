@@ -13,7 +13,8 @@ applications:
         build:
           commands:
             # Amplify only exposes console env vars at build time; persist server-side ones for the SSR runtime.
-            - env | grep -E '^(APP_DATA_MODE|API_BASE_URL|API_TIMEOUT_MS|SESSION_COOKIE_SECURE|SESSION_SECRET|SESSION_TTL_SECONDS|NEXT_PUBLIC_[A-Z0-9_]+)=' > .env.production
+            # SESSION_COOKIE_DOMAIN + APP_ROOT_DOMAIN are required for Main/CRM/Finance SSO (ADR 0009).
+            - env | grep -E '^(APP_DATA_MODE|API_BASE_URL|API_TIMEOUT_MS|APP_ROOT_DOMAIN|SESSION_COOKIE_DOMAIN|SESSION_COOKIE_SECURE|SESSION_SECRET|SESSION_TTL_SECONDS|SESSION_REFRESH_[A-Z0-9_]+|NEXT_PUBLIC_[A-Z0-9_]+)=' > .env.production
             - pnpm --dir ../.. exec turbo run build --filter=@agency-os/web
       artifacts:
         baseDirectory: .next

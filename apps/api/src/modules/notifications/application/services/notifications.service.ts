@@ -175,6 +175,34 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
         data,
       }));
     }
+    case DomainEventTypes.SOCIAL_POST_PUBLISHED: {
+      const recipientId = text(payload, 'createdById');
+      if (!recipientId) return [];
+      return [
+        {
+          recipientId,
+          typeKey: NotificationTypeKeys.SOCIAL_POST_PUBLISHED,
+          data: {
+            contentId: text(payload, 'contentId'),
+            title: text(payload, 'title'),
+          },
+        },
+      ];
+    }
+    case DomainEventTypes.SOCIAL_POST_FAILED: {
+      const recipientId = text(payload, 'createdById');
+      if (!recipientId) return [];
+      return [
+        {
+          recipientId,
+          typeKey: NotificationTypeKeys.SOCIAL_POST_FAILED,
+          data: {
+            contentId: text(payload, 'contentId'),
+            title: text(payload, 'title'),
+          },
+        },
+      ];
+    }
     default:
       return [];
   }
@@ -216,6 +244,10 @@ export class NotificationsService implements OnModuleInit {
       DomainEventTypes.TASK_OVERDUE,
       DomainEventTypes.CONTENT_STATE_CHANGED,
       DomainEventTypes.APPROVAL_REQUESTED,
+      DomainEventTypes.CHAT_MESSAGE_CREATED,
+      DomainEventTypes.CHAT_MEMBER_MENTIONED,
+      DomainEventTypes.SOCIAL_POST_PUBLISHED,
+      DomainEventTypes.SOCIAL_POST_FAILED,
     ]) {
       this.eventBus.subscribe(type, (event) => this.handleDomainEvent(event));
     }

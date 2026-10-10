@@ -236,6 +236,55 @@ export class MediaService {
     return download;
   }
 
+  /**
+   * Longer-lived signed URLs so Meta Graph can fetch media during publish
+   * (video processing can take minutes).
+   */
+  async createPublishFetchUrls(
+    organizationId: string,
+    assetIds: string[],
+    expiresInSeconds = 3600,
+  ): Promise<
+    Array<{
+      assetId: string;
+      url: string;
+      mimeType: string;
+      name: string;
+    }>
+  > {
+    const uniqueIds = [...new Set(assetIds)];
+    if (uniqueIds.length === 0) return [];
+    const assets = await this.repository.findForEmbedding(
+      organizationId,
+      uniqueIds,
+    );
+    const out: Array<{
+      assetId: string;
+      url: string;
+      mimeType: string;
+      name: string;
+    }> = [];
+    for (const asset of assets) {
+      if (asset.status !== 'READY') continue;
+      const storageKey = asset.versions.find(
+        (v) => v.version === asset.currentVersion,
+      )?.storageKey;
+      if (!storageKey) continue;
+      const download = await this.storage.createPresignedDownload(storageKey, {
+        filename: asset.name,
+        disposition: 'inline',
+        expiresInSeconds,
+      });
+      out.push({
+        assetId: asset.id,
+        url: download.url,
+        mimeType: asset.mimeType,
+        name: asset.name,
+      });
+    }
+    return out;
+  }
+
   /** Batch lookup for other domains; ids that are missing, deleted or in another org are absent from the map. */
   async resolveForEmbedding(
     organizationId: string,

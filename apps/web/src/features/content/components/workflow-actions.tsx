@@ -1,4 +1,4 @@
-import { CalendarPlus, Rocket, Send, Undo2 } from 'lucide-react';
+import { CalendarPlus, CheckCircle2, Rocket, Send, Undo2 } from 'lucide-react';
 import type { ContentStatus } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { ActionButton } from '@/shared/ui/action-button';
@@ -13,7 +13,8 @@ interface WorkflowActionsProps {
 
 /** The next workflow steps available to the current staff member for a post. */
 export function WorkflowActions({ post, approver, size = 'md' }: WorkflowActionsProps) {
-  const move = (target: ContentStatus) => moveContentAction.bind(null, post.id, target);
+  const move = (target: ContentStatus, livePublish?: boolean) =>
+    moveContentAction.bind(null, post.id, target, livePublish === undefined ? undefined : { livePublish });
   return (
     <div className="flex flex-wrap items-center gap-2">
       {post.status === 'DRAFT' || post.status === 'CHANGES_REQUESTED' ? (
@@ -26,11 +27,15 @@ export function WorkflowActions({ post, approver, size = 'md' }: WorkflowActions
         </>
       ) : null}
       {post.status === 'APPROVED' && approver ? (
-        <ActionButton variant="primary" size={size} icon={<CalendarPlus />} label={t('content.action.schedule')} action={move('SCHEDULED')} />
+        <>
+          <ActionButton variant="primary" size={size} icon={<Rocket />} label={t('content.action.publishNow')} action={move('PUBLISHED', true)} />
+          <ActionButton variant="secondary" size={size} icon={<CalendarPlus />} label={t('content.action.schedule')} action={move('SCHEDULED')} />
+        </>
       ) : null}
       {post.status === 'SCHEDULED' && approver ? (
         <>
-          <ActionButton variant="primary" size={size} icon={<Rocket />} label={t('content.action.publish')} action={move('PUBLISHED')} />
+          <ActionButton variant="primary" size={size} icon={<Rocket />} label={t('content.action.publishNow')} action={move('PUBLISHED', true)} />
+          <ActionButton variant="ghost" size={size} icon={<CheckCircle2 />} label={t('content.action.publish')} action={move('PUBLISHED', false)} />
           <ActionButton variant="ghost" size={size} icon={<Undo2 />} label={t('content.action.unschedule')} action={move('APPROVED')} />
         </>
       ) : null}

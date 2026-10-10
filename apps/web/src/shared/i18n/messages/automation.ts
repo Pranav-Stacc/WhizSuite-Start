@@ -174,6 +174,8 @@ export const automationMessages = {
   'integrations.connected': '{platform} connected',
   'integrations.disconnect': 'Disconnect',
   'integrations.disconnected': '{platform} disconnected',
+  'integrations.disconnectFailed': 'Could not disconnect this channel. Try again.',
+  'integrations.channelFallback': 'Channel',
   'integrations.sync': 'Sync now',
   'integrations.synced': 'Channel synced',
   'integrations.empty.title': 'No channels to show',

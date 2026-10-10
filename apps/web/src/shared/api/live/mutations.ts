@@ -13,9 +13,19 @@ export async function transitionTask(taskId: string, toStatus: string): Promise<
   await apiFetch(`${orgPath(org, 'tasks')}/${taskId}/transition`, { method: 'POST', body: { toStatus } });
 }
 
-export async function transitionContent(contentId: string, toStatus: string): Promise<void> {
+export async function transitionContent(
+  contentId: string,
+  toStatus: string,
+  options?: { livePublish?: boolean },
+): Promise<void> {
   const org = await orgId();
-  await apiFetch(`${orgPath(org, 'content')}/${contentId}/transition`, { method: 'POST', body: { toStatus } });
+  await apiFetch(`${orgPath(org, 'content')}/${contentId}/transition`, {
+    method: 'POST',
+    body: {
+      toStatus,
+      ...(options?.livePublish === undefined ? {} : { livePublish: options.livePublish }),
+    },
+  });
 }
 
 export async function reviewContent(contentId: string, toStatus: ContentReviewOutcome): Promise<void> {

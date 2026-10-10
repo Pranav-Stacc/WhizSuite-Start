@@ -95,6 +95,12 @@ export class IntegrationsRepository {
     });
   }
 
+  async deleteCredential(connectionId: string): Promise<void> {
+    await this.prisma.integrationCredential.deleteMany({
+      where: { connectionId },
+    });
+  }
+
   async findCredential(
     connectionId: string,
   ): Promise<{ accessToken: string; refreshToken: string | null } | null> {
@@ -111,6 +117,40 @@ export class IntegrationsRepository {
       return {
         accessToken: parsed.accessToken,
         refreshToken: parsed.refreshToken ?? null,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Meta Login for Business credential payload used for Instagram Graph publish. */
+  async findMetaPublishCredential(connectionId: string): Promise<{
+    pageAccessToken: string;
+    pageId: string | null;
+    instagramBusinessAccountId: string | null;
+  } | null> {
+    const row = await this.prisma.integrationCredential.findUnique({
+      where: { connectionId },
+    });
+    if (!row) return null;
+    try {
+      const parsed = JSON.parse(row.encryptedData) as {
+        pageAccessToken?: string;
+        accessToken?: string;
+        userAccessToken?: string;
+        pageId?: string | null;
+        instagramBusinessAccountId?: string | null;
+      };
+      const pageAccessToken =
+        parsed.pageAccessToken ??
+        parsed.accessToken ??
+        parsed.userAccessToken ??
+        null;
+      if (!pageAccessToken) return null;
+      return {
+        pageAccessToken,
+        pageId: parsed.pageId ?? null,
+        instagramBusinessAccountId: parsed.instagramBusinessAccountId ?? null,
       };
     } catch {
       return null;

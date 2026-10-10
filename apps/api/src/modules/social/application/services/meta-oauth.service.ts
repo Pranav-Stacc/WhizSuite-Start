@@ -8,6 +8,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import {
+  notFound,
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
@@ -114,9 +115,15 @@ export class MetaOauthService {
         : pages[0] ?? withInstagram[0];
 
     if (!selected) {
+      const scopeList = tokens.scopes.join(', ') || 'none';
+      if (!this.meta.hasPageListingScope(tokens)) {
+        throw unprocessable(
+          `Meta token missing Page permissions (got: ${scopeList}). In Business Settings → Integrations → Connected apps, remove Whiz, then Connect again and approve Pages + Instagram (and all requested permissions).`,
+        );
+      }
       throw unprocessable(
         tokens.tokenKind === 'system_user'
-          ? 'No Page/Instagram assets were granted. In Meta Login, select a Business portfolio that owns a Facebook Page linked to an Instagram professional account.'
+          ? 'Business connected, but no Page/Instagram assets were granted. In Meta Login, select the Facebook Page and linked Instagram professional account (not only the Business portfolio).'
           : 'No Facebook Page found. The Meta user must administer a Page (and an Instagram Business account for Instagram connect).',
       );
     }
@@ -225,6 +232,73 @@ export class MetaOauthService {
     const webOrigin = this.config.get('WEB_APP_URL', { infer: true });
     const q = reason ? `&reason=${encodeURIComponent(reason.slice(0, 80))}` : '';
     return `${webOrigin}/integrations?meta=error${q}`;
+  }
+
+  /**
+   * Disconnect a connected social account: stop publishing, cancel queued jobs,
+   * and revoke/clear Meta credentials when no sibling accounts still use them.
+   */
+  async disconnectAccount(input: {
+    organizationId: string;
+    actorId: string;
+    socialAccountId: string;
+  }): Promise<{ id: string; platform: string }> {
+    const account = await this.social.findAccountById(
+      input.organizationId,
+      input.socialAccountId,
+    );
+    if (!account) {
+      throw notFound('Social account not found');
+    }
+    if (account.status !== 'CONNECTED') {
+      return { id: account.id, platform: account.platform };
+    }
+
+    await this.social.cancelQueuedPublishJobsForAccount(
+      input.organizationId,
+      account.id,
+    );
+    await this.social.markAccountDisconnected(
+      input.organizationId,
+      account.id,
+    );
+
+    const connectionId = account.connectionId;
+    if (connectionId) {
+      const stillConnected = await this.social.countConnectedAccountsForConnection(
+        input.organizationId,
+        connectionId,
+        account.id,
+      );
+      if (stillConnected === 0) {
+        const credential = await this.integrations.findCredential(connectionId);
+        if (credential?.accessToken) {
+          await this.meta.revokeUserAuthorization(credential.accessToken);
+        }
+        await this.integrations.deleteCredential(connectionId);
+        await this.integrations.update(input.organizationId, connectionId, {
+          status: 'DISCONNECTED',
+          metadata: { disconnectedAt: new Date().toISOString() },
+        });
+      }
+    }
+
+    await this.audit.record({
+      organizationId: input.organizationId,
+      actorId: input.actorId,
+      actorType: 'user',
+      action: 'social/meta.disconnect',
+      entityType: 'socialAccount',
+      entityId: account.id,
+      before: {
+        platform: account.platform,
+        status: 'CONNECTED',
+        connectionId: account.connectionId,
+      },
+      after: { status: 'DISCONNECTED' },
+    });
+
+    return { id: account.id, platform: account.platform };
   }
 }
 

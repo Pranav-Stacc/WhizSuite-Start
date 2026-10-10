@@ -1,5 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SESSION_COOKIE, decodeSession, encodeSession, sessionCookieOptions } from '@/shared/auth/session-codec';
+import {
+  SESSION_COOKIE,
+  clearSessionCookie,
+  decodeSession,
+  encodeSession,
+  sessionCookieOptions,
+} from '@/shared/auth/session-codec';
 import { accessTokenNeedsRefresh, rotateTokens } from '@/shared/auth/token-refresh';
 import { parseWorkspaceHost, workspaceHref } from '@/shared/workspace/host';
 import { isSharedPath, moduleForPath } from '@/shared/workspace/modules';
@@ -26,7 +32,7 @@ function redirectToLogin(request: NextRequest, expired: boolean): NextResponse {
   url.pathname = '/login';
   url.search = expired ? '?expired=1' : '';
   const response = NextResponse.redirect(url);
-  if (request.cookies.has(SESSION_COOKIE)) response.cookies.delete(SESSION_COOKIE);
+  if (request.cookies.has(SESSION_COOKIE)) clearSessionCookie(response.cookies);
   return response;
 }
 
@@ -51,21 +57,20 @@ export async function proxy(request: NextRequest) {
   const host = parseWorkspaceHost(request.headers.get('host'), root);
   const pathModule = moduleForPath(pathname);
 
-  if (
-    root &&
-    host.subdomainMode &&
-    session.orgSlug &&
-    !isSharedPath(pathname) &&
-    pathModule !== host.module
-  ) {
-    const target = workspaceHref({
-      module: pathModule,
-      orgSlug: session.orgSlug,
-      rootDomain: root,
-      path: `${pathname}${request.nextUrl.search}`,
-      protocol: request.nextUrl.protocol.replace(':', ''),
-    });
-    return NextResponse.redirect(target);
+  // Staff must live on {slug}.root / crm-{slug}.root / finance-{slug}.root — never apex/www alone.
+  if (root && session.orgSlug && !isSharedPath(pathname)) {
+    const onWrongOrg = host.subdomainMode && host.orgSlug !== null && host.orgSlug !== session.orgSlug;
+    const onApexOrWww = !host.subdomainMode;
+    const onWrongModule = host.subdomainMode && pathModule !== host.module;
+    if (onApexOrWww || onWrongOrg || onWrongModule) {
+      const target = workspaceHref({
+        module: pathModule,
+        orgSlug: session.orgSlug,
+        rootDomain: root,
+        path: `${pathname}${request.nextUrl.search}`,
+      });
+      return NextResponse.redirect(target);
+    }
   }
 
   if (!session.accessToken || !session.refreshToken || !accessTokenNeedsRefresh(session.accessToken)) {

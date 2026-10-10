@@ -11,13 +11,19 @@ import { recordAudit } from '@/features/audit/services/audit.service';
 import { setClientPlatforms } from '@/features/clients/services/clients.service';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { integrationsRepository } from '../data/integrations.repository';
-import { connectedPlatforms } from '../services/integrations.service';
-import { beginMetaConnect } from '../services/meta.service';
+import { connectedPlatforms, listIntegrations } from '../services/integrations.service';
+import { beginMetaConnect, disconnectMetaAccount } from '../services/meta.service';
 
 /** Live channels are linked by the provider OAuth flow, never by typing a handle. */
 const oauthRequired = (): ActionResult => fail(t('integrations.oauthRequired'));
 
 const META_PLATFORMS = new Set(['instagram', 'facebook']);
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
 
 /** Starts Meta Facebook Login → Instagram/Page token exchange (live only). */
 export async function connectMetaAction(
@@ -70,7 +76,31 @@ export async function connectIntegrationAction(id: string, raw: unknown): Promis
 export async function disconnectIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
     await authorize(Permissions.INTEGRATIONS_MANAGE);
-    if (isLiveMode) return oauthRequired();
+
+    if (isLiveMode) {
+      if (!isUuid(id)) return fail(t('toast.failed'));
+      const liveRow = (await listIntegrations()).find((row) => row.id === id);
+      const platformLabel = liveRow
+        ? PLATFORM_META[liveRow.platform].label
+        : t('integrations.channelFallback');
+      try {
+        await disconnectMetaAccount(id);
+      } catch (error) {
+        return fail(
+          error instanceof Error ? error.message : t('integrations.disconnectFailed'),
+        );
+      }
+      await recordAudit({
+        action: 'integration.disconnected',
+        entityType: 'integration',
+        entityId: id,
+        entityLabel: `${platformLabel} ${liveRow?.handle ?? ''}`.trim(),
+        summary: 'Disconnected channel',
+      });
+      await refreshData('integrations', 'clients');
+      return succeed(undefined, t('integrations.disconnected', { platform: platformLabel }));
+    }
+
     const before = await integrationsRepository.get(id);
     if (!before) return fail(t('toast.failed'));
     await integrationsRepository.update(id, { connected: false, followers: 0, lastSyncAt: undefined });
@@ -90,7 +120,10 @@ export async function disconnectIntegrationAction(id: string): Promise<ActionRes
 export async function syncIntegrationAction(id: string): Promise<ActionResult> {
   return guarded(async () => {
     await authorize(Permissions.INTEGRATIONS_MANAGE);
-    if (isLiveMode) return oauthRequired();
+    if (isLiveMode) {
+      await refreshData('integrations');
+      return succeed(undefined, t('integrations.synced'));
+    }
     const before = await integrationsRepository.get(id);
     if (!before?.connected) return fail(t('toast.failed'));
     await integrationsRepository.update(id, { lastSyncAt: new Date().toISOString() });
