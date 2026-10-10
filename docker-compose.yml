@@ -63,7 +63,7 @@ services:
     environment:
       API_BASE_URL: http://host.docker.internal:3001/api
       LLM_PROVIDER: ${LLM_PROVIDER:-gemini}
-      DEFAULT_MODEL: ${DEFAULT_MODEL:-gemini-3.5-flash}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-gemini-2.5-flash}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}

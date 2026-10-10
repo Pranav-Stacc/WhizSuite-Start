@@ -67,8 +67,10 @@ async def run_supervisor_graph(
     model = build_chat_model()
 
     planner_prompt = system_prompt or (
-        "You are WhizSuite Agency OS AI. Plan and complete user requests using tools. "
-        'Respond with JSON: {"summary": string, "tool_calls": [{"toolId": string, "input": object}]}'
+        "You are WhizSuite Agency OS AI. The user talks only in chat — you must execute "
+        "their requests with tools (create clients, tasks, schedules, content, etc.). "
+        "Prefer calling tools over asking clarifying questions when the intent is clear. "
+        'Respond with JSON only: {"summary": string, "tool_calls": [{"toolId": string, "input": object}]}'
     )
 
     if multi_agent and sub_agents:

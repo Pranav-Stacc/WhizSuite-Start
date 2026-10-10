@@ -59,31 +59,37 @@ export class AgentOrchestratorService {
       if (!res.ok) {
         const text = await res.text();
         this.logger.warn(`Agent service error ${res.status}: ${text}`);
-        return this.fallbackResponse(request.message);
+        return this.failureResponse(
+          `The AI runtime returned ${res.status}. ${this.safeDetail(text)}`,
+        );
       }
 
       const data = (await res.json()) as AgentOrchestratorResponse;
       return data;
     } catch (error) {
       this.logger.warn(`Agent service unavailable: ${String(error)}`);
-      return this.fallbackResponse(request.message);
+      return this.failureResponse(
+        'The AI runtime is unreachable right now. Please try again in a moment.',
+      );
     }
   }
 
-  /** Local fallback when Python agent is offline — still routes through capabilities via instructions. */
-  private fallbackResponse(message: string): AgentOrchestratorResponse {
+  private failureResponse(response: string): AgentOrchestratorResponse {
     return {
-      response:
-        `Agent runtime is starting up. Your request was recorded: "${message.slice(0, 200)}". ` +
-        'Connect apps/agent or set AGENT_SERVICE_URL for full LangGraph multi-agent execution.',
+      response,
       steps: [
         {
           agentName: 'supervisor',
-          stepType: 'fallback',
-          status: 'COMPLETED',
+          stepType: 'error',
+          status: 'FAILED',
           output: { offline: true },
         },
       ],
     };
+  }
+
+  private safeDetail(text: string): string {
+    const trimmed = text.replace(/\s+/g, ' ').trim().slice(0, 240);
+    return trimmed || 'Check agent logs for details.';
   }
 }

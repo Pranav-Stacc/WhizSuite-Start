@@ -42,13 +42,18 @@ export class AgentSessionService {
 
   mintRunToken(user: AuthenticatedUser, runId: string): string {
     const ttl = this.config.get('AGENT_RUN_TOKEN_TTL_SECONDS', { infer: true });
+    // Must match JwtStrategy access-token shape (`sub`, org/membership) so
+    // capability/MCP calls from apps/agent authenticate as the same user.
     return this.jwt.sign(
       {
         type: 'agent_run',
         runId,
-        userId: user.userId,
+        sub: user.userId,
+        email: user.email,
         organizationId: user.organizationId,
         membershipId: user.membershipId,
+        membershipType: user.membershipType,
+        clientId: user.clientId,
       },
       {
         secret: this.config.get('JWT_ACCESS_SECRET', { infer: true }),

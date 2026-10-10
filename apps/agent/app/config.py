@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     # Google AI Studio / Gemini model id
-    default_model: str = "gemini-2.0-flash"
+    default_model: str = "gemini-2.5-flash"
     llm_provider: str = "gemini"
     request_timeout_seconds: int = 120
 

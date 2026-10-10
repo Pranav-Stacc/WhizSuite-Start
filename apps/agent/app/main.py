@@ -54,14 +54,17 @@ async def run_agent(
     if not org_id:
         raise HTTPException(status_code=401, detail="Token missing organizationId")
 
-    result = await run_supervisor_graph(
-        message=body.message,
-        run_token=token,
-        organization_id=org_id,
-        run_id=body.run_id,
-        multi_agent=body.multi_agent,
-        system_prompt=body.system_prompt,
-        sub_agents=body.sub_agents,
-        tool_ids=body.tool_ids,
-    )
-    return result
+    try:
+        result = await run_supervisor_graph(
+            message=body.message,
+            run_token=token,
+            organization_id=org_id,
+            run_id=body.run_id,
+            multi_agent=body.multi_agent,
+            system_prompt=body.system_prompt,
+            sub_agents=body.sub_agents,
+            tool_ids=body.tool_ids,
+        )
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Agent graph failed: {exc}") from exc

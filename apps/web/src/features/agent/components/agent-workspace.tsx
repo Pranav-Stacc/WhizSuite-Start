@@ -11,25 +11,19 @@ import type {
 } from '@agency-os/contracts';
 import {
   Bot,
-  CalendarClock,
   CheckCircle2,
   Clock,
   Loader2,
   Plus,
   Send,
   Sparkles,
-  Users,
   Wrench,
   XCircle,
 } from 'lucide-react';
 import {
   confirmPendingAction,
-  createDefinitionAction,
-  createScheduleAction,
   createSessionAction,
-  pauseScheduleAction,
   rejectPendingAction,
-  resumeScheduleAction,
   sendMessageAction,
 } from '../actions/agent.actions';
 import { t } from '@/shared/i18n/t';
@@ -45,8 +39,6 @@ interface Message {
   createdAt: string;
 }
 
-type Tab = 'chat' | 'agents' | 'schedules';
-
 export function AgentWorkspace({
   sessions,
   selectedSession,
@@ -55,9 +47,7 @@ export function AgentWorkspace({
   pendingActions,
   tools,
   definitions,
-  schedules,
   sessionId,
-  canManageAgents,
 }: {
   sessions: AgentSessionDto[];
   selectedSession: AgentSessionDto | null;
@@ -73,7 +63,6 @@ export function AgentWorkspace({
   const [draft, setDraft] = useState('');
   const [multiAgent, setMultiAgent] = useState(true);
   const [agentDefinitionId, setAgentDefinitionId] = useState('');
-  const [tab, setTab] = useState<Tab>('chat');
   const [isSending, startTransition] = useTransition();
 
   const onSend = () => {
@@ -91,41 +80,16 @@ export function AgentWorkspace({
     t('agent.empty.suggestions.tasks'),
   ];
 
-  const tabs: Array<{ id: Tab; label: string; icon: typeof Sparkles }> = [
-    { id: 'chat', label: t('agent.tab.chat'), icon: Sparkles },
-    { id: 'agents', label: t('agent.tab.agents'), icon: Users },
-    { id: 'schedules', label: t('agent.tab.schedules'), icon: CalendarClock },
-  ];
-
   return (
     <div className="overflow-hidden rounded-2xl border border-border-soft bg-gradient-to-br from-surface via-surface to-surface-2">
-      <div className="flex flex-wrap items-center gap-1 border-b border-border-soft px-3 py-2">
-        {tabs.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setTab(item.id)}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition',
-                tab === item.id
-                  ? 'bg-foreground text-background'
-                  : 'text-muted hover:bg-muted/60 hover:text-foreground',
-              )}
-            >
-              <Icon className="size-3.5" />
-              {item.label}
-            </button>
-          );
-        })}
-        <span className="ml-auto text-[11px] text-muted">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-soft px-3 py-2">
+        <p className="text-xs text-muted">{t('agent.empty.body')}</p>
+        <span className="text-[11px] text-muted">
           {t('agent.tools.count', { count: tools.length })}
         </span>
       </div>
 
-      {tab === 'chat' ? (
-        <div className="grid min-h-[min(78vh,44rem)] lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid min-h-[min(78vh,44rem)] lg:grid-cols-[260px_minmax(0,1fr)_300px]">
           <aside className="border-b border-border-soft p-4 lg:border-b-0 lg:border-r">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-sm font-semibold">{t('agent.sessions')}</h2>
@@ -345,160 +309,6 @@ export function AgentWorkspace({
             </div>
           </aside>
         </div>
-      ) : null}
-
-      {tab === 'agents' ? (
-        <div className="grid gap-6 p-6 lg:grid-cols-2">
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">{t('agent.agents')}</h2>
-            {definitions.length === 0 ? (
-              <p className="text-sm text-muted">{t('agent.empty.body')}</p>
-            ) : (
-              <ul className="space-y-2">
-                {definitions.map((d) => (
-                  <li key={d.id} className="rounded-xl border border-border-soft p-4">
-                    <p className="font-medium">{d.name}</p>
-                    {d.description ? <p className="mt-1 text-xs text-muted">{d.description}</p> : null}
-                    <p className="mt-2 line-clamp-3 text-xs text-muted">{d.systemPrompt}</p>
-                    {d.subAgents.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {d.subAgents.map((s) => (
-                          <Badge key={s.name} tone="neutral">
-                            {s.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          {canManageAgents ? (
-            <form action={createDefinitionAction} className="space-y-3 rounded-xl border border-border-soft p-4">
-              <h3 className="text-sm font-semibold">{t('agent.agent.new')}</h3>
-              <label className="block text-xs">
-                {t('agent.definition.name')}
-                <input name="name" required className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.definition.description')}
-                <input name="description" className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.definition.prompt')}
-                <textarea name="systemPrompt" required rows={5} className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.definition.subAgents')}
-                <textarea
-                  name="subAgents"
-                  rows={3}
-                  placeholder="Researcher: gather data&#10;Executor: run tools"
-                  className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm"
-                />
-              </label>
-              <Button type="submit" variant="primary">
-                {t('agent.definition.create')}
-              </Button>
-            </form>
-          ) : null}
-        </div>
-      ) : null}
-
-      {tab === 'schedules' ? (
-        <div className="grid gap-6 p-6 lg:grid-cols-2">
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">{t('agent.schedules')}</h2>
-            {schedules.length === 0 ? (
-              <p className="text-sm text-muted">{t('agent.empty.body')}</p>
-            ) : (
-              <ul className="space-y-2">
-                {schedules.map((s) => (
-                  <li key={s.id} className="rounded-xl border border-border-soft p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-medium">{s.name}</p>
-                        <p className="mt-1 text-xs text-muted">
-                          {s.cron} · {s.timezone}
-                        </p>
-                        <p className="mt-2 line-clamp-2 text-xs">{s.prompt}</p>
-                      </div>
-                      <Badge tone={s.status === 'ACTIVE' ? 'success' : 'neutral'}>{s.status}</Badge>
-                    </div>
-                    {canManageAgents ? (
-                      <div className="mt-3 flex gap-2">
-                        {s.status === 'ACTIVE' ? (
-                          <Button
-                            size="sm"
-                            variant="soft"
-                            onClick={() => {
-                              startTransition(async () => {
-                                await pauseScheduleAction(s.id);
-                              });
-                            }}
-                          >
-                            {t('agent.schedule.pause')}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => {
-                              startTransition(async () => {
-                                await resumeScheduleAction(s.id);
-                              });
-                            }}
-                          >
-                            {t('agent.schedule.resume')}
-                          </Button>
-                        )}
-                      </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          {canManageAgents ? (
-            <form action={createScheduleAction} className="space-y-3 rounded-xl border border-border-soft p-4">
-              <h3 className="text-sm font-semibold">{t('agent.schedule.new')}</h3>
-              <label className="block text-xs">
-                {t('agent.schedule.name')}
-                <input name="name" required className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.schedule.prompt')}
-                <textarea name="prompt" required rows={4} className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.schedule.cron')}
-                <input name="cron" required defaultValue="0 9 * * 1" className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              <label className="block text-xs">
-                {t('agent.schedule.timezone')}
-                <input name="timezone" defaultValue="UTC" className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm" />
-              </label>
-              {definitions.length > 0 ? (
-                <label className="block text-xs">
-                  {t('agent.pickAgent')}
-                  <select name="agentDefinitionId" className="mt-1 w-full rounded-md border border-border-soft bg-surface px-3 py-2 text-sm">
-                    <option value="">{t('agent.pickAgent.default')}</option>
-                    {definitions.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
-              <Button type="submit" variant="primary">
-                {t('agent.schedule.create')}
-              </Button>
-            </form>
-          ) : null}
-        </div>
-      ) : null}
     </div>
   );
 }
