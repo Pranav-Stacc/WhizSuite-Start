@@ -77,7 +77,9 @@ jobs:
           echo "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 --decode > ios/Runner/GoogleService-Info.plist
 
       - name: Flutter pub get
-        run: flutter pub get
+        run: |
+          flutter config --no-enable-swift-package-manager
+          flutter pub get
 
       - name: Install CocoaPods
         run: |
@@ -85,6 +87,8 @@ jobs:
           pod install
 
       - name: Build iOS (Flutter, unsigned)
+        env:
+          FLUTTER_XCODE_CODE_SIGN_STYLE: Manual
         run: >
           flutter build ios --release --no-codesign
           --dart-define-from-file=config/production.json
