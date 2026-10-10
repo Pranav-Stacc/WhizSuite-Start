@@ -57,7 +57,7 @@ export function AcceptInvitationForm({ token, email, hasAccount }: AcceptInvitat
         </>
       )}
       <Field
-        label={hasAccount ? t('auth.invite.password') : t('auth.register.password')}
+        label={t('auth.register.password')}
         htmlFor="inv-password"
         className="sm:col-span-2"
         error={translateError(errors.password?.message)}
@@ -65,7 +65,7 @@ export function AcceptInvitationForm({ token, email, hasAccount }: AcceptInvitat
         <Input
           id="inv-password"
           type="password"
-          autoComplete={hasAccount ? 'current-password' : 'new-password'}
+          autoComplete="new-password"
           {...form.register('password')}
         />
       </Field>

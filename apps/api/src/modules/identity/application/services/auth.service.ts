@@ -353,8 +353,9 @@ export class AuthService {
   }
 
   /**
-   * Authenticates an existing account or creates a new one for an invitee.
-   * Existing accounts must prove ownership with their current password.
+   * Creates an account or joins an existing user for an invitation redeem.
+   * The invitation token already proved email ownership (same trust model as a
+   * reset link), so the submitted password is set or updated — not verified.
    */
   async resolveInvitee(
     organizationId: string,
@@ -366,23 +367,23 @@ export class AuthService {
     },
   ) {
     const email = input.email.toLowerCase();
+    const passwordHash = await bcrypt.hash(
+      input.password,
+      PASSWORD_HASH_ROUNDS,
+    );
     const existing = await this.repo.findUserByEmail(email);
     if (existing) {
-      const valid = existing.passwordHash
-        ? await bcrypt.compare(input.password, existing.passwordHash)
-        : false;
-      if (!valid) {
-        throw new ProblemDetailsException(
-          {
-            type: 'about:blank',
-            title: 'Unauthorized',
-            status: 401,
-            code: ErrorCodes.INVALID_CREDENTIALS,
-          },
-          401,
-        );
-      }
-      return existing;
+      const user = await this.repo.setPasswordHash(existing.id, passwordHash);
+      await this.audit.record({
+        organizationId,
+        actorId: user.id,
+        actorType: 'user',
+        action: 'auth.password_set',
+        entityType: 'user',
+        entityId: user.id,
+        after: { via: 'invitation' },
+      });
+      return user;
     }
     if (!input.firstName) {
       throw new ProblemDetailsException(
@@ -396,10 +397,6 @@ export class AuthService {
         400,
       );
     }
-    const passwordHash = await bcrypt.hash(
-      input.password,
-      PASSWORD_HASH_ROUNDS,
-    );
     const user = await this.repo.createUser({
       email,
       passwordHash,

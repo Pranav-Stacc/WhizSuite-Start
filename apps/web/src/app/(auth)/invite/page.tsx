@@ -27,7 +27,8 @@ export default async function InvitePage({ searchParams }: InvitePageProps) {
             <p className="mt-2 text-muted">
               {preview.hasAccount
                 ? t('auth.invite.subtitleExisting', { email: preview.email })
-                : t('auth.invite.subtitle', { email: preview.email })}
+                : t('auth.invite.subtitle', { email: preview.email })}{' '}
+              {t('auth.invite.setPasswordHint')}
             </p>
           </header>
           <AcceptInvitationForm token={token} email={preview.email} hasAccount={preview.hasAccount} />
