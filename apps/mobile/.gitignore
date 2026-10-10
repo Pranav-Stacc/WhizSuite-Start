@@ -47,6 +47,7 @@ app.*.map.json
 # Local runtime config (copy config/dev.example.json)
 config/*.json
 !config/*.example.json
+!config/production.json
 
 # Apple App Store Connect API keys (never commit)
 ios/secrets/

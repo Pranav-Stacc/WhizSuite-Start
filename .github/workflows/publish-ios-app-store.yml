@@ -1,0 +1,114 @@
+name: Publish to iOS App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        required: true
+        description: Release track
+        type: choice
+        options:
+          - production
+          - beta
+        default: beta
+      bootstrap_certs:
+        required: true
+        description: Create/refresh Match certs (first run or renew) — no personal Mac needed
+        type: boolean
+        default: false
+
+concurrency:
+  group: publish-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ios-app-store:
+    name: Publish to iOS App Store
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    env:
+      APPSTORE_CONNECT_KEY_ID: ${{ secrets.APPSTORE_CONNECT_KEY_ID }}
+      APPSTORE_CONNECT_ISSUER_ID: ${{ secrets.APPSTORE_CONNECT_ISSUER_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_IDENTIFIER: ${{ secrets.APPLE_APP_IDENTIFIER }}
+      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+      MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      MATCH_KEYCHAIN_NAME: ${{ secrets.MATCH_KEYCHAIN_NAME }}
+      MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
+      MATCH_READONLY: ${{ inputs.bootstrap_certs && 'false' || 'true' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Config Match git over HTTPS
+        run: |
+          git config --global url."https://${{ secrets.MATCH_GIT_API_AUTH }}@github.com/".insteadOf "git@github.com:"
+
+      - name: Download App Store Connect key
+        id: app_store_connect_key
+        uses: timheuer/base64-to-file@v1
+        with:
+          fileName: appstore_connect_key.p8
+          encodedString: ${{ secrets.APPSTORE_CONNECT_KEY_BASE64 }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: apps/mobile
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: apps/mobile/pubspec.yaml
+          cache: true
+
+      - name: Create GoogleService-Info.plist
+        run: |
+          echo "${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Build iOS (Flutter, unsigned)
+        run: >
+          flutter build ios --release --no-codesign
+          --dart-define-from-file=config/production.json
+
+      - name: Bootstrap Match certificates
+        if: inputs.bootstrap_certs
+        run: bundle exec fastlane ios certificates
+        env:
+          APPSTORE_CONNECT_KEY_FILE: ${{ steps.app_store_connect_key.outputs.filePath }}
+
+      - name: Sign IPA via Fastlane
+        run: bundle exec fastlane ios build
+        env:
+          APPSTORE_CONNECT_KEY_FILE: ${{ steps.app_store_connect_key.outputs.filePath }}
+
+      - name: Upload to TestFlight
+        if: inputs.track == 'beta'
+        run: bundle exec fastlane ios beta
+        env:
+          APPSTORE_CONNECT_KEY_FILE: ${{ steps.app_store_connect_key.outputs.filePath }}
+
+      - name: Submit to App Store
+        if: inputs.track == 'production'
+        run: bundle exec fastlane ios deploy
+        env:
+          APPSTORE_CONNECT_KEY_FILE: ${{ steps.app_store_connect_key.outputs.filePath }}

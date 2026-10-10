@@ -14,6 +14,7 @@ class AppConfig {
     required this.accessRefreshInterval,
     required this.defaultCurrency,
     required this.googleServerClientId,
+    required this.googleSignInEnabled,
   });
 
   factory AppConfig.fromEnvironment() {
@@ -58,6 +59,10 @@ class AppConfig {
       'GOOGLE_SERVER_CLIENT_ID',
       defaultValue: '9465040813-c2o7a0t2b86tqnareuods7evo5ge355v.apps.googleusercontent.com',
     );
+    const googleSignInEnabledFlag = bool.fromEnvironment(
+      'GOOGLE_SIGN_IN_ENABLED',
+      defaultValue: false,
+    );
 
     final problems = <String>[
       if (Uri.tryParse(apiBaseUrl)?.hasAuthority != true) 'API_BASE_URL',
@@ -87,6 +92,7 @@ class AppConfig {
       accessRefreshInterval: const Duration(seconds: accessRefreshSeconds),
       defaultCurrency: defaultCurrency,
       googleServerClientId: googleServerClientId,
+      googleSignInEnabled: googleSignInEnabledFlag && googleServerClientId.isNotEmpty,
     );
   }
 
@@ -107,7 +113,8 @@ class AppConfig {
   /// Google OAuth web client ID; required for ID tokens on Android.
   final String googleServerClientId;
 
-  bool get googleSignInEnabled => googleServerClientId.isNotEmpty;
+  /// When false, login/register hide Google Sign-In (default until re-enabled).
+  final bool googleSignInEnabled;
 }
 
 /// Overridden in `main` with the validated configuration.
