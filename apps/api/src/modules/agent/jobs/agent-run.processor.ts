@@ -9,7 +9,9 @@ import {
   type ScheduledAgentRunJob,
 } from './agent-run.queue';
 
-@Processor(AGENT_RUN_QUEUE)
+@Processor(AGENT_RUN_QUEUE, {
+  concurrency: Number(process.env.AGENT_RUN_QUEUE_CONCURRENCY ?? 5),
+})
 export class AgentRunProcessor extends WorkerHost {
   constructor(
     private readonly repo: AgentRepository,
@@ -31,7 +33,7 @@ export class AgentRunProcessor extends WorkerHost {
     job: Job<ScheduledAgentRunJob>,
   ): Promise<void> {
     const data = job.data;
-    const session = await this.repo.createSession(
+    const session = await this.sessions.getOrCreateSession(
       data.organizationId,
       data.userId,
       `Scheduled: ${data.scheduleId}`,
@@ -75,18 +77,34 @@ export class AgentRunProcessor extends WorkerHost {
       run.id,
     );
 
-    const result = await this.orchestrator.run({
-      runToken,
-      sessionId,
-      runId: run.id,
-      message: data.prompt,
-      multiAgent: data.multiAgent,
-    });
+    try {
+      const result = await this.orchestrator.run({
+        runToken,
+        sessionId,
+        runId: run.id,
+        message: data.prompt,
+        multiAgent: data.multiAgent,
+      });
 
-    await this.repo.updateRun(run.id, {
-      status: 'COMPLETED',
-      response: result.response,
-      completedAt: new Date(),
-    });
+      const failed = result.steps.some(
+        (step) => step.stepType === 'error' && step.status === 'FAILED',
+      );
+
+      await this.repo.updateRun(run.id, {
+        status: failed ? 'FAILED' : 'COMPLETED',
+        response: result.response,
+        error: failed ? result.response : undefined,
+        completedAt: new Date(),
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Background agent run failed';
+      await this.repo.updateRun(run.id, {
+        status: 'FAILED',
+        error: message,
+        completedAt: new Date(),
+      });
+      throw error;
+    }
   }
 }

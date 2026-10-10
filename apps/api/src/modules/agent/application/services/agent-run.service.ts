@@ -12,8 +12,21 @@ import { notFound } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { CapabilityExecutorService } from '../../../capabilities/application/services/capability-executor.service';
 import { AgentRepository } from '../../infrastructure/repositories/agent.repository';
+import { nextCronRun } from '../../../../shared/utils/cron.util';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { AgentSessionService } from './agent-session.service';
+
+/** Plain-text voice for @Whiz replies posted into team chat rooms. */
+const CHAT_ROOM_WHIZ_SUMMARY_PROMPT = `
+You are Whiz replying in a team chat thread after someone @mentioned you.
+
+Format rules (strict):
+- Plain text only — no markdown, no headings, no bullet lists, no code fences.
+- Never use section titles like "Summary", "Next steps", "What I did", or similar.
+- Reply in 1–4 short, conversational sentences, like a helpful coworker in Slack.
+- If tools ran, weave the outcome into natural prose; do not list tools.
+- If something failed or needs approval, say so plainly in one sentence.
+`.trim();
 
 @Injectable()
 export class AgentRunService {
@@ -43,6 +56,25 @@ export class AgentRunService {
     return this.finalizeRun(organizationId, user, prepared, result);
   }
 
+  /** Non-streaming agent run with a short plain-text reply for in-room @Whiz mentions. */
+  async sendRoomWhizMessage(
+    organizationId: string,
+    user: AuthenticatedUser,
+    sessionId: string,
+    message: string,
+  ) {
+    const prepared = await this.prepareRun(organizationId, user, sessionId, {
+      message,
+      multiAgent: false,
+    });
+    const result = await this.orchestrator.run({
+      ...prepared.orchestratorRequest,
+      multiAgent: false,
+      summaryPrompt: CHAT_ROOM_WHIZ_SUMMARY_PROMPT,
+    });
+    return this.finalizeRun(organizationId, user, prepared, result);
+  }
+
   /**
    * Streams progressive agent events to onEvent, then persists the completed run.
    */
@@ -59,18 +91,26 @@ export class AgentRunService {
       sessionId,
       input,
     );
-    await onEvent({
-      type: 'status',
-      phase: 'planning',
-      detail: 'Starting run',
-      runId: prepared.run.id,
-    });
+    try {
+      await onEvent({
+        type: 'status',
+        phase: 'thinking',
+        detail: 'Connecting tools',
+        runId: prepared.run.id,
+      });
 
-    const result = await this.orchestrator.runStream(
-      prepared.orchestratorRequest,
-      onEvent,
-    );
-    return this.finalizeRun(organizationId, user, prepared, result);
+      const result = await this.orchestrator.runStream(
+        prepared.orchestratorRequest,
+        onEvent,
+      );
+      return await this.finalizeRun(organizationId, user, prepared, result);
+    } catch (error) {
+      await this.markRunFailed(
+        prepared.run.id,
+        error instanceof Error ? error.message : 'Agent stream failed',
+      );
+      throw error;
+    }
   }
 
   private async prepareRun(
@@ -173,13 +213,17 @@ export class AgentRunService {
       });
     }
 
+    const failed = this.isFailedRun(result);
     const status = result.pendingActionId
       ? 'WAITING_CONFIRMATION'
-      : 'COMPLETED';
+      : failed
+        ? 'FAILED'
+        : 'COMPLETED';
     await this.repo.updateRun(prepared.run.id, {
       status,
       response: result.response,
-      completedAt: status === 'COMPLETED' ? new Date() : undefined,
+      error: failed ? result.response : undefined,
+      completedAt: status === 'COMPLETED' || status === 'FAILED' ? new Date() : undefined,
     });
 
     await this.repo.addMessage(
@@ -215,6 +259,23 @@ export class AgentRunService {
       response: result.response,
       pendingActionId: result.pendingActionId,
     };
+  }
+
+  private isFailedRun(result: {
+    response: string;
+    steps: Array<{ stepType: string; status: string }>;
+  }): boolean {
+    return result.steps.some(
+      (step) => step.stepType === 'error' && step.status === 'FAILED',
+    );
+  }
+
+  private async markRunFailed(runId: string, message: string) {
+    await this.repo.updateRun(runId, {
+      status: 'FAILED',
+      error: message,
+      completedAt: new Date(),
+    });
   }
 
   listRuns(organizationId: string, userId: string) {
@@ -342,7 +403,7 @@ export class AgentRunService {
 
   createSchedule(organizationId: string, userId: string, raw: unknown) {
     const input = agentScheduleCreateInput.parse(raw);
-    const nextRunAt = new Date(Date.now() + 60_000);
+    const nextRunAt = nextCronRun(input.cron, input.timezone);
     return this.repo
       .createSchedule({
         organizationId,

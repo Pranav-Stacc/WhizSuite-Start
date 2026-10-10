@@ -7,6 +7,7 @@ import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../../tasks/application/tasks_controller.dart';
 import '../../tasks/domain/task.dart';
+import '../../dashboard/application/dashboard_providers.dart';
 import '../data/calendar_repository.dart';
 import '../domain/calendar_entry.dart';
 import '../domain/calendar_item.dart';
@@ -31,11 +32,22 @@ class CalendarFeed {
   final bool partial;
 }
 
+/// Month shown in the calendar UI; feed range tracks this instead of "today".
+final calendarVisibleMonthProvider =
+    NotifierProvider<CalendarVisibleMonth, DateTime>(CalendarVisibleMonth.new);
+
+class CalendarVisibleMonth extends Notifier<DateTime> {
+  @override
+  DateTime build() => DateTime(DateTime.now().year, DateTime.now().month);
+
+  void set(DateTime value) => state = value;
+}
+
 final calendarFeedProvider = FutureProvider.autoDispose<CalendarFeed>((ref) async {
   final repo = ref.watch(calendarRepositoryProvider);
-  final now = DateTime.now();
-  final from = DateTime(now.year, now.month - 1, 1);
-  final to = DateTime(now.year, now.month + 2, 1);
+  final month = ref.watch(calendarVisibleMonthProvider);
+  final from = DateTime(month.year, month.month - 1, 1);
+  final to = DateTime(month.year, month.month + 2, 1);
 
   try {
     final items = await repo.feed(from: from, to: to);
@@ -96,24 +108,28 @@ class CalendarActions {
 
   CalendarRepository get _repo => _ref.read(calendarRepositoryProvider);
 
+  void _refreshViews() {
+    _ref
+      ..invalidate(calendarItemsProvider)
+      ..invalidate(calendarFeedProvider)
+      ..invalidate(dashboardCalendarProvider);
+  }
+
   Future<CalendarItem> create(CalendarItemInput input) async {
     final item = await _repo.create(input);
-    _ref.invalidate(calendarItemsProvider);
-    _ref.invalidate(calendarFeedProvider);
+    _refreshViews();
     return item;
   }
 
   Future<CalendarItem> createShoot(CreateShootInput input) async {
     final item = await _repo.createShoot(input);
-    _ref.invalidate(calendarItemsProvider);
-    _ref.invalidate(calendarFeedProvider);
+    _refreshViews();
     return item;
   }
 
   Future<void> update(CalendarItem item, CalendarItemInput input) async {
     await _repo.update(item, input);
-    _ref.invalidate(calendarItemsProvider);
-    _ref.invalidate(calendarFeedProvider);
+    _refreshViews();
   }
 }
 

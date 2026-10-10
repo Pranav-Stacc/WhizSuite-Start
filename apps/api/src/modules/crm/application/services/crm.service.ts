@@ -10,6 +10,8 @@ import {
 } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { problem } from '../../../../shared/errors/problem-details.exception';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { leadMatchesScope } from '../../../../shared/tenant/scope-filters';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import {
   CrmRepository,
@@ -41,7 +43,11 @@ export class CrmService {
 
   async list(organizationId: string): Promise<LeadDto[]> {
     const limit = this.config.get('LEAD_LIST_LIMIT', { infer: true });
-    const records = await this.repository.list(organizationId, limit);
+    const records = await this.repository.list(
+      organizationId,
+      limit,
+      TenantContext.leadScope(),
+    );
     return records.map(toLeadDto);
   }
 
@@ -134,7 +140,10 @@ export class CrmService {
     id: string,
   ): Promise<LeadRecord> {
     const record = await this.repository.findById(organizationId, id);
-    if (!record) {
+    if (
+      !record ||
+      !leadMatchesScope(record, TenantContext.leadScope() ?? {})
+    ) {
       throw problem(
         HttpStatus.NOT_FOUND,
         'Not Found',

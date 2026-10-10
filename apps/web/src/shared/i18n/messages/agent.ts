@@ -24,6 +24,8 @@ export const agentMessages = {
   'agent.empty.suggestions.tools': 'List what you can do, grouped by module',
   'agent.phase.planning': 'Planning the next steps…',
   'agent.phase.summarizing': 'Writing your answer…',
+  'agent.stream.steps': 'Steps',
+  'agent.stream.answer': 'Answer',
   'agent.error.stream': 'The agent stream failed. Please try again.',
   'agent.runs.empty': 'No runs yet',
   'agent.confirm': 'Approve',

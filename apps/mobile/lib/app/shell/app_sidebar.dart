@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_tokens.dart';
-import '../../core/widgets/app_logo.dart';
 import '../../features/auth/domain/session.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
@@ -46,8 +45,6 @@ class AppSidebar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const AppLogo.primary(height: 34),
-                SizedBox(height: tokens.lg),
                 Text(
                   l10n.navMenu.toUpperCase(),
                   style: theme.textTheme.titleSmall?.copyWith(

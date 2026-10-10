@@ -20,6 +20,11 @@ class AgentRepository {
         jsonObject(await _api.post<Object?>(_agent('sessions'), body: {'title': ?title})),
       );
 
+  /// Opens the main Whiz thread, reusing an existing session when present.
+  Future<AgentSession> openSession({String title = 'Whiz'}) async => AgentSession.fromJson(
+        jsonObject(await _api.post<Object?>(_agent('sessions/open'), body: {'title': title})),
+      );
+
   Future<AgentSessionDetail> session(String sessionId) async =>
       AgentSessionDetail.fromJson(jsonObject(await _api.get<Object?>(_agent('sessions/$sessionId'))));
 

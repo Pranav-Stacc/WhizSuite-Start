@@ -20,6 +20,7 @@ import '../../access/domain/access_policy.dart';
 import '../../access/presentation/permission_gate.dart';
 import '../../calendar/calendar_routes.dart';
 import '../../content/content_routes.dart';
+import '../../reports/reports_routes.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../integrations/integrations_routes.dart';
 import '../../invoices/invoices_routes.dart';
@@ -397,7 +398,7 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Manage section — 4 options: Content, Content Grid, Calendar, Integrations
+// Manage section — Content, Analytics, Calendar, Integrations
 // Clean, theme-aligned cards (no color stripe on the side)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -419,12 +420,12 @@ class _ManageSection extends ConsumerWidget {
           subtitle: l10n.clientManageContentBody,
           route: ContentRoutes.home(clientId: client.id),
         ),
-      if (policy.can(Permissions.contentView))
+      if (policy.can(Permissions.reportsView))
         _ManageItem(
-          icon: Icons.grid_view_rounded,
-          title: l10n.clientManageGrid,
-          subtitle: l10n.clientManageGridBody,
-          route: ContentRoutes.home(clientId: client.id, tab: ContentRoutes.plannerTab),
+          icon: Icons.insights_outlined,
+          title: l10n.clientManageAnalytics,
+          subtitle: l10n.clientManageAnalyticsBody,
+          route: ReportsRoutes.home(clientId: client.id, tab: ReportsRoutes.analyticsTab),
         ),
       if (policy.can(Permissions.projectsView))
         _ManageItem(

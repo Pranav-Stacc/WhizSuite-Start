@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
@@ -38,12 +39,10 @@ Future<bool> decideApproval(
   final saved = await showFormSheet(
     context,
     title: rejecting ? l10n.approvalRejectTitle : l10n.approvalChangesTitle,
+    subtitle: rejecting ? l10n.approvalCommentHint : l10n.approvalCommentRequiredHint,
     submitLabel: rejecting ? l10n.approvalActionReject : l10n.approvalActionRequestChanges,
+    size: AppDialogSize.compact,
     fields: (context, _) => [
-      Text(
-        rejecting ? l10n.approvalCommentHint : l10n.approvalCommentRequiredHint,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
       TextFormField(
         controller: comment,
         autofocus: true,

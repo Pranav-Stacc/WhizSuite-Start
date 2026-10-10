@@ -24,6 +24,7 @@ export const NotificationTypeKeys = {
   FEEDBACK_COMMENT: 'feedback.comment',
   INVOICE_OVERDUE: 'invoice.overdue',
   INVOICE_PAID: 'invoice.paid',
+  CALENDAR_REMINDER: 'calendar.reminder',
 } as const;
 
 export type NotificationTypeKey =
@@ -44,4 +45,6 @@ export interface NotificationData {
   fromStatus?: string;
   toStatus?: string;
   reminderKey?: string;
+  calendarItemId?: string;
+  startsAt?: string;
 }

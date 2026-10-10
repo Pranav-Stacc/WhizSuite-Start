@@ -21,6 +21,7 @@ import {
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
+import { contentMatchesScope } from '../../../../shared/tenant/scope-filters';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import {
   AuditService,
@@ -529,7 +530,14 @@ export class SocialService {
   }
 
   listAccounts(organizationId: string, clientId?: string) {
-    return this.repository.listAccounts(organizationId, clientId);
+    if (clientId && !TenantContext.canAccessClient(clientId)) {
+      return [];
+    }
+    return this.repository.listAccounts(
+      organizationId,
+      clientId,
+      TenantContext.clientScope(),
+    );
   }
 
   private async findOrThrow(
@@ -537,8 +545,20 @@ export class SocialService {
     id: string,
   ): Promise<ContentItemRecord> {
     const record = await this.repository.findContent(organizationId, id);
-    if (!record || !TenantContext.canAccessClient(record.clientId))
+    if (
+      !record ||
+      !contentMatchesScope(
+        {
+          id: record.id,
+          clientId: record.clientId,
+          projectId: null,
+          createdById: record.createdById ?? null,
+        },
+        TenantContext.contentScopeFilter() ?? {},
+      )
+    ) {
       throw notFound();
+    }
     return record;
   }
 

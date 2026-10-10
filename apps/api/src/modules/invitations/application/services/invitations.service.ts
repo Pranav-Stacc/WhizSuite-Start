@@ -14,6 +14,7 @@ import { AuditService } from '../../../audit/application/services/audit.service'
 import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
 import { RoleAssignmentService } from '../../../access/application/services/role-assignment.service';
 import type { InvitableMembershipType } from '../../../access/config/default-roles';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { ClientsService } from '../../../clients/application/services/clients.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
 import {
@@ -70,10 +71,17 @@ export class InvitationsService {
 
   async list(organizationId: string) {
     const rows = await this.repository.list(organizationId);
-    return rows.map(({ scopePayload, ...row }) => ({
-      ...row,
-      clientId: scopeOf(scopePayload).clientId ?? null,
-    }));
+    const clientScope = TenantContext.clientScope();
+    return rows
+      .map(({ scopePayload, ...row }) => ({
+        ...row,
+        clientId: scopeOf(scopePayload).clientId ?? null,
+      }))
+      .filter((row) => {
+        if (!clientScope) return true;
+        if (!row.clientId) return clientScope.length === 0;
+        return clientScope.includes(row.clientId);
+      });
   }
 
   async invite(
@@ -227,7 +235,13 @@ export class InvitationsService {
         ...row,
         clientId: scopeOf(scopePayload).clientId ?? null,
       }))
-      .filter((row) => !clientId || row.clientId === clientId);
+      .filter((row) => {
+        if (clientId && row.clientId !== clientId) return false;
+        const scope = TenantContext.clientScope();
+        if (!scope) return true;
+        if (!row.clientId) return scope.length === 0;
+        return scope.includes(row.clientId);
+      });
   }
 
   /** Multi-use (or capped) shareable link for a client's portal — works in browser or app. */

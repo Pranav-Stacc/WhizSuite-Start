@@ -25,10 +25,15 @@ describe('DEFAULT_MEMBERSHIP_ROLES permission matrix', () => {
     expect(member.has(Permissions.CONTENT_VIEW)).toBe(true);
   });
 
-  it('gives owner and admin calendar sync for Google connect', () => {
-    expect(admin.has(Permissions.CALENDAR_SYNC)).toBe(true);
+  it('gives owner calendar sync for Google connect', () => {
     expect(owner.has(Permissions.CALENDAR_SYNC)).toBe(true);
-    expect(admin.has(Permissions.CALENDAR_VIEW)).toBe(true);
+    expect(owner.has(Permissions.CALENDAR_VIEW)).toBe(true);
     expect(owner.has(Permissions.CONTENT_VIEW)).toBe(true);
+  });
+
+  it('uses the same default staff template for admin and member', () => {
+    expect(admin).toEqual(member);
+    expect(admin.has(Permissions.ROLES_MANAGE)).toBe(false);
+    expect(admin.has(Permissions.CALENDAR_SYNC)).toBe(false);
   });
 });

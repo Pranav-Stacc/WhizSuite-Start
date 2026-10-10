@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../../../../shared/config/app.config';
+import { SubjectScopeService } from '../../../../shared/tenant/subject-scope.service';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { ActivityRepository } from '../../infrastructure/repositories/activity.repository';
 import type { CreateActivityDto } from '../../interface/http/dto/activity.dto';
@@ -11,13 +12,15 @@ export class ActivityService {
     private readonly repository: ActivityRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly subjectScope: SubjectScopeService,
   ) {}
 
-  list(organizationId: string) {
-    return this.repository.list(
+  async list(organizationId: string) {
+    const rows = await this.repository.list(
       organizationId,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
     );
+    return this.subjectScope.filterEntities(organizationId, rows);
   }
 
   async create(

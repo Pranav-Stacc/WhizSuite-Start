@@ -150,7 +150,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </Button>
         </div>
         <h2 className="text-lg font-semibold tracking-tight">{monthTitle({ year, month })}</h2>
-        <ul className="hidden flex-wrap items-center gap-3 text-xs text-muted lg:flex">
+        <ul className="flex flex-wrap items-center gap-2 text-[11px] text-muted sm:gap-3 sm:text-xs">
           <li className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-primary" />
             {t('calendar.legend.content')}
@@ -192,14 +192,25 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       {view === 'month' ? (
         <>
           {items.length === 0 ? <p className="mb-3 text-[13px] text-muted">{t('calendar.month.empty')}</p> : null}
-          <MonthGrid
-            days={days}
-            month={month}
-            itemsByDay={itemsByDay}
-            weekdayLabels={weekdayLabels()}
-            selectedDay={selectedDay}
-            dayHref={(key) => link({ day: key })}
-          />
+          <div className="hidden md:block">
+            <MonthGrid
+              days={days}
+              month={month}
+              itemsByDay={itemsByDay}
+              weekdayLabels={weekdayLabels()}
+              selectedDay={selectedDay}
+              dayHref={(key) => link({ day: key })}
+            />
+          </div>
+          <div className="md:hidden">
+            {items.length === 0 ? (
+              <div className="card-surface">
+                <EmptyState icon={<CalendarDays />} title={t('calendar.empty')} />
+              </div>
+            ) : (
+              <Agenda itemsByDay={itemsByDay} />
+            )}
+          </div>
         </>
       ) : items.length === 0 ? (
         <div className="card-surface">

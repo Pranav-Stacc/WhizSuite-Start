@@ -59,6 +59,21 @@ export class AgentController {
     );
   }
 
+  /** Reuse the main Whiz thread instead of creating a new session on every open. */
+  @Post('sessions/open')
+  @RequirePermissions(Permissions.AI_CHAT)
+  openSession(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: { title?: string },
+  ) {
+    return this.sessions.getOrCreateSession(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body.title?.trim() || 'Whiz',
+    );
+  }
+
   @Get('sessions/:sessionId')
   @RequirePermissions(Permissions.AI_VIEW)
   getSession(

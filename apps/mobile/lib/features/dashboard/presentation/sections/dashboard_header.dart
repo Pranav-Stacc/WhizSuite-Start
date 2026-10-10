@@ -9,6 +9,7 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../auth/application/session_controller.dart';
 import '../../../auth/domain/session.dart';
+import '../../../calendar/calendar_routes.dart';
 import '../../../clients/clients_routes.dart';
 import '../../../content/content_routes.dart';
 import '../../../notifications/application/notifications_controller.dart';
@@ -100,6 +101,7 @@ final List<DashboardQuickAction> dashboardQuickActions = [
   (permission: Permissions.tasksCreate, icon: Icons.add_task, label: (l10n) => l10n.dashboardQuickNewTask, route: TasksRoutes.root),
   (permission: Permissions.contentCreate, icon: Icons.edit_note, label: (l10n) => l10n.dashboardQuickNewPost, route: ContentRoutes.root),
   (permission: Permissions.clientsCreate, icon: Icons.person_add_alt_1_outlined, label: (l10n) => l10n.dashboardQuickNewClient, route: ClientsRoutes.root),
+  (permission: Permissions.calendarView, icon: Icons.calendar_month_outlined, label: (l10n) => l10n.navCalendar, route: CalendarRoutes.root),
   (permission: Permissions.timeTrack, icon: Icons.timer_outlined, label: (l10n) => l10n.dashboardQuickLogTime, route: TimeRoutes.root),
 ];
 

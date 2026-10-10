@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/departments_controller.dart';
@@ -18,25 +19,29 @@ Future<bool> showDepartmentForm(BuildContext context, WidgetRef ref, {String? pa
   var parent = parentId;
   final tree = flattenTree(ref.read(departmentTreeProvider).value ?? const []);
   final names = {for (final node in tree) node.department.id: node};
+  final presetParent = parentId != null ? names[parentId]?.department.name : null;
 
   return showFormSheet(
     context,
     title: l10n.departmentNew,
+    subtitle: presetParent == null ? null : l10n.departmentParentHint(presetParent),
     submitLabel: l10n.create,
+    size: AppDialogSize.compact,
     fields: (context, setState) => [
       TextFormField(
         controller: name,
         autofocus: true,
         decoration: InputDecoration(labelText: l10n.departmentName, hintText: l10n.departmentNameHint),
-        textInputAction: TextInputAction.next,
+        textInputAction: TextInputAction.done,
         maxLength: resourceNameMaxLength,
         validator: Validators(l10n).minLength(resourceNameMinLength),
       ),
-      if (tree.isNotEmpty)
-        OptionField<String>(
+      if (tree.isNotEmpty && parentId == null)
+        PickerField<String>(
           label: l10n.departmentParent,
           value: parent,
           allowNone: true,
+          noneLabel: l10n.departmentParentNone,
           options: [for (final node in tree) node.department.id],
           labelOf: (id) {
             final node = names[id];
@@ -44,10 +49,6 @@ Future<bool> showDepartmentForm(BuildContext context, WidgetRef ref, {String? pa
           },
           onChanged: (value) => setState(() => parent = value),
         ),
-      Text(
-        parent == null ? l10n.departmentParentNone : l10n.departmentParentHint(names[parent]?.department.path ?? ''),
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
     ],
     onSubmit: () => ref.read(departmentsActionsProvider).create(name: name.text.trim(), parentId: parent),
   );
@@ -61,9 +62,10 @@ Future<bool> showTeamForm(BuildContext context, WidgetRef ref) {
   return showFormSheet(
     context,
     title: l10n.departmentTeamNew,
+    subtitle: l10n.departmentTeamBody,
     submitLabel: l10n.create,
+    size: AppDialogSize.standard,
     fields: (context, setState) => [
-      Text(l10n.departmentTeamBody, style: Theme.of(context).textTheme.bodySmall),
       TextFormField(
         controller: name,
         autofocus: true,

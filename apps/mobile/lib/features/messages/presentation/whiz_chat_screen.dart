@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../agent/application/agent_providers.dart';
-import '../../agent/data/agent_repository.dart';
 import '../../agent/domain/agent_models.dart';
 import 'whiz_chat_pane.dart';
 
@@ -18,43 +16,16 @@ class WhizChatScreen extends ConsumerStatefulWidget {
 
 class _WhizChatScreenState extends ConsumerState<WhizChatScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  final _host = WhizChatHostController();
   String? _sessionId;
-  var _ensuring = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureSession());
-  }
-
-  Future<void> _ensureSession() async {
-    if (_ensuring) return;
-    _ensuring = true;
-    try {
-      final sessions = await ref.read(agentSessionsProvider.future);
-      if (!mounted) return;
-      if (sessions.isEmpty) {
-        await _newSession();
-      } else {
-        setState(() => _sessionId ??= sessions.first.id);
-      }
-    } catch (_) {
-      // WhizChatPane / history list surface provider errors.
-    } finally {
-      _ensuring = false;
-    }
-  }
 
   Future<void> _newSession() async {
-    final session = await ref.read(agentRepositoryProvider).createSession();
-    ref.invalidate(agentSessionsProvider);
-    if (!mounted) return;
-    setState(() => _sessionId = session.id);
+    await _host.newSession();
     _scaffoldKey.currentState?.closeEndDrawer();
   }
 
   void _openSession(AgentSession session) {
-    setState(() => _sessionId = session.id);
+    _host.openSession(session);
     _scaffoldKey.currentState?.closeEndDrawer();
   }
 
@@ -88,8 +59,8 @@ class _WhizChatScreenState extends ConsumerState<WhizChatScreen> {
                 onNewSession: _newSession,
               ),
             ),
-      body: WhizChatPane(
-        sessionId: _sessionId,
+      body: WhizChatHost(
+        controller: _host,
         onSessionChanged: (id) => setState(() => _sessionId = id),
       ),
     );

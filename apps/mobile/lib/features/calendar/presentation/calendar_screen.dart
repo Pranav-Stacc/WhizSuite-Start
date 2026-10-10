@@ -107,14 +107,25 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFeedMonth());
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(calendarFeedProvider);
     await ref.read(calendarFeedProvider.future);
   }
 
+  void _syncFeedMonth() {
+    ref.read(calendarVisibleMonthProvider.notifier).set(monthOf(_month));
+  }
+
   void _selectDay(DateTime day) => setState(() {
         _selected = day;
         _month = monthOf(day);
+        _syncFeedMonth();
       });
 
   void _shiftMonth(int delta) => setState(() {
@@ -122,6 +133,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         if (_selected.month != _month.month || _selected.year != _month.year) {
           _selected = _month;
         }
+        _syncFeedMonth();
       });
 
   void _goToday() {
@@ -129,6 +141,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     setState(() {
       _selected = today;
       _month = monthOf(today);
+      _syncFeedMonth();
     });
   }
 

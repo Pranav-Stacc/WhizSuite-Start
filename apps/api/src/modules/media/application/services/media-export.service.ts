@@ -14,6 +14,7 @@ import {
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { MediaRepository } from '../../infrastructure/repositories/media.repository';
 import {
@@ -93,6 +94,7 @@ export class MediaExportService {
       const all = await this.repository.listReady(
         organizationId,
         this.config.get('MEDIA_LIST_LIMIT', { infer: true }),
+        TenantContext.clientScope(),
       );
       assetIds = all.map((a) => a.id);
     }

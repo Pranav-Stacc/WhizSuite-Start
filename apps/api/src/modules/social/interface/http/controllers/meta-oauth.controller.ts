@@ -24,14 +24,15 @@ export class MetaOauthController {
   ) {
     if (error || !code || !state) {
       return res.redirect(
-        this.metaOauth.webFailureRedirect(
+        this.metaOauth.failureRedirect(
+          state,
           errorDescription ?? error ?? 'denied',
         ),
       );
     }
     try {
       await this.metaOauth.completeConnect({ code, state });
-      return res.redirect(this.metaOauth.webSuccessRedirect());
+      return res.redirect(this.metaOauth.successRedirect(state));
     } catch (err) {
       const detail =
         err instanceof ProblemDetailsException
@@ -39,7 +40,7 @@ export class MetaOauthController {
           : err instanceof Error
             ? err.message
             : 'failed';
-      return res.redirect(this.metaOauth.webFailureRedirect(detail));
+      return res.redirect(this.metaOauth.failureRedirect(state, detail));
     }
   }
 }

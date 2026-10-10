@@ -217,7 +217,7 @@ describe('Agency OS API (e2e)', () => {
     const project = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/projects`)
       .set(auth())
-      .send({ workspaceId, clientId, name: 'Q1 Campaign' })
+      .send({ clientId, name: 'Q1 Campaign' })
       .expect(201);
     projectId = project.body.id;
 
@@ -239,27 +239,27 @@ describe('Agency OS API (e2e)', () => {
 
   it('workflows flow', async () => {
     if (skipIfNoDb()) return;
-    const version = await request(app.getHttpServer())
+    const workflow = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/workflows`)
       .set(auth())
       .send({
-        entityType: 'TASK',
         name: 'Task Workflow',
-        states: [{ key: 'TODO', label: 'To Do', isInitial: true }],
-        transitions: [],
+        stages: [{ name: 'To Do' }, { name: 'Done' }],
       })
       .expect(201);
+    const versionId = workflow.body.versionId as string;
+    expect(versionId).toBeDefined();
 
     await request(app.getHttpServer())
       .get(
-        `/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}`,
+        `/api/v1/organizations/${organizationId}/workflows/versions/${versionId}`,
       )
       .set(auth())
       .expect(200);
 
     await request(app.getHttpServer())
       .post(
-        `/api/v1/organizations/${organizationId}/workflows/versions/${version.body.id}/publish`,
+        `/api/v1/organizations/${organizationId}/workflows/versions/${versionId}/publish`,
       )
       .set(auth())
       .expect(201);
@@ -273,7 +273,7 @@ describe('Agency OS API (e2e)', () => {
       .send({
         clientId,
         title: 'Launch Post',
-        contentType: 'POST',
+        contentType: 'STATIC_POST',
         caption: 'Hello world',
       })
       .expect(201);
@@ -307,14 +307,7 @@ describe('Agency OS API (e2e)', () => {
         subjectType: 'CONTENT',
         subjectId: contentId,
         subjectVersion: '1',
-        steps: [
-          {
-            name: 'Client Review',
-            order: 1,
-            rule: 'ANY',
-            approverSpec: { type: 'owner' },
-          },
-        ],
+        steps: [{ name: 'Client Review', rule: 'ANY' }],
       })
       .expect(201);
 
@@ -330,22 +323,26 @@ describe('Agency OS API (e2e)', () => {
   it('media, finance, time, feedback, chat', async () => {
     if (skipIfNoDb()) return;
 
-    await request(app.getHttpServer())
+    const presign = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/media/assets/presign`)
       .set(auth())
       .send({ filename: 'hero.jpg', mimeType: 'image/jpeg', sizeBytes: 1024 })
       .expect(201);
-
-    await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/media/assets`)
-      .set(auth())
-      .send({ name: 'logo.png', mimeType: 'image/png', sizeBytes: 2048 })
-      .expect(201);
+    expect(presign.body.asset?.id).toBeDefined();
+    expect(presign.body.uploadUrl).toBeDefined();
 
     const invoice = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/invoices`)
       .set(auth())
-      .send({ clientId, number: `INV-${Date.now()}` })
+      .send({
+        clientId,
+        number: `INV-${Date.now()}`,
+        dueDate: new Date(Date.now() + 30 * 86_400_000)
+          .toISOString()
+          .slice(0, 10),
+        taxRate: 0,
+        lines: [{ description: 'Retainer', quantity: 1, unitMinor: 5_000_000 }],
+      })
       .expect(201);
 
     await request(app.getHttpServer())
@@ -388,7 +385,6 @@ describe('Agency OS API (e2e)', () => {
         subjectType: 'CONTENT',
         subjectId: contentId,
         subjectVersion: '1',
-        createdById: userId,
       })
       .expect(201);
 
@@ -431,7 +427,12 @@ describe('Agency OS API (e2e)', () => {
     const automation = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/automations`)
       .set(auth())
-      .send({ name: 'Notify on approval' })
+      .send({
+        name: 'Notify on approval',
+        trigger: 'content.approved',
+        action: 'notify.team',
+        enabled: false,
+      })
       .expect(201);
     automationId = automation.body.id;
 
@@ -440,10 +441,7 @@ describe('Agency OS API (e2e)', () => {
         `/api/v1/organizations/${organizationId}/automations/${automationId}/publish`,
       )
       .set(auth())
-      .send({
-        trigger: { type: 'approval.completed' },
-        actions: { type: 'notify', channel: 'in_app' },
-      })
+      .send({})
       .expect(201);
 
     await request(app.getHttpServer())
@@ -451,7 +449,7 @@ describe('Agency OS API (e2e)', () => {
         `/api/v1/organizations/${organizationId}/automations/${automationId}/run`,
       )
       .set(auth())
-      .send({ source: 'e2e' })
+      .send({ detail: 'e2e' })
       .expect(201);
 
     const report = await request(app.getHttpServer())
@@ -477,10 +475,11 @@ describe('Agency OS API (e2e)', () => {
       .post(`/api/v1/organizations/${organizationId}/custom-fields`)
       .set(auth())
       .send({
-        entityType: 'CLIENT',
+        entityType: 'client',
         key: 'tier',
         label: 'Client Tier',
         type: 'SELECT',
+        options: ['Bronze', 'Silver', 'Gold'],
       })
       .expect(201);
 
@@ -616,18 +615,22 @@ describe('Agency OS API (e2e)', () => {
         .expect(200);
     }
 
-    const space = await request(app.getHttpServer())
-      .post(`/api/v1/organizations/${organizationId}/knowledge/spaces`)
+    const article = await request(app.getHttpServer())
+      .post(`/api/v1/organizations/${organizationId}/knowledge/articles`)
       .set(auth())
-      .send({ name: 'Playbooks' })
+      .send({
+        title: 'Playbooks',
+        category: 'PLAYBOOK',
+        body: 'How we work at the agency.',
+      })
       .expect(201);
 
     await request(app.getHttpServer())
       .patch(
-        `/api/v1/organizations/${organizationId}/knowledge/spaces/${space.body.id}`,
+        `/api/v1/organizations/${organizationId}/knowledge/articles/${article.body.id}`,
       )
       .set(auth())
-      .send({ name: 'Agency Playbooks' })
+      .send({ title: 'Agency Playbooks' })
       .expect(200);
 
     await request(app.getHttpServer())
@@ -646,7 +649,7 @@ describe('Agency OS API (e2e)', () => {
       .expect(200);
 
     await request(app.getHttpServer())
-      .get(`/api/v1/organizations/${organizationId}/billing/subscription`)
+      .get(`/api/v1/organizations/${organizationId}/billing/plans`)
       .set(auth())
       .expect(200);
 

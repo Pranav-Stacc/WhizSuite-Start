@@ -13,6 +13,7 @@ import {
   problem,
 } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
+import { SubjectScopeService } from '../../../../shared/tenant/subject-scope.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { SocialService } from '../../../social/application/services/social.service';
 import { FeedbackRepository } from '../../infrastructure/repositories/feedback.repository';
@@ -36,6 +37,7 @@ export class FeedbackService {
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
     private readonly social: SocialService,
+    private readonly subjectScope: SubjectScopeService,
   ) {}
 
   /** Client-portal principals may only discuss their own brand or that brand's content. */
@@ -55,16 +57,26 @@ export class FeedbackService {
     throw notFound();
   }
 
-  list(organizationId: string) {
-    return this.repository.list(
+  async list(organizationId: string) {
+    const rows = await this.repository.list(
       organizationId,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
     );
+    return this.subjectScope.filterSubjects(organizationId, rows);
   }
 
   async get(organizationId: string, id: string) {
     const item = await this.repository.findById(organizationId, id);
-    if (!item) throw notFound();
+    if (
+      !item ||
+      !(await this.subjectScope.canAccessSubject(
+        organizationId,
+        item.subjectType,
+        item.subjectId,
+      ))
+    ) {
+      throw notFound();
+    }
     return item;
   }
 

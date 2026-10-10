@@ -34,14 +34,18 @@ export class DataScopeInterceptor implements NestInterceptor {
         user.membershipId,
       );
       if (!scope.orgWide) {
-        // Empty project/content arrays mean "no restriction on that dimension"
-        // (CLIENT-only staff still see all projects/content for their clients).
+        const hasClientIds = scope.clientIds.length > 0;
         TenantContext.bindDataScope({
-          clientIds: scope.clientIds,
+          clientIds: hasClientIds
+            ? scope.clientIds
+            : scope.selfOnly
+              ? undefined
+              : [],
           projectIds:
             scope.projectIds.length > 0 ? scope.projectIds : undefined,
           contentIds:
             scope.contentIds.length > 0 ? scope.contentIds : undefined,
+          selfOnly: scope.selfOnly,
         });
       }
     }

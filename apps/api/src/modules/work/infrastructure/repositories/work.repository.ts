@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import {
+  projectListWhere,
+  taskListWhere,
+  milestoneListWhere,
+  type StaffProjectScope,
+  type StaffTaskScope,
+} from '../../../../shared/tenant/scope-filters';
 
 const PROJECT_SELECT = {
   id: true,
@@ -75,16 +82,14 @@ export class WorkRepository {
   listProjects(
     organizationId: string,
     limit: number,
-    allowedClientIds?: string[],
-    allowedProjectIds?: string[],
+    scope?: StaffProjectScope,
   ) {
+    const base: Prisma.ProjectWhereInput = {
+      organizationId,
+      deletedAt: null,
+    };
     return this.prisma.project.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
-        ...(allowedProjectIds ? { id: { in: allowedProjectIds } } : {}),
-      },
+      where: scope ? projectListWhere(base, scope) : base,
       orderBy: { createdAt: 'desc' },
       take: limit,
       select: PROJECT_SELECT,
@@ -116,16 +121,22 @@ export class WorkRepository {
     });
   }
 
-  listTasks(organizationId: string, projectId?: string, limit = 100) {
+  listTasks(
+    organizationId: string,
+    projectId?: string,
+    limit = 100,
+    scope?: StaffTaskScope,
+  ) {
+    const base: Prisma.TaskWhereInput = {
+      organizationId,
+      deletedAt: null,
+      ...(projectId ? { projectId } : {}),
+    };
     return this.prisma.task.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        ...(projectId ? { projectId } : {}),
-      },
+      where: scope ? taskListWhere(base, scope) : base,
       orderBy: { createdAt: 'desc' },
       take: limit,
-      include: { assignees: true },
+      include: { assignees: true, project: { select: { clientId: true } } },
     });
   }
 
@@ -178,29 +189,17 @@ export class WorkRepository {
   listTasksDueInRange(
     organizationId: string,
     range: { from: Date; to: Date },
-    clientIds: string[] | undefined,
     limit: number,
+    scope?: StaffTaskScope,
   ) {
+    const base: Prisma.TaskWhereInput = {
+      organizationId,
+      deletedAt: null,
+      status: { not: 'DONE' },
+      dueDate: { gte: range.from, lt: range.to },
+    };
     return this.prisma.task.findMany({
-      where: {
-        organizationId,
-        deletedAt: null,
-        status: { not: 'DONE' },
-        dueDate: { gte: range.from, lt: range.to },
-        ...(clientIds
-          ? {
-              OR: [
-                { clientId: { in: clientIds } },
-                {
-                  project: {
-                    clientId: { in: clientIds },
-                    deletedAt: null,
-                  },
-                },
-              ],
-            }
-          : {}),
-      },
+      where: scope ? taskListWhere(base, scope) : base,
       orderBy: { dueDate: 'asc' },
       take: limit,
       select: {
@@ -219,18 +218,16 @@ export class WorkRepository {
   listMilestonesDueInRange(
     organizationId: string,
     range: { from: Date; to: Date },
-    clientIds: string[] | undefined,
     limit: number,
+    scope?: StaffProjectScope,
   ) {
+    const base: Prisma.ProjectMilestoneWhereInput = {
+      organizationId,
+      completedAt: null,
+      dueDate: { gte: range.from, lt: range.to },
+    };
     return this.prisma.projectMilestone.findMany({
-      where: {
-        organizationId,
-        completedAt: null,
-        dueDate: { gte: range.from, lt: range.to },
-        ...(clientIds
-          ? { project: { clientId: { in: clientIds }, deletedAt: null } }
-          : {}),
-      },
+      where: scope ? milestoneListWhere(base, scope) : base,
       orderBy: { dueDate: 'asc' },
       take: limit,
       select: {
@@ -248,6 +245,7 @@ export class WorkRepository {
       where: { id, organizationId, deletedAt: null },
       include: {
         assignees: true,
+        project: { select: { clientId: true } },
         comments: { orderBy: { createdAt: 'asc' } },
         dependencies: true,
         children: true,

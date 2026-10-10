@@ -69,5 +69,14 @@
 	<string>WhizSuite needs camera access so you can capture photos for content and client deliverables.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>WhizSuite may save media you export to your photo library.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>whizsuite</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

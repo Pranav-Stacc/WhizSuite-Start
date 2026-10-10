@@ -1,7 +1,7 @@
 import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
-import { IsIn, IsUUID } from 'class-validator';
+import { IsIn, IsOptional, IsUUID } from 'class-validator';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -18,6 +18,10 @@ class BeginMetaConnectDto {
 
   @IsIn(['instagram', 'facebook'])
   platform: 'instagram' | 'facebook' = 'instagram';
+
+  @IsOptional()
+  @IsIn(['mobile', 'web'])
+  returnTo?: 'mobile' | 'web';
 }
 
 class DisconnectMetaDto {
@@ -44,6 +48,7 @@ export class MetaConnectController {
       actorId: user.userId,
       clientId: body.clientId,
       platform: body.platform,
+      returnTo: body.returnTo ?? 'web',
     });
   }
 

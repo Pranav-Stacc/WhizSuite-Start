@@ -45,7 +45,7 @@ void main() {
       expect(destinationFor('/unknown'), isNull);
     });
 
-    test('staff primary tabs pin Calendar, Messages, Agency around Overview, then More', () {
+    test('staff primary tabs pin Clients, Messages, Agency around Overview, then More', () {
       const policy = AccessPolicy({
         Permissions.orgView,
         Permissions.clientsView,
@@ -58,13 +58,13 @@ void main() {
       });
       final model = NavigationModel(_session(MembershipTypes.member), policy);
       expect(model.primary.map((d) => d.path).toList(), [
-        '/calendar',
+        '/clients',
         '/messages',
         AppRoutes.home,
         '/team',
         AppRoutes.more,
       ]);
-      expect(model.primary.map((d) => d.path), isNot(contains('/clients')));
+      expect(model.primary.map((d) => d.path), isNot(contains('/calendar')));
       expect(model.primary.map((d) => d.path), isNot(contains('/tasks')));
     });
 
@@ -83,8 +83,8 @@ void main() {
       final drawer = model.sidebarGroups(includePrimary: false);
       expect(drawer.keys.first, NavGroup.work);
       expect(drawer[NavGroup.work]?.map((d) => d.path), containsAll(['/tasks', '/projects']));
-      expect(drawer[NavGroup.work]?.map((d) => d.path), isNot(contains('/calendar')));
-      expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], contains('/clients'));
+      expect(drawer[NavGroup.work]?.map((d) => d.path), contains('/calendar'));
+      expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/clients')));
       expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/messages')));
       expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/team')));
     });

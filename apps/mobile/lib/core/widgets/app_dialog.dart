@@ -4,32 +4,80 @@ import 'package:flutter/services.dart';
 import '../../l10n/app_localizations.dart';
 import '../theme/app_tokens.dart';
 
+/// Preset dialog dimensions — pick the size that matches the content, not one-size-fits-all.
+enum AppDialogSize {
+  /// Confirmations and single-field prompts.
+  compact,
+  /// Typical short forms (2–4 fields).
+  standard,
+  /// Multi-section forms with several controls.
+  large,
+  /// Long lists, pickers, and composers that need most of the screen.
+  fullscreen,
+}
+
+/// Whether the surface is a centered dialog or a bottom sheet.
+enum AppDialogPresentation {
+  dialog,
+  bottomSheet,
+}
+
 /// Responsive width and inset rules shared by every app dialog.
 abstract final class AppDialogLayout {
   static const defaultMaxWidth = 520.0;
   static const horizontalInset = 20.0;
   static const maxHeightFactor = 0.88;
 
+  static const _compactMaxWidth = 400.0;
+  static const _largeMaxWidth = 560.0;
+  static const _fullscreenMaxWidth = 640.0;
+
+  static const _compactHeightFactor = 0.52;
+  static const _standardHeightFactor = 0.88;
+  static const _largeHeightFactor = 0.92;
+  static const _fullscreenHeightFactor = 0.96;
+
+  static double maxWidthFor(AppDialogSize size) => switch (size) {
+        AppDialogSize.compact => _compactMaxWidth,
+        AppDialogSize.standard => defaultMaxWidth,
+        AppDialogSize.large => _largeMaxWidth,
+        AppDialogSize.fullscreen => _fullscreenMaxWidth,
+      };
+
+  static double heightFactorFor(AppDialogSize size) => switch (size) {
+        AppDialogSize.compact => _compactHeightFactor,
+        AppDialogSize.standard => _standardHeightFactor,
+        AppDialogSize.large => _largeHeightFactor,
+        AppDialogSize.fullscreen => _fullscreenHeightFactor,
+      };
+
   static BoxConstraints constraintsOf(
     BuildContext context, {
-    double maxWidth = defaultMaxWidth,
-    double maxHeightFactor = AppDialogLayout.maxHeightFactor,
+    AppDialogSize size = AppDialogSize.standard,
+    double? maxWidth,
+    double? maxHeightFactor,
   }) {
-    final size = MediaQuery.sizeOf(context);
-    final width = (size.width - horizontalInset * 2).clamp(300.0, maxWidth);
+    final screen = MediaQuery.sizeOf(context);
+    final widthCap = maxWidth ?? maxWidthFor(size);
+    final heightCap = maxHeightFactor ?? heightFactorFor(size);
+    final width = (screen.width - horizontalInset * 2).clamp(280.0, widthCap);
     return BoxConstraints(
       minWidth: width,
       maxWidth: width,
-      maxHeight: size.height * maxHeightFactor,
+      maxHeight: screen.height * heightCap,
     );
   }
+
+  static double sheetHeightOf(BuildContext context, AppDialogSize size) =>
+      MediaQuery.sizeOf(context).height * heightFactorFor(size);
 }
 
-/// Opens a dialog with consistent insets and width on every screen size.
+/// Opens a centered dialog with consistent insets and width on every screen size.
 Future<T?> showAppDialog<T>(
   BuildContext context, {
   required WidgetBuilder builder,
   bool barrierDismissible = true,
+  AppDialogSize size = AppDialogSize.standard,
 }) {
   return showDialog<T>(
     context: context,
@@ -45,6 +93,55 @@ Future<T?> showAppDialog<T>(
   );
 }
 
+/// Modal bottom sheet for taller forms and list pickers.
+Future<T?> showAppBottomSheet<T>(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  AppDialogSize size = AppDialogSize.standard,
+  bool isDismissible = true,
+  bool showDragHandle = true,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: showDragHandle && size != AppDialogSize.fullscreen,
+    isDismissible: isDismissible,
+    enableDrag: isDismissible,
+    builder: (sheetContext) {
+      final height = AppDialogLayout.sheetHeightOf(sheetContext, size);
+      return Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheetContext).bottom),
+        child: SizedBox(height: height, child: builder(sheetContext)),
+      );
+    },
+  );
+}
+
+/// Routes to a centered dialog or bottom sheet based on [presentation].
+Future<T?> showAppAdaptiveSurface<T>(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  AppDialogSize size = AppDialogSize.standard,
+  AppDialogPresentation presentation = AppDialogPresentation.dialog,
+  bool barrierDismissible = true,
+}) {
+  return switch (presentation) {
+    AppDialogPresentation.dialog => showAppDialog<T>(
+        context,
+        builder: builder,
+        barrierDismissible: barrierDismissible,
+        size: size,
+      ),
+    AppDialogPresentation.bottomSheet => showAppBottomSheet<T>(
+        context,
+        builder: builder,
+        size: size,
+        isDismissible: barrierDismissible,
+      ),
+  };
+}
+
 /// Structured dialog shell: header, scrollable body, optional footer.
 class AppDialog extends StatelessWidget {
   const AppDialog({
@@ -54,7 +151,7 @@ class AppDialog extends StatelessWidget {
     this.actions,
     this.footer,
     this.onClose,
-    this.maxWidth = AppDialogLayout.defaultMaxWidth,
+    this.size = AppDialogSize.standard,
     this.scrollable = true,
     super.key,
   });
@@ -65,7 +162,7 @@ class AppDialog extends StatelessWidget {
   final List<Widget>? actions;
   final Widget? footer;
   final VoidCallback? onClose;
-  final double maxWidth;
+  final AppDialogSize size;
   final bool scrollable;
 
   @override
@@ -74,7 +171,7 @@ class AppDialog extends StatelessWidget {
     final close = onClose ?? () => Navigator.of(context).pop();
 
     return ConstrainedBox(
-      constraints: AppDialogLayout.constraintsOf(context, maxWidth: maxWidth),
+      constraints: AppDialogLayout.constraintsOf(context, size: size),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -82,7 +179,7 @@ class AppDialog extends StatelessWidget {
           _DialogHeader(title: title, subtitle: subtitle, onClose: close),
           if (child != null) ...[
             Divider(height: 1, color: tokens.border),
-            if (scrollable)
+            if (scrollable && size != AppDialogSize.compact)
               Flexible(
                 child: SingleChildScrollView(
                   padding: EdgeInsets.all(tokens.lg),
@@ -180,6 +277,7 @@ Future<bool> showInputDialog(
   required String title,
   required TextEditingController controller,
   String? hint,
+  String? subtitle,
   int? maxLength,
   String? confirmLabel,
   TextInputType? keyboardType,
@@ -188,8 +286,12 @@ Future<bool> showInputDialog(
   final l10n = AppLocalizations.of(context);
   final result = await showAppDialog<bool>(
     context,
+    size: AppDialogSize.compact,
     builder: (ctx) => AppDialog(
       title: title,
+      subtitle: subtitle,
+      size: AppDialogSize.compact,
+      scrollable: false,
       actions: [
         TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.cancel)),
         FilledButton(
@@ -225,13 +327,17 @@ Future<T?> showPickerDialog<T>(
   required String title,
   required List<PickerOption<T>> options,
   String? subtitle,
+  AppDialogSize size = AppDialogSize.large,
+  AppDialogPresentation presentation = AppDialogPresentation.dialog,
 }) {
-  return showAppDialog<T>(
+  return showAppAdaptiveSurface<T>(
     context,
+    size: size,
+    presentation: presentation,
     builder: (ctx) {
       final tokens = ctx.tokens;
       return ConstrainedBox(
-        constraints: AppDialogLayout.constraintsOf(ctx),
+        constraints: AppDialogLayout.constraintsOf(ctx, size: size),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

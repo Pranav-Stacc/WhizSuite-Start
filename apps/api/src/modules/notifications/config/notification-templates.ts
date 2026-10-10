@@ -133,6 +133,11 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: 'Invoice "{title}" was marked paid.',
     actionLabel: 'View invoice',
   },
+  [NotificationTypeKeys.CALENDAR_REMINDER]: {
+    subject: 'Calendar reminder',
+    body: 'Reminder: "{title}" is starting soon.',
+    actionLabel: 'Open calendar',
+  },
 };
 
 const PLACEHOLDER = /\{(\w+)\}/g;

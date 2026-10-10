@@ -16,8 +16,11 @@ import '../../features/auth/application/session_controller.dart';
 import '../../features/notifications/application/notification_delivery.dart';
 import '../../features/notifications/application/notifications_controller.dart';
 import '../../features/notifications/domain/app_notification.dart';
+import '../../features/notifications/infrastructure/notification_permission_store.dart';
+import '../../features/notifications/infrastructure/push_messaging.dart';
 import '../../features/notifications/presentation/notification_bell.dart';
 import '../../features/notifications/presentation/notification_links.dart';
+import '../../features/notifications/presentation/notification_permission_primer.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
@@ -51,6 +54,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   late final AppLifecycleListener _lifecycle;
   final _subscriptions = <StreamSubscription<Object?>>[];
   bool _deliveryStarted = false;
+  bool _primerScheduled = false;
 
   @override
   void initState() {
@@ -67,7 +71,39 @@ class _AppShellState extends ConsumerState<AppShell> {
     _subscriptions
       ..add(delivery.foreground.listen(_toast))
       ..add(delivery.opened.listen(_openFromTray));
-    delivery.start(l10n: AppLocalizations.of(context), locale: Localizations.localeOf(context).toLanguageTag());
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    delivery.start(l10n: AppLocalizations.of(context), locale: locale);
+    if (!_primerScheduled) {
+      _primerScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptForPush(locale));
+    }
+  }
+
+  Future<void> _maybePromptForPush(String locale) async {
+    if (!mounted) return;
+    final push = ref.read(pushMessagingProvider);
+    if (!push.isSupported) return;
+
+    final store = ref.read(notificationPermissionStoreProvider);
+    final delivery = ref.read(notificationDeliveryProvider);
+
+    if (store.primerCompleted()) {
+      await delivery.ensurePushRegistered(locale: locale);
+      return;
+    }
+
+    if (await push.isAuthorized()) {
+      await store.markPrimerCompleted();
+      await delivery.ensurePushRegistered(locale: locale);
+      return;
+    }
+
+    if (!mounted) return;
+    final enable = await showNotificationPermissionPrimer(context);
+    await store.markPrimerCompleted();
+    if (enable == true && mounted) {
+      await delivery.enablePush(locale: locale);
+    }
   }
 
   @override

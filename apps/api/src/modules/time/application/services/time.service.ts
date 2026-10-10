@@ -12,6 +12,8 @@ import type { AppConfig } from '../../../../shared/config/app.config';
 import { problem } from '../../../../shared/errors/problem-details.exception';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { timeEntryMatchesScope } from '../../../../shared/tenant/scope-filters';
 import { WorkService } from '../../../work/application/services/work.service';
 import {
   TimeRepository,
@@ -41,7 +43,11 @@ export class TimeService {
     const limit = this.config.get('TIME_ENTRY_LIST_LIMIT', { infer: true });
     return this.toDtos(
       organizationId,
-      await this.repository.list(organizationId, limit),
+      await this.repository.list(
+        organizationId,
+        limit,
+        TenantContext.timeEntryScope(),
+      ),
     );
   }
 
@@ -207,7 +213,10 @@ export class TimeService {
     id: string,
   ): Promise<TimeEntryRecord> {
     const record = await this.repository.findById(organizationId, id);
-    if (!record) {
+    if (
+      !record ||
+      !timeEntryMatchesScope(record, TenantContext.timeEntryScope() ?? {})
+    ) {
       throw problem(
         HttpStatus.NOT_FOUND,
         'Not Found',

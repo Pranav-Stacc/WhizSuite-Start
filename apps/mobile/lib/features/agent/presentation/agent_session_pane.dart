@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/theme/theme_settings.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../calendar/application/calendar_controller.dart';
+import '../../dashboard/application/dashboard_providers.dart';
 import '../application/agent_providers.dart';
 import '../data/agent_repository.dart';
 import '../domain/agent_models.dart';
@@ -23,10 +27,36 @@ class AgentSessionPane extends ConsumerStatefulWidget {
   ConsumerState<AgentSessionPane> createState() => _AgentSessionPaneState();
 }
 
+class _LiveStep {
+  _LiveStep({
+    required this.toolId,
+    this.callId,
+    this.input,
+    this.running = true,
+    this.ok,
+    this.error,
+    this.result,
+    this.expanded = false,
+  });
+
+  final String toolId;
+  final String? callId;
+  final Map<String, dynamic>? input;
+  final bool running;
+  final bool? ok;
+  final String? error;
+  final Object? result;
+  bool expanded;
+}
+
 class _LiveReply {
   _LiveReply();
 
   AgentStreamPhase phase = AgentStreamPhase.planning;
+  String? statusDetail;
+  String? planSummary;
+  int plannedToolCount = 0;
+  final steps = <_LiveStep>[];
   final StringBuffer text = StringBuffer();
 }
 
@@ -38,6 +68,7 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
   final _local = <AgentMessage>[];
   _LiveReply? _live;
   StreamSubscription<AgentStreamEvent>? _subscription;
+  var _calendarMutated = false;
 
   bool get _streaming => _live != null;
 
@@ -73,6 +104,7 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
     setState(() {
       _local.add(_message('user', text));
       _live = _LiveReply();
+      _calendarMutated = false;
     });
     _scrollToEnd();
 
@@ -88,8 +120,53 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
     final live = _live;
     if (live == null) return;
     switch (event) {
-      case AgentStreamStatus(:final phase):
-        setState(() => live.phase = phase);
+      case AgentStreamStatus(:final phase, :final detail):
+        setState(() {
+          live.phase = phase;
+          live.statusDetail = detail;
+        });
+        _scrollToEnd();
+      case AgentStreamPlan(:final summary, :final toolCount):
+        setState(() {
+          live.phase = AgentStreamPhase.planning;
+          live.planSummary = summary;
+          live.plannedToolCount = toolCount;
+        });
+        _scrollToEnd();
+      case AgentStreamToolStart(:final toolId, :final callId, :final input):
+        setState(() {
+          live.phase = AgentStreamPhase.working;
+          live.steps.add(_LiveStep(toolId: toolId, callId: callId, input: input));
+        });
+        _scrollToEnd();
+      case AgentStreamToolResult(:final toolId, :final callId, :final ok, :final error, :final result):
+        if (ok == true && toolId.startsWith('calendar.')) _calendarMutated = true;
+        setState(() {
+          live.phase = AgentStreamPhase.working;
+          final index = live.steps.lastIndexWhere(
+            (step) =>
+                step.running &&
+                (callId != null ? step.callId == callId : step.toolId == toolId),
+          );
+          if (index >= 0) {
+            final prior = live.steps[index];
+            live.steps[index] = _LiveStep(
+              toolId: toolId,
+              callId: callId ?? prior.callId,
+              input: prior.input,
+              running: false,
+              ok: ok,
+              error: error,
+              result: result,
+              expanded: prior.expanded,
+            );
+          } else {
+            live.steps.add(
+              _LiveStep(toolId: toolId, callId: callId, running: false, ok: ok, error: error, result: result),
+            );
+          }
+        });
+        _scrollToEnd();
       case AgentStreamDelta(:final text):
         setState(() {
           live.phase = AgentStreamPhase.writing;
@@ -97,11 +174,14 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
         });
         _scrollToEnd();
       case AgentStreamDone(:final response):
-        if (response.isNotEmpty) {
-          live.text
-            ..clear()
-            ..write(response);
-        }
+        setState(() {
+          live.phase = AgentStreamPhase.writing;
+          if (response.isNotEmpty) {
+            live.text
+              ..clear()
+              ..write(response);
+          }
+        });
       case AgentStreamError():
         _subscription?.cancel();
         _finish(failed: true);
@@ -116,7 +196,14 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
       if (answer.isNotEmpty) _local.add(_message('assistant', answer));
       _live = null;
     });
-    if (failed) showToast(context, AppLocalizations.of(context).agentSendFailed);
+    if (failed) {
+      showToast(context, AppLocalizations.of(context).agentSendFailed);
+    } else if (_calendarMutated) {
+      ref
+        ..invalidate(calendarFeedProvider)
+        ..invalidate(dashboardCalendarProvider);
+      showToast(context, AppLocalizations.of(context).agentCalendarUpdated);
+    }
 
     ref
       ..invalidate(agentPendingProvider)
@@ -193,6 +280,9 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
                 messages: [...session.messages, ..._local],
                 live: _live,
                 controller: _scroll,
+                onStepToggle: (index) => setState(() {
+                  _live?.steps[index].expanded = !_live!.steps[index].expanded;
+                }),
               ),
             AsyncValue(error: final error?, stackTrace: _) => ErrorState(
                 error: error,
@@ -234,11 +324,17 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
 }
 
 class _MessageList extends StatelessWidget {
-  const _MessageList({required this.messages, required this.live, required this.controller});
+  const _MessageList({
+    required this.messages,
+    required this.live,
+    required this.controller,
+    required this.onStepToggle,
+  });
 
   final List<AgentMessage> messages;
   final _LiveReply? live;
   final ScrollController controller;
+  final void Function(int index) onStepToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +359,11 @@ class _MessageList extends StatelessWidget {
           itemCount: count,
           itemBuilder: (context, index) {
             if (index == messages.length && live != null) {
-              return _Bubble(maxWidth: bubbleMax, mine: false, child: _LiveContent(live));
+              return _Bubble(
+                maxWidth: bubbleMax,
+                mine: false,
+                child: _LiveContent(live: live, onStepToggle: onStepToggle),
+              );
             }
             final message = messages[index];
             final mine = message.role == 'user';
@@ -306,34 +406,198 @@ class _Bubble extends StatelessWidget {
 }
 
 class _LiveContent extends StatelessWidget {
-  const _LiveContent(this.live);
+  const _LiveContent({required this.live, required this.onStepToggle});
 
   final _LiveReply live;
+  final void Function(int index) onStepToggle;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    final text = live.text.toString();
-    if (text.isNotEmpty) return AgentMarkdown(text);
-
-    final label = switch (live.phase) {
+    final text = Theme.of(context).textTheme;
+    final answer = live.text.toString();
+    final phaseLabel = switch (live.phase) {
       AgentStreamPhase.planning => l10n.agentPhasePlanning,
       AgentStreamPhase.working => l10n.agentPhaseWorking,
       AgentStreamPhase.writing => l10n.agentPhaseWriting,
     };
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _TypingDots(),
-        SizedBox(width: tokens.sm),
-        Flexible(
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tokens.muted),
+        Row(
+          children: [
+            const _TypingDots(),
+            SizedBox(width: tokens.sm),
+            Expanded(
+              child: Text(
+                live.statusDetail ?? phaseLabel,
+                style: text.labelMedium?.copyWith(color: tokens.muted, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        if (live.planSummary != null) ...[
+          SizedBox(height: tokens.md),
+          Text(
+            l10n.agentStreamPlan.toUpperCase(),
+            style: text.labelSmall?.copyWith(color: tokens.muted, letterSpacing: 0.6, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: tokens.xs),
+          Text(live.planSummary!, style: text.bodySmall),
+          if (live.plannedToolCount > 0) ...[
+            SizedBox(height: tokens.xs),
+            Text(
+              l10n.agentStreamToolCount(live.plannedToolCount),
+              style: text.labelSmall?.copyWith(color: tokens.muted),
+            ),
+          ],
+        ],
+        if (live.steps.isNotEmpty) ...[
+          SizedBox(height: tokens.md),
+          Text(
+            l10n.agentStreamSteps.toUpperCase(),
+            style: text.labelSmall?.copyWith(color: tokens.muted, letterSpacing: 0.6, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: tokens.xs),
+          for (var i = 0; i < live.steps.length; i++) ...[
+            _StepRow(step: live.steps[i], onToggle: () => onStepToggle(i)),
+            SizedBox(height: tokens.xs),
+          ],
+        ],
+        if (answer.isNotEmpty) ...[
+          SizedBox(height: tokens.md),
+          Text(
+            l10n.agentStreamAnswer.toUpperCase(),
+            style: text.labelSmall?.copyWith(color: tokens.muted, letterSpacing: 0.6, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: tokens.xs),
+          AgentMarkdown(answer),
+          if (live.phase == AgentStreamPhase.writing) const _StreamCursor(),
+        ],
+      ],
+    );
+  }
+}
+
+class _StepRow extends StatelessWidget {
+  const _StepRow({required this.step, required this.onToggle});
+
+  final _LiveStep step;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    final label = _formatToolId(step.toolId);
+    final IconData icon;
+    final Color color;
+    if (step.running) {
+      icon = Icons.sync;
+      color = tokens.primary;
+    } else if (step.ok == true) {
+      icon = Icons.check_circle_outline;
+      color = StatusColors.success;
+    } else {
+      icon = Icons.error_outline;
+      color = StatusColors.danger;
+    }
+    final detail = _formatStepDetail(step);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: detail == null ? null : onToggle,
+        borderRadius: BorderRadius.circular(tokens.radius),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: tokens.xs),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  step.running
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: tokens.primary),
+                        )
+                      : Icon(icon, size: 16, color: color),
+                  SizedBox(width: tokens.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: text.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+                        if (step.error != null && step.error!.isNotEmpty)
+                          Text(step.error!, style: text.labelSmall?.copyWith(color: StatusColors.danger)),
+                      ],
+                    ),
+                  ),
+                  if (detail != null)
+                    Icon(
+                      step.expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18,
+                      color: tokens.muted,
+                    ),
+                ],
+              ),
+              if (step.expanded && detail != null) ...[
+                SizedBox(height: tokens.xs),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(tokens.sm),
+                  decoration: BoxDecoration(
+                    color: tokens.surface.withValues(alpha: 0.55),
+                    borderRadius: BorderRadius.circular(tokens.radius),
+                    border: Border.all(color: tokens.border.withValues(alpha: 0.6)),
+                  ),
+                  child: SelectableText(
+                    detail,
+                    style: text.labelSmall?.copyWith(fontFamily: 'monospace', height: 1.35),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+String? _formatStepDetail(_LiveStep step) {
+  if (step.running) return null;
+  final parts = <String>[];
+  if (step.input != null && step.input!.isNotEmpty) {
+    parts.add('Input:\n${const JsonEncoder.withIndent('  ').convert(step.input)}');
+  }
+  if (step.result != null) {
+    final encoded = step.result is String ? step.result as String : const JsonEncoder.withIndent('  ').convert(step.result);
+    parts.add('Result:\n$encoded');
+  }
+  if (parts.isEmpty && step.error != null) return step.error;
+  return parts.isEmpty ? null : parts.join('\n\n');
+}
+
+String _formatToolId(String toolId) =>
+    toolId.split('.').map((part) => part.isEmpty ? part : '${part[0].toUpperCase()}${part.substring(1)}').join(' · ');
+
+class _StreamCursor extends StatelessWidget {
+  const _StreamCursor();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: context.tokens.xs),
+      child: Container(
+        width: 8,
+        height: 14,
+        color: context.tokens.primary.withValues(alpha: 0.75),
+      ),
     );
   }
 }

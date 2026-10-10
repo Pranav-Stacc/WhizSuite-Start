@@ -3,6 +3,7 @@ import { t } from '@/shared/i18n/t';
 import { formatDate } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
+import { MobileDataCard, MobileDataHeader, MobileDataRow, ResponsiveDataView } from '@/shared/ui/responsive-data';
 import { deleteTimeEntryAction } from '../actions/time.actions';
 
 const MINUTES_PER_HOUR = 60;
@@ -25,9 +26,9 @@ export function formatDuration(minutes: number): string {
 }
 
 export function TimeEntries({ rows, showPerson }: { rows: TimeRow[]; showPerson: boolean }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] text-left text-sm">
+  const table = (
+    <div className="card-surface overflow-x-auto">
+      <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border-soft text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-medium">{t('time.col.date')}</th>
@@ -68,4 +69,35 @@ export function TimeEntries({ rows, showPerson }: { rows: TimeRow[]; showPerson:
       </table>
     </div>
   );
+
+  const cards = rows.map((row) => (
+    <MobileDataCard key={row.id}>
+      <MobileDataHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <span className="size-2 shrink-0 rounded-full" style={{ background: row.clientColor }} />
+            {row.projectLabel}
+          </span>
+        }
+        subtitle={row.note || formatDate(row.date)}
+        trailing={<span className="font-semibold tabular-nums">{formatDuration(row.minutes)}</span>}
+      />
+      <MobileDataRow label={t('time.col.date')}>{formatDate(row.date)}</MobileDataRow>
+      {showPerson && row.personName ? (
+        <MobileDataRow label={t('time.col.person')}>
+          <span className="inline-flex items-center gap-2">
+            <Avatar name={row.personName} size="xs" />
+            {row.personName}
+          </span>
+        </MobileDataRow>
+      ) : null}
+      {row.canDelete ? (
+        <div className="mt-3 flex justify-end">
+          <ConfirmButton action={deleteTimeEntryAction.bind(null, row.id)} label={t('common.delete')} icon={<Trash2 />} size="sm" />
+        </div>
+      ) : null}
+    </MobileDataCard>
+  ));
+
+  return <ResponsiveDataView table={table} cards={cards} />;
 }

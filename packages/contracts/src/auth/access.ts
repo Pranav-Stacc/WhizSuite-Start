@@ -72,12 +72,6 @@ const STAFF_PERMISSIONS: readonly Permission[] = [
   Permissions.AI_CHAT,
 ];
 
-const MANAGER_EXCLUDED = new Set<Permission>([
-  Permissions.ORG_BILLING_MANAGE,
-  Permissions.ROLES_MANAGE,
-  Permissions.MEMBERS_DEACTIVATE,
-]);
-
 /** Portal clients — view/approve content in their brand; no staff calendar/sync. */
 const CLIENT_PERMISSIONS: readonly Permission[] = [
   Permissions.ORG_VIEW,
@@ -106,7 +100,7 @@ export const DEFAULT_MEMBERSHIP_ROLES: Record<MembershipType, DefaultRoleTemplat
   },
   ADMIN: {
     name: 'Admin',
-    permissions: ALL_PERMISSIONS.filter((p) => !MANAGER_EXCLUDED.has(p)),
+    permissions: STAFF_PERMISSIONS,
     kind: RoleKinds.ACCESS,
     defaultScopeTypes: ORG_SCOPE,
   },

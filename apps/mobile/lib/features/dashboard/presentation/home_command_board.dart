@@ -42,7 +42,7 @@ class HomeCommandBoard extends ConsumerWidget {
     final canApprovals = policy.can(Permissions.approvalsView);
     final canContent = policy.can(Permissions.contentView);
     final canInvoices = policy.can(Permissions.invoicesView);
-    final canUpcoming = policy.canAny(const [Permissions.projectsView, Permissions.contentView]);
+    final canUpcoming = policy.canAny(const [Permissions.calendarView, Permissions.projectsView, Permissions.contentView]);
     final showNowDesk = canTasks ||
         canApprovals ||
         (canContent && focus.contentWaiting > 0) ||

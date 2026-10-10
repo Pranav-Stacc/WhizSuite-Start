@@ -532,6 +532,78 @@ abstract class AppLocalizations {
   /// **'Assignments, approvals and feedback from your agency workspace'**
   String get notificationChannelDescription;
 
+  /// No description provided for @notificationPrimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay in the loop'**
+  String get notificationPrimerTitle;
+
+  /// No description provided for @notificationPrimerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'WhizSuite can notify you about work that matters to you.'**
+  String get notificationPrimerSubtitle;
+
+  /// No description provided for @notificationPrimerBulletTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Task assignments and due dates for your role'**
+  String get notificationPrimerBulletTasks;
+
+  /// No description provided for @notificationPrimerBulletApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval requests waiting on you'**
+  String get notificationPrimerBulletApprovals;
+
+  /// No description provided for @notificationPrimerBulletCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar reminders and upcoming deadlines'**
+  String get notificationPrimerBulletCalendar;
+
+  /// No description provided for @notificationPrimerBulletPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'You control each type in Settings → Notification preferences'**
+  String get notificationPrimerBulletPreferences;
+
+  /// No description provided for @notificationPrimerFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'We only send alerts you can turn off anytime. Nothing is shared outside your agency.'**
+  String get notificationPrimerFootnote;
+
+  /// No description provided for @notificationPrimerEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on notifications'**
+  String get notificationPrimerEnable;
+
+  /// No description provided for @notificationPrimerNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notificationPrimerNotNow;
+
+  /// No description provided for @notificationPushDisabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications are off'**
+  String get notificationPushDisabledTitle;
+
+  /// No description provided for @notificationPushDisabledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable push to get task, approval, and reminder alerts on this device.'**
+  String get notificationPushDisabledBody;
+
+  /// No description provided for @notificationPushEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable push'**
+  String get notificationPushEnableAction;
+
   /// No description provided for @notificationsOpen.
   ///
   /// In en, this message translates to:
@@ -3130,6 +3202,36 @@ abstract class AppLocalizations {
   /// **'{title}, {status}, position {position}'**
   String contentPlannerTile(String title, String status, int position);
 
+  /// No description provided for @contentPlannerPostPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Post {current} of {total}'**
+  String contentPlannerPostPosition(int current, int total);
+
+  /// No description provided for @contentPlannerPostPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous post'**
+  String get contentPlannerPostPrevious;
+
+  /// No description provided for @contentPlannerPostNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next post'**
+  String get contentPlannerPostNext;
+
+  /// No description provided for @contentPlannerManagePost.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage post'**
+  String get contentPlannerManagePost;
+
+  /// No description provided for @contentPlannerSwipePosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Swipe for the next post'**
+  String get contentPlannerSwipePosts;
+
   /// No description provided for @contentWorkflowTitle.
   ///
   /// In en, this message translates to:
@@ -4665,6 +4767,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pending'**
   String get integrationKpiPending;
+
+  /// No description provided for @integrationsChannelsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect each client\'s social accounts. Instagram and Facebook use secure OAuth.'**
+  String get integrationsChannelsHint;
+
+  /// No description provided for @integrationChannelAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to connect'**
+  String get integrationChannelAvailable;
+
+  /// No description provided for @integrationChannelMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{handle} · {followers, plural, =0{—} other{{followers} followers}} · synced {synced}'**
+  String integrationChannelMeta(String handle, int followers, String synced);
+
+  /// No description provided for @integrationConnectChannelBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a channel for {client}'**
+  String integrationConnectChannelBody(String client);
+
+  /// No description provided for @integrationSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync'**
+  String get integrationSync;
+
+  /// No description provided for @integrationSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Channel data refreshed'**
+  String get integrationSynced;
+
+  /// No description provided for @integrationMetaConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Account connected successfully'**
+  String get integrationMetaConnected;
+
+  /// No description provided for @integrationMetaFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not connect the account'**
+  String get integrationMetaFailed;
+
+  /// No description provided for @integrationMetaFailedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed: {reason}'**
+  String integrationMetaFailedReason(String reason);
+
+  /// No description provided for @integrationOAuthFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth could not be completed'**
+  String get integrationOAuthFailed;
+
+  /// No description provided for @integrationOAuthWebOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect this platform from the web app'**
+  String get integrationOAuthWebOnly;
 
   /// No description provided for @navInvoices.
   ///
@@ -6325,6 +6493,12 @@ abstract class AppLocalizations {
   /// **'Whiz could not send that message. Try again.'**
   String get agentSendFailed;
 
+  /// No description provided for @agentCalendarUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar updated'**
+  String get agentCalendarUpdated;
+
   /// No description provided for @agentConfirm.
   ///
   /// In en, this message translates to:
@@ -6334,7 +6508,7 @@ abstract class AppLocalizations {
   /// No description provided for @agentPhasePlanning.
   ///
   /// In en, this message translates to:
-  /// **'Planning the next steps…'**
+  /// **'Planning…'**
   String get agentPhasePlanning;
 
   /// No description provided for @agentPhaseWorking.
@@ -6348,6 +6522,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Writing your answer…'**
   String get agentPhaseWriting;
+
+  /// No description provided for @agentStreamPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get agentStreamPlan;
+
+  /// No description provided for @agentStreamSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps'**
+  String get agentStreamSteps;
+
+  /// No description provided for @agentStreamAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer'**
+  String get agentStreamAnswer;
+
+  /// No description provided for @agentStreamToolCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No tools needed} =1{1 tool queued} other{{count} tools queued}}'**
+  String agentStreamToolCount(int count);
 
   /// No description provided for @messagesStatus.
   ///
@@ -9964,6 +10162,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Instagram-style feed planner'**
   String get clientManageGridBody;
+
+  /// No description provided for @clientManageAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get clientManageAnalytics;
+
+  /// No description provided for @clientManageAnalyticsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach, engagement and followers'**
+  String get clientManageAnalyticsBody;
 
   /// No description provided for @clientManageIntegrations.
   ///

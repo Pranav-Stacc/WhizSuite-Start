@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import {
+  leadListWhere,
+  type StaffLeadScope,
+} from '../../../../shared/tenant/scope-filters';
 
 const LEAD_SELECT = {
   id: true,
@@ -49,9 +53,14 @@ export interface LeadFields {
 export class CrmRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit: number): Promise<LeadRecord[]> {
+  list(
+    organizationId: string,
+    limit: number,
+    scope?: StaffLeadScope,
+  ): Promise<LeadRecord[]> {
+    const base: Prisma.LeadWhereInput = { organizationId };
     return this.prisma.lead.findMany({
-      where: { organizationId },
+      where: scope ? leadListWhere(base, scope) : base,
       select: LEAD_SELECT,
       orderBy: { createdAt: 'desc' },
       take: limit,

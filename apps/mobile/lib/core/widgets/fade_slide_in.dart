@@ -41,8 +41,8 @@ class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStat
     _controller = AnimationController(vsync: this, duration: total)
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed && mounted) {
+          // Collapse to [child] on the next frame; disposing here races AnimatedBuilder.
           setState(() => _done = true);
-          _stop();
         }
       });
     _curve = CurvedAnimation(parent: _controller!, curve: Interval(start, 1, curve: AppMotion.emphasized));
@@ -78,7 +78,6 @@ class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStat
         builder: (context, child) => ExcludeSemantics(
           child: Opacity(
             opacity: curve.value,
-            alwaysIncludeSemantics: true,
             child: Transform.translate(
               offset: Offset(0, (1 - curve.value) * widget.offset),
               child: child,

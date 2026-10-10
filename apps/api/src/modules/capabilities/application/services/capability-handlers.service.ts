@@ -431,6 +431,10 @@ export class CapabilityHandlersService {
           projectId: input.projectId as string | undefined,
           allDay: input.allDay as boolean | undefined,
           syncToGoogle: input.syncToGoogle as boolean | undefined,
+          metadata: {
+            reminderUserIds: [actorId],
+            createdByAgent: true,
+          },
         });
       case 'calendar.update':
         return this.calendar.update(

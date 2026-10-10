@@ -4,7 +4,6 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/widgets/forms.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../domain/member.dart';
 import '../team_labels.dart';
 
 class MemberListFilters {
@@ -36,9 +35,11 @@ Future<MemberListFilters?> showMemberFiltersSheet(
 
   return showAppDialog<MemberListFilters>(
     context,
+    size: AppDialogSize.standard,
     builder: (ctx) => StatefulBuilder(
       builder: (ctx, setState) => AppDialog(
         title: l10n.memberFilterTitle,
+        size: AppDialogSize.standard,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(const MemberListFilters()),

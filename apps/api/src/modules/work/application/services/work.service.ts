@@ -18,6 +18,10 @@ import {
 } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import {
+  projectMatchesScope,
+  taskMatchesScope,
+} from '../../../../shared/tenant/scope-filters';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AuthService } from '../../../identity/application/services/auth.service';
 import {
@@ -96,8 +100,7 @@ export class WorkService {
     const rows = await this.repository.listProjects(
       organizationId,
       limit,
-      TenantContext.clientScope(),
-      TenantContext.projectScope(),
+      TenantContext.projectScopeFilter(),
     );
     return rows.map(toProjectDto);
   }
@@ -105,6 +108,17 @@ export class WorkService {
   async get(organizationId: string, id: string): Promise<ProjectDto> {
     const item = await this.repository.findProject(organizationId, id);
     if (!item) {
+      throw new ProblemDetailsException(
+        {
+          type: 'about:blank',
+          title: 'Not Found',
+          status: 404,
+          code: ErrorCodes.NOT_FOUND,
+        },
+        404,
+      );
+    }
+    if (!projectMatchesScope(item, TenantContext.projectScopeFilter() ?? {})) {
       throw new ProblemDetailsException(
         {
           type: 'about:blank',
@@ -204,7 +218,13 @@ export class WorkService {
   }
 
   async listTasks(organizationId: string, projectId?: string) {
-    const tasks = await this.repository.listTasks(organizationId, projectId);
+    const limit = this.config.get('RESOURCE_LIST_LIMIT', { infer: true });
+    const tasks = await this.repository.listTasks(
+      organizationId,
+      projectId,
+      limit,
+      TenantContext.taskScope(),
+    );
     return this.withAssigneeUsers(organizationId, tasks);
   }
 
@@ -214,11 +234,18 @@ export class WorkService {
     range: { from: Date; to: Date },
     clientIds?: string[],
   ) {
+    const taskScope = TenantContext.taskScope();
+    const mergedScope =
+      clientIds?.length && taskScope
+        ? { ...taskScope, clientIds }
+        : clientIds?.length
+          ? { clientIds }
+          : taskScope;
     return this.repository.listTasksDueInRange(
       organizationId,
       range,
-      clientIds,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+      mergedScope,
     );
   }
 
@@ -228,11 +255,18 @@ export class WorkService {
     range: { from: Date; to: Date },
     clientIds?: string[],
   ) {
+    const projectScope = TenantContext.projectScopeFilter();
+    const mergedScope =
+      clientIds?.length && projectScope
+        ? { ...projectScope, clientIds }
+        : clientIds?.length
+          ? { clientIds }
+          : projectScope;
     return this.repository.listMilestonesDueInRange(
       organizationId,
       range,
-      clientIds,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
+      mergedScope,
     );
   }
 
@@ -534,7 +568,10 @@ export class WorkService {
 
   private async requireTask(organizationId: string, taskId: string) {
     const task = await this.repository.findTask(organizationId, taskId);
-    if (!task) {
+    if (
+      !task ||
+      !taskMatchesScope(task, TenantContext.taskScope() ?? {})
+    ) {
       throw new ProblemDetailsException(
         {
           type: 'about:blank',

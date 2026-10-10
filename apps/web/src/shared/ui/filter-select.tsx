@@ -26,7 +26,7 @@ export function FilterSelect({ name, value, allLabel, options, label, className 
     <Select
       aria-label={label}
       value={value ?? ''}
-      className={cn('h-9 w-auto min-w-40 text-[13px]', pending && 'opacity-70', className)}
+      className={cn('h-9 w-full min-w-0 max-w-full text-[13px] sm:w-auto sm:min-w-40', pending && 'opacity-70', className)}
       onChange={(e) => {
         const next = new URLSearchParams(params.toString());
         if (e.target.value) next.set(name, e.target.value);

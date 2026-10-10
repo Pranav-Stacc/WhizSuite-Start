@@ -10,39 +10,43 @@ import type {
   AgentSessionDto,
   AgentStreamEvent,
 } from '@agency-os/contracts';
-import { Bot, CheckCircle2, Clock, Plus, Send, Sparkles, XCircle } from 'lucide-react';
+import {
+  Bot,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  List,
+  Loader2,
+  Plus,
+  Send,
+  Sparkles,
+  XCircle,
+} from 'lucide-react';
 import {
   confirmPendingAction,
   createSessionAction,
   rejectPendingAction,
 } from '../actions/agent.actions';
 import { AgentMarkdown } from './agent-markdown';
+import {
+  applyStreamEvent,
+  formatStepDetail,
+  formatToolId,
+  type StreamState,
+} from '../utils/agent-stream-state';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { EmptyState } from '@/shared/ui/feedback';
+import { Sheet } from '@/shared/ui/overlays';
 
 interface Message {
   id: string;
   role: string;
   content: string;
   createdAt: string;
-}
-
-interface StreamState {
-  status: string;
-  text: string;
-}
-
-function statusFor(event: AgentStreamEvent): string | null {
-  if (event.type === 'status') {
-    if (event.phase === 'summarizing') return t('agent.phase.summarizing');
-    if (event.phase === 'executing') return t('agent.thinking');
-    return t('agent.phase.planning');
-  }
-  if (event.type === 'tool.start' || event.type === 'tool.result') return t('agent.thinking');
-  return null;
 }
 
 function parseSseEvents(chunk: string): AgentStreamEvent[] {
@@ -96,6 +100,7 @@ export function AgentWorkspace({
   const [stream, setStream] = useState<StreamState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPendingAction, startTransition] = useTransition();
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isStreaming = stream !== null;
 
@@ -137,7 +142,7 @@ export function AgentWorkspace({
     setDraft('');
     setError(null);
     appendMessage('user', text);
-    setStream({ status: t('agent.phase.planning'), text: '' });
+    setStream({ status: t('agent.thinking'), text: '', steps: [] });
 
     let finalText = '';
     try {
@@ -170,18 +175,19 @@ export function AgentWorkspace({
         buffer = buffer.slice(boundary + 2);
 
         for (const event of parseSseEvents(complete)) {
-          if (event.type === 'summary.delta') {
-            finalText += event.text;
-            const next = finalText;
-            setStream({ status: t('agent.phase.summarizing'), text: next });
-          } else if (event.type === 'done') {
+          if (event.type === 'done') {
             finalText = event.response || finalText;
             finished = true;
           } else if (event.type === 'error') {
             throw new Error(event.message);
           } else {
-            const status = statusFor(event);
-            if (status) setStream((prev) => ({ status, text: prev?.text ?? '' }));
+            setStream((prev) => {
+              const next = applyStreamEvent(prev, event);
+              if (event.type === 'summary.delta') {
+                finalText = next.text;
+              }
+              return next;
+            });
           }
         }
       }
@@ -215,55 +221,32 @@ export function AgentWorkspace({
           embedded ? 'min-h-0 flex-1' : 'min-h-[min(78vh,46rem)]',
         )}
       >
-        <aside className="border-b border-border-soft/80 p-3 lg:border-b-0 lg:border-r">
-          <div className="mb-3 flex items-center justify-between gap-2 px-1">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
-              {t('agent.sessions')}
-            </h2>
-            <form
-              action={async () => {
-                const created = await createSessionAction();
-                if (created?.id) router.push(sessionHref(created.id));
-              }}
-            >
-              <Button type="submit" size="icon-sm" variant="ghost" aria-label={t('agent.newSession')}>
-                <Plus className="size-4" />
-              </Button>
-            </form>
-          </div>
-          <ul
-            className={cn(
-              'max-h-64 space-y-0.5 overflow-y-auto',
-              embedded ? 'lg:max-h-[calc(70vh-5.5rem)]' : 'lg:max-h-[calc(78vh-5.5rem)]',
-            )}
-          >
-            {sessions.map((s) => (
-              <li key={s.id}>
-                <a
-                  href={sessionHref(s.id)}
-                  className={cn(
-                    'group flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition',
-                    sessionId === s.id
-                      ? 'bg-primary/10 text-foreground'
-                      : 'text-muted hover:bg-muted/50 hover:text-foreground',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'size-1.5 shrink-0 rounded-full',
-                      sessionId === s.id ? 'bg-primary' : 'bg-border-soft group-hover:bg-muted-foreground/40',
-                    )}
-                  />
-                  <span className="truncate">{s.title ?? t('agent.newSession')}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+        <aside className="hidden border-b border-border-soft/80 p-3 lg:block lg:border-b-0 lg:border-r">
+          <SessionList
+            sessions={sessions}
+            sessionId={sessionId}
+            sessionHref={sessionHref}
+            onCreate={async () => {
+              const created = await createSessionAction();
+              if (created?.id) router.push(sessionHref(created.id));
+            }}
+            maxHeightClass={embedded ? 'lg:max-h-[calc(70vh-5.5rem)]' : 'lg:max-h-[calc(78vh-5.5rem)]'}
+          />
         </aside>
 
         <section className="flex min-h-0 flex-col">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft/80 px-4 py-3">
-            <div className="flex items-center gap-3">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-soft/80 px-3 py-3 sm:px-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="lg:hidden"
+                aria-label={t('agent.sessions')}
+                onClick={() => setSessionsOpen(true)}
+              >
+                <List className="size-4" />
+              </Button>
               <div className="relative flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/20 to-amber-500/10 text-sky-300 ring-1 ring-sky-500/20">
                 <Sparkles className="size-4" />
                 {isStreaming ? (
@@ -280,12 +263,12 @@ export function AgentWorkspace({
               </div>
             </div>
             {definitions.length > 0 ? (
-              <label className="flex items-center gap-2 text-xs text-muted">
-                {t('agent.pickAgent')}
+              <label className="flex w-full flex-col gap-1 text-xs text-muted sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                <span className="shrink-0">{t('agent.pickAgent')}</span>
                 <select
                   value={agentDefinitionId}
                   onChange={(e) => setAgentDefinitionId(e.target.value)}
-                  className="rounded-lg border border-border-soft bg-surface-2/80 px-2 py-1 text-foreground"
+                  className="w-full rounded-lg border border-border-soft bg-surface-2/80 px-2 py-1.5 text-foreground sm:w-auto"
                 >
                   <option value="">{t('agent.pickAgent.default')}</option>
                   {definitions.map((d) => (
@@ -297,6 +280,23 @@ export function AgentWorkspace({
               </label>
             ) : null}
           </header>
+
+          <Sheet open={sessionsOpen} onOpenChange={setSessionsOpen} title={t('agent.sessions')} width="max-w-sm" side="left">
+            <SessionList
+              sessions={sessions}
+              sessionId={sessionId}
+              sessionHref={sessionHref}
+              onCreate={async () => {
+                const created = await createSessionAction();
+                if (created?.id) {
+                  setSessionsOpen(false);
+                  router.push(sessionHref(created.id));
+                }
+              }}
+              onSelect={() => setSessionsOpen(false)}
+              maxHeightClass="max-h-[70dvh]"
+            />
+          </Sheet>
 
           <div
             className="flex-1 space-y-4 overflow-y-auto px-4 py-5"
@@ -328,7 +328,20 @@ export function AgentWorkspace({
                 {messages.map((m) => (
                   <MessageBubble key={m.id} role={m.role} content={m.content} />
                 ))}
-                {stream ? <StreamingBubble stream={stream} /> : null}
+                {stream ? (
+                  <StreamingBubble
+                    stream={stream}
+                    onToggleStep={(index) =>
+                      setStream((prev) => {
+                        if (!prev) return prev;
+                        const steps = prev.steps.map((step, i) =>
+                          i === index ? { ...step, expanded: !step.expanded } : step,
+                        );
+                        return { ...prev, steps };
+                      })
+                    }
+                  />
+                ) : null}
                 {error ? (
                   <div
                     role="alert"
@@ -425,7 +438,7 @@ export function AgentWorkspace({
           </footer>
         </section>
 
-        <aside className="border-t border-border-soft/80 p-4 lg:border-t-0 lg:border-l">
+        <aside className="hidden border-t border-border-soft/80 p-4 lg:block lg:border-t-0 lg:border-l">
           <h3 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
             <Clock className="size-3.5" />
             {t('agent.runs')}
@@ -472,24 +485,82 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
   );
 }
 
-function StreamingBubble({ stream }: { stream: StreamState }) {
+function StreamingBubble({
+  stream,
+  onToggleStep,
+}: {
+  stream: StreamState;
+  onToggleStep: (index: number) => void;
+}) {
+  const showCursor = stream.text.length > 0 && stream.status === t('agent.phase.summarizing');
+
   return (
     <div className="mr-auto max-w-[90%]">
       <div className="rounded-2xl rounded-tl-md border border-border-soft/70 bg-surface-2/70 px-4 py-3 text-sm shadow-sm">
-        {stream.text ? (
-          <>
-            <AgentMarkdown content={stream.text} />
-            <span
-              aria-hidden
-              className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-sky-400/80 align-middle"
-            />
-          </>
-        ) : (
-          <div className="flex items-center gap-3 text-muted">
-            <TypingDots />
-            <span className="text-xs">{stream.status}</span>
+        <div className="mb-3 flex items-center gap-3 text-muted">
+          {stream.text ? null : <TypingDots />}
+          <span className="text-xs font-medium">{stream.statusDetail ?? stream.status}</span>
+        </div>
+
+        {stream.steps.length > 0 ? (
+          <div className="mb-3 space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+              {t('agent.stream.steps')}
+            </p>
+            {stream.steps.map((step, index) => {
+              const detail = formatStepDetail(step);
+              return (
+                <div key={`${step.callId ?? step.toolId}-${index}`} className="rounded-lg border border-border-soft/60 bg-surface/40">
+                  <button
+                    type="button"
+                    className="flex w-full items-start gap-2 px-2.5 py-2 text-left"
+                    onClick={() => detail && onToggleStep(index)}
+                    disabled={!detail}
+                  >
+                    {step.running ? (
+                      <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-sky-400" />
+                    ) : step.ok ? (
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
+                    ) : (
+                      <XCircle className="mt-0.5 size-4 shrink-0 text-red-400" />
+                    )}
+                    <span className="min-w-0 flex-1 text-xs font-medium">{formatToolId(step.toolId)}</span>
+                    {detail ? (
+                      step.expanded ? (
+                        <ChevronDown className="size-4 shrink-0 text-muted" />
+                      ) : (
+                        <ChevronRight className="size-4 shrink-0 text-muted" />
+                      )
+                    ) : null}
+                  </button>
+                  {step.expanded && detail ? (
+                    <pre className="overflow-x-auto border-t border-border-soft/50 px-2.5 py-2 text-[11px] leading-relaxed text-muted">
+                      {detail}
+                    </pre>
+                  ) : null}
+                  {!step.expanded && step.error ? (
+                    <p className="px-2.5 pb-2 text-[11px] text-red-300">{step.error}</p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
-        )}
+        ) : null}
+
+        {stream.text ? (
+          <div>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
+              {t('agent.stream.answer')}
+            </p>
+            <AgentMarkdown content={stream.text} />
+            {showCursor ? (
+              <span
+                aria-hidden
+                className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-sky-400/80 align-middle"
+              />
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -506,5 +577,58 @@ function TypingDots() {
         />
       ))}
     </span>
+  );
+}
+
+function SessionList({
+  sessions,
+  sessionId,
+  sessionHref,
+  onCreate,
+  onSelect,
+  maxHeightClass,
+}: {
+  sessions: AgentSessionDto[];
+  sessionId?: string;
+  sessionHref: (id: string) => string;
+  onCreate: () => void | Promise<void>;
+  onSelect?: () => void;
+  maxHeightClass?: string;
+}) {
+  return (
+    <>
+      <div className="mb-3 flex items-center justify-between gap-2 px-1">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
+          {t('agent.sessions')}
+        </h2>
+        <Button type="button" size="icon-sm" variant="ghost" aria-label={t('agent.newSession')} onClick={() => void onCreate()}>
+          <Plus className="size-4" />
+        </Button>
+      </div>
+      <ul className={cn('space-y-0.5 overflow-y-auto', maxHeightClass ?? 'max-h-64')}>
+        {sessions.map((s) => (
+          <li key={s.id}>
+            <a
+              href={sessionHref(s.id)}
+              onClick={onSelect}
+              className={cn(
+                'group flex items-center gap-2 rounded-xl px-3 py-2 text-sm transition',
+                sessionId === s.id
+                  ? 'bg-primary/10 text-foreground'
+                  : 'text-muted hover:bg-muted/50 hover:text-foreground',
+              )}
+            >
+              <span
+                className={cn(
+                  'size-1.5 shrink-0 rounded-full',
+                  sessionId === s.id ? 'bg-primary' : 'bg-border-soft group-hover:bg-muted-foreground/40',
+                )}
+              />
+              <span className="truncate">{s.title ?? t('agent.newSession')}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

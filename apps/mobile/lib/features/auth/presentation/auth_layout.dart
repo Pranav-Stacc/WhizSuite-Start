@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/fade_slide_in.dart';
+import '../../../l10n/app_localizations.dart';
 /// Immersive frame shared by sign-in and registration — brand-first, one composition.
 class AuthLayout extends StatelessWidget {
   const AuthLayout({required this.title, required this.subtitle, required this.form, required this.footer, super.key});
@@ -20,6 +20,7 @@ class AuthLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: tokens.bg,
       body: Stack(
@@ -41,7 +42,16 @@ class AuthLayout extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const AppLogo.primary(height: 40),
+                              Text(
+                                l10n.authHeroEyebrow,
+                                style: text.displaySmall?.copyWith(
+                                  color: tokens.fg,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 42,
+                                  height: 1.02,
+                                  letterSpacing: -1.6,
+                                ),
+                              ),
                               SizedBox(height: tokens.md),
                               const _BrandAccentBar(),
                             ],

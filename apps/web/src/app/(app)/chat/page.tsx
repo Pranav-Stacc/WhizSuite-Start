@@ -75,8 +75,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     };
   }
 
-  const selected =
-    whizActive ? null : roomId ? await getRoom(roomId) : (rooms[0] ?? null);
+  const selected = whizActive ? null : roomId ? await getRoom(roomId) : null;
   const page = selected
     ? await listMessages(selected.id)
     : { items: [], nextCursor: null, hasMore: false };

@@ -1,149 +1,114 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/async_value_view.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/page_scaffold.dart';
-import '../../../core/widgets/resource_list.dart';
 import '../../../core/widgets/state_views.dart';
-import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../access/presentation/permission_gate.dart';
 import '../../directory/application/directory_providers.dart';
-import '../../directory/domain/directory_entry.dart';
 import '../application/integrations_controller.dart';
-import '../domain/integration_connection.dart';
-import 'connection_card.dart';
-import 'connection_forms.dart';
-import 'integration_labels.dart';
+import '../domain/platform_channel.dart';
+import 'channel_row.dart';
 
 class IntegrationsScreen extends ConsumerStatefulWidget {
-  const IntegrationsScreen({this.initialClientId, super.key});
+  const IntegrationsScreen({
+    this.initialClientId,
+    this.oauthResult,
+    super.key,
+  });
 
   final String? initialClientId;
+  final String? oauthResult;
 
   @override
   ConsumerState<IntegrationsScreen> createState() => _IntegrationsScreenState();
 }
 
 class _IntegrationsScreenState extends ConsumerState<IntegrationsScreen> {
-  String? _status;
-  late final String? _clientId = widget.initialClientId;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showOAuthToast());
+  }
 
-  Future<void> _connect() async {
+  void _showOAuthToast() {
+    final meta = widget.oauthResult;
+    if (meta == null) return;
     final l10n = AppLocalizations.of(context);
-    final items = ref.read(integrationConnectionsProvider).value ?? const <IntegrationConnection>[];
-    final created = await showConnectForm(context, ref, providers: knownProviders(items));
-    if (created && mounted) showToast(context, l10n.integrationCreatedToast);
+    if (meta == 'connected') {
+      showToast(context, l10n.integrationMetaConnected);
+    } else if (meta == 'error') {
+      showToast(context, l10n.integrationMetaFailed);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    final connections = ref.watch(integrationConnectionsProvider);
-    final clients = ref.watch(clientDirectoryProvider).value ?? Directory.empty;
-    final items = connections.value ?? const <IntegrationConnection>[];
-    final connected = items.where((c) => c.status == IntegrationConnectionStatuses.connected).length;
-    final pending = items.where((c) => c.status == IntegrationConnectionStatuses.pending).length;
-    final issues = items
-        .where(
-          (c) =>
-              c.status == IntegrationConnectionStatuses.error ||
-              c.status == IntegrationConnectionStatuses.disconnected,
-        )
-        .length;
-    final connectButton = PermissionGate(
-      anyOf: const [Permissions.integrationsManage],
-      child: CreateFab(label: l10n.integrationConnect, icon: Icons.add_link, onPressed: _connect),
-    );
+    final clientId = widget.initialClientId;
+    final channels = ref.watch(platformChannelsProvider(clientId));
+    final clients = ref.watch(clientDirectoryProvider).value;
 
     return PageScaffold(
       title: l10n.integrationsTitle,
-      floatingActionButton: connectButton,
-      body: ResourceList<IntegrationConnection>(
-        value: connections,
-        onRefresh: () => ref.refresh(integrationConnectionsProvider.future),
-        minTileWidth: 360,
-        tileHeight: 176,
-        searchHint: l10n.integrationsSearch,
-        matches: (connection, query) => [
-          integrationProviderLabel(l10n, connection),
-          connection.accountHandle,
-          clients.nameOf(connection.clientId),
-        ].any((value) => value?.toLowerCase().contains(query) ?? false),
-        filter: (connection) =>
-            (_clientId == null || connection.clientId == _clientId) &&
-            (_status == null || connection.status == _status),
-        sort: (a, b) {
-          final byStatus = a.statusRank.compareTo(b.statusRank);
-          return byStatus != 0 ? byStatus : b.updatedAt.compareTo(a.updatedAt);
-        },
-        header: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (items.isNotEmpty) ...[
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final tiles = [
-                    MetricTile(
-                      label: l10n.integrationKpiConnected,
-                      icon: Icons.link,
-                      value: '$connected',
-                      tone: connected > 0 ? StatusTone.success : StatusTone.neutral,
-                      onTap: () => setState(() => _status = IntegrationConnectionStatuses.connected),
-                    ),
-                    MetricTile(
-                      label: l10n.integrationKpiPending,
-                      icon: Icons.hourglass_empty,
-                      value: '$pending',
-                      onTap: () => setState(() => _status = IntegrationConnectionStatuses.pending),
-                    ),
-                    MetricTile(
-                      label: l10n.integrationKpiIssues,
-                      icon: Icons.warning_amber_rounded,
-                      value: '$issues',
-                      tone: issues > 0 ? StatusTone.danger : StatusTone.neutral,
-                      onTap: () => setState(() => _status = IntegrationConnectionStatuses.error),
-                    ),
-                  ];
-                  final columns = gridColumns(constraints.maxWidth, minTileWidth: 140, max: tiles.length);
-                  final width = (constraints.maxWidth - tokens.md * (columns - 1)) / columns;
-                  return Wrap(
-                    spacing: tokens.md,
-                    runSpacing: tokens.md,
-                    children: [for (final tile in tiles) SizedBox(width: width, child: tile)],
-                  );
-                },
-              ),
-              SizedBox(height: tokens.md),
-            ],
-            FilterBar<String>(
-              options: integrationStatusOrder,
-              selected: _status,
-              labelOf: (status) => integrationStatusLabel(l10n, status),
-              countOf: (status) => status == null ? items.length : items.where((c) => c.status == status).length,
-              onSelected: (status) => setState(() => _status = status),
-            ),
-          ],
-        ),
+      body: AsyncValueView<List<PlatformChannel>>(
+        value: channels,
+        onRetry: () => ref.invalidate(platformChannelsProvider(clientId)),
+        isEmpty: (items) => items.isEmpty,
         empty: EmptyState(
           icon: Icons.extension_outlined,
           title: l10n.integrationsEmpty,
           body: l10n.integrationsEmptyBody,
-          action: PermissionGate(
-            anyOf: const [Permissions.integrationsManage],
-            child: FilledButton.icon(
-              onPressed: _connect,
-              icon: const Icon(Icons.add_link),
-              label: Text(l10n.integrationConnect),
-            ),
-          ),
         ),
-        itemBuilder: (context, connection) =>
-            ConnectionCard(connection: connection, clientName: clients.nameOf(connection.clientId)),
+        data: (rows) {
+          final grouped = <String, List<PlatformChannel>>{};
+          for (final row in rows) {
+            grouped.putIfAbsent(row.clientId, () => []).add(row);
+          }
+          final clientIds = grouped.keys.toList()
+            ..sort((a, b) => (clients?.nameOf(a) ?? a).compareTo(clients?.nameOf(b) ?? b));
+
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(platformChannelsProvider(clientId).future),
+            child: ListView(
+              padding: EdgeInsets.all(tokens.lg),
+              children: [
+                if (clientId == null)
+                  Text(
+                    l10n.integrationsChannelsHint,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted),
+                  ),
+                for (final id in clientIds) ...[
+                  if (clientId == null) ...[
+                    SizedBox(height: tokens.lg),
+                    Text(
+                      clients?.nameOf(id) ?? l10n.valueUnknown,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    SizedBox(height: tokens.sm),
+                  ],
+                  SurfaceCard(
+                    child: Column(
+                      children: [
+                        for (final (i, channel) in grouped[id]!.indexed) ...[
+                          if (i > 0) Divider(height: 1, color: tokens.border),
+                          ChannelRow(
+                            channel: channel,
+                            clientName: clients?.nameOf(id) ?? l10n.valueUnknown,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

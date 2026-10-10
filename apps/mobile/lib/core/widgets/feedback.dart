@@ -38,8 +38,11 @@ Future<bool> confirmAction(
   final scheme = Theme.of(context).colorScheme;
   final confirmed = await showAppDialog<bool>(
     context,
+    size: AppDialogSize.compact,
     builder: (ctx) => AppDialog(
       title: title,
+      size: AppDialogSize.compact,
+      scrollable: false,
       actions: [
         OutlinedButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.cancel)),
         FilledButton(

@@ -7,9 +7,14 @@ import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_value_view.dart';
 import '../../../core/widgets/error_message.dart';
 import '../../../core/widgets/fade_slide_in.dart';
+import '../../../core/widgets/feedback.dart';
 import '../../../l10n/app_localizations.dart';
+import '../application/notification_delivery.dart';
 import '../application/preferences_controller.dart';
 import '../domain/app_notification.dart';
+import '../infrastructure/notification_permission_store.dart';
+import '../infrastructure/push_messaging.dart';
+import 'notification_permission_primer.dart';
 
 class NotificationPreferencesScreen extends ConsumerWidget {
   const NotificationPreferencesScreen({super.key});
@@ -30,6 +35,8 @@ class NotificationPreferencesScreen extends ConsumerWidget {
       }
     }
 
+    final push = ref.watch(pushMessagingProvider);
+
     return Scaffold(
       appBar: AppBar(title: Text(l10n.preferencesTitle)),
       body: AsyncValueView(
@@ -38,6 +45,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
         data: (items) => ListView(
           padding: EdgeInsets.all(tokens.lg),
           children: [
+            if (push.isSupported) _PushPermissionBanner(),
             Text(l10n.preferencesBody, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted)),
             SizedBox(height: tokens.lg),
             for (final (index, preference) in items.indexed)
@@ -49,6 +57,78 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PushPermissionBanner extends ConsumerStatefulWidget {
+  const _PushPermissionBanner();
+
+  @override
+  ConsumerState<_PushPermissionBanner> createState() => _PushPermissionBannerState();
+}
+
+class _PushPermissionBannerState extends ConsumerState<_PushPermissionBanner> {
+  var _authorized = true;
+  var _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final push = ref.read(pushMessagingProvider);
+    await push.prepare();
+    final authorized = await push.isAuthorized();
+    if (mounted) setState(() {
+      _checked = true;
+      _authorized = authorized;
+    });
+  }
+
+  Future<void> _enable() async {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final enable = await showNotificationPermissionPrimer(context);
+    if (enable != true || !mounted) {
+      return;
+    }
+    await ref.read(notificationPermissionStoreProvider).markPrimerCompleted();
+    final granted = await ref.read(notificationDeliveryProvider).enablePush(locale: locale);
+    if (!mounted) return;
+    if (granted) {
+      showToast(context, l10n.notificationPrimerEnable);
+    }
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_checked || _authorized) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final tokens = context.tokens;
+    return Padding(
+      padding: EdgeInsets.only(bottom: tokens.lg),
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(tokens.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(l10n.notificationPushDisabledTitle, style: Theme.of(context).textTheme.titleMedium),
+              SizedBox(height: tokens.sm),
+              Text(
+                l10n.notificationPushDisabledBody,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted),
+              ),
+              SizedBox(height: tokens.md),
+              FilledButton(onPressed: _enable, child: Text(l10n.notificationPushEnableAction)),
+            ],
+          ),
         ),
       ),
     );

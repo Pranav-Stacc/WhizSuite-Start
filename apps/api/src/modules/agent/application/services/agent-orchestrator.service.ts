@@ -14,6 +14,8 @@ export interface AgentOrchestratorRequest {
   message: string;
   multiAgent?: boolean;
   systemPrompt?: string;
+  /** Overrides the default markdown summary voice (e.g. plain-text team chat). */
+  summaryPrompt?: string;
   subAgents?: Array<{ name: string; role: string }>;
   toolIds?: string[];
   history?: AgentHistoryMessage[];
@@ -104,7 +106,7 @@ export class AgentOrchestratorService {
         },
         body: JSON.stringify(this.toBody(request)),
         signal: AbortSignal.timeout(
-          this.config.get('AGENT_SERVICE_TIMEOUT_MS', { infer: true }),
+          this.config.get('AGENT_SERVICE_STREAM_TIMEOUT_MS', { infer: true }),
         ),
       });
 
@@ -205,6 +207,7 @@ export class AgentOrchestratorService {
       message: request.message,
       multi_agent: request.multiAgent ?? false,
       system_prompt: request.systemPrompt,
+      summary_prompt: request.summaryPrompt,
       sub_agents: request.subAgents,
       tool_ids: request.toolIds,
       history: request.history ?? [],

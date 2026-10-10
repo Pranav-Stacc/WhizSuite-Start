@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../theme/app_tokens.dart';
-import 'fade_slide_in.dart';
 import 'skeleton.dart';
 import 'state_views.dart';
 import 'surfaces.dart';
@@ -265,8 +264,7 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
                 sliver: SliverList.separated(
                   itemCount: visible.length,
                   separatorBuilder: (_, _) => SizedBox(height: widget.itemSpacing ?? tokens.md),
-                  itemBuilder: (context, index) =>
-                      FadeSlideIn(index: index, child: widget.itemBuilder(context, visible[index])),
+                  itemBuilder: (context, index) => widget.itemBuilder(context, visible[index]),
                 ),
               )
             else
@@ -280,8 +278,7 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
                     mainAxisExtent: widget.tileHeight,
                   ),
                   itemCount: visible.length,
-                  itemBuilder: (context, index) =>
-                      FadeSlideIn(index: index, child: widget.itemBuilder(context, visible[index])),
+                  itemBuilder: (context, index) => widget.itemBuilder(context, visible[index]),
                 ),
               ),
           ];

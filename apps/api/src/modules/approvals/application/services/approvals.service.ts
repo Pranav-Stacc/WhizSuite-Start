@@ -15,6 +15,7 @@ import {
   evaluateApprovalAction,
   parseApproverSpec,
 } from '../domain/approval-evaluation';
+import { SubjectScopeService } from '../../../../shared/tenant/subject-scope.service';
 import { ApproverResolutionService } from './approver-resolution.service';
 
 const ENTITY_TYPE = 'approvalRequest';
@@ -30,27 +31,42 @@ export class ApprovalsService {
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly subjectScope: SubjectScopeService,
   ) {}
 
-  list(organizationId: string) {
-    return this.repository.list(
+  async list(organizationId: string) {
+    const rows = await this.repository.list(
       organizationId,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
     );
+    return this.subjectScope.filterSubjects(organizationId, rows);
   }
 
   /** Pending approvals for the calendar feed (dueAt, else createdAt). */
-  listPendingInRange(organizationId: string, range: { from: Date; to: Date }) {
-    return this.repository.listPendingInRange(
+  async listPendingInRange(
+    organizationId: string,
+    range: { from: Date; to: Date },
+  ) {
+    const rows = await this.repository.listPendingInRange(
       organizationId,
       range,
       this.config.get('RESOURCE_LIST_LIMIT', { infer: true }),
     );
+    return this.subjectScope.filterSubjects(organizationId, rows);
   }
 
   async get(organizationId: string, id: string) {
     const item = await this.repository.findById(organizationId, id);
-    if (!item) throw notFound('Approval not found');
+    if (
+      !item ||
+      !(await this.subjectScope.canAccessSubject(
+        organizationId,
+        item.subjectType,
+        item.subjectId,
+      ))
+    ) {
+      throw notFound('Approval not found');
+    }
     return item;
   }
 

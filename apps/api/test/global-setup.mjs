@@ -10,6 +10,10 @@ const flagFile = path.join(testDir, '.e2e-db-unavailable');
 export default async function globalSetup() {
   process.env.NODE_ENV = 'test';
   process.env.OUTBOX_RELAY_ENABLED = 'false';
+  // Prefer the e2e Redis container (6380) over a legacy Windows Redis on 6379 (<5).
+  if (!process.env.REDIS_URL || process.env.REDIS_URL.includes(':6379')) {
+    process.env.REDIS_URL = 'redis://127.0.0.1:6380';
+  }
   fs.rmSync(flagFile, { force: true });
 
   try {

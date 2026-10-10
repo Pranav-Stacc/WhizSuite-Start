@@ -20,6 +20,10 @@ final projectDirectoryProvider = FutureProvider<Directory>(
   (ref) => _load(ref, Permissions.projectsView, (repo) => repo.projects()),
 );
 
+final teamDirectoryProvider = FutureProvider<Directory>(
+  (ref) => _load(ref, Permissions.orgView, (repo) => repo.teams()),
+);
+
 /// Members keyed by user id; `parentId` carries the membership type.
 final memberDirectoryProvider = FutureProvider<Directory>(
   (ref) => _load(ref, Permissions.membersView, (repo) => repo.members()),

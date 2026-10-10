@@ -40,7 +40,6 @@ export async function updateRoleAction(id: string, raw: unknown): Promise<Action
     if (!parsed.ok) return parsed.result;
     const before = await rolesRepository.get(id);
     if (!before) return fail(t('toast.failed'));
-    if (before.isSystem) return fail(t('roles.system.protected'));
     await rolesRepository.update(id, {
       name: parsed.data.name,
       description: parsed.data.description ?? '',

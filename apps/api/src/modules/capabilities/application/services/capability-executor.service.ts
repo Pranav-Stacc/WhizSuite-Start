@@ -139,6 +139,50 @@ export class CapabilityExecutorService {
     return { status: 'ok', output };
   }
 
+  async executeBatch(
+    organizationId: string,
+    actor: AuthenticatedUser,
+    calls: ExecuteCapabilityInput[],
+  ): Promise<
+    Array<{
+      toolId: string;
+      ok: boolean;
+      result?: CapabilityExecuteResult;
+      error?: string;
+    }>
+  > {
+    const maxSize = this.config.get('CAPABILITY_BATCH_MAX_SIZE', { infer: true });
+    const concurrency = this.config.get('CAPABILITY_BATCH_CONCURRENCY', {
+      infer: true,
+    });
+    const slice = calls.slice(0, maxSize);
+    const results: Array<{
+      toolId: string;
+      ok: boolean;
+      result?: CapabilityExecuteResult;
+      error?: string;
+    }> = [];
+
+    for (let offset = 0; offset < slice.length; offset += concurrency) {
+      const chunk = slice.slice(offset, offset + concurrency);
+      const chunkResults = await Promise.all(
+        chunk.map(async (call) => {
+          try {
+            const result = await this.execute(organizationId, actor, call);
+            return { toolId: call.toolId, ok: true, result };
+          } catch (error) {
+            const message =
+              error instanceof Error ? error.message : 'Tool execution failed';
+            return { toolId: call.toolId, ok: false, error: message };
+          }
+        }),
+      );
+      results.push(...chunkResults);
+    }
+
+    return results;
+  }
+
   private async loadConfirmablePendingAction(
     organizationId: string,
     actor: AuthenticatedUser,

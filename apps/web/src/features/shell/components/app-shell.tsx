@@ -43,9 +43,9 @@ export async function AppShell({ session, children }: { session: Session; childr
         {t('shell.skip')}
       </a>
       <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-8 lg:gap-8 lg:px-12">
+        <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-8 lg:gap-8 lg:px-12">
           <MobileMenu permissions={permissions} badges={badges} module={workspace.module} orgSlug={session.orgSlug} />
-          <Link href={home} className="min-w-0 max-w-56 outline-none" aria-label={session.orgName}>
+          <Link href={home} className="min-w-0 max-w-[9rem] outline-none sm:max-w-56" aria-label={session.orgName}>
             <Logo name={session.orgName} />
           </Link>
           <WorkspaceSwitcher

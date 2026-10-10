@@ -12,7 +12,6 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/error_message.dart';
-import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/state_views.dart';
@@ -243,32 +242,30 @@ class _MessageListState extends ConsumerState<_MessageList> {
           for (final day in days) ...[
             _DaySeparator(day: day.day),
             for (final (i, message) in day.messages.indexed)
-              FadeSlideIn(
-                index: i,
-                child: Builder(
-                  builder: (_) {
-                    final parent = message.replyToId == null ? null : byId[message.replyToId];
-                    return _Bubble(
-                      message: message,
-                      parent: parent,
-                      author: names.of(message),
-                      parentAuthor: parent == null ? null : names.of(parent),
-                      mine: names.isMine(message),
-                      showAuthor: i == 0 ||
-                          day.messages[i - 1].senderId != message.senderId ||
-                          day.messages[i - 1].isSystem != message.isSystem,
-                      onReply: () => widget.onReply(message),
-                      onOpenProfile: message.isSystem || message.senderId.isEmpty
-                          ? null
-                          : () => context.push(TeamRoutes.member(message.senderId)),
-                      onMentionTap: (mention) {
-                        if (mention.type == ChatMentionTypes.user) {
-                          context.push(TeamRoutes.member(mention.targetId));
-                        }
-                      },
-                    );
-                  },
-                ),
+              Builder(
+                key: ValueKey(message.id),
+                builder: (_) {
+                  final parent = message.replyToId == null ? null : byId[message.replyToId];
+                  return _Bubble(
+                    message: message,
+                    parent: parent,
+                    author: names.of(message),
+                    parentAuthor: parent == null ? null : names.of(parent),
+                    mine: names.isMine(message),
+                    showAuthor: i == 0 ||
+                        day.messages[i - 1].senderId != message.senderId ||
+                        day.messages[i - 1].isSystem != message.isSystem,
+                    onReply: () => widget.onReply(message),
+                    onOpenProfile: message.isSystem || message.senderId.isEmpty
+                        ? null
+                        : () => context.push(TeamRoutes.member(message.senderId)),
+                    onMentionTap: (mention) {
+                      if (mention.type == ChatMentionTypes.user) {
+                        context.push(TeamRoutes.member(mention.targetId));
+                      }
+                    },
+                  );
+                },
               ),
           ],
         ],
@@ -368,7 +365,9 @@ class _BubbleState extends State<_Bubble> {
             ? null
             : (widget.parent!.isDeleted ? l10n.messagesDeleted : widget.parent!.body));
 
-    final bubble = GestureDetector(
+    final bubble = ExcludeSemantics(
+      excluding: _drag != 0,
+      child: GestureDetector(
       onLongPress: message.isDeleted ? null : widget.onReply,
       onHorizontalDragUpdate: message.isDeleted
           ? null
@@ -469,6 +468,7 @@ class _BubbleState extends State<_Bubble> {
           ],
         ),
       ),
+    ),
     );
 
     final column = Column(
@@ -552,7 +552,9 @@ class _BubbleState extends State<_Bubble> {
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxWidth),
                     child: message.pending
-                        ? Opacity(opacity: _pendingOpacity, alwaysIncludeSemantics: true, child: column)
+                        ? ExcludeSemantics(
+                            child: Opacity(opacity: _pendingOpacity, child: column),
+                          )
                         : column,
                   ),
                 ],

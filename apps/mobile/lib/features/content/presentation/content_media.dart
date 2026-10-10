@@ -46,10 +46,16 @@ class ContentMediaThumb extends StatelessWidget {
 
 /// Swipeable slides with a position indicator, the core of the post preview.
 class ContentCarousel extends StatefulWidget {
-  const ContentCarousel({required this.media, required this.fallbackIcon, super.key});
+  const ContentCarousel({
+    required this.media,
+    required this.fallbackIcon,
+    this.immersive = false,
+    super.key,
+  });
 
   final List<ContentMedia> media;
   final IconData fallbackIcon;
+  final bool immersive;
 
   @override
   State<ContentCarousel> createState() => _ContentCarouselState();
@@ -88,6 +94,26 @@ class _ContentCarouselState extends State<ContentCarousel> {
             onPageChanged: (page) => setState(() => _page = page),
             itemBuilder: (context, index) => ContentMediaThumb(media: media[index]),
           ),
+          if (widget.immersive && count > 1)
+            Positioned.fill(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: _page > 0 ? () => _go(_page - 1) : null,
+                    ),
+                  ),
+                  const Expanded(flex: 2, child: SizedBox.expand()),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: _page < count - 1 ? () => _go(_page + 1) : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (count > 1) ...[
             PositionedDirectional(
               top: tokens.sm,
@@ -117,16 +143,18 @@ class _ContentCarouselState extends State<ContentCarousel> {
                 ),
               ),
             ),
-            if (_page > 0)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: _NavButton(icon: Icons.chevron_left, tooltip: l10n.contentSlidePrevious, onPressed: () => _go(_page - 1)),
-              ),
-            if (_page < count - 1)
-              Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: _NavButton(icon: Icons.chevron_right, tooltip: l10n.contentSlideNext, onPressed: () => _go(_page + 1)),
-              ),
+            if (!widget.immersive) ...[
+              if (_page > 0)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: _NavButton(icon: Icons.chevron_left, tooltip: l10n.contentSlidePrevious, onPressed: () => _go(_page - 1)),
+                ),
+              if (_page < count - 1)
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: _NavButton(icon: Icons.chevron_right, tooltip: l10n.contentSlideNext, onPressed: () => _go(_page + 1)),
+                ),
+            ],
           ],
         ],
       ),

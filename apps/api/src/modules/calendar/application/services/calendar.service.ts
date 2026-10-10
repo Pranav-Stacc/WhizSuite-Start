@@ -55,6 +55,13 @@ export class CalendarService {
       input.syncToGoogle ?? connection.defaultSyncNewEvents ?? false;
 
     const sourceId = input.sourceId ?? randomUUID();
+    const metadata = {
+      ...(input.metadata ?? {}),
+      reminderUserIds: [
+        actorId,
+        ...reminderUserIdsFromMetadata(input.metadata),
+      ].filter((id, index, ids) => ids.indexOf(id) === index),
+    };
     const item = await this.repository.create(organizationId, {
       sourceType: input.sourceType,
       sourceId,
@@ -62,7 +69,7 @@ export class CalendarService {
       allDay: input.allDay,
       clientId: input.clientId,
       projectId: input.projectId,
-      metadata: input.metadata,
+      metadata,
       startsAt: new Date(input.startsAt),
       endsAt: input.endsAt ? new Date(input.endsAt) : undefined,
       syncToGoogle,
@@ -127,4 +134,11 @@ export class CalendarService {
     );
     return updated;
   }
+}
+
+function reminderUserIdsFromMetadata(metadata: unknown): string[] {
+  if (!metadata || typeof metadata !== 'object') return [];
+  const raw = (metadata as { reminderUserIds?: unknown }).reminderUserIds;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((id): id is string => typeof id === 'string' && id.length > 0);
 }

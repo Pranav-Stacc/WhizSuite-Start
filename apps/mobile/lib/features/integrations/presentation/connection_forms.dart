@@ -3,17 +3,59 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/forms/validators.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../application/integrations_controller.dart';
 import '../domain/integration_connection.dart';
+import '../domain/platform_channel.dart';
 import 'integration_labels.dart';
 
 String? _optional(TextEditingController controller) {
   final text = controller.text.trim();
   return text.isEmpty ? null : text;
+}
+
+/// Demo-mode connect for a single platform channel (handle only).
+Future<bool> showChannelConnectForm(
+  BuildContext context,
+  WidgetRef ref, {
+  required PlatformChannel channel,
+  required String clientName,
+}) {
+  final l10n = AppLocalizations.of(context);
+  final handle = TextEditingController();
+  return showFormSheet(
+    context,
+    title: l10n.integrationConnect,
+    subtitle: l10n.integrationConnectChannelBody(clientName),
+    submitLabel: l10n.integrationConnectSubmit,
+    size: AppDialogSize.compact,
+    fields: (context, _) => [
+      TextFormField(
+        controller: handle,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: l10n.integrationHandle,
+          hintText: l10n.integrationHandleHint,
+        ),
+        autocorrect: false,
+        maxLength: resourceNameMaxLength,
+        validator: Validators(l10n).minLength(1),
+      ),
+    ],
+    onSubmit: () => ref.read(integrationsActionsProvider).connect(
+          ConnectionInput(
+            providerId: channel.platform,
+            clientId: channel.clientId,
+            providerName: channel.platform,
+            accountHandle: handle.text.trim().startsWith('@') ? handle.text.trim() : '@${handle.text.trim()}',
+          ),
+        ),
+  );
 }
 
 /// Links a provider account to the organization (or one client). Resolves to true when created.

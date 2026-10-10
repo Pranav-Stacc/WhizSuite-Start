@@ -7,6 +7,7 @@ import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/error_message.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../core/widgets/status_badge.dart';
@@ -81,6 +82,8 @@ Future<bool> showTaskForm(BuildContext context, WidgetRef ref, {Task? task, Stri
     context,
     title: task == null ? l10n.taskNew : l10n.taskEdit,
     submitLabel: task == null ? l10n.create : l10n.save,
+    size: AppDialogSize.large,
+    presentation: AppDialogPresentation.bottomSheet,
     fields: (context, setState) => [
       OptionField<String>(
         label: l10n.taskProject,

@@ -302,11 +302,8 @@ export class ChatService {
   }
 
   async unreadTotal(organizationId: string, userId: string): Promise<number> {
-    const rows = await this.repository.totalUnreadForUser(
-      organizationId,
-      userId,
-    );
-    return Number(rows[0]?.count ?? 0);
+    const rooms = await this.listRooms(organizationId, userId);
+    return rooms.reduce((total, room) => total + room.unreadCount, 0);
   }
 
   async getRoom(
@@ -856,11 +853,11 @@ export class ChatService {
 
     let replyBody: string;
     try {
-      const result = await this.agentRuns.sendMessage(
+      const result = await this.agentRuns.sendRoomWhizMessage(
         organizationId,
         user,
         session.id,
-        { message: prompt, multiAgent: true },
+        prompt,
       );
       replyBody =
         result.response?.trim() ||

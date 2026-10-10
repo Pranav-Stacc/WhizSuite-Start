@@ -254,6 +254,49 @@ class AppLocalizationsEn extends AppLocalizations {
       'Assignments, approvals and feedback from your agency workspace';
 
   @override
+  String get notificationPrimerTitle => 'Stay in the loop';
+
+  @override
+  String get notificationPrimerSubtitle =>
+      'WhizSuite can notify you about work that matters to you.';
+
+  @override
+  String get notificationPrimerBulletTasks =>
+      'Task assignments and due dates for your role';
+
+  @override
+  String get notificationPrimerBulletApprovals =>
+      'Approval requests waiting on you';
+
+  @override
+  String get notificationPrimerBulletCalendar =>
+      'Calendar reminders and upcoming deadlines';
+
+  @override
+  String get notificationPrimerBulletPreferences =>
+      'You control each type in Settings → Notification preferences';
+
+  @override
+  String get notificationPrimerFootnote =>
+      'We only send alerts you can turn off anytime. Nothing is shared outside your agency.';
+
+  @override
+  String get notificationPrimerEnable => 'Turn on notifications';
+
+  @override
+  String get notificationPrimerNotNow => 'Not now';
+
+  @override
+  String get notificationPushDisabledTitle => 'Push notifications are off';
+
+  @override
+  String get notificationPushDisabledBody =>
+      'Enable push to get task, approval, and reminder alerts on this device.';
+
+  @override
+  String get notificationPushEnableAction => 'Enable push';
+
+  @override
   String get notificationsOpen => 'Open';
 
   @override
@@ -2054,6 +2097,23 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String contentPlannerPostPosition(int current, int total) {
+    return 'Post $current of $total';
+  }
+
+  @override
+  String get contentPlannerPostPrevious => 'Previous post';
+
+  @override
+  String get contentPlannerPostNext => 'Next post';
+
+  @override
+  String get contentPlannerManagePost => 'Manage post';
+
+  @override
+  String get contentPlannerSwipePosts => 'Swipe for the next post';
+
+  @override
   String get contentWorkflowTitle => 'Workflow';
 
   @override
@@ -3187,6 +3247,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get integrationKpiPending => 'Pending';
 
   @override
+  String get integrationsChannelsHint =>
+      'Connect each client\'s social accounts. Instagram and Facebook use secure OAuth.';
+
+  @override
+  String get integrationChannelAvailable => 'Available to connect';
+
+  @override
+  String integrationChannelMeta(String handle, int followers, String synced) {
+    String _temp0 = intl.Intl.pluralLogic(
+      followers,
+      locale: localeName,
+      other: '$followers followers',
+      zero: '—',
+    );
+    return '$handle · $_temp0 · synced $synced';
+  }
+
+  @override
+  String integrationConnectChannelBody(String client) {
+    return 'Link a channel for $client';
+  }
+
+  @override
+  String get integrationSync => 'Sync';
+
+  @override
+  String get integrationSynced => 'Channel data refreshed';
+
+  @override
+  String get integrationMetaConnected => 'Account connected successfully';
+
+  @override
+  String get integrationMetaFailed => 'Could not connect the account';
+
+  @override
+  String integrationMetaFailedReason(String reason) {
+    return 'Connection failed: $reason';
+  }
+
+  @override
+  String get integrationOAuthFailed => 'OAuth could not be completed';
+
+  @override
+  String get integrationOAuthWebOnly =>
+      'Connect this platform from the web app';
+
+  @override
   String get navInvoices => 'Invoices';
 
   @override
@@ -4311,16 +4418,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get agentSendFailed => 'Whiz could not send that message. Try again.';
 
   @override
+  String get agentCalendarUpdated => 'Calendar updated';
+
+  @override
   String get agentConfirm => 'Approve';
 
   @override
-  String get agentPhasePlanning => 'Planning the next steps…';
+  String get agentPhasePlanning => 'Planning…';
 
   @override
   String get agentPhaseWorking => 'Working on it…';
 
   @override
   String get agentPhaseWriting => 'Writing your answer…';
+
+  @override
+  String get agentStreamPlan => 'Plan';
+
+  @override
+  String get agentStreamSteps => 'Steps';
+
+  @override
+  String get agentStreamAnswer => 'Answer';
+
+  @override
+  String agentStreamToolCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tools queued',
+      one: '1 tool queued',
+      zero: 'No tools needed',
+    );
+    return '$_temp0';
+  }
 
   @override
   String messagesStatus(String status) {
@@ -6849,6 +6980,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clientManageGridBody => 'Instagram-style feed planner';
+
+  @override
+  String get clientManageAnalytics => 'Analytics';
+
+  @override
+  String get clientManageAnalyticsBody => 'Reach, engagement and followers';
 
   @override
   String get clientManageIntegrations => 'Integrations';

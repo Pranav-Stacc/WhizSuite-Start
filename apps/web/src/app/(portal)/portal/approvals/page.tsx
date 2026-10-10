@@ -42,6 +42,7 @@ export default async function PortalApprovalsPage({ searchParams }: { searchPara
           posts={posts}
           selectedId={selected?.id}
           hrefs={hrefs}
+          backHref={withQuery(BASE, sp, { post: undefined })}
           aside={
             client ? (
               <PhoneGrid clientId={client.id} clientName={client.name} clientInitials={initials(client.name)} tiles={toGridTiles(posts)} editable={false} tileHrefs={hrefs} selectedId={selected?.id} />

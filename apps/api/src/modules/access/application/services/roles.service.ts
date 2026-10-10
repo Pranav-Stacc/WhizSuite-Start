@@ -38,7 +38,7 @@ function parseRoleInput(input: unknown): RoleInput {
   return parsed.data;
 }
 
-/** Custom roles are editable; system roles back membership types and stay as provisioned. */
+/** Custom and system roles are editable; only custom roles may be deleted. */
 @Injectable()
 export class RolesService {
   constructor(
@@ -153,15 +153,20 @@ export class RolesService {
     });
   }
 
-  private async requireCustomRole(organizationId: string, roleId: string) {
+  private async requireRole(organizationId: string, roleId: string) {
     const role = await this.repository.findRole(organizationId, roleId);
     if (!role) throw notFound();
+    return role;
+  }
+
+  private async requireCustomRole(organizationId: string, roleId: string) {
+    const role = await this.requireRole(organizationId, roleId);
     if (role.isSystem) {
       throw problem(
         HttpStatus.UNPROCESSABLE_ENTITY,
-        'System roles are read-only',
+        'System roles cannot be deleted',
         ErrorCodes.VALIDATION_FAILED,
-        'Create a custom role to grant a different permission set',
+        'Remove assignments before replacing this role with a custom one',
       );
     }
     return role;

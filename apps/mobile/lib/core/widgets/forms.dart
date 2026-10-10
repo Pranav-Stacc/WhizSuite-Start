@@ -48,21 +48,28 @@ class FormErrorBanner extends StatelessWidget {
   }
 }
 
-/// Opens a centered dialog form; resolves to true when submitted successfully.
+/// Opens a form in a dialog or bottom sheet; resolves to true when submitted successfully.
 Future<bool> showFormSheet(
   BuildContext context, {
   required String title,
   required String submitLabel,
   required List<Widget> Function(BuildContext context, StateSetter setState) fields,
   required Future<void> Function() onSubmit,
+  String? subtitle,
+  AppDialogSize size = AppDialogSize.standard,
+  AppDialogPresentation presentation = AppDialogPresentation.dialog,
 }) async {
-  final saved = await showAppDialog<bool>(
+  final saved = await showAppAdaptiveSurface<bool>(
     context,
+    size: size,
+    presentation: presentation,
     builder: (dialogContext) => FormSheet(
       title: title,
+      subtitle: subtitle,
       submitLabel: submitLabel,
       fields: fields,
       onSubmit: onSubmit,
+      size: size,
     ),
   );
   return saved ?? false;
@@ -75,15 +82,17 @@ class FormSheet extends StatefulWidget {
     required this.submitLabel,
     required this.fields,
     required this.onSubmit,
+    this.subtitle,
+    this.size = AppDialogSize.standard,
     super.key,
   });
 
-  static const maxWidth = AppDialogLayout.defaultMaxWidth;
-
   final String title;
+  final String? subtitle;
   final String submitLabel;
   final List<Widget> Function(BuildContext context, StateSetter setState) fields;
   final Future<void> Function() onSubmit;
+  final AppDialogSize size;
 
   @override
   State<FormSheet> createState() => _FormSheetState();
@@ -115,10 +124,16 @@ class _FormSheetState extends State<FormSheet> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final fields = widget.fields(context, setState);
+    final compact = widget.size == AppDialogSize.compact;
+    final body = [
+      FormErrorBanner(message: _error),
+      for (final field in fields) Padding(padding: EdgeInsets.only(bottom: tokens.lg), child: field),
+    ];
+
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: ConstrainedBox(
-        constraints: AppDialogLayout.constraintsOf(context, maxWidth: FormSheet.maxWidth),
+        constraints: AppDialogLayout.constraintsOf(context, size: widget.size),
         child: Form(
           key: _formKey,
           child: Column(
@@ -131,9 +146,21 @@ class _FormSheetState extends State<FormSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Semantics(
-                        header: true,
-                        child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Semantics(
+                            header: true,
+                            child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                          ),
+                          if (widget.subtitle != null) ...[
+                            SizedBox(height: tokens.xs),
+                            Text(
+                              widget.subtitle!,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     IconButton(
@@ -145,16 +172,18 @@ class _FormSheetState extends State<FormSheet> {
                 ),
               ),
               Divider(height: 1, color: tokens.border),
-              Flexible(
-                child: ListView(
+              if (compact)
+                Padding(
                   padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.md),
-                  children: [
-                    FormErrorBanner(message: _error),
-                    for (final field in fields)
-                      Padding(padding: EdgeInsets.only(bottom: tokens.lg), child: field),
-                  ],
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: body),
+                )
+              else
+                Flexible(
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.md),
+                    children: body,
+                  ),
                 ),
-              ),
               Divider(height: 1, color: tokens.border),
               Padding(
                 padding: EdgeInsets.fromLTRB(tokens.lg, tokens.md, tokens.lg, tokens.lg),
@@ -163,6 +192,70 @@ class _FormSheetState extends State<FormSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PickerNone {
+  const _PickerNone();
+}
+
+const _pickerNone = _PickerNone();
+
+/// Read-only row that opens a picker dialog instead of an in-form dropdown.
+class PickerField<T> extends StatelessWidget {
+  const PickerField({
+    required this.label,
+    required this.value,
+    required this.labelOf,
+    required this.onChanged,
+    required this.options,
+    this.dialogTitle,
+    this.allowNone = false,
+    this.noneLabel,
+    super.key,
+  });
+
+  final String label;
+  final T? value;
+  final String Function(T value) labelOf;
+  final ValueChanged<T?> onChanged;
+  final List<T> options;
+  final String? dialogTitle;
+  final bool allowNone;
+  final String? noneLabel;
+
+  Future<void> _pick(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final picked = await showPickerDialog<Object>(
+      context,
+      title: dialogTitle ?? label,
+      size: options.length > 8 ? AppDialogSize.fullscreen : AppDialogSize.large,
+      presentation: options.length > 12 ? AppDialogPresentation.bottomSheet : AppDialogPresentation.dialog,
+      options: [
+        if (allowNone) PickerOption<Object>(value: _pickerNone, label: noneLabel ?? l10n.valueNone),
+        for (final option in options) PickerOption<Object>(value: option as Object, label: labelOf(option)),
+      ],
+    );
+    if (picked == null) return;
+    onChanged(picked == _pickerNone ? null : picked as T);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final display = value == null ? (noneLabel ?? l10n.valueNone) : labelOf(value as T);
+    return InkWell(
+      onTap: () => _pick(context),
+      borderRadius: context.tokens.borderRadius,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.chevron_right),
+        ),
+        isEmpty: value == null,
+        child: Text(display, maxLines: 2, overflow: TextOverflow.ellipsis),
       ),
     );
   }

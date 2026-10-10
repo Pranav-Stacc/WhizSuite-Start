@@ -89,4 +89,14 @@ export class CalendarRepository {
       take: limit,
     });
   }
+
+  listStartingBetween(from: Date, to: Date, limit: number) {
+    return this.prisma.calendarItem.findMany({
+      where: {
+        startsAt: { gte: from, lte: to },
+      },
+      orderBy: { startsAt: 'asc' },
+      take: limit,
+    });
+  }
 }

@@ -13,11 +13,18 @@ export class SearchService {
 
   search(organizationId: string, query: string) {
     const limit = this.config.get('SEARCH_RESULT_LIMIT', { infer: true });
-    return this.repository.search(
-      organizationId,
-      query,
-      limit,
-      TenantContext.clientScope(),
-    );
+    const clientIds = TenantContext.clientScope();
+    const restricted =
+      clientIds !== undefined ||
+      TenantContext.projectScope() !== undefined ||
+      TenantContext.contentScope() !== undefined ||
+      TenantContext.selfOnly();
+    return this.repository.search(organizationId, query, limit, {
+      clientIds,
+      projectIds: TenantContext.projectScope(),
+      contentIds: TenantContext.contentScope(),
+      taskScope: TenantContext.taskScope(),
+      includeLeads: !restricted,
+    });
   }
 }

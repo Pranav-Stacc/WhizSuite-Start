@@ -3,14 +3,15 @@ import { t } from '@/shared/i18n/t';
 import { formatMoney } from '@/shared/lib/format';
 import { Avatar, LogoTile } from '@/shared/ui/avatar';
 import { PlatformStack } from '@/shared/ui/platform';
+import { MobileDataCard, MobileDataHeader, MobileDataRow, ResponsiveDataView } from '@/shared/ui/responsive-data';
 import { StatusBadge } from '@/shared/ui/status';
 import type { Client } from '../data/clients.repository';
 import { HealthPill } from './health-pill';
 
 export function ClientTable({ clients, ownerName }: { clients: Client[]; ownerName: (memberId: string) => string | undefined }) {
-  return (
+  const table = (
     <div className="card-surface overflow-x-auto">
-      <table className="w-full min-w-[760px] text-left text-sm">
+      <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border-soft text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-medium">{t('clients.col.client')}</th>
@@ -60,4 +61,39 @@ export function ClientTable({ clients, ownerName }: { clients: Client[]; ownerNa
       </table>
     </div>
   );
+
+  const cards = clients.map((client) => {
+    const owner = ownerName(client.ownerId);
+    return (
+      <MobileDataCard key={client.id} href={`/clients/${client.id}`}>
+        <MobileDataHeader
+          title={
+            <span className="inline-flex items-center gap-2">
+              <LogoTile name={client.name} color={client.color} size="sm" />
+              {client.name}
+            </span>
+          }
+          subtitle={client.industry}
+          trailing={<StatusBadge kind="client" value={client.status} />}
+        />
+        <MobileDataRow label={t('clients.col.health')}>
+          <HealthPill score={client.health} showLabel />
+        </MobileDataRow>
+        <MobileDataRow label={t('clients.col.retainer')}>{formatMoney(client.retainerMinor)}</MobileDataRow>
+        <MobileDataRow label={t('clients.col.channels')}>
+          <PlatformStack platforms={client.platforms} size="xs" />
+        </MobileDataRow>
+        {owner ? (
+          <MobileDataRow label={t('clients.col.owner')}>
+            <span className="inline-flex items-center gap-2">
+              <Avatar name={owner} size="xs" />
+              {owner}
+            </span>
+          </MobileDataRow>
+        ) : null}
+      </MobileDataCard>
+    );
+  });
+
+  return <ResponsiveDataView table={table} cards={cards} />;
 }

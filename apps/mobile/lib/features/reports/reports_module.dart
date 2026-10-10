@@ -21,7 +21,10 @@ final reportsModule = FeatureModule(
   routes: [
     destinationRoute(
       ReportsRoutes.root,
-      (_) => const ReportsScreen(),
+      (state) => ReportsScreen(
+            initialClientId: state.uri.queryParameters[ReportsRoutes.clientQuery],
+            initialTab: state.uri.queryParameters[ReportsRoutes.tabQuery],
+          ),
       routes: [
         childRoute(
           ':${ReportsRoutes.detailParam}',

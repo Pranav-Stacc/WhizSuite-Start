@@ -1,5 +1,10 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { MembershipType } from '@agency-os/contracts';
+import type {
+  StaffContentScope,
+  StaffProjectScope,
+  StaffTaskScope,
+} from './scope-filters';
 
 export interface TenantContextData {
   organizationId: string;
@@ -15,6 +20,8 @@ export interface TenantContextData {
   staffClientIds?: string[];
   staffProjectIds?: string[];
   staffContentIds?: string[];
+  /** When true, lists are further narrowed to records owned by or assigned to the actor. */
+  staffSelfOnly?: boolean;
   correlationId: string;
   ipAddress?: string;
   userAgent?: string;
@@ -88,12 +95,117 @@ export class TenantContext {
     clientIds?: string[];
     projectIds?: string[];
     contentIds?: string[];
+    selfOnly?: boolean;
   }): void {
     const ctx = storage.getStore();
     if (!ctx) return;
-    if (scope.clientIds) ctx.staffClientIds = scope.clientIds;
-    if (scope.projectIds) ctx.staffProjectIds = scope.projectIds;
-    if (scope.contentIds) ctx.staffContentIds = scope.contentIds;
+    if (scope.clientIds !== undefined) ctx.staffClientIds = scope.clientIds;
+    if (scope.projectIds !== undefined) ctx.staffProjectIds = scope.projectIds;
+    if (scope.contentIds !== undefined) ctx.staffContentIds = scope.contentIds;
+    if (scope.selfOnly !== undefined) ctx.staffSelfOnly = scope.selfOnly;
+  }
+
+  static selfOnly(): boolean {
+    const ctx = storage.getStore();
+    return ctx?.membershipType !== CLIENT_MEMBERSHIP && ctx?.staffSelfOnly === true;
+  }
+
+  static taskScope(): StaffTaskScope | undefined {
+    const ctx = storage.getStore();
+    if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    const clientIds = ctx.staffClientIds;
+    const projectIds = ctx.staffProjectIds;
+    const selfOnly = ctx.staffSelfOnly === true;
+    if (
+      clientIds === undefined &&
+      projectIds === undefined &&
+      !selfOnly
+    ) {
+      return undefined;
+    }
+    return {
+      clientIds,
+      projectIds,
+      selfOnly,
+      membershipId: ctx.membershipId,
+      userId: ctx.userId,
+    };
+  }
+
+  static leadScope(): { selfOnly?: boolean; userId?: string; clientIds?: string[] } | undefined {
+    const ctx = storage.getStore();
+    if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    const clientIds = ctx.staffClientIds;
+    const selfOnly = ctx.staffSelfOnly === true;
+    if (clientIds === undefined && !selfOnly) return undefined;
+    return { clientIds, selfOnly, userId: ctx.userId };
+  }
+
+  static timeEntryScope(): {
+    clientIds?: string[];
+    projectIds?: string[];
+    selfOnly?: boolean;
+    membershipId?: string;
+  } | undefined {
+    const ctx = storage.getStore();
+    if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    const clientIds = ctx.staffClientIds;
+    const projectIds = ctx.staffProjectIds;
+    const selfOnly = ctx.staffSelfOnly === true;
+    if (clientIds === undefined && projectIds === undefined && !selfOnly) {
+      return undefined;
+    }
+    return {
+      clientIds,
+      projectIds,
+      selfOnly,
+      membershipId: ctx.membershipId,
+    };
+  }
+
+  static contentScopeFilter(): StaffContentScope | undefined {
+    const ctx = storage.getStore();
+    if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    const clientIds = ctx.staffClientIds;
+    const projectIds = ctx.staffProjectIds;
+    const contentIds = ctx.staffContentIds;
+    const selfOnly = ctx.staffSelfOnly === true;
+    if (
+      clientIds === undefined &&
+      projectIds === undefined &&
+      contentIds === undefined &&
+      !selfOnly
+    ) {
+      return undefined;
+    }
+    return {
+      clientIds,
+      projectIds,
+      contentIds,
+      selfOnly,
+      userId: ctx.userId,
+    };
+  }
+
+  static projectScopeFilter(): StaffProjectScope | undefined {
+    const ctx = storage.getStore();
+    if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
+    const clientIds = ctx.staffClientIds;
+    const projectIds = ctx.staffProjectIds;
+    const selfOnly = ctx.staffSelfOnly === true;
+    if (
+      clientIds === undefined &&
+      projectIds === undefined &&
+      !selfOnly
+    ) {
+      return undefined;
+    }
+    return {
+      clientIds,
+      projectIds,
+      selfOnly,
+      userId: ctx.userId,
+    };
   }
 
   static canAccessClient(clientId: string | null | undefined): boolean {

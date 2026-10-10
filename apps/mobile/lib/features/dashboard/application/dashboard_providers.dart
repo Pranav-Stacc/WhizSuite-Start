@@ -51,10 +51,10 @@ final receivablesProvider = FutureProvider.autoDispose<ReceivablesSummary>(
   (ref) async => ReceivablesSummary.of(await ref.watch(dashboardInvoicesProvider.future), now: DateTime.now()),
 );
 
-/// Calendar items (projects.view) and scheduled content (content.view), whichever are permitted.
+/// Calendar feed (calendar.view) and scheduled content (content.view), whichever are permitted.
 final upcomingProvider = FutureProvider.autoDispose<List<UpcomingItem>>((ref) async {
   final policy = ref.watch(accessPolicyProvider);
-  final calendar = policy.can(Permissions.projectsView)
+  final calendar = policy.can(Permissions.calendarView)
       ? await ref.watch(dashboardCalendarProvider.future)
       : const <CalendarEntry>[];
   final content = policy.can(Permissions.contentView)
@@ -78,7 +78,7 @@ final dashboardFocusProvider = Provider.autoDispose<DashboardFocus>((ref) {
   final work = take(policy.can(Permissions.tasksView), ref.watch(myWorkProvider));
   final approvals = take(policy.can(Permissions.approvalsView), ref.watch(approvalSummaryProvider));
   final upcoming = take(
-    policy.canAny(const [Permissions.projectsView, Permissions.contentView]),
+    policy.canAny(const [Permissions.calendarView, Permissions.projectsView, Permissions.contentView]),
     ref.watch(upcomingProvider),
   );
   final receivables = take(policy.can(Permissions.invoicesView), ref.watch(receivablesProvider));
@@ -139,7 +139,7 @@ final List<({String permission, FutureProvider<Object?> source})> dashboardSourc
   (permission: Permissions.contentView, source: dashboardContentProvider),
   (permission: Permissions.approvalsView, source: dashboardApprovalsProvider),
   (permission: Permissions.invoicesView, source: dashboardInvoicesProvider),
-  (permission: Permissions.projectsView, source: dashboardCalendarProvider),
+  (permission: Permissions.calendarView, source: dashboardCalendarProvider),
 ];
 
 /// Reloads every permitted section plus the profile and access policy.

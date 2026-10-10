@@ -4,19 +4,54 @@ import 'package:agency_os/features/agent/presentation/agent_markdown.dart';
 
 void main() {
   group('AgentStreamEvent.fromJson', () {
-    test('maps phases, deltas, done and error; ignores plan details', () {
+    test('maps phases, plan, tools, deltas, done and error', () {
       expect(
         (AgentStreamEvent.fromJson({'type': 'status', 'phase': 'summarizing'}) as AgentStreamStatus).phase,
         AgentStreamPhase.writing,
       );
       expect(
-        (AgentStreamEvent.fromJson({'type': 'tool.start', 'toolId': 'clients.create'}) as AgentStreamStatus).phase,
+        (AgentStreamEvent.fromJson({'type': 'status', 'phase': 'planning', 'detail': 'Planning the next steps'})
+                as AgentStreamStatus)
+            .detail,
+        'Planning the next steps',
+      );
+      final plan = AgentStreamEvent.fromJson({'type': 'plan', 'summary': 'List clients', 'toolCount': 2})
+          as AgentStreamPlan;
+      expect(plan.summary, 'List clients');
+      expect(plan.toolCount, 2);
+      expect(
+        (AgentStreamEvent.fromJson({
+          'type': 'status',
+          'phase': 'thinking',
+          'detail': 'Reasoning',
+        }) as AgentStreamStatus)
+            .phase,
         AgentStreamPhase.working,
       );
+      final start = AgentStreamEvent.fromJson({
+        'type': 'tool.start',
+        'toolId': 'clients.create',
+        'callId': 'call-1',
+        'input': {'displayName': 'Acme'},
+      }) as AgentStreamToolStart;
+      expect(start.toolId, 'clients.create');
+      expect(start.callId, 'call-1');
+      expect(start.input, {'displayName': 'Acme'});
+      final result = AgentStreamEvent.fromJson({
+        'type': 'tool.result',
+        'toolId': 'clients.create',
+        'callId': 'call-1',
+        'ok': false,
+        'error': 'Denied',
+        'result': {'status': 'error'},
+      }) as AgentStreamToolResult;
+      expect(result.ok, isFalse);
+      expect(result.error, 'Denied');
+      expect(result.result, {'status': 'error'});
       expect((AgentStreamEvent.fromJson({'type': 'summary.delta', 'text': 'Hi'}) as AgentStreamDelta).text, 'Hi');
       expect((AgentStreamEvent.fromJson({'type': 'done', 'response': 'Done'}) as AgentStreamDone).response, 'Done');
       expect(AgentStreamEvent.fromJson({'type': 'error', 'message': 'x'}), isA<AgentStreamError>());
-      expect(AgentStreamEvent.fromJson({'type': 'plan', 'summary': 's'}), isNull);
+      expect(AgentStreamEvent.fromJson({'type': 'unknown'}), isNull);
     });
   });
 

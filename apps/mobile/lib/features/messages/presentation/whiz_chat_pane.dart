@@ -69,6 +69,84 @@ class WhizChatPane extends ConsumerWidget {
   }
 }
 
+/// Ensures an agent session exists and hosts [WhizChatPane].
+class WhizChatHost extends ConsumerStatefulWidget {
+  const WhizChatHost({this.controller, this.onSessionChanged, super.key});
+
+  final WhizChatHostController? controller;
+  final ValueChanged<String?>? onSessionChanged;
+
+  @override
+  ConsumerState<WhizChatHost> createState() => WhizChatHostState();
+}
+
+/// Imperative hooks for app bars and drawers that wrap [WhizChatHost].
+class WhizChatHostController {
+  WhizChatHostState? _state;
+
+  void _attach(WhizChatHostState state) => _state = state;
+  void _detach() => _state = null;
+
+  Future<void> newSession() => _state?._newSession() ?? Future.value();
+  void openSession(AgentSession session) => _state?._openSession(session);
+  String? get sessionId => _state?._sessionId;
+}
+
+class WhizChatHostState extends ConsumerState<WhizChatHost> {
+  String? _sessionId;
+  var _ensuring = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?._attach(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureSession());
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach();
+    super.dispose();
+  }
+
+  Future<void> _ensureSession() async {
+    if (_ensuring) return;
+    _ensuring = true;
+    try {
+      final session = await ref.read(agentRepositoryProvider).openSession();
+      ref.invalidate(agentSessionsProvider);
+      if (!mounted) return;
+      _setSession(session.id);
+    } catch (_) {
+      // WhizChatPane / history list surface provider errors.
+    } finally {
+      _ensuring = false;
+    }
+  }
+
+  Future<void> _newSession() async {
+    final session = await ref.read(agentRepositoryProvider).createSession();
+    ref.invalidate(agentSessionsProvider);
+    if (!mounted) return;
+    _setSession(session.id);
+  }
+
+  void _openSession(AgentSession session) => _setSession(session.id);
+
+  void _setSession(String? id) {
+    setState(() => _sessionId = id);
+    widget.onSessionChanged?.call(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WhizChatPane(
+      sessionId: _sessionId,
+      onSessionChanged: _setSession,
+    );
+  }
+}
+
 /// Session list for the Whiz history sidebar or drawer.
 class WhizSessionHistory extends ConsumerWidget {
   const WhizSessionHistory({

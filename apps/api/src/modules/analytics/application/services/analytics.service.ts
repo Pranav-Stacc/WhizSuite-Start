@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../../../../shared/config/app.config';
+import { SubjectScopeService } from '../../../../shared/tenant/subject-scope.service';
 import { AnalyticsRepository } from '../../infrastructure/repositories/analytics.repository';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import type {
@@ -14,6 +15,7 @@ export class AnalyticsService {
     private readonly repository: AnalyticsRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly subjectScope: SubjectScopeService,
   ) {}
 
   async list(organizationId: string, query: ListMetricSnapshotsQuery) {
@@ -22,7 +24,15 @@ export class AnalyticsService {
       metricKeys: query.metrics,
       limit: this.config.get('METRIC_SNAPSHOT_LIST_LIMIT', { infer: true }),
     });
-    return rows.map((row) => ({ ...row, value: row.value.toNumber() }));
+    const scoped: typeof rows = [];
+    for (const row of rows) {
+      if (
+        await this.subjectScope.canAccessMetricSnapshot(organizationId, row)
+      ) {
+        scoped.push(row);
+      }
+    }
+    return scoped.map((row) => ({ ...row, value: row.value.toNumber() }));
   }
 
   async create(

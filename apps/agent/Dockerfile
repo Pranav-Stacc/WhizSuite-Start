@@ -17,4 +17,5 @@ COPY app ./app
 
 USER appuser
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Scale throughput with AGENT_UVICORN_WORKERS × replica count; each worker has its own concurrency cap.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${AGENT_UVICORN_WORKERS:-2}"]

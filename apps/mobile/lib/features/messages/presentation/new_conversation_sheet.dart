@@ -17,19 +17,16 @@ enum _Tab { clients, team, group }
 /// WhatsApp-style contact picker: search, tap a person/client to open a chat.
 /// Returns the room id for routing, or null when cancelled.
 Future<String?> showNewConversationSheet(BuildContext context, WidgetRef ref) {
-  return showAppDialog<String>(
+  return showAppBottomSheet<String>(
     context,
-    builder: (dialogContext) => ConstrainedBox(
-      constraints: AppDialogLayout.constraintsOf(dialogContext, maxWidth: _NewConversationSheet.maxWidth),
-      child: const _NewConversationSheet(),
-    ),
+    size: AppDialogSize.fullscreen,
+    showDragHandle: false,
+    builder: (_) => const _NewConversationSheet(),
   );
 }
 
 class _NewConversationSheet extends ConsumerStatefulWidget {
   const _NewConversationSheet();
-
-  static const maxWidth = 560.0;
 
   @override
   ConsumerState<_NewConversationSheet> createState() => _NewConversationSheetState();

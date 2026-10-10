@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
+import '../domain/role_assignment_scope.dart';
+import 'scope_picker.dart';
 import '../../../core/formatting/formats.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/network/api_exception.dart';
@@ -28,14 +30,33 @@ const _hoursPerDay = 24;
 Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member member) {
   final l10n = AppLocalizations.of(context);
   var selected = member.roleIds;
+  var scopeType = AssignableScopeTypes.organization;
+  String? scopeResourceId;
   return showFormSheet(
     context,
     title: l10n.teamRolesEdit(member.name),
     submitLabel: l10n.save,
+    size: AppDialogSize.large,
+    presentation: AppDialogPresentation.bottomSheet,
     fields: (context, setState) => [
       RolePickerField(selected: selected, onChanged: (value) => setState(() => selected = value)),
+      ScopePickerField(
+        scopeType: scopeType,
+        resourceId: scopeResourceId,
+        onScopeTypeChanged: (value) => setState(() => scopeType = value),
+        onResourceIdChanged: (value) => setState(() => scopeResourceId = value),
+      ),
     ],
-    onSubmit: () => ref.read(teamActionsProvider).assignRoles(member.userId, selected.toList()),
+    onSubmit: () => ref.read(teamActionsProvider).assignRoles(
+          member.userId,
+          selected.toList(),
+          scopes: [
+            RoleAssignmentScope(
+              scopeType: scopeType,
+              resourceId: scopeNeedsResource(scopeType) ? scopeResourceId : null,
+            ),
+          ],
+        ),
   );
 }
 
@@ -47,6 +68,7 @@ Future<bool> showMembershipTypeForm(BuildContext context, WidgetRef ref, Member 
     context,
     title: l10n.teamTypeChange,
     submitLabel: l10n.save,
+    size: AppDialogSize.compact,
     fields: (context, setState) => [
       OptionField<String>(
         label: l10n.teamType,
@@ -79,9 +101,11 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
   final sent = await showFormSheet(
     context,
     title: l10n.teamInvite,
+    subtitle: l10n.teamInviteBody,
     submitLabel: l10n.teamInviteSend,
+    size: AppDialogSize.large,
+    presentation: AppDialogPresentation.bottomSheet,
     fields: (context, setState) => [
-      Text(l10n.teamInviteBody, style: TextStyle(color: context.tokens.secondary)),
       TextFormField(
         controller: email,
         autofocus: true,
@@ -142,9 +166,11 @@ Future<void> showInviteLinkSheet(BuildContext context, {required String email, r
   final l10n = AppLocalizations.of(context);
   return showAppDialog<void>(
     context,
+    size: AppDialogSize.standard,
     builder: (dialogContext) => AppDialog(
       title: l10n.teamInviteSent,
       subtitle: l10n.teamInviteSentBody(email),
+      size: AppDialogSize.standard,
       actions: [
         FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.close)),
       ],

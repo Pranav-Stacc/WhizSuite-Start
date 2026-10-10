@@ -1,6 +1,7 @@
 import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../../../shared/config/app.config';
+import { nextCronRun } from '../../../shared/utils/cron.util';
 import { AgentRepository } from '../infrastructure/repositories/agent.repository';
 import { AgentRunQueue } from './agent-run.queue';
 
@@ -35,7 +36,11 @@ export class AgentSchedulerService implements OnModuleInit {
         prompt: schedule.prompt,
         agentDefinitionId: schedule.agentDefinitionId,
       });
-      const next = new Date(Date.now() + 60 * 60 * 1000);
+      const next = nextCronRun(
+        schedule.cron,
+        schedule.timezone,
+        new Date(),
+      );
       await this.repo.updateSchedule(schedule.id, {
         lastRunAt: new Date(),
         nextRunAt: next,

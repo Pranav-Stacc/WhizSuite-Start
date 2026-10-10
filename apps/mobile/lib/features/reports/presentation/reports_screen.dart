@@ -23,7 +23,10 @@ import 'report_form.dart';
 import 'report_status.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
-  const ReportsScreen({super.key});
+  const ReportsScreen({this.initialClientId, this.initialTab, super.key});
+
+  final String? initialClientId;
+  final String? initialTab;
 
   @override
   ConsumerState<ReportsScreen> createState() => _ReportsScreenState();
@@ -31,8 +34,13 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTickerProviderStateMixin {
   static const _reportsTab = 0;
+  static const _analyticsTab = 1;
 
-  late final TabController _tabs = TabController(length: 2, vsync: this)..addListener(_onTab);
+  late final TabController _tabs = TabController(
+    length: 2,
+    vsync: this,
+    initialIndex: widget.initialTab == ReportsRoutes.analyticsTab ? _analyticsTab : _reportsTab,
+  )..addListener(_onTab);
 
   void _onTab() {
     if (!_tabs.indexIsChanging) setState(() {});
@@ -74,7 +82,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
         controller: _tabs,
         children: [
           _ReportsList(onCreate: manage ? _create : null),
-          const AnalyticsView(),
+          AnalyticsView(initialClientId: widget.initialClientId),
         ],
       ),
     );

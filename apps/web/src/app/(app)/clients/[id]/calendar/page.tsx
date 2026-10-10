@@ -11,7 +11,7 @@ import { initials, toDateKey } from '@/shared/lib/format';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { SectionHeading } from '@/shared/ui/section-heading';
-import { MonthGrid } from '@/features/calendar/components/calendar-views';
+import { Agenda, MonthGrid } from '@/features/calendar/components/calendar-views';
 import { contentCalendarItem, groupByDay, isScheduled, monthGrid } from '@/features/calendar/services/calendar.service';
 import { daysInMonth, monthKey, monthTitle, parseMonth, shiftMonth, weekdayLabels, type MonthRef } from '@/features/calendar/utils/month';
 import { getClient } from '@/features/clients/services/clients.service';
@@ -105,6 +105,7 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
         posts={planner.posts}
         selectedId={selected?.id}
         hrefs={hrefs}
+        backHref={link({ post: undefined })}
         aside={<PhoneGrid clientId={client.id} clientName={client.name} clientInitials={initials(client.name)} tiles={toGridTiles(planner.posts)} editable={false} tileHrefs={hrefs} selectedId={selected?.id} />}
       >
         {selected ? (
@@ -134,7 +135,17 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
     );
   } else if (view === 'month') {
     const items = monthPosts.filter(isScheduled).map((p) => contentCalendarItem(p, client.color));
-    body = <MonthGrid days={monthGrid(ref.year, ref.month)} month={ref.month} itemsByDay={groupByDay(items)} weekdayLabels={weekdayLabels()} />;
+    const itemsByDay = groupByDay(items);
+    body = (
+      <>
+        <div className="hidden md:block">
+          <MonthGrid days={monthGrid(ref.year, ref.month)} month={ref.month} itemsByDay={itemsByDay} weekdayLabels={weekdayLabels()} />
+        </div>
+        <div className="md:hidden">
+          <Agenda itemsByDay={itemsByDay} />
+        </div>
+      </>
+    );
   } else {
     const threads = await eventsForMany(monthPosts.map((p) => p.id));
     const notes = new Map([...threads].flatMap(([postId, events]) => (events.length ? [[postId, events[events.length - 1].body] as const] : [])));

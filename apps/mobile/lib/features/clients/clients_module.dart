@@ -16,6 +16,7 @@ final clientsModule = FeatureModule(
       anyOf: const [Permissions.clientsView],
       audiences: staffOnly,
       group: NavGroup.clients,
+      primary: true,
     ),
   ],
   routes: [

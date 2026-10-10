@@ -20,7 +20,10 @@ final integrationsModule = FeatureModule(
   routes: [
     destinationRoute(
       IntegrationsRoutes.root,
-      (state) => IntegrationsScreen(initialClientId: state.uri.queryParameters[IntegrationsRoutes.clientQuery]),
+      (state) => IntegrationsScreen(
+            initialClientId: state.uri.queryParameters[IntegrationsRoutes.clientQuery],
+            oauthResult: state.uri.queryParameters[IntegrationsRoutes.metaQuery],
+          ),
     ),
   ],
 );

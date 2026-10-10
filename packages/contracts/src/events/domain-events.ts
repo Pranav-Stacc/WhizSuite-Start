@@ -46,6 +46,7 @@ export const DomainEventTypes = {
   AUTOMATION_NOTIFY: 'automation.notify.v1',
   INVOICE_PAID: 'invoice.paid.v1',
   INVOICE_OVERDUE: 'invoice.overdue.v1',
+  CALENDAR_REMINDER_DUE: 'calendar.reminder_due.v1',
   AUDIT_RECORDED: 'audit.recorded.v1',
 } as const;
 

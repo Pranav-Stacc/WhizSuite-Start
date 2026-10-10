@@ -28,8 +28,11 @@ import { WorkflowEngineModule } from '../workflow-engine/workflow-engine.module'
 import { CapabilityExecutorService } from './application/services/capability-executor.service';
 import { CapabilityHandlersService } from './application/services/capability-handlers.service';
 import { CapabilityRegistryService } from './application/services/capability-registry.service';
+import { McpRpcService } from './application/services/mcp-rpc.service';
+import { McpSseService } from './application/services/mcp-sse.service';
 import { CapabilitiesController } from './interface/http/controllers/capabilities.controller';
 import { McpController } from './interface/http/controllers/mcp.controller';
+import { McpSseController } from './interface/http/controllers/mcp-sse.controller';
 
 @Module({
   imports: [
@@ -60,11 +63,13 @@ import { McpController } from './interface/http/controllers/mcp.controller';
     BillingModule,
     forwardRef(() => AgentModule),
   ],
-  controllers: [CapabilitiesController, McpController],
+  controllers: [CapabilitiesController, McpController, McpSseController],
   providers: [
     CapabilityRegistryService,
     CapabilityHandlersService,
     CapabilityExecutorService,
+    McpRpcService,
+    McpSseService,
   ],
   exports: [
     CapabilityRegistryService,

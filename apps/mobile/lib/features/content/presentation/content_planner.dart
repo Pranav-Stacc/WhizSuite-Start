@@ -27,6 +27,7 @@ import '../domain/content_workflow.dart';
 import 'content_labels.dart';
 import 'content_media.dart';
 import 'content_planner_layout.dart';
+import 'content_planner_viewer.dart';
 import 'content_post_options.dart';
 import 'content_sheet.dart';
 
@@ -87,6 +88,19 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
   }
 
   void _shiftMonth(int delta) => setState(() => _month = DateTime(_month.year, _month.month + delta));
+
+  void _openViewer(BuildContext context, String clientId, String clientName, List<Content> posts, Content post) {
+    final index = posts.indexWhere((item) => item.id == post.id);
+    openContentPlannerViewer(
+      context,
+      ref,
+      posts: posts,
+      initialIndex: index < 0 ? 0 : index,
+      clientId: clientId,
+      clientName: clientName,
+      layout: PlannerPlatformLayout.forPlatform(_platform),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +191,7 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
                   posts: clientPosts
                       .where((p) => p.status == ContentStatuses.inReview || p.status == ContentStatuses.changesRequested)
                       .toList(),
-                  onOpen: (post) => context.push(ContentRoutes.detail(post.id)),
+                  onOpen: (post) => _openViewer(context, clientId, clientName, order, post),
                   onMore: (post) => showContentPostOptions(context, ref, content: post),
                 ),
               ),
@@ -203,7 +217,7 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
                   posts: filtered,
                   saving: _saving,
                   layout: PlannerPlatformLayout.forPlatform(_platform),
-                  grid: _grid(context, clientId, filtered, PlannerPlatformLayout.forPlatform(_platform)),
+                  grid: _grid(context, clientId, clientName, filtered, PlannerPlatformLayout.forPlatform(_platform)),
                   legend: _StatusLegend(posts: clientPosts),
                 ),
               ),
@@ -229,7 +243,7 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
                     hideEmptyDays: _hideEmptyDays,
                   ),
                   onNewPost: (scheduledAt) => context.push(ContentRoutes.compose(clientId: clientId, scheduledAt: scheduledAt)),
-                  onPostTap: (post) => context.push(ContentRoutes.detail(post.id)),
+                  onPostTap: (post) => _openViewer(context, clientId, clientName, order, post),
                 ),
               ),
             ],
@@ -239,7 +253,7 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
     );
   }
 
-  Widget _grid(BuildContext context, String clientId, List<Content> order, PlannerPlatformLayout layout) {
+  Widget _grid(BuildContext context, String clientId, String clientName, List<Content> order, PlannerPlatformLayout layout) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final canReorder = ref.watch(accessPolicyProvider.select((p) => p.can(Permissions.contentEdit))) && !_saving;
@@ -271,7 +285,7 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
             final tile = _GridTile(
               post: post,
               position: position,
-              onTap: () => context.push(ContentRoutes.detail(post.id)),
+              onTap: () => _openViewer(context, clientId, clientName, order, post),
               onMore: () => showContentPostOptions(context, ref, content: post),
             );
             if (!canReorder) return tile;
@@ -717,7 +731,10 @@ class _GridTile extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                ContentMediaThumb(media: post.cover, fallbackIcon: contentTypeIcon(post.contentType)),
+                Hero(
+                  tag: plannerPostHeroTag(post.id),
+                  child: ContentMediaThumb(media: post.cover, fallbackIcon: contentTypeIcon(post.contentType)),
+                ),
                 if (onMore != null)
                   PositionedDirectional(
                     top: tokens.xs,

@@ -6,6 +6,7 @@ import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { formatDate, formatDateTime } from '@/shared/lib/format';
 import { EmptyState } from '@/shared/ui/feedback';
+import { MasterDetailLayout } from '@/shared/ui/master-detail';
 import { MediaThumb } from '@/shared/ui/media-thumb';
 import { StatusBadge } from '@/shared/ui/status';
 import type { ContentEvent, Post } from '../../data/content.repository';
@@ -41,15 +42,16 @@ interface ApprovalQueueProps {
   selectedId?: string;
   /** Link that selects each post (keeps the rest of the page state). */
   hrefs: Record<string, string>;
+  /** Mobile back link when a post is selected. */
+  backHref?: string;
   /** The selected post's panel. */
   children?: ReactNode;
   aside?: ReactNode;
 }
 
 /** Three-pane review desk: grouped queue · selected post with its conversation · feed preview. */
-export function ApprovalQueue({ groups, posts, selectedId, hrefs, children, aside }: ApprovalQueueProps) {
-  return (
-    <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+export function ApprovalQueue({ groups, posts, selectedId, hrefs, backHref, children, aside }: ApprovalQueueProps) {
+  const queueNav = (
       <nav aria-label={t('queue.title')} className="space-y-8">
         {groups.map((group) => {
           const items = posts.filter((p) => QUEUE_GROUP_STATUSES[group].includes(p.status)).sort(byDate);
@@ -92,18 +94,31 @@ export function ApprovalQueue({ groups, posts, selectedId, hrefs, children, asid
           );
         })}
       </nav>
+  );
 
-      <div className="min-w-0">
-        {children ??
-          (posts.length ? (
-            <p className="border border-border bg-surface px-6 py-16 text-center text-[13px] text-muted">{t('queue.pick')}</p>
-          ) : (
-            <div className="card-surface">
-              <EmptyState icon={<CheckCircle2 />} title={t('queue.empty.title')} body={t('queue.empty.body')} />
-            </div>
-          ))}
-      </div>
+  const detail = (
+    <div className="min-w-0">
+      {children ??
+        (posts.length ? (
+          <p className="border border-border bg-surface px-4 py-16 text-center text-[13px] text-muted sm:px-6">{t('queue.pick')}</p>
+        ) : (
+          <div className="card-surface">
+            <EmptyState icon={<CheckCircle2 />} title={t('queue.empty.title')} body={t('queue.empty.body')} />
+          </div>
+        ))}
+      {aside ? <aside className="mt-6 xl:hidden">{aside}</aside> : null}
+    </div>
+  );
 
+  return (
+    <div className="xl:grid xl:grid-cols-[280px_minmax(0,1fr)_340px] xl:gap-8">
+      <MasterDetailLayout
+        showDetail={Boolean(selectedId)}
+        backHref={backHref}
+        className="gap-8 lg:grid-cols-[280px_minmax(0,1fr)]"
+        list={queueNav}
+        detail={detail}
+      />
       {aside ? <aside className="hidden xl:block">{aside}</aside> : null}
     </div>
   );
@@ -123,13 +138,13 @@ interface QueuePostPanelProps {
 export function QueuePostPanel({ post, thread, actions, composer, headerAction }: QueuePostPanelProps) {
   return (
     <article className="border border-border bg-surface">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border-soft px-6 py-5">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border-soft px-4 py-4 sm:px-6 sm:py-5">
         <div className="min-w-0">
           <p className="eyebrow">
             {t(`type.content.${post.contentType}`)}
             {post.scheduledAt ? ` · ${formatDateTime(post.scheduledAt)}` : ''}
           </p>
-          <h2 className="display mt-2 text-[24px]">{post.title}</h2>
+          <h2 className="display mt-2 text-xl sm:text-[24px]">{post.title}</h2>
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge kind="content" value={post.status} />

@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import {
+  timeEntryListWhere,
+  type StaffTimeEntryScope,
+} from '../../../../shared/tenant/scope-filters';
 
 const TIME_ENTRY_SELECT = {
   id: true,
@@ -42,9 +46,17 @@ const RUNNING = { endedAt: null } satisfies Prisma.TimeEntryWhereInput;
 export class TimeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  list(organizationId: string, limit: number): Promise<TimeEntryRecord[]> {
+  list(
+    organizationId: string,
+    limit: number,
+    scope?: StaffTimeEntryScope,
+  ): Promise<TimeEntryRecord[]> {
+    const base: Prisma.TimeEntryWhereInput = {
+      organizationId,
+      ...FINISHED,
+    };
     return this.prisma.timeEntry.findMany({
-      where: { organizationId, ...FINISHED },
+      where: scope ? timeEntryListWhere(base, scope) : base,
       select: TIME_ENTRY_SELECT,
       orderBy: { startedAt: 'desc' },
       take: limit,

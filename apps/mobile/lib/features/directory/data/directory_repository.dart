@@ -31,6 +31,11 @@ class DirectoryRepository {
     return [for (final json in jsonList(raw)) DirectoryEntry(id: json.str('id'), name: json.str('name'))];
   }
 
+  Future<List<DirectoryEntry>> teams() async {
+    final raw = await _api.get<Object?>(_api.org('teams'));
+    return [for (final json in jsonList(raw)) DirectoryEntry(id: json.str('id'), name: json.str('name'))];
+  }
+
   Future<List<DirectoryEntry>> members() async {
     final raw = await _api.get<Object?>(_api.org('members'));
     return [

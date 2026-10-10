@@ -47,12 +47,17 @@ function setup() {
       createdById: '00000000-0000-4000-8000-000000000099',
     }),
   };
+  const subjectScope = {
+    canAccessSubject: jest.fn().mockResolvedValue(true),
+    filterSubjects: jest.fn().mockImplementation(async (_org, items) => items),
+  };
   const service = new FeedbackService(
     repository as unknown as FeedbackRepository,
     outbox as unknown as OutboxService,
     audit as unknown as AuditService,
     config as unknown as ConfigService<AppConfig, true>,
     social as unknown as SocialService,
+    subjectScope as never,
   );
   return { service, repository, audit, social, outbox };
 }

@@ -8,9 +8,11 @@ from typing import Any, TypedDict
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
+from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.tools.nest_client import NestCapabilityClient
+from app.tools.tool_executor import execute_tools_stream
 
 DEFAULT_PLANNER_PROMPT = """
 You are WhizSuite Agency OS AI. The product UI is chat-only — the user never fills
@@ -18,15 +20,20 @@ agent/schedule forms. You execute requests with tools.
 
 What you can do from chat (use the matching toolIds):
 - Domain work: create/update clients, tasks, content, calendar, finance, team, etc.
-- Schedules: if the user wants something recurring ("every Monday", "daily at 9"),
-  call agents.schedules.create with name, prompt, cron, timezone (default UTC).
+- Reminders: one-time ("remind me tomorrow at 3pm", "set a reminder for Friday")
+  MUST use calendar.create with title and startsAt/endsAt as ISO-8601 UTC datetimes.
+  Do NOT use agents.schedules.create for one-time reminders.
+- Schedules: recurring only ("every Monday", "daily at 9") → agents.schedules.create
+  with name, prompt, cron, timezone (default UTC).
   Cron examples: daily 9am = "0 9 * * *", every Monday 9am = "0 9 * * 1".
 - Custom agents: call agents.definitions.create ONLY when the user asks to save a
   reusable specialist agent, OR a complex ongoing workflow truly needs a named
   agent with its own systemPrompt/subAgents. Do NOT create agents for simple
   one-shot asks (e.g. "create a client").
 - Prefer executing tools over asking clarifying questions when intent is clear.
-- You may call multiple tools in one response (e.g. create client then create task).
+- You may call many tools in one tool_calls array; independent tools run in parallel
+  automatically (batch reads together, then batch writes). Prefer one plan with all
+  needed tool_calls over multiple round-trips.
 - Use conversation history for context (follow-ups, corrections, prior IDs).
 - Each tool lists `inputs` (field→type) and `required`. Use EXACT field names
   (e.g. clients.create needs displayName, not name; leads.create needs companyName;
@@ -35,10 +42,19 @@ What you can do from chat (use the matching toolIds):
   (reads first, then safe writes with clear demo data). Do not refuse for safety —
   this product is for agency automation; the user is authorized.
 
-Respond with JSON only (no markdown fences):
-{"summary": string, "tool_calls": [{"toolId": string, "input": object}]}
-If no tools are needed, return {"summary": string, "tool_calls": []}.
+Return a structured plan: a short summary plus tool_calls (toolId + input object per call).
+If no tools are needed, return an empty tool_calls list.
 """.strip()
+
+
+class PlannedToolCall(BaseModel):
+    toolId: str
+    input: dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentPlan(BaseModel):
+    summary: str
+    tool_calls: list[PlannedToolCall] = Field(default_factory=list)
 
 SUMMARY_SYSTEM_PROMPT = """
 You are the Agency AI voice. Summarize what happened for the user.
@@ -55,10 +71,16 @@ Format rules (strict):
 - Do not wrap the whole reply in a code fence.
 """.strip()
 
-# Simple in-process tool catalog cache between runs (same process).
-_TOOL_CACHE: dict[str, tuple[float, list[dict[str, Any]]]] = {}
-_TOOL_CACHE_TTL_SEC = 90.0
+CHAT_ROOM_SUMMARY_PROMPT = """
+You are Whiz replying in a team chat thread after someone @mentioned you.
 
+Format rules (strict):
+- Plain text only — no markdown, no headings, no bullet lists, no code fences.
+- Never use section titles like "Summary", "Next steps", "What I did", or similar.
+- Reply in 1–4 short, conversational sentences, like a helpful coworker in Slack.
+- If tools ran, weave the outcome into natural prose; do not list tools.
+- If something failed or needs approval, say so plainly in one sentence.
+""".strip()
 
 class AgentState(TypedDict, total=False):
     message: str
@@ -98,6 +120,43 @@ def build_chat_model(*, streaming: bool = False) -> BaseChatModel:
     )
 
 
+async def _plan_with_tools(
+    model: BaseChatModel, messages: list[BaseMessage]
+) -> tuple[AgentPlan, str]:
+    """Structured tool plan via provider-native output; JSON fallback if needed."""
+    try:
+        planner = model.with_structured_output(AgentPlan)
+        plan = await planner.ainvoke(messages)
+        if isinstance(plan, AgentPlan):
+            return plan, json.dumps(plan.model_dump(), ensure_ascii=False)
+    except Exception:  # noqa: BLE001 — provider may not support structured output
+        pass
+
+    plan_msg = await model.ainvoke(messages)
+    parsed = parse_llm_json(str(plan_msg.content))
+    tool_calls_raw = parsed.get("tool_calls") or []
+    calls: list[PlannedToolCall] = []
+    if isinstance(tool_calls_raw, list):
+        for row in tool_calls_raw:
+            if not isinstance(row, dict):
+                continue
+            tool_id = str(row.get("toolId") or row.get("name") or "").strip()
+            if not tool_id:
+                continue
+            input_data = row.get("input") or row.get("arguments") or {}
+            calls.append(
+                PlannedToolCall(
+                    toolId=tool_id,
+                    input=input_data if isinstance(input_data, dict) else {},
+                )
+            )
+    plan = AgentPlan(
+        summary=str(parsed.get("summary") or "Working on your request…"),
+        tool_calls=calls,
+    )
+    return plan, str(plan_msg.content)
+
+
 def parse_llm_json(raw: str) -> dict[str, Any]:
     text = str(raw).strip()
     if text.startswith("```"):
@@ -134,7 +193,13 @@ def compact_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
             fields: dict[str, Any] = {}
             for name, prop in props.items():
                 if isinstance(prop, dict):
-                    fields[name] = prop.get("format") or prop.get("type") or "any"
+                    field_type = prop.get("format") or prop.get("type") or "any"
+                    description = prop.get("description")
+                    fields[name] = (
+                        {"type": field_type, "description": description}
+                        if description
+                        else field_type
+                    )
                 else:
                     fields[name] = "any"
             entry["inputs"] = fields
@@ -185,16 +250,13 @@ def rank_tools_for_message(
 async def _load_tools(
     client: NestCapabilityClient, tool_ids: list[str] | None
 ) -> list[dict[str, Any]]:
-    import time
+    from app.runtime import tool_cache
 
-    cache_key = client.organization_id
-    now = time.time()
-    cached = _TOOL_CACHE.get(cache_key)
-    if cached and now - cached[0] < _TOOL_CACHE_TTL_SEC:
-        tools = cached[1]
-    else:
+    cache = tool_cache()
+    tools = cache.get(client.organization_id)
+    if tools is None:
         tools = await client.list_tools()
-        _TOOL_CACHE[cache_key] = (now, tools)
+        cache.set(client.organization_id, tools)
 
     if tool_ids:
         allowed = set(tool_ids)
@@ -244,6 +306,7 @@ async def run_supervisor_graph_stream(
     run_id: str,
     multi_agent: bool,
     system_prompt: str | None,
+    summary_prompt: str | None = None,
     sub_agents: list[dict[str, str]] | None,
     tool_ids: list[str] | None,
     history: list[dict[str, str]] | None = None,
@@ -279,25 +342,21 @@ async def run_supervisor_graph_stream(
         ),
     ]
 
-    plan_msg = await model.ainvoke(plan_messages)
+    plan, plan_raw = await _plan_with_tools(model, plan_messages)
 
     steps: list[dict[str, Any]] = [
         {
             "agentName": "planner",
             "stepType": "plan",
             "status": "COMPLETED",
-            "output": {"content": plan_msg.content},
+            "output": {"content": plan_raw},
         }
     ]
 
     pending_action_id: str | None = None
     tool_results: list[Any] = []
-    parsed = parse_llm_json(str(plan_msg.content))
-    tool_calls = parsed.get("tool_calls") or []
-    if not isinstance(tool_calls, list):
-        tool_calls = []
-
-    plan_summary = str(parsed.get("summary") or "Working on your request…")
+    tool_calls = [{"toolId": call.toolId, "input": call.input} for call in plan.tool_calls]
+    plan_summary = plan.summary.strip() or "Working on your request…"
     yield {
         "type": "plan",
         "summary": plan_summary,
@@ -315,85 +374,29 @@ async def run_supervisor_graph_stream(
             }
         )
 
-    priority = {
-        "agents.definitions.create": 0,
-        "agents.definitions.list": 1,
-        "agents.schedules.create": 2,
-        "agents.schedules.list": 3,
-    }
+    ordered_calls = [c for c in tool_calls if isinstance(c, dict)]
 
-    def sort_key(call: dict[str, Any]) -> tuple[int, int]:
-        tid = str(call.get("toolId") or call.get("tool_id") or "")
-        return (priority.get(tid, 50), 0)
-
-    ordered_calls = sorted(
-        [c for c in tool_calls if isinstance(c, dict)],
-        key=sort_key,
-    )
-
-    if ordered_calls:
-        yield {
-            "type": "status",
-            "phase": "executing",
-            "detail": f"Running {min(len(ordered_calls), 12)} tool(s)",
-        }
-
-    for call in ordered_calls[:12]:
-        tool_id = call.get("toolId") or call.get("tool_id")
-        if not tool_id:
+    async for tool_event in execute_tools_stream(
+        client, ordered_calls, run_id, executor_name
+    ):
+        if tool_event.get("type") == "_tool_executor_done":
+            tool_results = tool_event.get("toolResults") or []
+            raw_steps = tool_event.get("steps")
+            if isinstance(raw_steps, list):
+                steps.extend(raw_steps)
+            pending_action_id = tool_event.get("pendingActionId")
             continue
-        input_data = call.get("input") or {}
-        if not isinstance(input_data, dict):
-            input_data = {}
-
-        yield {"type": "tool.start", "toolId": str(tool_id), "input": input_data}
-
-        try:
-            result = await client.execute(str(tool_id), input_data, run_id)
-            ok = not (
-                isinstance(result, dict)
-                and result.get("status") in {"error", "failed"}
-            )
-            err = None
-            if isinstance(result, dict) and result.get("status") == "error":
-                err = str(result.get("error") or result.get("message") or "Tool failed")
-                ok = False
-        except Exception as exc:  # noqa: BLE001
-            result = {"status": "error", "error": str(exc)}
-            ok = False
-            err = str(exc)
-
-        tool_results.append({"toolId": tool_id, "result": result})
-        if isinstance(result, dict) and result.get("status") == "pending_confirmation":
-            pending_action_id = result.get("pendingActionId")
-
-        yield {
-            "type": "tool.result",
-            "toolId": str(tool_id),
-            "ok": ok,
-            "result": result if ok else None,
-            "error": err,
-        }
-
-        steps.append(
-            {
-                "agentName": executor_name,
-                "stepType": "tool",
-                "status": "COMPLETED" if ok else "FAILED",
-                "input": {"toolId": tool_id, "input": input_data},
-                "output": result if isinstance(result, dict) else {"value": result},
-            }
-        )
+        yield tool_event
 
     yield {"type": "status", "phase": "summarizing", "detail": "Writing your answer"}
 
     summary_messages: list[BaseMessage] = [
-        SystemMessage(content=SUMMARY_SYSTEM_PROMPT),
+        SystemMessage(content=summary_prompt or SUMMARY_SYSTEM_PROMPT),
         HumanMessage(
             content=json.dumps(
                 {
                     "request": message,
-                    "planner_summary": parsed.get("summary"),
+                    "planner_summary": plan_summary,
                     "tool_results": tool_results,
                 },
                 default=str,
@@ -447,6 +450,7 @@ async def run_supervisor_graph(
     run_id: str,
     multi_agent: bool,
     system_prompt: str | None,
+    summary_prompt: str | None = None,
     sub_agents: list[dict[str, str]] | None,
     tool_ids: list[str] | None,
     history: list[dict[str, str]] | None = None,
@@ -462,6 +466,7 @@ async def run_supervisor_graph(
         run_id=run_id,
         multi_agent=multi_agent,
         system_prompt=system_prompt,
+        summary_prompt=summary_prompt,
         sub_agents=sub_agents,
         tool_ids=tool_ids,
         history=history,

@@ -7,6 +7,7 @@ import '../domain/member.dart';
 import '../domain/member_access.dart';
 import '../domain/member_document.dart';
 import '../domain/member_position.dart';
+import '../domain/role_assignment_scope.dart';
 
 class TeamRepository {
   TeamRepository(this._api);
@@ -18,8 +19,19 @@ class TeamRepository {
 
   Future<List<Member>> members() async => jsonList(await _api.get<Object?>(_members)).map(Member.fromJson).toList();
 
-  Future<void> assignRoles(String userId, List<String> roleIds) =>
-      _api.put<Object?>('$_members/$userId/roles', body: {'roleIds': roleIds});
+  Future<void> assignRoles(
+    String userId,
+    List<String> roleIds, {
+    List<RoleAssignmentScope>? scopes,
+  }) =>
+      _api.put<Object?>(
+        '$_members/$userId/roles',
+        body: {
+          'roleIds': roleIds,
+          if (scopes != null)
+            'scopes': scopes.map((scope) => scope.toJson()).toList(),
+        },
+      );
 
   Future<void> changeType(String userId, String membershipType) =>
       _api.patch<Object?>('$_members/$userId', body: {'membershipType': membershipType});

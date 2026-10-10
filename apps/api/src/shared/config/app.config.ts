@@ -180,6 +180,8 @@ export const appConfigSchema = z
     /** Optional store URLs shown on the portal-access landing page (empty = hide). */
     MOBILE_APP_STORE_URL: z.string().default(''),
     MOBILE_PLAY_STORE_URL: z.string().default(''),
+    /** Custom URL scheme for OAuth return to the Flutter app (e.g. whizsuite). */
+    MOBILE_DEEP_LINK_SCHEME: z.string().default('whizsuite'),
     IDEMPOTENCY_TTL_SECONDS: z.coerce.number().int().positive().default(86400),
     AUTHZ_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
     OUTBOX_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(1000),
@@ -235,6 +237,12 @@ export const appConfigSchema = z
       .positive()
       .default(60_000),
     REMINDER_SCHEDULER_BATCH: z.coerce.number().int().positive().default(50),
+    /** Notify this many minutes before a calendar event starts. */
+    CALENDAR_REMINDER_LEAD_MINUTES: z.coerce
+      .number()
+      .int()
+      .nonnegative()
+      .default(5),
     /** How far ahead of due date a task is considered "due soon". */
     TASK_REMINDER_DUE_SOON_HOURS: z.coerce
       .number()
@@ -298,11 +306,33 @@ export const appConfigSchema = z
       .int()
       .positive()
       .default(120_000),
+    /** Longer budget for SSE agent streams (heavy multi-tool runs). */
+    AGENT_SERVICE_STREAM_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(600_000),
+    AGENT_RUN_QUEUE_CONCURRENCY: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(5),
     CAPABILITIES_CACHE_TTL_SECONDS: z.coerce
       .number()
       .int()
       .positive()
       .default(90),
+    /** Parallel tool executions per MCP batch request from the agent runtime. */
+    CAPABILITY_BATCH_CONCURRENCY: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(8),
+    CAPABILITY_BATCH_MAX_SIZE: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(24),
     AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce
       .number()
       .int()

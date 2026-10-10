@@ -43,9 +43,24 @@ class LocalNotifier {
     if (launch?.didNotificationLaunchApp ?? false) _taps.add(launch!.notificationResponse?.payload);
   }
 
+  Future<bool> hasPermission() async {
+    if (!isSupported) return false;
+    final android = _android;
+    if (android != null) {
+      return await android.areNotificationsEnabled() ?? false;
+    }
+    final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
+    if (ios != null) {
+      final settings = await ios.checkPermissions();
+      return settings?.isEnabled ?? false;
+    }
+    return false;
+  }
+
   /// Asks the OS for permission; returns whether notifications may be shown.
   Future<bool> requestPermission() async {
     if (!isSupported) return false;
+    if (await hasPermission()) return true;
     final ios = _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
     final granted = await _android?.requestNotificationsPermission() ??
         await ios?.requestPermissions(alert: true, badge: true, sound: true);
@@ -61,8 +76,15 @@ class LocalNotifier {
       body: body,
       payload: id,
       notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(_channelId, channelName, importance: Importance.high, priority: Priority.high),
-        iOS: const DarwinNotificationDetails(),
+        android: AndroidNotificationDetails(
+          _channelId,
+          channelName,
+          importance: Importance.high,
+          priority: Priority.high,
+          playSound: true,
+          enableVibration: true,
+        ),
+        iOS: const DarwinNotificationDetails(presentSound: true, presentBadge: true, presentAlert: true),
       ),
     );
   }

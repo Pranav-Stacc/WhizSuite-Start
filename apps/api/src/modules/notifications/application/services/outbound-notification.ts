@@ -41,6 +41,8 @@ function notificationData(raw: unknown): NotificationData {
     fromStatus: pick(row.fromStatus),
     toStatus: pick(row.toStatus),
     reminderKey: pick(row.reminderKey),
+    calendarItemId: pick(row.calendarItemId),
+    startsAt: pick(row.startsAt),
   };
 }
 

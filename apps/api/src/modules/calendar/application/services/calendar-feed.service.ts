@@ -254,9 +254,6 @@ export class CalendarFeedService {
         organizationId,
         range,
       );
-      // Client-scoped principals only see org-wide pending when unrestricted;
-      // without a subject→client map we omit approvals for restricted scopes.
-      if (clientIds) return [];
       return rows.map((row) => {
         const at = (row.dueAt ?? row.createdAt).toISOString();
         return {

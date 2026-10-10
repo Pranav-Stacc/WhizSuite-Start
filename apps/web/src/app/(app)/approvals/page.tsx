@@ -48,6 +48,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
       posts={posts}
       selectedId={selected?.id}
       hrefs={hrefs}
+      backHref={withQuery(BASE, sp, { post: undefined })}
       aside={
         selectedClient && planner ? (
           <PhoneGrid

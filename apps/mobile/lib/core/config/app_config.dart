@@ -16,6 +16,8 @@ class AppConfig {
     required this.defaultCurrency,
     required this.googleServerClientId,
     required this.googleSignInEnabled,
+    required this.deepLinkScheme,
+    required this.liveMode,
   });
 
   factory AppConfig.fromEnvironment() {
@@ -68,6 +70,14 @@ class AppConfig {
       'GOOGLE_SIGN_IN_ENABLED',
       defaultValue: false,
     );
+    const deepLinkScheme = String.fromEnvironment(
+      'DEEP_LINK_SCHEME',
+      defaultValue: 'whizsuite',
+    );
+    const liveMode = bool.fromEnvironment(
+      'LIVE_MODE',
+      defaultValue: true,
+    );
 
     final problems = <String>[
       if (Uri.tryParse(apiBaseUrl)?.hasAuthority != true) 'API_BASE_URL',
@@ -100,6 +110,8 @@ class AppConfig {
       defaultCurrency: defaultCurrency,
       googleServerClientId: googleServerClientId,
       googleSignInEnabled: googleSignInEnabledFlag && googleServerClientId.isNotEmpty,
+      deepLinkScheme: deepLinkScheme,
+      liveMode: liveMode,
     );
   }
 
@@ -125,6 +137,12 @@ class AppConfig {
 
   /// When false, login/register hide Google Sign-In (default until re-enabled).
   final bool googleSignInEnabled;
+
+  /// Custom URL scheme for OAuth callbacks (`whizsuite://oauth?...`).
+  final String deepLinkScheme;
+
+  /// When true, Meta platforms use OAuth; when false, demo handle connect is allowed.
+  final bool liveMode;
 }
 
 /// Overridden in `main` with the validated configuration.

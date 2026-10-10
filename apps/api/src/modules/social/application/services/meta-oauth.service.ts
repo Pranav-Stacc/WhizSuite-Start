@@ -20,12 +20,15 @@ import { IntegrationsRepository } from '../../../integrations/infrastructure/rep
 import { MetaClient } from '../../../integrations/providers/meta.client';
 import { SocialRepository } from '../../infrastructure/repositories/social.repository';
 
+type OAuthReturnTo = 'mobile' | 'web';
+
 type OAuthState = {
   organizationId: string;
   clientId: string;
   actorId: string;
   platform: Platform;
   nonce: string;
+  returnTo?: OAuthReturnTo;
 };
 
 @Injectable()
@@ -45,6 +48,7 @@ export class MetaOauthService {
     actorId: string;
     clientId: string;
     platform: 'instagram' | 'facebook';
+    returnTo?: OAuthReturnTo;
   }): Promise<{ authorizeUrl: string }> {
     if (!this.meta.isConfigured()) {
       throw problem(
@@ -90,6 +94,7 @@ export class MetaOauthService {
         platform: input.platform,
         nonce: randomBytes(16).toString('hex'),
         connectionId,
+        returnTo: input.returnTo ?? 'web',
       } satisfies OAuthState & { connectionId: string }),
     ).toString('base64url');
 
@@ -230,6 +235,33 @@ export class MetaOauthService {
     };
   }
 
+  successRedirect(stateRaw: string): string {
+    const parsed = safeParseState(stateRaw);
+    if (parsed?.returnTo === 'mobile') {
+      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', { infer: true });
+      const client = parsed.clientId
+        ? `&client=${encodeURIComponent(parsed.clientId)}`
+        : '';
+      return `${scheme}://oauth?meta=connected${client}`;
+    }
+    return this.webSuccessRedirect();
+  }
+
+  failureRedirect(stateRaw: string | undefined, reason?: string): string {
+    const parsed = stateRaw ? safeParseState(stateRaw) : null;
+    const q = reason
+      ? `&reason=${encodeURIComponent(reason.slice(0, 80))}`
+      : '';
+    if (parsed?.returnTo === 'mobile') {
+      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', { infer: true });
+      const client = parsed.clientId
+        ? `&client=${encodeURIComponent(parsed.clientId)}`
+        : '';
+      return `${scheme}://oauth?meta=error${q}${client}`;
+    }
+    return this.webFailureRedirect(reason);
+  }
+
   webSuccessRedirect(): string {
     const webOrigin = this.config.get('WEB_APP_URL', { infer: true });
     return `${webOrigin}/integrations?meta=connected`;
@@ -323,6 +355,14 @@ export class MetaOauthService {
     });
 
     return { id: account.id, platform: account.platform };
+  }
+}
+
+function safeParseState(state: string): (OAuthState & { connectionId?: string }) | null {
+  try {
+    return parseState(state);
+  } catch {
+    return null;
   }
 }
 

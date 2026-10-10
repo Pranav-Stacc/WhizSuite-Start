@@ -16,6 +16,7 @@ import { relativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import { Badge } from '@/shared/ui/badge';
 import { EmptyState } from '@/shared/ui/feedback';
+import { MasterDetailLayout } from '@/shared/ui/master-detail';
 import { ChatRoomThread } from './chat-room-thread';
 import type { MentionCandidate } from './send-message-form';
 
@@ -71,16 +72,11 @@ export function ChatWorkspace({
   whiz?: WhizAgentProps | null;
 }) {
   const titles = roomTitles ?? new Map<string, string>();
+  const showDetail = whizActive || selected != null;
+  const backHref = whizActive ? '/chat' : selected ? '/chat' : undefined;
 
-  return (
-    <div
-      className={cn(
-        'grid overflow-hidden rounded-2xl border border-border-soft bg-surface',
-        compact ? 'min-h-[28rem]' : 'min-h-[min(70vh,36rem)] sm:min-h-[70vh]',
-        'lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]',
-      )}
-    >
-      <aside className="border-b border-border-soft lg:border-b-0 lg:border-r">
+  const roomList = (
+    <>
         <div className="flex items-center justify-between gap-2 border-b border-border-soft px-3 py-3 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-sm font-semibold">{t('chat.rooms')}</h2>
@@ -91,7 +87,7 @@ export function ChatWorkspace({
         <ul
           className={cn(
             'overflow-y-auto',
-            compact ? 'max-h-64' : 'max-h-[36vh] sm:max-h-[40vh] lg:max-h-[calc(70vh-3.25rem)]',
+            compact ? 'max-h-64' : 'max-h-[calc(100dvh-14rem)] lg:max-h-[calc(70vh-3.25rem)]',
           )}
         >
           {showWhiz ? (
@@ -170,9 +166,11 @@ export function ChatWorkspace({
             />
           </div>
         ) : null}
-      </aside>
+    </>
+  );
 
-      <section className="flex min-h-[50vh] flex-col">
+  const detailPane = (
+    <>
         {whizActive && whiz ? (
           <AgentWorkspace
             embedded
@@ -220,7 +218,21 @@ export function ChatWorkspace({
             />
           </div>
         )}
-      </section>
-    </div>
+    </>
+  );
+
+  return (
+    <MasterDetailLayout
+      showDetail={showDetail}
+      backHref={backHref}
+      className={cn(
+        'rounded-2xl border border-border-soft bg-surface lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]',
+        compact ? 'min-h-[28rem]' : 'min-h-[min(70vh,36rem)] sm:min-h-[70vh]',
+      )}
+      listClassName="border-b border-border-soft lg:max-h-none lg:border-b-0 lg:border-r"
+      detailClassName="min-h-[50vh]"
+      list={roomList}
+      detail={detailPane}
+    />
   );
 }

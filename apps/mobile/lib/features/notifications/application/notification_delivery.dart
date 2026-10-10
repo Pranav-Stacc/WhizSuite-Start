@@ -44,8 +44,21 @@ class NotificationDelivery {
       ..add(push.taps.listen(_opened.add));
     realtime.connect();
 
-    await local.initialize(channelName: l10n.notificationChannelName, channelDescription: l10n.notificationChannelDescription);
-    await push.register(locale: locale);
+    await local.initialize(
+      channelName: l10n.notificationChannelName,
+      channelDescription: l10n.notificationChannelDescription,
+    );
+    await push.prepare();
+  }
+
+  /// Registers push when the member already granted OS permission.
+  Future<void> ensurePushRegistered({required String locale}) async {
+    await _ref.read(pushMessagingProvider).registerIfAuthorized(locale: locale);
+  }
+
+  /// After the in-app primer — requests OS permission and registers the device token.
+  Future<bool> enablePush({required String locale}) async {
+    return _ref.read(pushMessagingProvider).requestPermissionAndRegister(locale: locale);
   }
 
   /// Ends delivery for this device before sign-out (push token is unregistered server-side).

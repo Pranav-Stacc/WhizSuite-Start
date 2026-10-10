@@ -171,6 +171,16 @@ class CalendarEntry {
         allDay: json.flag('allDay'),
       );
 
+  /// Unified calendar feed row (`GET calendar/feed`); `sourceId` is the deep-link id.
+  factory CalendarEntry.fromFeedJson(Json json) => CalendarEntry(
+        id: json.str('sourceId', json.str('id')),
+        sourceType: json.str('sourceType', CalendarSourceTypes.manual),
+        sourceId: json.str('sourceId', json.str('id')),
+        title: json.str('title'),
+        startsAt: json.date('startsAt'),
+        allDay: json.flag('allDay'),
+      );
+
   final String id;
   final String sourceType;
   final String sourceId;

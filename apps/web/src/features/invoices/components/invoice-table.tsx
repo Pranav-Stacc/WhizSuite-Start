@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { t } from '@/shared/i18n/t';
 import { formatDate, formatMoney } from '@/shared/lib/format';
+import { MobileDataCard, MobileDataHeader, MobileDataRow, ResponsiveDataView } from '@/shared/ui/responsive-data';
 import { StatusBadge } from '@/shared/ui/status';
 import type { InvoiceView } from '../services/invoices.service';
 
@@ -10,9 +11,9 @@ interface InvoiceTableProps {
 }
 
 export function InvoiceTable({ invoices, clientName }: InvoiceTableProps) {
-  return (
+  const table = (
     <div className="card-surface overflow-x-auto">
-      <table className="w-full min-w-[720px] text-left text-sm">
+      <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border-soft text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-medium">{t('invoices.col.number')}</th>
@@ -44,4 +45,23 @@ export function InvoiceTable({ invoices, clientName }: InvoiceTableProps) {
       </table>
     </div>
   );
+
+  const cards = invoices.map((invoice) => (
+    <MobileDataCard key={invoice.id} href={`/invoices/${invoice.id}`}>
+      <MobileDataHeader
+        title={invoice.number}
+        subtitle={clientName(invoice.clientId)}
+        trailing={<StatusBadge kind="invoice" value={invoice.status} />}
+      />
+      <MobileDataRow label={t('invoices.col.issued')}>{formatDate(invoice.issueDate)}</MobileDataRow>
+      <MobileDataRow label={t('invoices.col.due')}>
+        {invoice.status === 'PAID' && invoice.paidAt ? t('invoices.paidOn', { date: formatDate(invoice.paidAt) }) : formatDate(invoice.dueDate)}
+      </MobileDataRow>
+      <MobileDataRow label={t('invoices.col.total')}>
+        <span className="font-semibold tabular-nums">{formatMoney(invoice.total)}</span>
+      </MobileDataRow>
+    </MobileDataCard>
+  ));
+
+  return <ResponsiveDataView table={table} cards={cards} />;
 }

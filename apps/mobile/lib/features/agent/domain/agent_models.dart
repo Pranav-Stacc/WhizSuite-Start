@@ -93,14 +93,36 @@ enum AgentStreamPhase { planning, working, writing }
 sealed class AgentStreamEvent {
   const AgentStreamEvent();
 
-  /// Returns null for event types the UI does not render (plans, tool details).
   static AgentStreamEvent? fromJson(Json json) => switch (json.str('type')) {
-        'status' => AgentStreamStatus(switch (json.str('phase')) {
-            'summarizing' => AgentStreamPhase.writing,
-            'executing' => AgentStreamPhase.working,
-            _ => AgentStreamPhase.planning,
-          }),
-        'tool.start' || 'tool.result' => const AgentStreamStatus(AgentStreamPhase.working),
+        'status' => AgentStreamStatus(
+            switch (json.str('phase')) {
+              'summarizing' => AgentStreamPhase.writing,
+              'executing' => AgentStreamPhase.working,
+              'thinking' => AgentStreamPhase.working,
+              _ => AgentStreamPhase.planning,
+            },
+            detail: json.strOrNull('detail'),
+          ),
+        'tool.call.delta' => AgentStreamStatus(
+            AgentStreamPhase.working,
+            detail: json.strOrNull('toolId'),
+          ),
+        'plan' => AgentStreamPlan(
+            summary: json.str('summary'),
+            toolCount: json.integer('toolCount'),
+          ),
+        'tool.start' => AgentStreamToolStart(
+            toolId: json.str('toolId'),
+            callId: json.strOrNull('callId'),
+            input: json.object('input'),
+          ),
+        'tool.result' => AgentStreamToolResult(
+            toolId: json.str('toolId'),
+            callId: json.strOrNull('callId'),
+            ok: json.flag('ok', true),
+            error: json.strOrNull('error'),
+            result: json['result'],
+          ),
         'summary.delta' => AgentStreamDelta(json.str('text')),
         'done' => AgentStreamDone(json.str('response')),
         'error' => AgentStreamError(json.str('message')),
@@ -109,8 +131,37 @@ sealed class AgentStreamEvent {
 }
 
 class AgentStreamStatus extends AgentStreamEvent {
-  const AgentStreamStatus(this.phase);
+  const AgentStreamStatus(this.phase, {this.detail});
   final AgentStreamPhase phase;
+  final String? detail;
+}
+
+class AgentStreamPlan extends AgentStreamEvent {
+  const AgentStreamPlan({required this.summary, required this.toolCount});
+  final String summary;
+  final int toolCount;
+}
+
+class AgentStreamToolStart extends AgentStreamEvent {
+  const AgentStreamToolStart({required this.toolId, this.callId, this.input});
+  final String toolId;
+  final String? callId;
+  final Map<String, dynamic>? input;
+}
+
+class AgentStreamToolResult extends AgentStreamEvent {
+  const AgentStreamToolResult({
+    required this.toolId,
+    required this.ok,
+    this.callId,
+    this.error,
+    this.result,
+  });
+  final String toolId;
+  final String? callId;
+  final bool ok;
+  final String? error;
+  final Object? result;
 }
 
 class AgentStreamDelta extends AgentStreamEvent {

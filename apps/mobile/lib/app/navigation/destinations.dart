@@ -84,10 +84,16 @@ class NavigationModel {
         .toList();
 
     final tabs = <AppDestination>[];
-    tabs.addAll(features.take(2)); // first two features on the left
-    if (home != null) tabs.add(home); // home in the center
-    tabs.addAll(features.skip(2)); // remaining features on the right
-    if (more != null) tabs.add(more); // more at the end
+    if (features.length <= 2) {
+      if (features.isNotEmpty) tabs.add(features.first);
+      if (home != null) tabs.add(home);
+      if (features.length > 1) tabs.add(features[1]);
+    } else {
+      tabs.addAll(features.take(2)); // first two features on the left
+      if (home != null) tabs.add(home); // home in the center
+      tabs.addAll(features.skip(2)); // remaining features on the right
+    }
+    if (more != null) tabs.add(more);
 
     return tabs;
   }

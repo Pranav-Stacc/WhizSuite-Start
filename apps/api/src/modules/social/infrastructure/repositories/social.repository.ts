@@ -530,9 +530,17 @@ export class SocialRepository {
     });
   }
 
-  listAccounts(organizationId: string, clientId?: string) {
+  listAccounts(
+    organizationId: string,
+    clientId?: string,
+    allowedClientIds?: string[],
+  ) {
     return this.prisma.socialAccount.findMany({
-      where: { organizationId, ...(clientId ? { clientId } : {}) },
+      where: {
+        organizationId,
+        ...(clientId ? { clientId } : {}),
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+      },
       include: { channels: true },
     });
   }

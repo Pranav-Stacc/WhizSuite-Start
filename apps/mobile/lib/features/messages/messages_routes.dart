@@ -3,6 +3,9 @@ abstract final class MessagesRoutes {
   static const detailParam = 'threadId';
   static const whiz = '/messages/whiz';
 
+  /// Pseudo-id when Whiz is selected in the wide Messages split pane.
+  static const whizSelectionId = '__whiz__';
+
   static String detail(String id) => '$root/$id';
 
   /// Opens a client room directly (parity with web `clients/[id]/messages`).

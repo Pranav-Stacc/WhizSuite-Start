@@ -111,8 +111,13 @@ export type SendAgentMessageInput = z.infer<typeof sendAgentMessageSchema>;
 export const agentStreamEventSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('status'),
-    phase: z.enum(['planning', 'executing', 'summarizing']),
+    phase: z.enum(['planning', 'thinking', 'executing', 'summarizing']),
     detail: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('tool.call.delta'),
+    toolId: z.string(),
+    index: z.number().int().nonnegative().optional(),
   }),
   z.object({
     type: z.literal('plan'),
@@ -123,6 +128,7 @@ export const agentStreamEventSchema = z.discriminatedUnion('type', [
     type: z.literal('tool.start'),
     toolId: z.string(),
     input: z.record(z.unknown()).optional(),
+    callId: z.string().optional(),
   }),
   z.object({
     type: z.literal('tool.result'),
@@ -130,6 +136,7 @@ export const agentStreamEventSchema = z.discriminatedUnion('type', [
     ok: z.boolean(),
     result: z.unknown().optional(),
     error: z.string().optional(),
+    callId: z.string().optional(),
   }),
   z.object({
     type: z.literal('summary.delta'),

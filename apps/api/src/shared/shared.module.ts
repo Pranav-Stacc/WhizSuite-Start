@@ -6,6 +6,7 @@ import { EventsModule } from './events/events.module';
 import { NotificationsSharedModule } from './notifications/notifications-shared.module';
 import { QueueModule } from './queue/queue.module';
 import { StorageModule } from './storage/storage.module';
+import { TenantScopeModule } from './tenant/tenant-scope.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { StorageModule } from './storage/storage.module';
     StorageModule,
     NotificationsSharedModule,
     QueueModule,
+    TenantScopeModule,
   ],
   exports: [
     AppConfigModule,
@@ -25,6 +27,7 @@ import { StorageModule } from './storage/storage.module';
     StorageModule,
     NotificationsSharedModule,
     QueueModule,
+    TenantScopeModule,
   ],
 })
 export class SharedModule {}

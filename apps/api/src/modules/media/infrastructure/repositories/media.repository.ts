@@ -473,12 +473,14 @@ export class MediaRepository {
   listReady(
     organizationId: string,
     limit: number,
+    allowedClientIds?: string[],
   ): Promise<MediaAssetRecord[]> {
     return this.prisma.mediaAsset.findMany({
       where: {
         organizationId,
         deletedAt: null,
         status: 'READY',
+        ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
       },
       orderBy: { createdAt: 'asc' },
       take: limit,

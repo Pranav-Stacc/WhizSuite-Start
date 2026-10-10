@@ -19,6 +19,7 @@ import {
   GoogleCalendarController,
 } from './interface/http/controllers/calendar-resource.controller';
 import { GoogleCalendarOauthController } from './interface/http/controllers/google-calendar-oauth.controller';
+import { CalendarReminderScheduler } from './jobs/calendar-reminder.scheduler';
 import { CalendarSyncProcessor } from './jobs/calendar-sync.processor';
 import {
   CALENDAR_SYNC_QUEUE,
@@ -51,6 +52,7 @@ import {
     CalendarConnectionRepository,
     CalendarSyncQueue,
     CalendarSyncProcessor,
+    CalendarReminderScheduler,
   ],
   exports: [
     CalendarService,

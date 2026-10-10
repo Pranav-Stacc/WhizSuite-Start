@@ -11,6 +11,7 @@ import '../domain/invitation.dart';
 import '../domain/member.dart';
 import '../domain/member_access.dart';
 import '../domain/member_document.dart';
+import '../domain/role_assignment_scope.dart';
 
 const _typeOrder = [MembershipTypes.owner, MembershipTypes.admin, MembershipTypes.member, MembershipTypes.client];
 
@@ -54,8 +55,12 @@ class TeamActions {
 
   TeamRepository get _repo => _ref.read(teamRepositoryProvider);
 
-  Future<void> assignRoles(String userId, List<String> roleIds) async {
-    await _repo.assignRoles(userId, roleIds);
+  Future<void> assignRoles(
+    String userId,
+    List<String> roleIds, {
+    List<RoleAssignmentScope>? scopes,
+  }) async {
+    await _repo.assignRoles(userId, roleIds, scopes: scopes);
     await _afterMemberChange(userId);
   }
 

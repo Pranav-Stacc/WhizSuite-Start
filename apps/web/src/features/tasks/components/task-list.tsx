@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { t } from '@/shared/i18n/t';
 import { Avatar } from '@/shared/ui/avatar';
 import { DueBadge } from '@/shared/ui/due-badge';
+import { MobileDataCard, MobileDataHeader, MobileDataRow, ResponsiveDataView } from '@/shared/ui/responsive-data';
 import { StatusBadge } from '@/shared/ui/status';
 import type { Task } from '../data/tasks.repository';
 
@@ -14,9 +15,9 @@ interface TaskListProps {
 }
 
 export function TaskList({ tasks, clientName, clientColor, assigneeNames, editHref }: TaskListProps) {
-  return (
+  const table = (
     <div className="card-surface overflow-x-auto">
-      <table className="w-full min-w-[720px] text-left text-sm">
+      <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border-soft text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3 font-medium">{t('tasks.list.task')}</th>
@@ -75,4 +76,31 @@ export function TaskList({ tasks, clientName, clientColor, assigneeNames, editHr
       </table>
     </div>
   );
+
+  const cards = tasks.map((task) => {
+    const names = assigneeNames(task.assigneeIds);
+    return (
+      <MobileDataCard key={task.id} href={editHref(task.id)}>
+        <MobileDataHeader
+          title={task.title}
+          subtitle={clientName(task.clientId) ?? (task.projectId ? '—' : t('tasks.inbox'))}
+          trailing={<StatusBadge kind="task" value={task.status} />}
+        />
+        <MobileDataRow label={t('tasks.field.priority')}>
+          <StatusBadge kind="priority" value={task.priority} dot={false} />
+        </MobileDataRow>
+        <MobileDataRow label={t('tasks.list.assignee')}>
+          {names.length > 0 ? names.join(', ') : t('common.unassigned')}
+        </MobileDataRow>
+        <MobileDataRow label={t('tasks.list.due')}>
+          {task.dueDate ? <DueBadge date={task.dueDate} done={task.status === 'DONE'} /> : '—'}
+        </MobileDataRow>
+        {task.estimateHours !== undefined ? (
+          <MobileDataRow label={t('tasks.list.estimate')}>{t('common.hours', { hours: task.estimateHours })}</MobileDataRow>
+        ) : null}
+      </MobileDataCard>
+    );
+  });
+
+  return <ResponsiveDataView table={table} cards={cards} />;
 }

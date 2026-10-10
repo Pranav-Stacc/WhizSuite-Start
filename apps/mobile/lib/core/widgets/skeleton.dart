@@ -102,7 +102,7 @@ class SkeletonList extends StatelessWidget {
                   if (leading) ...[
                     SkeletonBox(width: 40, height: 40, radius: tokens.radius + 4),
                     SizedBox(width: tokens.md),
-                  ],
+                  ],  
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
@@ -33,9 +34,10 @@ Future<bool> showScheduleSheet(BuildContext context, WidgetRef ref, Content cont
   return showFormSheet(
     context,
     title: markScheduled ? l10n.contentScheduleTitle : l10n.contentRescheduleTitle,
+    subtitle: l10n.contentScheduleBody,
     submitLabel: markScheduled ? l10n.contentActionSchedule : l10n.save,
+    size: AppDialogSize.compact,
     fields: (context, setState) => [
-      Text(l10n.contentScheduleBody, style: Theme.of(context).textTheme.bodyMedium),
       DateField(
         label: l10n.contentFieldScheduledAt,
         value: when,
@@ -68,12 +70,10 @@ Future<bool> showReviewSheet(
   return showFormSheet(
     context,
     title: rejecting ? l10n.contentReviewRejectTitle(title) : l10n.contentReviewChangesTitle(title),
+    subtitle: rejecting ? l10n.contentReviewRejectBody : l10n.contentReviewChangesBody,
     submitLabel: rejecting ? l10n.contentActionReject : l10n.contentActionRequestChanges,
+    size: AppDialogSize.compact,
     fields: (context, _) => [
-      Text(
-        rejecting ? l10n.contentReviewRejectBody : l10n.contentReviewChangesBody,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
       if (withNote)
         TextFormField(
           controller: note,

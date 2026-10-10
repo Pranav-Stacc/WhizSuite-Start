@@ -9,26 +9,18 @@ import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
-import { CapabilityExecutorService } from '../../../application/services/capability-executor.service';
-import { CapabilityRegistryService } from '../../../application/services/capability-registry.service';
+import {
+  McpRpcService,
+  type McpJsonRpcRequest,
+} from '../../../application/services/mcp-rpc.service';
 
-interface McpJsonRpcRequest {
-  jsonrpc: '2.0';
-  id: string | number;
-  method: string;
-  params?: Record<string, unknown>;
-}
-
-/** MCP-compatible JSON-RPC endpoint over the capability registry. */
+/** Stateless MCP JSON-RPC over HTTP POST (tools/list, tools/call, …). */
 @ApiTags('mcp')
 @ApiBearerAuth()
 @Controller('v1/organizations/:organizationId/mcp')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class McpController {
-  constructor(
-    private readonly registry: CapabilityRegistryService,
-    private readonly executor: CapabilityExecutorService,
-  ) {}
+  constructor(private readonly rpc: McpRpcService) {}
 
   @Post()
   @RequirePermissions(Permissions.AI_CHAT)
@@ -38,41 +30,6 @@ export class McpController {
     @Body() body: McpJsonRpcRequest,
   ) {
     const orgId = requireOrganizationId(organizationId);
-    const tools = await this.registry.listForUserCached(
-      orgId,
-      user.userId,
-      user.permissions ?? [],
-    );
-
-    switch (body.method) {
-      case 'tools/list':
-        return {
-          jsonrpc: '2.0',
-          id: body.id,
-          result: { tools },
-        };
-      case 'tools/call': {
-        const name = body.params?.name as string;
-        const args = (body.params?.arguments ?? {}) as Record<string, unknown>;
-        const result = await this.executor.execute(orgId, user, {
-          toolId: name,
-          input: args,
-          runId: body.params?.runId as string | undefined,
-        });
-        return {
-          jsonrpc: '2.0',
-          id: body.id,
-          result: {
-            content: [{ type: 'text', text: JSON.stringify(result) }],
-          },
-        };
-      }
-      default:
-        return {
-          jsonrpc: '2.0',
-          id: body.id,
-          error: { code: -32601, message: `Method not found: ${body.method}` },
-        };
-    }
+    return this.rpc.handle(orgId, user, body);
   }
 }

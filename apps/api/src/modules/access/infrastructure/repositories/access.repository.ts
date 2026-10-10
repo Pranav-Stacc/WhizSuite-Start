@@ -22,6 +22,10 @@ import {
   type PermissionInputs,
 } from '../../application/utils/effective-permissions';
 import {
+  resolveDataScopeFromAssignments,
+  type ResolvedDataScope,
+} from '../../application/utils/resolve-data-scope';
+import {
   ACTIVE_MEMBERSHIP_STATUS,
   OWNER_MEMBERSHIP_TYPE,
 } from '../../config/default-roles';
@@ -357,88 +361,17 @@ export class AccessRepository {
   async resolveDataScope(
     organizationId: string,
     membershipId: string,
-  ): Promise<{
-    orgWide: boolean;
-    clientIds: string[];
-    projectIds: string[];
-    contentIds: string[];
-  }> {
+  ): Promise<ResolvedDataScope> {
     const assignments = await this.prisma.roleAssignment.findMany({
       where: { organizationId, membershipId },
       include: { scopes: true },
     });
-    let orgWide = assignments.length === 0;
-    const clientIds = new Set<string>();
-    const projectIds = new Set<string>();
-    const contentIds = new Set<string>();
-
-    for (const assignment of assignments) {
-      if (assignment.scopes.length === 0) {
-        orgWide = true;
-        continue;
-      }
-      for (const scope of assignment.scopes) {
-        // Unit scopes (department/team) pick a resource for assignee pools; they do not
-        // narrow client lists on their own. Only CLIENT/PROJECT/CONTENT ids restrict data.
-        if (
-          scope.scopeType === 'ORGANIZATION' ||
-          scope.scopeType === 'WORKSPACE' ||
-          scope.scopeType === 'SELF' ||
-          scope.scopeType === 'DEPARTMENT' ||
-          scope.scopeType === 'TEAM'
-        ) {
-          if (
-            scope.scopeType === 'ORGANIZATION' ||
-            scope.scopeType === 'WORKSPACE' ||
-            scope.scopeType === 'SELF' ||
-            !scope.resourceId
-          ) {
-            orgWide = true;
-          }
-          continue;
-        }
-        if (!scope.resourceId) {
-          orgWide = true;
-          continue;
-        }
-        if (scope.scopeType === 'CLIENT') clientIds.add(scope.resourceId);
-        if (scope.scopeType === 'PROJECT') projectIds.add(scope.resourceId);
-        if (scope.scopeType === 'CONTENT') contentIds.add(scope.resourceId);
-      }
-    }
-
-    if (
-      orgWide ||
-      (clientIds.size === 0 && projectIds.size === 0 && contentIds.size === 0)
-    ) {
-      return { orgWide: true, clientIds: [], projectIds: [], contentIds: [] };
-    }
-
-    if (projectIds.size > 0) {
-      const projects = await this.prisma.project.findMany({
-        where: { organizationId, id: { in: [...projectIds] } },
-        select: { clientId: true },
-      });
-      for (const project of projects) clientIds.add(project.clientId);
-    }
-
-    if (contentIds.size > 0) {
-      const items = await this.prisma.contentItem.findMany({
-        where: { organizationId, id: { in: [...contentIds] }, deletedAt: null },
-        select: { clientId: true, projectId: true },
-      });
-      for (const item of items) {
-        clientIds.add(item.clientId);
-        if (item.projectId) projectIds.add(item.projectId);
-      }
-    }
-
-    return {
-      orgWide: false,
-      clientIds: [...clientIds],
-      projectIds: [...projectIds],
-      contentIds: [...contentIds],
-    };
+    return resolveDataScopeFromAssignments(
+      this.prisma,
+      organizationId,
+      membershipId,
+      assignments,
+    );
   }
 
   async seedPermissions(catalog: Array<{ key: string; category: string }>) {

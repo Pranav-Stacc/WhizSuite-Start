@@ -117,7 +117,7 @@ export function MobileDock({
   const pathname = usePathname();
   const dock = primaryNav(new Set(permissions), module).slice(0, 4);
   return (
-    <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-3 z-40 lg:hidden print:hidden">
+    <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 lg:hidden print:hidden">
       <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-md border border-border-soft p-1">
         {dock.map((item) => {
           const Icon = item.icon;

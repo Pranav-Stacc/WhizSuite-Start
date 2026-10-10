@@ -34,7 +34,9 @@ IconData metricIcon(String key) => switch (key) {
 
 /// Social performance over 7/30/90 days: KPI tiles with period-over-period change and a chart per metric.
 class AnalyticsView extends ConsumerStatefulWidget {
-  const AnalyticsView({super.key});
+  const AnalyticsView({this.initialClientId, super.key});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<AnalyticsView> createState() => _AnalyticsViewState();
@@ -42,7 +44,7 @@ class AnalyticsView extends ConsumerStatefulWidget {
 
 class _AnalyticsViewState extends ConsumerState<AnalyticsView> {
   int _days = analyticsDefaultRange;
-  String? _clientId;
+  late String? _clientId = widget.initialClientId;
 
   @override
   Widget build(BuildContext context) {
