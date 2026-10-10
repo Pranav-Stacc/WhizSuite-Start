@@ -61,7 +61,10 @@ export class CapabilityRegistryService {
     return tools;
   }
 
-  async invalidateUserCache(organizationId: string, userId: string): Promise<void> {
+  async invalidateUserCache(
+    organizationId: string,
+    userId: string,
+  ): Promise<void> {
     const key = this.redis.orgKey(
       organizationId,
       'user',

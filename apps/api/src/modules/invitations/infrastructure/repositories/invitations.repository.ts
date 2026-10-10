@@ -180,7 +180,9 @@ export class InvitationsRepository {
     clientId?: string;
     expiresAt?: Date | null;
   }) {
-    return this.prisma.$transaction((tx) => this.upsertMembershipRoles(tx, input));
+    return this.prisma.$transaction((tx) =>
+      this.upsertMembershipRoles(tx, input),
+    );
   }
 
   /**
@@ -215,10 +217,7 @@ export class InvitationsRepository {
       },
     });
 
-    const nextType = preferMembershipType(
-      existing?.type,
-      input.membershipType,
-    );
+    const nextType = preferMembershipType(existing?.type, input.membershipType);
 
     const membership = await tx.organizationMembership.upsert({
       where: {

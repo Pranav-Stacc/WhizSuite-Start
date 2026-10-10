@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
-import type { ChatMessageDto } from '@agency-os/contracts';
-import { Reply, X } from 'lucide-react';
+import {
+  WHIZ_AGENT_DISPLAY,
+  WHIZ_AGENT_TARGET_ID,
+  type ChatMessageDto,
+} from '@agency-os/contracts';
+import { Reply, Sparkles, X } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { sendChatMessageAction, type ChatMentionPayload } from '../actions/chat.actions';
@@ -14,15 +17,24 @@ export interface MentionCandidate {
   type?: ChatMentionPayload['type'];
 }
 
+export function withWhizMention(candidates: MentionCandidate[]): MentionCandidate[] {
+  if (candidates.some((c) => c.type === 'AGENT' || c.id === WHIZ_AGENT_TARGET_ID)) {
+    return candidates;
+  }
+  return [
+    { id: WHIZ_AGENT_TARGET_ID, label: WHIZ_AGENT_DISPLAY, type: 'AGENT' },
+    ...candidates,
+  ];
+}
+
 function extractMentions(body: string, candidates: MentionCandidate[]): ChatMentionPayload[] {
   const mentions: ChatMentionPayload[] = [];
   for (const candidate of candidates) {
-    const token = `@${candidate.label}`;
-    let from = 0;
-    while (from < body.length) {
-      const index = body.indexOf(token, from);
-      if (index === -1) break;
-      const end = index + token.length;
+    const pattern = new RegExp(`@${escapeRegExp(candidate.label)}`, 'gi');
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(body)) !== null) {
+      const index = match.index;
+      const end = index + match[0].length;
       const beforeOk = index === 0 || /\s|[([{"'`]/.test(body[index - 1] ?? '');
       const afterOk = end === body.length || /\s|[)\]},.!?;:'"]/.test(body[end] ?? '');
       if (beforeOk && afterOk) {
@@ -34,10 +46,13 @@ function extractMentions(body: string, candidates: MentionCandidate[]): ChatMent
           endOffset: end,
         });
       }
-      from = end;
     }
   }
   return mentions;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function SendMessageForm({
@@ -46,14 +61,15 @@ export function SendMessageForm({
   replyTo = null,
   onClearReply,
   membersById,
+  onSent,
 }: {
   roomId: string;
   mentionCandidates?: MentionCandidate[];
   replyTo?: ChatMessageDto | null;
   onClearReply?: () => void;
   membersById?: Map<string, string>;
+  onSent?: (message: ChatMessageDto) => void;
 }) {
-  const router = useRouter();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState('');
   const [pending, startTransition] = useTransition();
@@ -63,13 +79,18 @@ export function SendMessageForm({
     if (replyTo) inputRef.current?.focus();
   }, [replyTo]);
 
+  const candidates = useMemo(
+    () => withWhizMention(mentionCandidates),
+    [mentionCandidates],
+  );
+
   const suggestions = useMemo(() => {
     if (mentionQuery === null) return [];
     const q = mentionQuery.toLowerCase();
-    return mentionCandidates
+    return candidates
       .filter((c) => !q || c.label.toLowerCase().includes(q))
       .slice(0, 6);
-  }, [mentionCandidates, mentionQuery]);
+  }, [candidates, mentionQuery]);
 
   const replyAuthor = replyTo?.senderId
     ? (membersById?.get(replyTo.senderId) ?? t('chat.unknown'))
@@ -109,7 +130,7 @@ export function SendMessageForm({
         event.preventDefault();
         const value = body.trim();
         if (!value) return;
-        const mentions = extractMentions(body, mentionCandidates);
+        const mentions = extractMentions(body, candidates);
         const replyId = replyTo?.id;
         startTransition(async () => {
           const result = await sendChatMessageAction(roomId, value, mentions, replyId);
@@ -117,7 +138,7 @@ export function SendMessageForm({
             setBody('');
             setMentionQuery(null);
             onClearReply?.();
-            router.refresh();
+            onSent?.(result.message);
           }
         });
       }}
@@ -151,13 +172,23 @@ export function SendMessageForm({
           aria-label={t('chat.composer.mentionHint')}
         >
           {suggestions.map((candidate) => (
-            <li key={candidate.id}>
+            <li key={`${candidate.type ?? 'USER'}-${candidate.id}`}>
               <button
                 type="button"
-                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
                 onClick={() => insertMention(candidate)}
               >
-                <span>@{candidate.label}</span>
+                {candidate.type === 'AGENT' ? (
+                  <Sparkles className="size-3.5 shrink-0 text-primary" aria-hidden />
+                ) : null}
+                <span className="min-w-0 flex-1">
+                  <span className="block">@{candidate.label}</span>
+                  {candidate.type === 'AGENT' ? (
+                    <span className="block text-[11px] text-muted">
+                      {t('chat.composer.whizHint')}
+                    </span>
+                  ) : null}
+                </span>
                 <span className="text-[11px] uppercase tracking-wide text-muted">
                   {(candidate.type ?? 'USER').toLowerCase()}
                 </span>

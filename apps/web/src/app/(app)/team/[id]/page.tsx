@@ -22,6 +22,7 @@ import { changeMemberRoleAction, removeMemberAction } from '@/features/team/acti
 import { PERSONAL_ACCESS_PREFIX } from '@/features/team/config';
 import { getMember } from '@/features/team/services/members.service';
 import { loadScopeResources } from '@/features/team/services/scope-resources.service';
+import { MemberProfileTabs } from '@/features/team/components/member-profile-tabs';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 
 export const metadata: Metadata = { title: t('team.detail.title') };
@@ -84,6 +85,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
         }
       />
 
+      <MemberProfileTabs memberId={member.id} memberName={member.name} tasks={tasks}>
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="card-surface space-y-5 p-5">
           <h2 className="text-sm font-semibold">{t('team.detail.info')}</h2>
@@ -205,6 +207,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </section>
+      </MemberProfileTabs>
     </div>
   );
 }

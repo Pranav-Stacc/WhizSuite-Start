@@ -8,13 +8,23 @@ void main() {
     test('parses every preset from the shared contract', () {
       expect(
         themePresetList.map((p) => p.id),
-        containsAll(['editorial', 'chalk', 'porcelain', 'mist', 'daylight', 'sage', 'sky', 'linen', 'noir', 'mono']),
+        containsAll(['editorial', 'chalk', 'porcelain', 'mist', 'daylight', 'sage', 'sky', 'linen', 'mono', 'noir']),
       );
+      expect(themePresetList.first.id, 'mono');
       expect(themePresetList.where((p) => p.isLight).length, greaterThanOrEqualTo(8));
       expect(themePresetList.where((p) => !p.isLight).length, greaterThanOrEqualTo(6));
       expect(themePresetList.first.settings, contractDefaultThemeSettings);
+      expect(toHex(contractDefaultThemeSettings.bg), '#040109');
+      expect(toHex(contractDefaultThemeSettings.surface), '#0B0B0B');
+      expect(toHex(contractDefaultThemeSettings.border), '#2A2A2A');
+      expect(toHex(contractDefaultThemeSettings.primary), '#FFFFFF');
+      expect(toHex(contractDefaultThemeSettings.secondary), '#D1D1D1');
+      expect(toHex(contractDefaultThemeSettings.fg), '#FFFFFF');
+      expect(toHex(contractDefaultThemeSettings.muted), '#8D9B98');
+      expect(contractDefaultThemeSettings.radius, 14);
       expect(defaultThemeSettings.isLight, isFalse);
       expect(defaultThemeSettings.density, ThemeDensity.compact);
+      expect(defaultThemeSettings.radius, 14);
     });
 
     test('round-trips through JSON in the web cookie format', () {

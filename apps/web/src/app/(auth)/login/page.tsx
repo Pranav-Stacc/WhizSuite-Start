@@ -43,7 +43,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
           <PersonaCards />
           <div className="relative py-2 text-center text-xs text-muted before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-border-soft">
-            <span className="relative bg-[var(--bg)] px-3">{t('auth.login.or')}</span>
+            <span className="relative bg-surface px-3">{t('auth.login.or')}</span>
           </div>
         </section>
       )}

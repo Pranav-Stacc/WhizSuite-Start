@@ -9,7 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Permissions, themeSchema, type ThemeSettings } from '@agency-os/contracts';
+import {
+  Permissions,
+  themeSchema,
+  type ThemeSettings,
+} from '@agency-os/contracts';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -40,7 +44,9 @@ export class OrganizationsController {
   @Get(':organizationId/theme')
   @RequirePermissions(Permissions.ORG_VIEW)
   getTheme(@Param('organizationId') organizationId: string) {
-    return this.tenancy.getAppearanceTheme(requireOrganizationId(organizationId)).then((theme) => ({ theme }));
+    return this.tenancy
+      .getAppearanceTheme(requireOrganizationId(organizationId))
+      .then((theme) => ({ theme }));
   }
 
   @Patch(':organizationId/theme')
@@ -52,7 +58,11 @@ export class OrganizationsController {
   ) {
     const theme = themeSchema.parse(body);
     return this.tenancy
-      .updateAppearanceTheme(requireOrganizationId(organizationId), user.userId, theme)
+      .updateAppearanceTheme(
+        requireOrganizationId(organizationId),
+        user.userId,
+        theme,
+      )
       .then((saved) => ({ theme: saved }));
   }
 

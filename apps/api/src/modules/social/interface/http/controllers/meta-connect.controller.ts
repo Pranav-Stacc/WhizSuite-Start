@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
 import { IsIn, IsUUID } from 'class-validator';

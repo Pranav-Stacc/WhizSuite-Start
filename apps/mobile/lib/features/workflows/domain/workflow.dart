@@ -8,6 +8,93 @@ abstract final class WorkflowVersionStatuses {
   static const published = 'PUBLISHED';
 }
 
+List<String> _uuidList(Object? raw) {
+  if (raw is! List) return const [];
+  return [
+    for (final id in raw)
+      if (id is String && id.isNotEmpty) id,
+  ];
+}
+
+String _approvalRule(String? raw) {
+  if (raw == ApprovalStepRules.all || raw == ApprovalStepRules.quorum) return raw!;
+  return ApprovalStepRules.any;
+}
+
+/// One step in an approval pipeline with optional assignees and sign-off rules.
+class WorkflowStage {
+  const WorkflowStage({
+    required this.name,
+    this.assigneeRoleId,
+    this.approvalRule = ApprovalStepRules.any,
+    this.quorumCount,
+    this.approverIds = const [],
+    this.roleIds = const [],
+    this.scopeType,
+    this.scopeResourceId,
+  });
+
+  factory WorkflowStage.empty() => const WorkflowStage(name: '');
+
+  factory WorkflowStage.fromJson(Json json) {
+    final roleIds = _uuidList(json['roleIds']);
+    final assigneeRoleId = json.strOrNull('assigneeRoleId');
+    final mergedRoleIds = assigneeRoleId != null && !roleIds.contains(assigneeRoleId)
+        ? [...roleIds, assigneeRoleId]
+        : roleIds;
+    final rule = json.strOrNull('approvalRule');
+    return WorkflowStage(
+      name: json.str('name'),
+      assigneeRoleId: assigneeRoleId ?? (mergedRoleIds.isNotEmpty ? mergedRoleIds.first : null),
+      approvalRule: _approvalRule(rule),
+      quorumCount: json.integerOrNull('quorumCount'),
+      approverIds: _uuidList(json['approverIds']),
+      roleIds: mergedRoleIds,
+      scopeType: json.strOrNull('scopeType'),
+      scopeResourceId: json.strOrNull('scopeResourceId'),
+    );
+  }
+
+  final String name;
+  final String? assigneeRoleId;
+  final String approvalRule;
+  final int? quorumCount;
+  final List<String> approverIds;
+  final List<String> roleIds;
+  final String? scopeType;
+  final String? scopeResourceId;
+
+  bool get hasAssignees =>
+      assigneeRoleId != null || roleIds.isNotEmpty || approverIds.isNotEmpty;
+
+  Json toJson() => {
+        'name': name.trim(),
+        'approvalRule': approvalRule,
+        if (approvalRule == ApprovalStepRules.quorum && quorumCount != null) 'quorumCount': quorumCount,
+        'roleIds': roleIds,
+        'assigneeRoleId': roleIds.isNotEmpty ? roleIds.first : assigneeRoleId,
+        'approverIds': approverIds,
+        if (scopeType != null) 'scopeType': scopeType,
+        if (scopeResourceId != null) 'scopeResourceId': scopeResourceId,
+      };
+}
+
+List<WorkflowStage> parseWorkflowStagesFromJson(Json json) {
+  final raw = json['stages'];
+  if (raw is List) {
+    final stages = <WorkflowStage>[];
+    for (final entry in raw) {
+      if (entry is String) {
+        stages.add(WorkflowStage(name: entry));
+      } else if (entry is Map) {
+        stages.add(WorkflowStage.fromJson(entry.cast<String, dynamic>()));
+      }
+    }
+    if (stages.isNotEmpty) return stages;
+  }
+  return json.strings('stageNames').map((name) => WorkflowStage(name: name)).toList();
+}
+
 /// An ordered approval pipeline; the first stage is initial, the last terminal.
 class Workflow {
   const Workflow({
@@ -31,7 +118,7 @@ class Workflow {
       id: json.str('id'),
       name: json.str('name'),
       entityType: json.str('entityType'),
-      stages: json.strings('stages'),
+      stages: parseWorkflowStagesFromJson(json),
       slaHours: json.integerOrNull('slaHours'),
       requiresClientApproval: json.flag('requiresClientApproval'),
       active: json.flag('active', true),
@@ -46,7 +133,7 @@ class Workflow {
   final String id;
   final String name;
   final String entityType;
-  final List<String> stages;
+  final List<WorkflowStage> stages;
   final int? slaHours;
   final bool requiresClientApproval;
   final bool active;
@@ -57,6 +144,8 @@ class Workflow {
   final String? versionStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  List<String> get stageNames => stages.map((stage) => stage.name).toList();
 }
 
 class WorkflowState {
@@ -143,7 +232,7 @@ class WorkflowInput {
   });
 
   final String name;
-  final List<String> stages;
+  final List<WorkflowStage> stages;
   final int? slaHours;
   final bool requiresClientApproval;
   final bool active;
@@ -151,7 +240,7 @@ class WorkflowInput {
   /// Creating omits an empty SLA; editing sends null so the API clears it.
   Json toJson({required bool clearEmpty}) => {
         'name': name,
-        'stages': stages,
+        'stages': stages.map((stage) => stage.toJson()).toList(),
         if (slaHours != null || clearEmpty) 'slaHours': slaHours,
         'requiresClientApproval': requiresClientApproval,
         'active': active,
@@ -161,11 +250,13 @@ class WorkflowInput {
 enum WorkflowStagesIssue { tooFew, tooMany, blank, tooLong }
 
 /// Checks a stage list against the API's limits; null when valid.
-WorkflowStagesIssue? validateWorkflowStages(List<String> stages) {
+WorkflowStagesIssue? validateWorkflowStages(List<WorkflowStage> stages) {
   if (stages.length < minWorkflowStages) return WorkflowStagesIssue.tooFew;
   if (stages.length > maxWorkflowStages) return WorkflowStagesIssue.tooMany;
-  if (stages.any((s) => s.trim().isEmpty)) return WorkflowStagesIssue.blank;
-  if (stages.any((s) => s.trim().length > maxWorkflowStageLength)) return WorkflowStagesIssue.tooLong;
+  if (stages.any((stage) => stage.name.trim().isEmpty)) return WorkflowStagesIssue.blank;
+  if (stages.any((stage) => stage.name.trim().length > maxWorkflowStageLength)) {
+    return WorkflowStagesIssue.tooLong;
+  }
   return null;
 }
 

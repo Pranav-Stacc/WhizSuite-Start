@@ -150,16 +150,14 @@ class MentionCandidate {
   final String type;
 }
 
-/// Extract @mentions from body text using known candidates.
+/// Extract @mentions from body text using known candidates (case-insensitive labels).
 List<ChatMention> extractMentions(String body, List<MentionCandidate> candidates) {
   final mentions = <ChatMention>[];
   for (final candidate in candidates) {
-    final token = '@${candidate.label}';
-    var from = 0;
-    while (from < body.length) {
-      final index = body.indexOf(token, from);
-      if (index == -1) break;
-      final end = index + token.length;
+    final pattern = RegExp('@${RegExp.escape(candidate.label)}', caseSensitive: false);
+    for (final match in pattern.allMatches(body)) {
+      final index = match.start;
+      final end = match.end;
       final beforeOk = index == 0 || RegExp(r'''[\s(\[{"']''').hasMatch(body[index - 1]);
       final afterOk = end == body.length || RegExp(r'''[\s)\]},.!?;:"']''').hasMatch(body[end]);
       if (beforeOk && afterOk) {
@@ -173,7 +171,6 @@ List<ChatMention> extractMentions(String body, List<MentionCandidate> candidates
           ),
         );
       }
-      from = end;
     }
   }
   return mentions;
@@ -195,7 +192,6 @@ List<ChatRoom> sortRoomsByActivity(Iterable<ChatRoom> rooms) {
 List<({DateTime day, List<ChatMessage> messages})> groupMessagesByDay(List<ChatMessage> messages) {
   final groups = <({DateTime day, List<ChatMessage> messages})>[];
   for (final message in messages) {
-    if (message.isSystem) continue;
     final local = message.createdAt.toLocal();
     final day = DateTime(local.year, local.month, local.day);
     if (groups.isEmpty || groups.last.day != day) groups.add((day: day, messages: []));

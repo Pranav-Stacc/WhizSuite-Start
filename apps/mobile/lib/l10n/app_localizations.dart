@@ -136,42 +136,6 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get authLoginSubmit;
 
-  /// No description provided for @authOrEmail.
-  ///
-  /// In en, this message translates to:
-  /// **'or use email'**
-  String get authOrEmail;
-
-  /// No description provided for @authGoogleButton.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with Google'**
-  String get authGoogleButton;
-
-  /// No description provided for @authGoogleCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Google sign-in was cancelled.'**
-  String get authGoogleCancelled;
-
-  /// No description provided for @authGoogleNoAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'No account for that Google email. Create a workspace first.'**
-  String get authGoogleNoAccount;
-
-  /// No description provided for @authGoogleInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Google sign-in was rejected. Try again.'**
-  String get authGoogleInvalid;
-
-  /// No description provided for @authGoogleWorkspaceRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter an agency name and workspace URL before continuing with Google.'**
-  String get authGoogleWorkspaceRequired;
-
   /// No description provided for @authLoginInvalid.
   ///
   /// In en, this message translates to:
@@ -297,66 +261,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have been signed out.'**
   String get authSignedOut;
-
-  /// No description provided for @authInviteTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Join {organization}'**
-  String authInviteTitle(String organization);
-
-  /// No description provided for @authInviteSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'You were invited as {email}.'**
-  String authInviteSubtitle(String email);
-
-  /// No description provided for @authInviteSubtitleExisting.
-  ///
-  /// In en, this message translates to:
-  /// **'Accept as {email}.'**
-  String authInviteSubtitleExisting(String email);
-
-  /// No description provided for @authInvitePassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Your password'**
-  String get authInvitePassword;
-
-  /// No description provided for @authInviteSetPasswordHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a password (12+ characters) to join.'**
-  String get authInviteSetPasswordHint;
-
-  /// No description provided for @authInviteSubmit.
-  ///
-  /// In en, this message translates to:
-  /// **'Accept invitation'**
-  String get authInviteSubmit;
-
-  /// No description provided for @authInviteInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'This invitation link is invalid, already used or expired. Ask the sender for a new one.'**
-  String get authInviteInvalid;
-
-  /// No description provided for @authInviteInvalidTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Invitation unavailable'**
-  String get authInviteInvalidTitle;
-
-  /// No description provided for @authInviteWrongPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'That password does not match the existing account for this email.'**
-  String get authInviteWrongPassword;
-
-  /// No description provided for @authInviteAlreadyMember.
-  ///
-  /// In en, this message translates to:
-  /// **'This account is already a member of the workspace. Sign in instead.'**
-  String get authInviteAlreadyMember;
 
   /// No description provided for @validationRequired.
   ///
@@ -495,12 +399,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More'**
   String get navMore;
-
-  /// No description provided for @navMenu.
-  ///
-  /// In en, this message translates to:
-  /// **'Menu'**
-  String get navMenu;
 
   /// No description provided for @navGroupWork.
   ///
@@ -759,66 +657,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Created'**
   String get createdToast;
-
-  /// No description provided for @quickCreateTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Create'**
-  String get quickCreateTitle;
-
-  /// No description provided for @quickCreateSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Start something new without leaving your flow.'**
-  String get quickCreateSubtitle;
-
-  /// No description provided for @quickCreateEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'You don\'t have permission to create anything yet.'**
-  String get quickCreateEmpty;
-
-  /// No description provided for @quickCreateTask.
-  ///
-  /// In en, this message translates to:
-  /// **'New task'**
-  String get quickCreateTask;
-
-  /// No description provided for @quickCreateContent.
-  ///
-  /// In en, this message translates to:
-  /// **'New post'**
-  String get quickCreateContent;
-
-  /// No description provided for @quickCreateProject.
-  ///
-  /// In en, this message translates to:
-  /// **'New project'**
-  String get quickCreateProject;
-
-  /// No description provided for @quickCreateClient.
-  ///
-  /// In en, this message translates to:
-  /// **'New client'**
-  String get quickCreateClient;
-
-  /// No description provided for @quickCreateLead.
-  ///
-  /// In en, this message translates to:
-  /// **'New lead'**
-  String get quickCreateLead;
-
-  /// No description provided for @quickCreateInvoice.
-  ///
-  /// In en, this message translates to:
-  /// **'New invoice'**
-  String get quickCreateInvoice;
-
-  /// No description provided for @quickCreateShoot.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan shoot'**
-  String get quickCreateShoot;
 
   /// No description provided for @deletedToast.
   ///
@@ -2518,108 +2356,6 @@ abstract class AppLocalizations {
   /// **'New event'**
   String get calendarNew;
 
-  /// No description provided for @calendarCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Create'**
-  String get calendarCreate;
-
-  /// No description provided for @calendarNewEventHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Meeting, deadline or manual block'**
-  String get calendarNewEventHint;
-
-  /// No description provided for @calendarPlanShoot.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan shoot'**
-  String get calendarPlanShoot;
-
-  /// No description provided for @calendarPlanShootHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Shoot day with folders and tasks'**
-  String get calendarPlanShootHint;
-
-  /// No description provided for @calendarShootHeading.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan a shoot'**
-  String get calendarShootHeading;
-
-  /// No description provided for @calendarShootDesc.
-  ///
-  /// In en, this message translates to:
-  /// **'Schedule a shoot day, optionally create media folders and checklist tasks.'**
-  String get calendarShootDesc;
-
-  /// No description provided for @calendarShootSubmit.
-  ///
-  /// In en, this message translates to:
-  /// **'Plan shoot'**
-  String get calendarShootSubmit;
-
-  /// No description provided for @calendarShootTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Shoot title'**
-  String get calendarShootTitle;
-
-  /// No description provided for @calendarShootTitleHint.
-  ///
-  /// In en, this message translates to:
-  /// **'e.g. Spring campaign on-location'**
-  String get calendarShootTitleHint;
-
-  /// No description provided for @calendarShootClient.
-  ///
-  /// In en, this message translates to:
-  /// **'Client'**
-  String get calendarShootClient;
-
-  /// No description provided for @calendarShootProject.
-  ///
-  /// In en, this message translates to:
-  /// **'Project'**
-  String get calendarShootProject;
-
-  /// No description provided for @calendarShootStarts.
-  ///
-  /// In en, this message translates to:
-  /// **'Starts'**
-  String get calendarShootStarts;
-
-  /// No description provided for @calendarShootEnds.
-  ///
-  /// In en, this message translates to:
-  /// **'Ends'**
-  String get calendarShootEnds;
-
-  /// No description provided for @calendarShootCreateFolders.
-  ///
-  /// In en, this message translates to:
-  /// **'Create media folders'**
-  String get calendarShootCreateFolders;
-
-  /// No description provided for @calendarShootCreateFoldersHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Raw / Selects / Finals / Deliverables under Shoots'**
-  String get calendarShootCreateFoldersHint;
-
-  /// No description provided for @calendarShootTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Checklist tasks'**
-  String get calendarShootTasks;
-
-  /// No description provided for @calendarShootTasksHint.
-  ///
-  /// In en, this message translates to:
-  /// **'One task per line (needs a project)'**
-  String get calendarShootTasksHint;
-
   /// No description provided for @calendarEdit.
   ///
   /// In en, this message translates to:
@@ -2704,11 +2440,29 @@ abstract class AppLocalizations {
   /// **'Type'**
   String get calendarFilterType;
 
+  /// No description provided for @calendarFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get calendarFilters;
+
+  /// No description provided for @calendarFiltersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow the calendar without cluttering the main view.'**
+  String get calendarFiltersBody;
+
   /// No description provided for @calendarFiltersClear.
   ///
   /// In en, this message translates to:
   /// **'Clear filters'**
   String get calendarFiltersClear;
+
+  /// No description provided for @calendarDayAgenda.
+  ///
+  /// In en, this message translates to:
+  /// **'Day agenda'**
+  String get calendarDayAgenda;
 
   /// No description provided for @calendarOpenTask.
   ///
@@ -2896,12 +2650,6 @@ abstract class AppLocalizations {
   /// **'Overview'**
   String get clientTabOverview;
 
-  /// No description provided for @clientTabManage.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage'**
-  String get clientTabManage;
-
   /// No description provided for @clientTabBrand.
   ///
   /// In en, this message translates to:
@@ -2913,318 +2661,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Projects'**
   String get clientTabProjects;
-
-  /// No description provided for @clientManageTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Workspace'**
-  String get clientManageTitle;
-
-  /// No description provided for @clientManageBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Jump into every area for this client.'**
-  String get clientManageBody;
-
-  /// No description provided for @clientManageContent.
-  ///
-  /// In en, this message translates to:
-  /// **'Content'**
-  String get clientManageContent;
-
-  /// No description provided for @clientManageContentBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Posts, captions and planner'**
-  String get clientManageContentBody;
-
-  /// No description provided for @clientManageCalendar.
-  ///
-  /// In en, this message translates to:
-  /// **'Calendar'**
-  String get clientManageCalendar;
-
-  /// No description provided for @clientManageCalendarBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Schedule and deadlines'**
-  String get clientManageCalendarBody;
-
-  /// No description provided for @clientManageMessages.
-  ///
-  /// In en, this message translates to:
-  /// **'Messages'**
-  String get clientManageMessages;
-
-  /// No description provided for @clientManageMessagesBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Feedback and conversations'**
-  String get clientManageMessagesBody;
-
-  /// No description provided for @clientManageAssets.
-  ///
-  /// In en, this message translates to:
-  /// **'Assets'**
-  String get clientManageAssets;
-
-  /// No description provided for @clientManageAssetsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Files and brand media'**
-  String get clientManageAssetsBody;
-
-  /// No description provided for @clientManageInvoices.
-  ///
-  /// In en, this message translates to:
-  /// **'Invoices'**
-  String get clientManageInvoices;
-
-  /// No description provided for @clientManageInvoicesBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Billing and retainers'**
-  String get clientManageInvoicesBody;
-
-  /// No description provided for @clientManageIntegrations.
-  ///
-  /// In en, this message translates to:
-  /// **'Integrations'**
-  String get clientManageIntegrations;
-
-  /// No description provided for @clientManageIntegrationsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected accounts'**
-  String get clientManageIntegrationsBody;
-
-  /// No description provided for @clientManageCompose.
-  ///
-  /// In en, this message translates to:
-  /// **'New post'**
-  String get clientManageCompose;
-
-  /// No description provided for @clientManageAgreements.
-  ///
-  /// In en, this message translates to:
-  /// **'Agreements'**
-  String get clientManageAgreements;
-
-  /// No description provided for @clientManageAgreementsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Contracts, NDAs and signatures'**
-  String get clientManageAgreementsBody;
-
-  /// No description provided for @clientManageGrid.
-  ///
-  /// In en, this message translates to:
-  /// **'Content grid'**
-  String get clientManageGrid;
-
-  /// No description provided for @clientManageGridBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Instagram-style feed planner'**
-  String get clientManageGridBody;
-
-  /// No description provided for @clientTabAgreements.
-  ///
-  /// In en, this message translates to:
-  /// **'Agreements'**
-  String get clientTabAgreements;
-
-  /// No description provided for @agreementsEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No agreements yet'**
-  String get agreementsEmptyTitle;
-
-  /// No description provided for @agreementsEmptyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Create an NDA, MSA or SOW and upload the signed PDF when ready.'**
-  String get agreementsEmptyBody;
-
-  /// No description provided for @agreementsNew.
-  ///
-  /// In en, this message translates to:
-  /// **'New agreement'**
-  String get agreementsNew;
-
-  /// No description provided for @agreementsNewHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Start a draft contract for this client. You can upload a PDF and collect a signature next.'**
-  String get agreementsNewHint;
-
-  /// No description provided for @agreementsTitleLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Title'**
-  String get agreementsTitleLabel;
-
-  /// No description provided for @agreementsTypeLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Type'**
-  String get agreementsTypeLabel;
-
-  /// No description provided for @agreementsTypeNda.
-  ///
-  /// In en, this message translates to:
-  /// **'NDA'**
-  String get agreementsTypeNda;
-
-  /// No description provided for @agreementsTypeMsa.
-  ///
-  /// In en, this message translates to:
-  /// **'MSA'**
-  String get agreementsTypeMsa;
-
-  /// No description provided for @agreementsTypeSow.
-  ///
-  /// In en, this message translates to:
-  /// **'SOW'**
-  String get agreementsTypeSow;
-
-  /// No description provided for @agreementsTypeOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get agreementsTypeOther;
-
-  /// No description provided for @agreementsStart.
-  ///
-  /// In en, this message translates to:
-  /// **'Start date'**
-  String get agreementsStart;
-
-  /// No description provided for @agreementsEnd.
-  ///
-  /// In en, this message translates to:
-  /// **'End date'**
-  String get agreementsEnd;
-
-  /// No description provided for @agreementsStatTotal.
-  ///
-  /// In en, this message translates to:
-  /// **'Total'**
-  String get agreementsStatTotal;
-
-  /// No description provided for @agreementsStatSigned.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed'**
-  String get agreementsStatSigned;
-
-  /// No description provided for @agreementsStatDraft.
-  ///
-  /// In en, this message translates to:
-  /// **'Drafts'**
-  String get agreementsStatDraft;
-
-  /// No description provided for @agreementsDownload.
-  ///
-  /// In en, this message translates to:
-  /// **'Download'**
-  String get agreementsDownload;
-
-  /// No description provided for @agreementsDownloadStarted.
-  ///
-  /// In en, this message translates to:
-  /// **'Opening agreement…'**
-  String get agreementsDownloadStarted;
-
-  /// No description provided for @agreementsUploadPdf.
-  ///
-  /// In en, this message translates to:
-  /// **'Upload PDF'**
-  String get agreementsUploadPdf;
-
-  /// No description provided for @agreementsPdfUploaded.
-  ///
-  /// In en, this message translates to:
-  /// **'PDF uploaded'**
-  String get agreementsPdfUploaded;
-
-  /// No description provided for @agreementsSign.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign'**
-  String get agreementsSign;
-
-  /// No description provided for @agreementsSignTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign agreement'**
-  String get agreementsSignTitle;
-
-  /// No description provided for @agreementsSignHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Type your full legal name to sign. A snapshot of the PDF is locked at signing time.'**
-  String get agreementsSignHint;
-
-  /// No description provided for @agreementsSignerName.
-  ///
-  /// In en, this message translates to:
-  /// **'Full name'**
-  String get agreementsSignerName;
-
-  /// No description provided for @agreementsMarkSigned.
-  ///
-  /// In en, this message translates to:
-  /// **'Mark signed'**
-  String get agreementsMarkSigned;
-
-  /// No description provided for @agreementsSignedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Agreement signed'**
-  String get agreementsSignedToast;
-
-  /// No description provided for @agreementsCreatedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Agreement created'**
-  String get agreementsCreatedToast;
-
-  /// No description provided for @agreementsStatusDraft.
-  ///
-  /// In en, this message translates to:
-  /// **'Draft'**
-  String get agreementsStatusDraft;
-
-  /// No description provided for @agreementsStatusSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Sent'**
-  String get agreementsStatusSent;
-
-  /// No description provided for @agreementsStatusSigned.
-  ///
-  /// In en, this message translates to:
-  /// **'Signed'**
-  String get agreementsStatusSigned;
-
-  /// No description provided for @agreementsStatusActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Active'**
-  String get agreementsStatusActive;
-
-  /// No description provided for @agreementsStatusExpired.
-  ///
-  /// In en, this message translates to:
-  /// **'Expired'**
-  String get agreementsStatusExpired;
-
-  /// No description provided for @agreementsStatusVoid.
-  ///
-  /// In en, this message translates to:
-  /// **'Void'**
-  String get agreementsStatusVoid;
 
   /// No description provided for @clientProjectsEmpty.
   ///
@@ -3423,6 +2859,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Platform'**
   String get contentFilterPlatform;
+
+  /// No description provided for @contentFilterStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get contentFilterStatus;
+
+  /// No description provided for @contentFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get contentFilters;
+
+  /// No description provided for @contentFiltersBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Narrow the library without cluttering the main view.'**
+  String get contentFiltersBody;
+
+  /// No description provided for @contentFiltersClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get contentFiltersClear;
+
+  /// No description provided for @contentOpenPost.
+  ///
+  /// In en, this message translates to:
+  /// **'Open post'**
+  String get contentOpenPost;
+
+  /// No description provided for @contentSetReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Set reminder'**
+  String get contentSetReminder;
+
+  /// No description provided for @contentSetReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a publish date and time'**
+  String get contentSetReminderBody;
+
+  /// No description provided for @contentReminderSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder saved'**
+  String get contentReminderSet;
+
+  /// No description provided for @contentPlannerViewGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get contentPlannerViewGrid;
+
+  /// No description provided for @contentPlannerViewSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet'**
+  String get contentPlannerViewSheet;
+
+  /// No description provided for @contentPlannerPlatforms.
+  ///
+  /// In en, this message translates to:
+  /// **'Platforms'**
+  String get contentPlannerPlatforms;
+
+  /// No description provided for @contentPlannerPlatformsAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get contentPlannerPlatformsAll;
+
+  /// No description provided for @contentPlannerPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs action'**
+  String get contentPlannerPending;
+
+  /// No description provided for @contentPlannerPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 in review} other{{count} in review}}'**
+  String contentPlannerPendingReview(int count);
+
+  /// No description provided for @contentPlannerPendingChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 needs changes} other{{count} need changes}}'**
+  String contentPlannerPendingChanges(int count);
+
+  /// No description provided for @contentSheetEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled posts this month'**
+  String get contentSheetEmpty;
+
+  /// No description provided for @contentSheetRowType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get contentSheetRowType;
+
+  /// No description provided for @contentSheetRowName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get contentSheetRowName;
+
+  /// No description provided for @contentSheetRowVisual.
+  ///
+  /// In en, this message translates to:
+  /// **'Visual'**
+  String get contentSheetRowVisual;
+
+  /// No description provided for @contentSheetRowCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Caption'**
+  String get contentSheetRowCaption;
+
+  /// No description provided for @contentSheetRowHashtags.
+  ///
+  /// In en, this message translates to:
+  /// **'Hashtags'**
+  String get contentSheetRowHashtags;
+
+  /// No description provided for @contentSheetRowCta.
+  ///
+  /// In en, this message translates to:
+  /// **'CTA'**
+  String get contentSheetRowCta;
+
+  /// No description provided for @contentSheetRowPillar.
+  ///
+  /// In en, this message translates to:
+  /// **'Pillar'**
+  String get contentSheetRowPillar;
+
+  /// No description provided for @contentSheetRowStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get contentSheetRowStatus;
+
+  /// No description provided for @contentSheetNewSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get contentSheetNewSlot;
+
+  /// No description provided for @contentSheetHideEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide empty days'**
+  String get contentSheetHideEmpty;
+
+  /// No description provided for @calendarModeSheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Sheet'**
+  String get calendarModeSheet;
 
   /// No description provided for @contentScheduledFor.
   ///
@@ -4438,6 +4036,54 @@ abstract class AppLocalizations {
   /// **'Log time'**
   String get dashboardQuickLogTime;
 
+  /// No description provided for @homeBoardEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'YOUR DESK'**
+  String get homeBoardEyebrow;
+
+  /// No description provided for @homeBoardNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Right now'**
+  String get homeBoardNow;
+
+  /// No description provided for @homeBoardNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming up'**
+  String get homeBoardNext;
+
+  /// No description provided for @homeBoardCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get homeBoardCreate;
+
+  /// No description provided for @homeBoardAttentionTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 urgent task} other{{count} urgent tasks}}'**
+  String homeBoardAttentionTasks(int count);
+
+  /// No description provided for @homeBoardAttentionApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 approval waiting} other{{count} approvals waiting}}'**
+  String homeBoardAttentionApprovals(int count);
+
+  /// No description provided for @homeBoardAttentionContent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post needs review} other{{count} posts need review}}'**
+  String homeBoardAttentionContent(int count);
+
+  /// No description provided for @homeBoardAttentionInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue invoices to collect'**
+  String get homeBoardAttentionInvoices;
+
   /// No description provided for @dashboardEmptyTitle.
   ///
   /// In en, this message translates to:
@@ -4804,335 +4450,17 @@ abstract class AppLocalizations {
   /// **'Team created'**
   String get departmentTeamCreated;
 
-  /// No description provided for @navInbox.
+  /// No description provided for @departmentHead.
   ///
   /// In en, this message translates to:
-  /// **'Inbox'**
-  String get navInbox;
+  /// **'Head'**
+  String get departmentHead;
 
-  /// No description provided for @inboxTitle.
+  /// No description provided for @departmentPositionNameHint.
   ///
   /// In en, this message translates to:
-  /// **'Inbox'**
-  String get inboxTitle;
-
-  /// No description provided for @inboxSearch.
-  ///
-  /// In en, this message translates to:
-  /// **'Search author or message'**
-  String get inboxSearch;
-
-  /// No description provided for @inboxEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Inbox zero'**
-  String get inboxEmpty;
-
-  /// No description provided for @inboxEmptyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Comments, DMs and mentions from your clients\' channels will land here.'**
-  String get inboxEmptyBody;
-
-  /// No description provided for @inboxStatOpen.
-  ///
-  /// In en, this message translates to:
-  /// **'Open'**
-  String get inboxStatOpen;
-
-  /// No description provided for @inboxStatOpenHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Needs a reply'**
-  String get inboxStatOpenHint;
-
-  /// No description provided for @inboxStatUrgent.
-  ///
-  /// In en, this message translates to:
-  /// **'Urgent'**
-  String get inboxStatUrgent;
-
-  /// No description provided for @inboxStatUrgentHint.
-  ///
-  /// In en, this message translates to:
-  /// **'High or urgent priority'**
-  String get inboxStatUrgentHint;
-
-  /// No description provided for @inboxStatMine.
-  ///
-  /// In en, this message translates to:
-  /// **'Mine'**
-  String get inboxStatMine;
-
-  /// No description provided for @inboxStatMineHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Assigned to you'**
-  String get inboxStatMineHint;
-
-  /// No description provided for @inboxStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'{status, select, OPEN{Open} REPLIED{Replied} ARCHIVED{Archived} other{{status}}}'**
-  String inboxStatus(String status);
-
-  /// No description provided for @inboxType.
-  ///
-  /// In en, this message translates to:
-  /// **'{type, select, COMMENT{Comment} DM{Direct message} MENTION{Mention} other{{type}}}'**
-  String inboxType(String type);
-
-  /// No description provided for @inboxSentiment.
-  ///
-  /// In en, this message translates to:
-  /// **'{sentiment, select, POSITIVE{Positive} NEUTRAL{Neutral} NEGATIVE{Negative} other{Not rated}}'**
-  String inboxSentiment(String sentiment);
-
-  /// No description provided for @inboxPriority.
-  ///
-  /// In en, this message translates to:
-  /// **'{priority, select, LOW{Low} NORMAL{Normal} HIGH{High} URGENT{Urgent} other{{priority}}}'**
-  String inboxPriority(String priority);
-
-  /// No description provided for @inboxPlatform.
-  ///
-  /// In en, this message translates to:
-  /// **'{platform, select, instagram{Instagram} facebook{Facebook} linkedin{LinkedIn} x{X} youtube{YouTube} tiktok{TikTok} other{{platform}}}'**
-  String inboxPlatform(String platform);
-
-  /// No description provided for @inboxFilterType.
-  ///
-  /// In en, this message translates to:
-  /// **'Type'**
-  String get inboxFilterType;
-
-  /// No description provided for @inboxFilterSentiment.
-  ///
-  /// In en, this message translates to:
-  /// **'Sentiment'**
-  String get inboxFilterSentiment;
-
-  /// No description provided for @inboxFilterPriority.
-  ///
-  /// In en, this message translates to:
-  /// **'Priority'**
-  String get inboxFilterPriority;
-
-  /// No description provided for @inboxFilterClient.
-  ///
-  /// In en, this message translates to:
-  /// **'Client'**
-  String get inboxFilterClient;
-
-  /// No description provided for @inboxFilterMine.
-  ///
-  /// In en, this message translates to:
-  /// **'Assigned to me'**
-  String get inboxFilterMine;
-
-  /// No description provided for @inboxClearFilters.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear filters'**
-  String get inboxClearFilters;
-
-  /// No description provided for @inboxUnknownAuthor.
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown author'**
-  String get inboxUnknownAuthor;
-
-  /// No description provided for @inboxNoPreview.
-  ///
-  /// In en, this message translates to:
-  /// **'No message text'**
-  String get inboxNoPreview;
-
-  /// No description provided for @inboxSelectTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a conversation'**
-  String get inboxSelectTitle;
-
-  /// No description provided for @inboxSelectBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Pick a message to read the thread, triage it and reply.'**
-  String get inboxSelectBody;
-
-  /// No description provided for @inboxMetaClient.
-  ///
-  /// In en, this message translates to:
-  /// **'Client'**
-  String get inboxMetaClient;
-
-  /// No description provided for @inboxMetaReceived.
-  ///
-  /// In en, this message translates to:
-  /// **'Received'**
-  String get inboxMetaReceived;
-
-  /// No description provided for @inboxMetaSentiment.
-  ///
-  /// In en, this message translates to:
-  /// **'Sentiment'**
-  String get inboxMetaSentiment;
-
-  /// No description provided for @inboxMetaPriority.
-  ///
-  /// In en, this message translates to:
-  /// **'Priority'**
-  String get inboxMetaPriority;
-
-  /// No description provided for @inboxMetaAssignee.
-  ///
-  /// In en, this message translates to:
-  /// **'Assignee'**
-  String get inboxMetaAssignee;
-
-  /// No description provided for @inboxPriorityValue.
-  ///
-  /// In en, this message translates to:
-  /// **'Priority: {priority}'**
-  String inboxPriorityValue(String priority);
-
-  /// No description provided for @inboxChangeStatus.
-  ///
-  /// In en, this message translates to:
-  /// **'Change status'**
-  String get inboxChangeStatus;
-
-  /// No description provided for @inboxChangeSentiment.
-  ///
-  /// In en, this message translates to:
-  /// **'Change sentiment'**
-  String get inboxChangeSentiment;
-
-  /// No description provided for @inboxChangePriority.
-  ///
-  /// In en, this message translates to:
-  /// **'Change priority'**
-  String get inboxChangePriority;
-
-  /// No description provided for @inboxChangeAssignee.
-  ///
-  /// In en, this message translates to:
-  /// **'Change assignee'**
-  String get inboxChangeAssignee;
-
-  /// No description provided for @inboxAssignMe.
-  ///
-  /// In en, this message translates to:
-  /// **'Assign to me'**
-  String get inboxAssignMe;
-
-  /// No description provided for @inboxUnassign.
-  ///
-  /// In en, this message translates to:
-  /// **'Unassign'**
-  String get inboxUnassign;
-
-  /// No description provided for @inboxArchive.
-  ///
-  /// In en, this message translates to:
-  /// **'Archive'**
-  String get inboxArchive;
-
-  /// No description provided for @inboxReopen.
-  ///
-  /// In en, this message translates to:
-  /// **'Reopen'**
-  String get inboxReopen;
-
-  /// No description provided for @inboxArchivedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation archived'**
-  String get inboxArchivedToast;
-
-  /// No description provided for @inboxReopenedToast.
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation reopened'**
-  String get inboxReopenedToast;
-
-  /// No description provided for @inboxReplyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Reply to {name}…'**
-  String inboxReplyHint(String name);
-
-  /// No description provided for @inboxReplySend.
-  ///
-  /// In en, this message translates to:
-  /// **'Send reply'**
-  String get inboxReplySend;
-
-  /// No description provided for @inboxReplySent.
-  ///
-  /// In en, this message translates to:
-  /// **'Reply sent'**
-  String get inboxReplySent;
-
-  /// No description provided for @inboxReplyReadOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'Your role can read this conversation but not reply to it.'**
-  String get inboxReplyReadOnly;
-
-  /// No description provided for @inboxMessagesEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No messages in this thread yet.'**
-  String get inboxMessagesEmpty;
-
-  /// No description provided for @inboxSending.
-  ///
-  /// In en, this message translates to:
-  /// **'Sending…'**
-  String get inboxSending;
-
-  /// No description provided for @inboxCharacterCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} / {max}'**
-  String inboxCharacterCount(int count, int max);
-
-  /// No description provided for @inboxYou.
-  ///
-  /// In en, this message translates to:
-  /// **'You'**
-  String get inboxYou;
-
-  /// No description provided for @inboxTeam.
-  ///
-  /// In en, this message translates to:
-  /// **'Team'**
-  String get inboxTeam;
-
-  /// No description provided for @inboxToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Today'**
-  String get inboxToday;
-
-  /// No description provided for @inboxYesterday.
-  ///
-  /// In en, this message translates to:
-  /// **'Yesterday'**
-  String get inboxYesterday;
-
-  /// No description provided for @inboxMessageLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'{author}, {time}: {body}'**
-  String inboxMessageLabel(String author, String time, String body);
-
-  /// No description provided for @inboxRowLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'{author}, {status}, {time}'**
-  String inboxRowLabel(String author, String status, String time);
+  /// **'e.g. Senior designer'**
+  String get departmentPositionNameHint;
 
   /// No description provided for @navIntegrations.
   ///
@@ -6814,8 +6142,20 @@ abstract class AppLocalizations {
   /// No description provided for @messagesComposerHint.
   ///
   /// In en, this message translates to:
-  /// **'Write a message…'**
+  /// **'Message…'**
   String get messagesComposerHint;
+
+  /// No description provided for @messagesWhiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Whiz'**
+  String get messagesWhiz;
+
+  /// No description provided for @messagesWhizHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign tasks, schedule posts, set reminders…'**
+  String get messagesWhizHint;
 
   /// No description provided for @messagesResolve.
   ///
@@ -6937,6 +6277,78 @@ abstract class AppLocalizations {
   /// **'Content feedback'**
   String get messagesContentConversation;
 
+  /// No description provided for @agentNewSession.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get agentNewSession;
+
+  /// No description provided for @agentSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get agentSessions;
+
+  /// No description provided for @agentUntitledSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled chat'**
+  String get agentUntitledSession;
+
+  /// No description provided for @agentEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Say what you need'**
+  String get agentEmptyTitle;
+
+  /// No description provided for @agentEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'One chat for everything: create clients, assign tasks, draft content, schedule reminders, and more.'**
+  String get agentEmptyBody;
+
+  /// No description provided for @agentComposerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell me what to do…'**
+  String get agentComposerHint;
+
+  /// No description provided for @agentSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get agentSend;
+
+  /// No description provided for @agentSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Whiz could not send that message. Try again.'**
+  String get agentSendFailed;
+
+  /// No description provided for @agentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get agentConfirm;
+
+  /// No description provided for @agentPhasePlanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Planning the next steps…'**
+  String get agentPhasePlanning;
+
+  /// No description provided for @agentPhaseWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working on it…'**
+  String get agentPhaseWorking;
+
+  /// No description provided for @agentPhaseWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing your answer…'**
+  String get agentPhaseWriting;
+
   /// No description provided for @messagesStatus.
   ///
   /// In en, this message translates to:
@@ -7002,18 +6414,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View projects'**
   String get portalQuickProjects;
-
-  /// No description provided for @portalQuickFiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Open files'**
-  String get portalQuickFiles;
-
-  /// No description provided for @portalQuickReports.
-  ///
-  /// In en, this message translates to:
-  /// **'View reports'**
-  String get portalQuickReports;
 
   /// No description provided for @portalKpiAria.
   ///
@@ -7164,66 +6564,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Browse content'**
   String get portalContentCta;
-
-  /// No description provided for @portalKpiFiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Shared files'**
-  String get portalKpiFiles;
-
-  /// No description provided for @portalKpiFilesCaption.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}'**
-  String portalKpiFilesCaption(int count);
-
-  /// No description provided for @portalKpiReports.
-  ///
-  /// In en, this message translates to:
-  /// **'Reach (30 days)'**
-  String get portalKpiReports;
-
-  /// No description provided for @portalKpiReportsCaption.
-  ///
-  /// In en, this message translates to:
-  /// **'Across your connected channels'**
-  String get portalKpiReportsCaption;
-
-  /// No description provided for @portalFilesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Files'**
-  String get portalFilesTitle;
-
-  /// No description provided for @portalFilesEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No files have been shared with you yet.'**
-  String get portalFilesEmpty;
-
-  /// No description provided for @portalFilesCta.
-  ///
-  /// In en, this message translates to:
-  /// **'Browse files'**
-  String get portalFilesCta;
-
-  /// No description provided for @portalReportsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reports'**
-  String get portalReportsTitle;
-
-  /// No description provided for @portalReportsEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'No reports are ready yet.'**
-  String get portalReportsEmpty;
-
-  /// No description provided for @portalReportsCta.
-  ///
-  /// In en, this message translates to:
-  /// **'View reports'**
-  String get portalReportsCta;
 
   /// No description provided for @portalContentStatus.
   ///
@@ -8501,6 +7841,12 @@ abstract class AppLocalizations {
   /// **'Agency'**
   String get navTeam;
 
+  /// No description provided for @teamOrgStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure & access'**
+  String get teamOrgStructure;
+
   /// No description provided for @teamTabMembers.
   ///
   /// In en, this message translates to:
@@ -8512,6 +7858,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invitations'**
   String get teamTabInvitations;
+
+  /// No description provided for @agencyTabHrDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'HR docs'**
+  String get agencyTabHrDocuments;
+
+  /// No description provided for @memberTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get memberTabOverview;
+
+  /// No description provided for @memberTabWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get memberTabWork;
+
+  /// No description provided for @memberTabContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get memberTabContent;
+
+  /// No description provided for @memberTabTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get memberTabTime;
+
+  /// No description provided for @memberTabPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay'**
+  String get memberTabPay;
+
+  /// No description provided for @memberTabDocuments.
+  ///
+  /// In en, this message translates to:
+  /// **'Documents'**
+  String get memberTabDocuments;
+
+  /// No description provided for @memberWorkEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks assigned to this person yet.'**
+  String get memberWorkEmpty;
+
+  /// No description provided for @memberContentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts or content from this person yet.'**
+  String get memberContentEmpty;
+
+  /// No description provided for @memberTimeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No time logged yet.'**
+  String get memberTimeEmpty;
+
+  /// No description provided for @memberDocumentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents sent yet.'**
+  String get memberDocumentsEmpty;
+
+  /// No description provided for @memberEmploymentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Employment type'**
+  String get memberEmploymentType;
+
+  /// No description provided for @memberEmploymentTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, EMPLOYEE{Employee} FREELANCE{Freelance} CONTRACTOR{Contractor} other{Not set}}'**
+  String memberEmploymentTypeLabel(String type);
+
+  /// No description provided for @memberDocumentTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, OFFER_LETTER{Offer letter} SALARY_SLIP{Salary slip} NDA{NDA} EMPLOYMENT_AGREEMENT{Employment agreement} OTHER{Document} other{{type}}}'**
+  String memberDocumentTypeLabel(String type);
+
+  /// No description provided for @memberSendDocument.
+  ///
+  /// In en, this message translates to:
+  /// **'Send document'**
+  String get memberSendDocument;
+
+  /// No description provided for @memberPickDocumentType.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose document type'**
+  String get memberPickDocumentType;
+
+  /// No description provided for @memberPickTemplate.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose template'**
+  String get memberPickTemplate;
+
+  /// No description provided for @memberDocumentSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Document sent to {name}.'**
+  String memberDocumentSent(String name);
+
+  /// No description provided for @memberFilterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter members'**
+  String get memberFilterTitle;
+
+  /// No description provided for @memberFilterApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get memberFilterApply;
+
+  /// No description provided for @memberFilterClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get memberFilterClear;
+
+  /// No description provided for @memberActiveFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Active filters'**
+  String get memberActiveFilters;
+
+  /// No description provided for @memberTasksAssigned.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 task assigned} other{{count} tasks assigned}}'**
+  String memberTasksAssigned(int count);
+
+  /// No description provided for @memberContentAuthored.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post} other{{count} posts}}'**
+  String memberContentAuthored(int count);
+
+  /// No description provided for @memberHoursLogged.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} logged'**
+  String memberHoursLogged(String hours);
+
+  /// No description provided for @hrTemplatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HR document templates'**
+  String get hrTemplatesTitle;
+
+  /// No description provided for @hrTemplatesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create templates for offer letters, salary slips, NDAs and employment agreements.'**
+  String get hrTemplatesBody;
+
+  /// No description provided for @hrTemplatesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No HR templates yet'**
+  String get hrTemplatesEmpty;
 
   /// No description provided for @teamSearch.
   ///
@@ -8873,6 +8387,204 @@ abstract class AppLocalizations {
   /// **'Clients'**
   String get teamStatClients;
 
+  /// No description provided for @agencyTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get agencyTabOverview;
+
+  /// No description provided for @agencyBoardEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'STUDIO COMMAND'**
+  String get agencyBoardEyebrow;
+
+  /// No description provided for @agencyBoardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run the agency'**
+  String get agencyBoardTitle;
+
+  /// No description provided for @agencyBoardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'People, structure, and permissions — your creative control room.'**
+  String get agencyBoardSubtitle;
+
+  /// No description provided for @agencyBoardPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get agencyBoardPeople;
+
+  /// No description provided for @agencyBoardStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure'**
+  String get agencyBoardStructure;
+
+  /// No description provided for @agencyBoardAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Access'**
+  String get agencyBoardAccess;
+
+  /// No description provided for @agencyBoardPlaybook.
+  ///
+  /// In en, this message translates to:
+  /// **'Playbook'**
+  String get agencyBoardPlaybook;
+
+  /// No description provided for @agencyBoardOnTheFloor.
+  ///
+  /// In en, this message translates to:
+  /// **'On the floor'**
+  String get agencyBoardOnTheFloor;
+
+  /// No description provided for @agencyBoardLaunchPad.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch pad'**
+  String get agencyBoardLaunchPad;
+
+  /// No description provided for @agencyBoardNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get agencyBoardNeedsAttention;
+
+  /// No description provided for @agencyBoardOpenRoster.
+  ///
+  /// In en, this message translates to:
+  /// **'Open roster'**
+  String get agencyBoardOpenRoster;
+
+  /// No description provided for @agencyBoardStaffLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{staff} staff · {clients} clients'**
+  String agencyBoardStaffLine(int staff, int clients);
+
+  /// No description provided for @agencyBoardUnassignedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person without a department} other{{count} people without a department}}'**
+  String agencyBoardUnassignedHint(int count);
+
+  /// No description provided for @agencyOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your organisation at a glance'**
+  String get agencyOverviewTitle;
+
+  /// No description provided for @agencyUnassignedMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Not in a department'**
+  String get agencyUnassignedMembers;
+
+  /// No description provided for @agencyAssignMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign'**
+  String get agencyAssignMember;
+
+  /// No description provided for @agencyPendingInvites.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 pending invitation} other{{count} pending invitations}}'**
+  String agencyPendingInvites(int count);
+
+  /// No description provided for @agencyQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get agencyQuickActions;
+
+  /// No description provided for @agencyCustomAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom access'**
+  String get agencyCustomAccess;
+
+  /// No description provided for @memberPositions.
+  ///
+  /// In en, this message translates to:
+  /// **'Departments & positions'**
+  String get memberPositions;
+
+  /// No description provided for @memberPositionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Not assigned to any department yet.'**
+  String get memberPositionsEmpty;
+
+  /// No description provided for @memberAddPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to department'**
+  String get memberAddPosition;
+
+  /// No description provided for @memberPrimaryPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary'**
+  String get memberPrimaryPosition;
+
+  /// No description provided for @memberPickDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a department'**
+  String get memberPickDepartment;
+
+  /// No description provided for @memberPickPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a position'**
+  String get memberPickPosition;
+
+  /// No description provided for @memberNoPositionsInDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'This department has no positions yet. Create one from the department page.'**
+  String get memberNoPositionsInDepartment;
+
+  /// No description provided for @memberEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit job title'**
+  String get memberEditTitle;
+
+  /// No description provided for @memberTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Creative director'**
+  String get memberTitleHint;
+
+  /// No description provided for @memberPermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct permissions'**
+  String get memberPermissions;
+
+  /// No description provided for @memberPermissionsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{effective} effective · {overrides} custom overrides'**
+  String memberPermissionsSummary(int effective, int overrides);
+
+  /// No description provided for @memberPermissionsReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This member\'s permissions cannot be edited here.'**
+  String get memberPermissionsReadOnly;
+
+  /// No description provided for @memberSavePermissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Save permission changes'**
+  String get memberSavePermissions;
+
   /// No description provided for @navTemplates.
   ///
   /// In en, this message translates to:
@@ -8930,7 +8642,7 @@ abstract class AppLocalizations {
   /// No description provided for @templateType.
   ///
   /// In en, this message translates to:
-  /// **'{type, select, PROJECT{Project} TASK{Task} CONTENT{Content} REPORT{Report} MESSAGE{Message} other{{type}}}'**
+  /// **'{type, select, PROJECT{Project} TASK{Task} CONTENT{Content} REPORT{Report} MESSAGE{Message} OFFER_LETTER{Offer letter} SALARY_SLIP{Salary slip} NDA{NDA} EMPLOYMENT_AGREEMENT{Employment agreement} other{{type}}}'**
   String templateType(String type);
 
   /// No description provided for @templateScope.
@@ -9518,7 +9230,7 @@ abstract class AppLocalizations {
   /// No description provided for @workflowStagesTooFew.
   ///
   /// In en, this message translates to:
-  /// **'Add at least {min} stage(s)'**
+  /// **'Add at least {min} stages'**
   String workflowStagesTooFew(int min);
 
   /// No description provided for @workflowStagesTooMany.
@@ -9544,6 +9256,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Changing the stages publishes a new version. Content already in progress keeps its version.'**
   String get workflowStagesVersionNote;
+
+  /// No description provided for @workflowStageApprovalRule.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval rule'**
+  String get workflowStageApprovalRule;
+
+  /// No description provided for @workflowStageRuleAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any one approver'**
+  String get workflowStageRuleAny;
+
+  /// No description provided for @workflowStageRuleAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone must approve'**
+  String get workflowStageRuleAll;
+
+  /// No description provided for @workflowStageRuleQuorum.
+  ///
+  /// In en, this message translates to:
+  /// **'Quorum (N of pool)'**
+  String get workflowStageRuleQuorum;
+
+  /// No description provided for @workflowStageQuorum.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals needed'**
+  String get workflowStageQuorum;
+
+  /// No description provided for @workflowStageQuorumHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How many people from the pool must approve.'**
+  String get workflowStageQuorumHint;
+
+  /// No description provided for @workflowStageRoles.
+  ///
+  /// In en, this message translates to:
+  /// **'Approver roles'**
+  String get workflowStageRoles;
+
+  /// No description provided for @workflowStageRolesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick any access role. People with that role can approve this stage.'**
+  String get workflowStageRolesHint;
+
+  /// No description provided for @workflowStageRolesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No roles available yet — create a role under Agency → Roles first.'**
+  String get workflowStageRolesEmpty;
+
+  /// No description provided for @workflowStagePeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Named people'**
+  String get workflowStagePeople;
+
+  /// No description provided for @workflowStagePeopleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add specific people who can approve this stage.'**
+  String get workflowStagePeopleHint;
+
+  /// No description provided for @workflowStagePeopleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No active team members to pick.'**
+  String get workflowStagePeopleEmpty;
+
+  /// No description provided for @workflowStageAssigneesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage assignees'**
+  String get workflowStageAssigneesTitle;
+
+  /// No description provided for @workflowStageNoAssignees.
+  ///
+  /// In en, this message translates to:
+  /// **'No roles or people assigned yet.'**
+  String get workflowStageNoAssignees;
 
   /// No description provided for @workflowSlaField.
   ///
@@ -9743,6 +9539,858 @@ abstract class AppLocalizations {
   /// **'{active} of {total}'**
   String workflowKpiActiveOf(int active, int total);
 
+  /// No description provided for @agreementsCreatedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreement created'**
+  String get agreementsCreatedToast;
+
+  /// No description provided for @agreementsDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get agreementsDownload;
+
+  /// No description provided for @agreementsDownloadStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening agreement…'**
+  String get agreementsDownloadStarted;
+
+  /// No description provided for @agreementsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an NDA, MSA or SOW and upload the signed PDF when ready.'**
+  String get agreementsEmptyBody;
+
+  /// No description provided for @agreementsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No agreements yet'**
+  String get agreementsEmptyTitle;
+
+  /// No description provided for @agreementsEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get agreementsEnd;
+
+  /// No description provided for @agreementsMarkSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark signed'**
+  String get agreementsMarkSigned;
+
+  /// No description provided for @agreementsNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New agreement'**
+  String get agreementsNew;
+
+  /// No description provided for @agreementsNewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a draft contract for this client. You can upload a PDF and collect a signature next.'**
+  String get agreementsNewHint;
+
+  /// No description provided for @agreementsPdfUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'PDF uploaded'**
+  String get agreementsPdfUploaded;
+
+  /// No description provided for @agreementsSign.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign'**
+  String get agreementsSign;
+
+  /// No description provided for @agreementsSignedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreement signed'**
+  String get agreementsSignedToast;
+
+  /// No description provided for @agreementsSignerName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full name'**
+  String get agreementsSignerName;
+
+  /// No description provided for @agreementsSignHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type your full legal name to sign. A snapshot of the PDF is locked at signing time.'**
+  String get agreementsSignHint;
+
+  /// No description provided for @agreementsSignTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign agreement'**
+  String get agreementsSignTitle;
+
+  /// No description provided for @agreementsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get agreementsStart;
+
+  /// No description provided for @agreementsStatDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts'**
+  String get agreementsStatDraft;
+
+  /// No description provided for @agreementsStatSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed'**
+  String get agreementsStatSigned;
+
+  /// No description provided for @agreementsStatTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get agreementsStatTotal;
+
+  /// No description provided for @agreementsStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get agreementsStatusActive;
+
+  /// No description provided for @agreementsStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get agreementsStatusDraft;
+
+  /// No description provided for @agreementsStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get agreementsStatusExpired;
+
+  /// No description provided for @agreementsStatusSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get agreementsStatusSent;
+
+  /// No description provided for @agreementsStatusSigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed'**
+  String get agreementsStatusSigned;
+
+  /// No description provided for @agreementsStatusVoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Void'**
+  String get agreementsStatusVoid;
+
+  /// No description provided for @agreementsTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get agreementsTitleLabel;
+
+  /// No description provided for @agreementsTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get agreementsTypeLabel;
+
+  /// No description provided for @agreementsTypeMsa.
+  ///
+  /// In en, this message translates to:
+  /// **'MSA'**
+  String get agreementsTypeMsa;
+
+  /// No description provided for @agreementsTypeNda.
+  ///
+  /// In en, this message translates to:
+  /// **'NDA'**
+  String get agreementsTypeNda;
+
+  /// No description provided for @agreementsTypeOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get agreementsTypeOther;
+
+  /// No description provided for @agreementsTypeSow.
+  ///
+  /// In en, this message translates to:
+  /// **'SOW'**
+  String get agreementsTypeSow;
+
+  /// No description provided for @agreementsUploadPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload PDF'**
+  String get agreementsUploadPdf;
+
+  /// No description provided for @authGoogleButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get authGoogleButton;
+
+  /// No description provided for @authGoogleCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was cancelled.'**
+  String get authGoogleCancelled;
+
+  /// No description provided for @authGoogleInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was rejected. Try again.'**
+  String get authGoogleInvalid;
+
+  /// No description provided for @authGoogleNoAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'No account for that Google email. Create a workspace first.'**
+  String get authGoogleNoAccount;
+
+  /// No description provided for @authGoogleWorkspaceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an agency name and workspace URL before continuing with Google.'**
+  String get authGoogleWorkspaceRequired;
+
+  /// No description provided for @authInviteAlreadyMember.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is already a member of the workspace. Sign in instead.'**
+  String get authInviteAlreadyMember;
+
+  /// No description provided for @authInviteInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation link is invalid, already used or expired. Ask the sender for a new one.'**
+  String get authInviteInvalid;
+
+  /// No description provided for @authInviteInvalidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation unavailable'**
+  String get authInviteInvalidTitle;
+
+  /// No description provided for @authInvitePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password'**
+  String get authInvitePassword;
+
+  /// No description provided for @authInviteSetPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a password (12+ characters) to join.'**
+  String get authInviteSetPasswordHint;
+
+  /// No description provided for @authInviteSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept invitation'**
+  String get authInviteSubmit;
+
+  /// No description provided for @authInviteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You were invited as {email}.'**
+  String authInviteSubtitle(String email);
+
+  /// No description provided for @authInviteSubtitleExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept as {email}.'**
+  String authInviteSubtitleExisting(String email);
+
+  /// No description provided for @authInviteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {organization}'**
+  String authInviteTitle(String organization);
+
+  /// No description provided for @authInviteWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'That password does not match the existing account for this email.'**
+  String get authInviteWrongPassword;
+
+  /// No description provided for @authOrEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'or use email'**
+  String get authOrEmail;
+
+  /// No description provided for @calendarCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get calendarCreate;
+
+  /// No description provided for @calendarNewEventHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting, deadline or manual block'**
+  String get calendarNewEventHint;
+
+  /// No description provided for @calendarPlanShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get calendarPlanShoot;
+
+  /// No description provided for @calendarPlanShootHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot day with folders and tasks'**
+  String get calendarPlanShootHint;
+
+  /// No description provided for @calendarShootClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get calendarShootClient;
+
+  /// No description provided for @calendarShootCreateFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Create media folders'**
+  String get calendarShootCreateFolders;
+
+  /// No description provided for @calendarShootCreateFoldersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw / Selects / Finals / Deliverables under Shoots'**
+  String get calendarShootCreateFoldersHint;
+
+  /// No description provided for @calendarShootDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a shoot day, optionally create media folders and checklist tasks.'**
+  String get calendarShootDesc;
+
+  /// No description provided for @calendarShootEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get calendarShootEnds;
+
+  /// No description provided for @calendarShootHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan a shoot'**
+  String get calendarShootHeading;
+
+  /// No description provided for @calendarShootProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get calendarShootProject;
+
+  /// No description provided for @calendarShootStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get calendarShootStarts;
+
+  /// No description provided for @calendarShootSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get calendarShootSubmit;
+
+  /// No description provided for @calendarShootTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist tasks'**
+  String get calendarShootTasks;
+
+  /// No description provided for @calendarShootTasksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One task per line (needs a project)'**
+  String get calendarShootTasksHint;
+
+  /// No description provided for @calendarShootTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot title'**
+  String get calendarShootTitle;
+
+  /// No description provided for @calendarShootTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Spring campaign on-location'**
+  String get calendarShootTitleHint;
+
+  /// No description provided for @clientManageCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get clientManageCalendar;
+
+  /// No description provided for @clientManageCalendarBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule and deadlines'**
+  String get clientManageCalendarBody;
+
+  /// No description provided for @clientManageContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get clientManageContent;
+
+  /// No description provided for @clientManageContentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts, captions and planner'**
+  String get clientManageContentBody;
+
+  /// No description provided for @clientManageGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Content grid'**
+  String get clientManageGrid;
+
+  /// No description provided for @clientManageGridBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Instagram-style feed planner'**
+  String get clientManageGridBody;
+
+  /// No description provided for @clientManageIntegrations.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get clientManageIntegrations;
+
+  /// No description provided for @clientManageIntegrationsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected accounts'**
+  String get clientManageIntegrationsBody;
+
+  /// No description provided for @clientTabAgreements.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreements'**
+  String get clientTabAgreements;
+
+  /// No description provided for @contentCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get contentCopyLink;
+
+  /// No description provided for @contentFieldHashtagsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'#brand #launch'**
+  String get contentFieldHashtagsHint;
+
+  /// No description provided for @contentLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Post link copied'**
+  String get contentLinkCopied;
+
+  /// No description provided for @contentPlatformsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one or more networks for this post.'**
+  String get contentPlatformsHint;
+
+  /// No description provided for @contentPlatformsSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select platforms'**
+  String get contentPlatformsSelect;
+
+  /// No description provided for @contentReviewActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Review decision'**
+  String get contentReviewActions;
+
+  /// No description provided for @contentShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get contentShare;
+
+  /// No description provided for @contentShareCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Share text copied'**
+  String get contentShareCopied;
+
+  /// No description provided for @contentShareText.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} · {client}\n{url}'**
+  String contentShareText(String title, String client, String url);
+
+  /// No description provided for @dashboardFocusClearSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing urgent. Space to think.'**
+  String get dashboardFocusClearSubtitle;
+
+  /// No description provided for @dashboardFocusSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 thing needs you today.} other{{count} things need you today.}}'**
+  String dashboardFocusSubtitle(int count);
+
+  /// No description provided for @messagesCreateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get messagesCreateGroup;
+
+  /// No description provided for @messagesDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get messagesDeleted;
+
+  /// No description provided for @messagesGroupNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get messagesGroupNameLabel;
+
+  /// No description provided for @messagesGroupPickMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one teammate'**
+  String get messagesGroupPickMembers;
+
+  /// No description provided for @messagesGroupSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected} other{{count} selected}}'**
+  String messagesGroupSelected(int count);
+
+  /// No description provided for @messagesNewPortalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a chat with your agency team. They will see it in the client room.'**
+  String get messagesNewPortalBody;
+
+  /// No description provided for @messagesNoContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No people match that search'**
+  String get messagesNoContacts;
+
+  /// No description provided for @messagesSearchContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search name or email'**
+  String get messagesSearchContacts;
+
+  /// No description provided for @messagesTabClients.
+  ///
+  /// In en, this message translates to:
+  /// **'Clients'**
+  String get messagesTabClients;
+
+  /// No description provided for @messagesTabGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get messagesTabGroup;
+
+  /// No description provided for @messagesTabTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get messagesTabTeam;
+
+  /// No description provided for @navMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get navMenu;
+
+  /// No description provided for @portalFilesCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse files'**
+  String get portalFilesCta;
+
+  /// No description provided for @portalFilesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No files have been shared with you yet.'**
+  String get portalFilesEmpty;
+
+  /// No description provided for @portalFilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get portalFilesTitle;
+
+  /// No description provided for @portalKpiFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared files'**
+  String get portalKpiFiles;
+
+  /// No description provided for @portalKpiFilesCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}'**
+  String portalKpiFilesCaption(int count);
+
+  /// No description provided for @portalKpiReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach (30 days)'**
+  String get portalKpiReports;
+
+  /// No description provided for @portalKpiReportsCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Across your connected channels'**
+  String get portalKpiReportsCaption;
+
+  /// No description provided for @portalQuickFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Open files'**
+  String get portalQuickFiles;
+
+  /// No description provided for @portalQuickReports.
+  ///
+  /// In en, this message translates to:
+  /// **'View reports'**
+  String get portalQuickReports;
+
+  /// No description provided for @portalReportsCta.
+  ///
+  /// In en, this message translates to:
+  /// **'View reports'**
+  String get portalReportsCta;
+
+  /// No description provided for @portalReportsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports are ready yet.'**
+  String get portalReportsEmpty;
+
+  /// No description provided for @portalReportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get portalReportsTitle;
+
+  /// No description provided for @quickCreateClient.
+  ///
+  /// In en, this message translates to:
+  /// **'New client'**
+  String get quickCreateClient;
+
+  /// No description provided for @quickCreateContent.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get quickCreateContent;
+
+  /// No description provided for @quickCreateEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to create anything yet.'**
+  String get quickCreateEmpty;
+
+  /// No description provided for @quickCreateInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'New invoice'**
+  String get quickCreateInvoice;
+
+  /// No description provided for @quickCreateLead.
+  ///
+  /// In en, this message translates to:
+  /// **'New lead'**
+  String get quickCreateLead;
+
+  /// No description provided for @quickCreateProject.
+  ///
+  /// In en, this message translates to:
+  /// **'New project'**
+  String get quickCreateProject;
+
+  /// No description provided for @quickCreateShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get quickCreateShoot;
+
+  /// No description provided for @quickCreateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start something new without leaving your flow.'**
+  String get quickCreateSubtitle;
+
+  /// No description provided for @quickCreateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'New task'**
+  String get quickCreateTask;
+
+  /// No description provided for @quickCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get quickCreateTitle;
+
+  /// No description provided for @storageClearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selection'**
+  String get storageClearSelection;
+
+  /// No description provided for @storageDriveConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Drive'**
+  String get storageDriveConnect;
+
+  /// No description provided for @storageDriveConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Google Drive connect.'**
+  String get storageDriveConnectFailed;
+
+  /// No description provided for @storageDriveDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get storageDriveDisconnect;
+
+  /// No description provided for @storageDriveDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive disconnected.'**
+  String get storageDriveDisconnected;
+
+  /// No description provided for @storageDriveDisconnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not disconnect Google Drive.'**
+  String get storageDriveDisconnectFailed;
+
+  /// No description provided for @storageDriveNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your platform admin to set Google Drive OAuth credentials.'**
+  String get storageDriveNotConfigured;
+
+  /// No description provided for @storageDriveTransferAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer all to Drive'**
+  String get storageDriveTransferAll;
+
+  /// No description provided for @storageDriveTransferFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start the Drive transfer.'**
+  String get storageDriveTransferFailed;
+
+  /// No description provided for @storageDriveTransferStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive transfer started.'**
+  String get storageDriveTransferStarted;
+
+  /// No description provided for @storageFileCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file} other{{count} files}}'**
+  String storageFileCount(int count);
+
+  /// No description provided for @storageSelectedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String storageSelectedCount(int count);
+
+  /// No description provided for @storageSettingsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage, data sources, and Google Drive'**
+  String get storageSettingsBody;
+
+  /// No description provided for @storageSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage'**
+  String get storageSettingsTitle;
+
+  /// No description provided for @storageSourceDriveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Drive to import files or transfer copies out.'**
+  String get storageSourceDriveBody;
+
+  /// No description provided for @storageSourcePlatformBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure platform storage used across media, clients, and the portal.'**
+  String get storageSourcePlatformBody;
+
+  /// No description provided for @storageSourcesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect external libraries and manage where agency files live.'**
+  String get storageSourcesBody;
+
+  /// No description provided for @storageSourcesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources'**
+  String get storageSourcesTitle;
+
+  /// No description provided for @storageStatusAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get storageStatusAvailable;
+
+  /// No description provided for @storageStatusConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get storageStatusConnected;
+
+  /// No description provided for @storageStatusDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Not configured'**
+  String get storageStatusDisabled;
+
+  /// No description provided for @storageStatusError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get storageStatusError;
+
+  /// No description provided for @storageStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting'**
+  String get storageStatusPending;
+
   /// No description provided for @storageTitle.
   ///
   /// In en, this message translates to:
@@ -9761,138 +10409,6 @@ abstract class AppLocalizations {
   /// **'{used} used'**
   String storageUsedUnlimited(String used);
 
-  /// No description provided for @storageFileCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 file} other{{count} files}}'**
-  String storageFileCount(int count);
-
-  /// No description provided for @storageSettingsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Storage'**
-  String get storageSettingsTitle;
-
-  /// No description provided for @storageSettingsBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Usage, data sources, and Google Drive'**
-  String get storageSettingsBody;
-
-  /// No description provided for @storageSourcesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Data sources'**
-  String get storageSourcesTitle;
-
-  /// No description provided for @storageSourcesBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect external libraries and manage where agency files live.'**
-  String get storageSourcesBody;
-
-  /// No description provided for @storageSourcePlatformBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Secure platform storage used across media, clients, and the portal.'**
-  String get storageSourcePlatformBody;
-
-  /// No description provided for @storageSourceDriveBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google Drive to import files or transfer copies out.'**
-  String get storageSourceDriveBody;
-
-  /// No description provided for @storageStatusConnected.
-  ///
-  /// In en, this message translates to:
-  /// **'Connected'**
-  String get storageStatusConnected;
-
-  /// No description provided for @storageStatusAvailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready'**
-  String get storageStatusAvailable;
-
-  /// No description provided for @storageStatusPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Connecting'**
-  String get storageStatusPending;
-
-  /// No description provided for @storageStatusError.
-  ///
-  /// In en, this message translates to:
-  /// **'Error'**
-  String get storageStatusError;
-
-  /// No description provided for @storageStatusDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Not configured'**
-  String get storageStatusDisabled;
-
-  /// No description provided for @storageDriveConnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect Google Drive'**
-  String get storageDriveConnect;
-
-  /// No description provided for @storageDriveDisconnect.
-  ///
-  /// In en, this message translates to:
-  /// **'Disconnect'**
-  String get storageDriveDisconnect;
-
-  /// No description provided for @storageDriveTransferAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Transfer all to Drive'**
-  String get storageDriveTransferAll;
-
-  /// No description provided for @storageDriveNotConfigured.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask your platform admin to set Google Drive OAuth credentials.'**
-  String get storageDriveNotConfigured;
-
-  /// No description provided for @storageDriveConnectFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not start Google Drive connect.'**
-  String get storageDriveConnectFailed;
-
-  /// No description provided for @storageDriveDisconnectFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not disconnect Google Drive.'**
-  String get storageDriveDisconnectFailed;
-
-  /// No description provided for @storageDriveDisconnected.
-  ///
-  /// In en, this message translates to:
-  /// **'Google Drive disconnected.'**
-  String get storageDriveDisconnected;
-
-  /// No description provided for @storageDriveTransferFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not start the Drive transfer.'**
-  String get storageDriveTransferFailed;
-
-  /// No description provided for @storageDriveTransferStarted.
-  ///
-  /// In en, this message translates to:
-  /// **'Drive transfer started.'**
-  String get storageDriveTransferStarted;
-
-  /// No description provided for @storageZipSelect.
-  ///
-  /// In en, this message translates to:
-  /// **'Select files'**
-  String get storageZipSelect;
-
   /// No description provided for @storageZipDownload.
   ///
   /// In en, this message translates to:
@@ -9905,95 +10421,11 @@ abstract class AppLocalizations {
   /// **'Could not build the ZIP.'**
   String get storageZipFailed;
 
-  /// No description provided for @storageSelectedCount.
+  /// No description provided for @storageZipSelect.
   ///
   /// In en, this message translates to:
-  /// **'{count} selected'**
-  String storageSelectedCount(int count);
-
-  /// No description provided for @storageClearSelection.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear selection'**
-  String get storageClearSelection;
-
-  /// No description provided for @messagesDeleted.
-  ///
-  /// In en, this message translates to:
-  /// **'Message deleted'**
-  String get messagesDeleted;
-
-  /// No description provided for @messagesGroupConversation.
-  ///
-  /// In en, this message translates to:
-  /// **'Group chat'**
-  String get messagesGroupConversation;
-
-  /// No description provided for @messagesGroupNameLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Group name'**
-  String get messagesGroupNameLabel;
-
-  /// No description provided for @agentTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'AI Agent'**
-  String get agentTitle;
-
-  /// No description provided for @agentNewSession.
-  ///
-  /// In en, this message translates to:
-  /// **'New session'**
-  String get agentNewSession;
-
-  /// No description provided for @agentMultiAgent.
-  ///
-  /// In en, this message translates to:
-  /// **'Multi-agent mode'**
-  String get agentMultiAgent;
-
-  /// No description provided for @agentUntitledSession.
-  ///
-  /// In en, this message translates to:
-  /// **'Untitled session'**
-  String get agentUntitledSession;
-
-  /// No description provided for @agentToolsCount.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} tools available'**
-  String agentToolsCount(int count);
-
-  /// No description provided for @agentConfirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm'**
-  String get agentConfirm;
-
-  /// No description provided for @agentEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask the agent to work for you'**
-  String get agentEmptyTitle;
-
-  /// No description provided for @agentEmptyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Create a session to draft content, manage tasks, summarize data, and more — under your permissions.'**
-  String get agentEmptyBody;
-
-  /// No description provided for @agentComposerHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Ask the agent…'**
-  String get agentComposerHint;
-
-  /// No description provided for @agentSendFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not send your message.'**
-  String get agentSendFailed;
+  /// **'Select files'**
+  String get storageZipSelect;
 }
 
 class _AppLocalizationsDelegate

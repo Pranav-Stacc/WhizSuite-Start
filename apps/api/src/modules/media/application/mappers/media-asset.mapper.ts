@@ -1,5 +1,9 @@
 import type { MediaAsset, MediaAssetVersion } from '@prisma/client';
-import type { MediaAssetDto, MediaAssetStatus, MediaFolderDto } from '@agency-os/contracts';
+import type {
+  MediaAssetDto,
+  MediaAssetStatus,
+  MediaFolderDto,
+} from '@agency-os/contracts';
 
 export type MediaAssetRecord = Pick<
   MediaAsset,

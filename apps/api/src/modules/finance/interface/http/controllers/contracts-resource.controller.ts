@@ -43,7 +43,10 @@ export class ContractsResourceController {
     @Param('organizationId') organizationId: string,
     @Query() query: ListContractsQueryDto,
   ) {
-    return this.service.listContracts(requireOrganizationId(organizationId), query.clientId);
+    return this.service.listContracts(
+      requireOrganizationId(organizationId),
+      query.clientId,
+    );
   }
 
   @Post()
@@ -53,10 +56,14 @@ export class ContractsResourceController {
     @Body() body: CreateContractDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.createContract(requireOrganizationId(organizationId), user.userId, {
-      ...body,
-      type: body.type ?? 'OTHER',
-    });
+    return this.service.createContract(
+      requireOrganizationId(organizationId),
+      user.userId,
+      {
+        ...body,
+        type: body.type ?? 'OTHER',
+      },
+    );
   }
 
   @Patch(':id')
@@ -129,6 +136,9 @@ export class ContractsResourceController {
     @Param('organizationId') organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.service.contractDownloadUrl(requireOrganizationId(organizationId), id);
+    return this.service.contractDownloadUrl(
+      requireOrganizationId(organizationId),
+      id,
+    );
   }
 }

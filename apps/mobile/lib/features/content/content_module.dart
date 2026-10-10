@@ -7,6 +7,11 @@ import 'presentation/content_compose_screen.dart';
 import 'presentation/content_detail_screen.dart';
 import 'presentation/content_screen.dart';
 
+DateTime? _parseScheduledAt(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  return DateTime.tryParse(raw)?.toLocal();
+}
+
 final contentModule = FeatureModule(
   destinations: [
     AppDestination(
@@ -17,7 +22,7 @@ final contentModule = FeatureModule(
       anyOf: const [Permissions.contentView],
       audiences: everyAudience,
       group: NavGroup.content,
-      primary: true,
+      primary: false,
     ),
   ],
   routes: [
@@ -30,7 +35,10 @@ final contentModule = FeatureModule(
       routes: [
         childRoute(
           ContentRoutes.composeSegment,
-          (state) => ContentComposeScreen(initialClientId: state.uri.queryParameters[ContentRoutes.clientQuery]),
+          (state) => ContentComposeScreen(
+                initialClientId: state.uri.queryParameters[ContentRoutes.clientQuery],
+                initialScheduledAt: _parseScheduledAt(state.uri.queryParameters[ContentRoutes.scheduledAtQuery]),
+              ),
         ),
         childRoute(
           ':${ContentRoutes.detailParam}',

@@ -6,47 +6,30 @@ import '../../../../core/contracts/contracts.g.dart';
 import '../../../../core/formatting/formats.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../../l10n/app_localizations.dart';
-import '../../../access/application/access_controller.dart';
+import '../../../access/domain/access_policy.dart';
 import '../../../approvals/approvals_routes.dart';
-import '../../../clients/clients_routes.dart';
 import '../../../content/content_routes.dart';
 import '../../../invoices/invoices_routes.dart';
 import '../../../tasks/tasks_routes.dart';
 import '../../application/dashboard_providers.dart';
 import '../../domain/dashboard_summaries.dart';
 import '../widgets/overview_layout.dart';
-
 /// Permissions that unlock at least one KPI tile.
 const List<String> dashboardKpiPermissions = [
   Permissions.tasksView,
   Permissions.contentView,
   Permissions.approvalsView,
   Permissions.invoicesView,
-  Permissions.clientsView,
 ];
 
-/// Key metrics, each tile gated by the permission of the endpoint it summarises.
-class DashboardKpis extends ConsumerWidget {
-  const DashboardKpis({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final policy = ref.watch(accessPolicyProvider);
-    // Cap to four high-signal tiles so phones stay a compact 2×2, matching the web overview strip.
-    final tiles = <Widget>[
-      if (policy.can(Permissions.invoicesView)) const _OutstandingTile(),
+/// Up to four KPI tiles the member is allowed to see.
+List<Widget> dashboardKpiTiles(AccessPolicy policy) => <Widget>[
+      if (policy.can(Permissions.tasksView)) const _MyTasksTile(),
       if (policy.can(Permissions.approvalsView)) const _ApprovalsTile(),
       if (policy.can(Permissions.tasksView)) const _DueTile(),
-      if (policy.can(Permissions.clientsView)) const _ClientsTile(),
-      if (policy.can(Permissions.tasksView)) const _MyTasksTile(),
+      if (policy.can(Permissions.invoicesView)) const _OutstandingTile(),
       if (policy.can(Permissions.contentView)) const _InReviewTile(),
     ].take(4).toList();
-    return MetricGrid(semanticLabel: l10n.dashboardKpiAria, tiles: tiles);
-  }
-}
-
-typedef _Shown = ({String value, String? caption, StatusTone tone});
 
 class _MyTasksTile extends ConsumerWidget {
   const _MyTasksTile();
@@ -60,7 +43,7 @@ class _MyTasksTile extends ConsumerWidget {
       icon: Icons.check_circle_outline,
       value: ref.watch(myWorkProvider),
       onRetry: () => ref.invalidate(dashboardTasksProvider),
-      onTap: () => context.go(TasksRoutes.root),
+      onTap: () => context.push(TasksRoutes.root),
       present: (work) => (
         value: formats.number(work.open),
         caption: l10n.dashboardKpiMyTasksCaption(work.dueThisWeek),
@@ -82,7 +65,7 @@ class _DueTile extends ConsumerWidget {
       icon: Icons.event_busy_outlined,
       value: ref.watch(myWorkProvider),
       onRetry: () => ref.invalidate(dashboardTasksProvider),
-      onTap: () => context.go(TasksRoutes.root),
+      onTap: () => context.push(TasksRoutes.root),
       present: (work) => (
         value: formats.number(work.urgent),
         caption: l10n.dashboardKpiDueCaption(work.overdue),
@@ -108,7 +91,7 @@ class _InReviewTile extends ConsumerWidget {
       icon: Icons.rate_review_outlined,
       value: ref.watch(contentSummaryProvider),
       onRetry: () => ref.invalidate(dashboardContentProvider),
-      onTap: () => context.go(ContentRoutes.root),
+      onTap: () => context.push(ContentRoutes.root),
       present: (content) => (
         value: formats.number(content.inReview),
         caption: l10n.dashboardKpiInReviewCaption(content.changesRequested),
@@ -130,7 +113,7 @@ class _ApprovalsTile extends ConsumerWidget {
       icon: Icons.hourglass_bottom,
       value: ref.watch(approvalSummaryProvider),
       onRetry: () => ref.invalidate(dashboardApprovalsProvider),
-      onTap: () => context.go(ApprovalsRoutes.root),
+      onTap: () => context.push(ApprovalsRoutes.root),
       present: (approvals) => (
         value: formats.number(approvals.pending.length),
         caption: l10n.dashboardKpiApprovalsCaption(approvals.overdue),
@@ -152,42 +135,20 @@ class _OutstandingTile extends ConsumerWidget {
       icon: Icons.payments_outlined,
       value: ref.watch(receivablesProvider),
       onRetry: () => ref.invalidate(dashboardInvoicesProvider),
-      onTap: () => context.go(InvoicesRoutes.root),
+      onTap: () => context.push(InvoicesRoutes.root),
       present: (receivables) {
         final money = formats.money(receivables.outstandingMinor, currency: receivables.currency, compact: true);
-        final _Shown shown = receivables.overdueMinor > 0
-            ? (
-                value: money,
-                caption: l10n.dashboardKpiOutstandingCaption(
-                  formats.money(receivables.overdueMinor, currency: receivables.currency, compact: true),
-                ),
-                tone: StatusTone.danger,
-              )
-            : (value: money, caption: l10n.dashboardKpiOutstandingClear, tone: StatusTone.neutral);
-        return shown;
+        if (receivables.overdueMinor > 0) {
+          return (
+            value: money,
+            caption: l10n.dashboardKpiOutstandingCaption(
+              formats.money(receivables.overdueMinor, currency: receivables.currency, compact: true),
+            ),
+            tone: StatusTone.danger,
+          );
+        }
+        return (value: money, caption: l10n.dashboardKpiOutstandingClear, tone: StatusTone.neutral);
       },
-    );
-  }
-}
-
-class _ClientsTile extends ConsumerWidget {
-  const _ClientsTile();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final formats = context.formats;
-    return AsyncMetricTile<ClientSummary>(
-      label: l10n.dashboardKpiClients,
-      icon: Icons.business_outlined,
-      value: ref.watch(clientSummaryProvider),
-      onRetry: () => ref.invalidate(dashboardClientsProvider),
-      onTap: () => context.go(ClientsRoutes.root),
-      present: (clients) => (
-        value: formats.number(clients.active),
-        caption: l10n.dashboardKpiClientsCaption(clients.onboarding),
-        tone: StatusTone.neutral,
-      ),
     );
   }
 }

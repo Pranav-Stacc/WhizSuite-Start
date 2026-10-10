@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../network/api_exception.dart';
+import 'app_dialog.dart';
 import 'error_message.dart';
 
 /// Shows a single transient message, replacing any visible one.
@@ -35,21 +36,21 @@ Future<bool> confirmAction(
 }) async {
   final l10n = AppLocalizations.of(context);
   final scheme = Theme.of(context).colorScheme;
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: body == null ? null : Text(body),
+  final confirmed = await showAppDialog<bool>(
+    context,
+    builder: (ctx) => AppDialog(
+      title: title,
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(l10n.cancel)),
+        OutlinedButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l10n.cancel)),
         FilledButton(
           style: destructive
               ? FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError)
               : null,
-          onPressed: () => Navigator.of(context).pop(true),
+          onPressed: () => Navigator.of(ctx).pop(true),
           child: Text(confirmLabel),
         ),
       ],
+      child: body == null ? null : Text(body),
     ),
   );
   return confirmed ?? false;

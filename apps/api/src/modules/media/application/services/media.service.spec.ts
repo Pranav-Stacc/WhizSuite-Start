@@ -73,7 +73,10 @@ function setup() {
     deleteObjects: jest.fn(),
   };
   const audit = { record: jest.fn() };
-  const mediaStorage = { canAccept: jest.fn().mockResolvedValue(true), usage: jest.fn() };
+  const mediaStorage = {
+    canAccept: jest.fn().mockResolvedValue(true),
+    usage: jest.fn(),
+  };
   const config = { get: (key: keyof AppConfig) => configValues[key] };
   const service = new MediaService(
     repository as unknown as MediaRepository,

@@ -29,7 +29,7 @@ void main() {
   });
 
   group('groupMessagesByDay', () {
-    test('buckets messages by local calendar day and skips system messages', () {
+    test('buckets messages by local calendar day including Whiz system replies', () {
       final messages = [
         ChatMessage(
           id: '1',
@@ -58,7 +58,7 @@ void main() {
       ];
       final groups = groupMessagesByDay(messages);
       expect(groups, hasLength(2));
-      expect(groups.first.messages.map((m) => m.id), ['1']);
+      expect(groups.first.messages.map((m) => m.id), ['1', 'sys']);
       expect(groups.last.messages.map((m) => m.id), ['2']);
     });
   });

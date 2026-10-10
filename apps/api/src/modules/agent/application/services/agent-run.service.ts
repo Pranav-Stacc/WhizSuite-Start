@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   AgentEventTypes,
@@ -21,6 +21,7 @@ export class AgentRunService {
     private readonly repo: AgentRepository,
     private readonly sessions: AgentSessionService,
     private readonly orchestrator: AgentOrchestratorService,
+    @Inject(forwardRef(() => CapabilityExecutorService))
     private readonly capabilities: CapabilityExecutorService,
     private readonly outbox: OutboxService,
     private readonly config: ConfigService<AppConfig, true>,
@@ -32,7 +33,12 @@ export class AgentRunService {
     sessionId: string,
     input: SendAgentMessageInput,
   ) {
-    const prepared = await this.prepareRun(organizationId, user, sessionId, input);
+    const prepared = await this.prepareRun(
+      organizationId,
+      user,
+      sessionId,
+      input,
+    );
     const result = await this.orchestrator.run(prepared.orchestratorRequest);
     return this.finalizeRun(organizationId, user, prepared, result);
   }
@@ -47,7 +53,12 @@ export class AgentRunService {
     input: SendAgentMessageInput,
     onEvent: (event: Record<string, unknown>) => void | Promise<void>,
   ) {
-    const prepared = await this.prepareRun(organizationId, user, sessionId, input);
+    const prepared = await this.prepareRun(
+      organizationId,
+      user,
+      sessionId,
+      input,
+    );
     await onEvent({
       type: 'status',
       phase: 'planning',
@@ -76,7 +87,12 @@ export class AgentRunService {
       .slice(-12)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    await this.repo.addMessage(organizationId, sessionId, 'user', input.message);
+    await this.repo.addMessage(
+      organizationId,
+      sessionId,
+      'user',
+      input.message,
+    );
     const title = session.title ?? input.message.slice(0, 80);
     await this.repo.touchSession(sessionId, session.title ? undefined : title);
 
@@ -118,7 +134,8 @@ export class AgentRunService {
         multiAgent: input.multiAgent ?? true,
         systemPrompt: definition?.systemPrompt,
         subAgents:
-          (definition?.subAgents as Array<{ name: string; role: string }>) ?? undefined,
+          (definition?.subAgents as Array<{ name: string; role: string }>) ??
+          undefined,
         toolIds: (definition?.toolIds as string[]) ?? undefined,
         history,
       },
@@ -156,7 +173,9 @@ export class AgentRunService {
       });
     }
 
-    const status = result.pendingActionId ? 'WAITING_CONFIRMATION' : 'COMPLETED';
+    const status = result.pendingActionId
+      ? 'WAITING_CONFIRMATION'
+      : 'COMPLETED';
     await this.repo.updateRun(prepared.run.id, {
       status,
       response: result.response,
@@ -182,7 +201,10 @@ export class AgentRunService {
           : AgentEventTypes.AGENT_PENDING_ACTION,
       version: 1,
       organizationId,
-      payload: { runId: prepared.run.id, pendingActionId: result.pendingActionId },
+      payload: {
+        runId: prepared.run.id,
+        pendingActionId: result.pendingActionId,
+      },
       actor: { id: user.userId, type: 'user' },
     });
 
@@ -239,7 +261,10 @@ export class AgentRunService {
     user: AuthenticatedUser,
     pendingId: string,
   ) {
-    const pending = await this.repo.findPendingAction(organizationId, pendingId);
+    const pending = await this.repo.findPendingAction(
+      organizationId,
+      pendingId,
+    );
     if (!pending || pending.userId !== user.userId) throw notFound();
 
     const result = await this.capabilities.execute(organizationId, user, {
@@ -259,8 +284,15 @@ export class AgentRunService {
     return result;
   }
 
-  async rejectPending(organizationId: string, userId: string, pendingId: string) {
-    const pending = await this.repo.findPendingAction(organizationId, pendingId);
+  async rejectPending(
+    organizationId: string,
+    userId: string,
+    pendingId: string,
+  ) {
+    const pending = await this.repo.findPendingAction(
+      organizationId,
+      pendingId,
+    );
     if (!pending || pending.userId !== userId) throw notFound();
     await this.repo.resolvePendingAction(pendingId, 'REJECTED');
     await this.repo.updateRun(pending.runId, {
@@ -271,11 +303,7 @@ export class AgentRunService {
     return { status: 'rejected' };
   }
 
-  createDefinition(
-    organizationId: string,
-    userId: string,
-    raw: unknown,
-  ) {
+  createDefinition(organizationId: string, userId: string, raw: unknown) {
     const input = agentDefinitionCreateInput.parse(raw);
     return this.repo
       .createDefinition({

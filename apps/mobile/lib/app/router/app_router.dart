@@ -25,6 +25,52 @@ GoRoute _page(String path, Widget screen, {List<RouteBase> routes = const []}) =
       routes: routes,
     );
 
+/// One IndexedStack branch per top-level shell destination so tab switches keep state.
+List<StatefulShellBranch> _shellBranches() {
+  final branches = <StatefulShellBranch>[
+    StatefulShellBranch(routes: [_page(AppRoutes.home, const HomeScreen())]),
+    StatefulShellBranch(routes: [_page(AppRoutes.more, const MoreScreen())]),
+  ];
+  for (final module in featureModules) {
+    for (final route in module.routes) {
+      branches.add(StatefulShellBranch(routes: [route]));
+    }
+  }
+  branches
+    ..add(
+      StatefulShellBranch(
+        routes: [
+          GoRoute(path: AppRoutes.notifications, builder: (_, _) => const NotificationsScreen()),
+        ],
+      ),
+    )
+    ..add(
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: AppRoutes.settings,
+            builder: (_, _) => const SettingsScreen(),
+            routes: [
+              GoRoute(
+                path: AppRoutes.appearance.substring(AppRoutes.settings.length + 1),
+                builder: (_, _) => const AppearanceScreen(),
+              ),
+              GoRoute(
+                path: AppRoutes.notificationPreferences.substring(AppRoutes.settings.length + 1),
+                builder: (_, _) => const NotificationPreferencesScreen(),
+              ),
+              GoRoute(
+                path: AppRoutes.storage.substring(AppRoutes.settings.length + 1),
+                builder: (_, _) => const StorageSettingsScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  return branches;
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.listen(sessionProvider, (_, _) => refresh.value++);
@@ -55,32 +101,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.invite,
         builder: (_, state) => InviteAcceptScreen(token: state.uri.queryParameters['token']),
       ),
-      ShellRoute(
-        builder: (context, state, child) => AppShell(location: state.uri.path, child: child),
-        routes: [
-          _page(AppRoutes.home, const HomeScreen()),
-          _page(AppRoutes.more, const MoreScreen()),
-          for (final module in featureModules) ...module.routes,
-          GoRoute(path: AppRoutes.notifications, builder: (_, _) => const NotificationsScreen()),
-          GoRoute(
-            path: AppRoutes.settings,
-            builder: (_, _) => const SettingsScreen(),
-            routes: [
-              GoRoute(
-                path: AppRoutes.appearance.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const AppearanceScreen(),
-              ),
-              GoRoute(
-                path: AppRoutes.notificationPreferences.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const NotificationPreferencesScreen(),
-              ),
-              GoRoute(
-                path: AppRoutes.storage.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const StorageSettingsScreen(),
-              ),
-            ],
-          ),
-        ],
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(location: state.uri.path, navigationShell: navigationShell),
+        branches: _shellBranches(),
       ),
     ],
   );

@@ -4,13 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/widgets/forms.dart';
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/resource_list.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
-import '../../directory/application/directory_providers.dart';
 import '../application/messages_providers.dart';
 import '../domain/chat_models.dart';
 import '../messages_routes.dart';
@@ -23,7 +21,7 @@ import 'new_conversation_sheet.dart';
 const messagesSplitBreakpoint = 840.0;
 const _listPaneWidth = 380.0;
 
-/// Chat rooms, filterable by client for staff. On wide screens the selected room opens beside the list.
+/// Chat rooms. On wide screens the selected thread opens beside the list.
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
@@ -32,20 +30,25 @@ class MessagesScreen extends ConsumerStatefulWidget {
 }
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
-  String? _clientId;
   String? _selectedId;
-  var _handledClientDeepLink = false;
+  var _handledDeepLink = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _openClientDeepLink());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleDeepLinks());
   }
 
-  Future<void> _openClientDeepLink() async {
-    if (_handledClientDeepLink) return;
-    _handledClientDeepLink = true;
-    final clientId = GoRouterState.of(context).uri.queryParameters['clientId'];
+  Future<void> _handleDeepLinks() async {
+    if (_handledDeepLink) return;
+    _handledDeepLink = true;
+    final uri = GoRouterState.of(context).uri;
+    final whiz = uri.queryParameters['whiz'];
+    if (whiz == '1' || whiz == 'true') {
+      if (mounted) context.push(MessagesRoutes.whiz);
+      return;
+    }
+    final clientId = uri.queryParameters['clientId'];
     if (clientId == null || clientId.isEmpty) return;
     try {
       final room = await ref.read(messagesActionsProvider).openClientRoom(clientId);
@@ -80,47 +83,22 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     final tokens = context.tokens;
     final rooms = ref.watch(chatRoomsProvider);
     final isPortal = ref.watch(messagesPortalClientProvider).value != null;
-    final clients = isPortal ? null : ref.watch(clientDirectoryProvider).value;
     final all = rooms.value ?? const <ChatRoom>[];
-    final clientIds = {
-      for (final room in all)
-        if (room.isClientRoom && room.clientId != null) room.clientId!,
-    }.toList()
-      ..sort((a, b) => (clients?.nameOf(a) ?? a).compareTo(clients?.nameOf(b) ?? b));
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= messagesSplitBreakpoint;
-        final filtered = all.where(_matches).toList();
-        final selectedId = wide ? (_selectedId ?? filtered.firstOrNull?.id) : null;
+        final selectedId = wide ? (_selectedId ?? all.firstOrNull?.id) : null;
 
         final list = ResourceList<ChatRoom>(
           value: rooms,
           onRefresh: _refresh,
           matches: (room, query) => roomTitle(ref, l10n, room).toLowerCase().contains(query),
           searchHint: l10n.messagesSearchHint,
-          filter: _matches,
           itemSpacing: tokens.xs,
-          header: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.messagesThreadCount(filtered.length),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tokens.muted),
-              ),
-              if (!isPortal && clientIds.length > 1) ...[
-                SizedBox(height: tokens.md),
-                OptionField<String>(
-                  key: ValueKey(_clientId),
-                  label: l10n.messagesClientFilter,
-                  value: _clientId,
-                  allowNone: true,
-                  options: clientIds,
-                  labelOf: (id) => clients?.nameOf(id) ?? l10n.messagesClientConversation,
-                  onChanged: (id) => setState(() => _clientId = id),
-                ),
-              ],
-            ],
+          header: Text(
+            l10n.messagesThreadCount(all.length),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(color: tokens.muted),
           ),
           empty: EmptyState(
             icon: Icons.chat_bubble_outline,
@@ -166,6 +144,4 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       },
     );
   }
-
-  bool _matches(ChatRoom room) => _clientId == null || room.clientId == _clientId;
 }

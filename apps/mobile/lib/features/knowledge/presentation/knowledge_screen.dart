@@ -116,7 +116,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         itemBuilder: (context, article) => ArticleCard(
           article: article,
           authorName: members.nameOf(article.authorId),
-          onTap: () => context.go(KnowledgeRoutes.detail(article.id)),
+          onTap: () => context.push(KnowledgeRoutes.detail(article.id)),
         ),
       ),
     );

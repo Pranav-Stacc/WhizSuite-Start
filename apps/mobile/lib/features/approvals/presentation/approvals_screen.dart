@@ -129,7 +129,7 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
         itemBuilder: (context, approval) => ApprovalCard(
           approval: approval,
           subjectTitle: titles[approval.subjectId],
-          onTap: () => context.go(ApprovalsRoutes.detail(approval.id)),
+          onTap: () => context.push(ApprovalsRoutes.detail(approval.id)),
         ),
       ),
     );

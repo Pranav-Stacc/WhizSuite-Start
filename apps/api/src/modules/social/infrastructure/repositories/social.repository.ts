@@ -360,9 +360,7 @@ export class SocialRepository {
     bumpQueuedToNow?: boolean;
   }): Promise<{ variantIds: string[]; jobIds: string[] }> {
     const platforms = [
-      ...new Set(
-        input.platforms.map((p) => p.toLowerCase()).filter(Boolean),
-      ),
+      ...new Set(input.platforms.map((p) => p.toLowerCase()).filter(Boolean)),
     ];
     if (platforms.length === 0) {
       return { variantIds: [], jobIds: [] };

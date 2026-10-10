@@ -17,7 +17,9 @@ export class AgentSchedulerService implements OnModuleInit {
 
   onModuleInit(): void {
     if (!this.config.get('AGENT_SCHEDULER_ENABLED', { infer: true })) return;
-    const interval = this.config.get('AGENT_SCHEDULER_POLL_MS', { infer: true });
+    const interval = this.config.get('AGENT_SCHEDULER_POLL_MS', {
+      infer: true,
+    });
     this.timer = setInterval(() => void this.poll(), interval);
     this.logger.log(`Agent scheduler polling every ${interval}ms`);
   }

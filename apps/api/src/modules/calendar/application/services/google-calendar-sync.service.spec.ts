@@ -25,7 +25,9 @@ describe('GoogleCalendarSyncService', () => {
   };
   const google = {
     isConfigured: jest.fn().mockReturnValue(true),
-    buildAuthorizeUrl: jest.fn().mockReturnValue('https://accounts.google.com/o'),
+    buildAuthorizeUrl: jest
+      .fn()
+      .mockReturnValue('https://accounts.google.com/o'),
     exchangeCode: jest.fn(),
     refreshAccessToken: jest.fn(),
     upsertEvent: jest.fn(),

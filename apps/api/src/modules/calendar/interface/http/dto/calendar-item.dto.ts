@@ -62,7 +62,10 @@ export class CreateCalendarItemDto {
   @IsObject()
   metadata?: Record<string, unknown>;
 
-  @ApiProperty({ required: false, description: 'Opt-in Google Calendar sync for this event' })
+  @ApiProperty({
+    required: false,
+    description: 'Opt-in Google Calendar sync for this event',
+  })
   @IsOptional()
   @IsBoolean()
   syncToGoogle?: boolean;

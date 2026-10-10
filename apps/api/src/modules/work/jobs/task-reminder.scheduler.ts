@@ -16,9 +16,7 @@ const MS_PER_HOUR = 3_600_000;
 const DAY_KEY_LENGTH = 10;
 
 @Injectable()
-export class TaskReminderScheduler
-  implements OnModuleInit, OnModuleDestroy
-{
+export class TaskReminderScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TaskReminderScheduler.name);
   private timer?: NodeJS.Timeout;
   private running = false;

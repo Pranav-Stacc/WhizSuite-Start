@@ -7,10 +7,6 @@ final agentSessionsProvider = FutureProvider.autoDispose<List<AgentSession>>(
   (ref) => ref.watch(agentRepositoryProvider).sessions(),
 );
 
-final agentCapabilitiesProvider = FutureProvider.autoDispose<List<CapabilityTool>>(
-  (ref) => ref.watch(agentRepositoryProvider).capabilities(),
-);
-
 final agentPendingProvider = FutureProvider.autoDispose<List<AgentPendingAction>>(
   (ref) => ref.watch(agentRepositoryProvider).pending(),
 );

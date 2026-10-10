@@ -12,4 +12,3 @@ export const chatRoomChannel = (
   organizationId: string,
   roomId: string,
 ): string => `${orgRoom(organizationId)}:chat:${roomId}`;
-

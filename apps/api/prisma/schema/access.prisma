@@ -5,7 +5,8 @@ model Permission {
   category    String?
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  rolePermissions RolePermission[]
+  rolePermissions   RolePermission[]
+  memberOverrides   MemberPermissionOverride[]
 
   @@map("permissions")
   @@schema("access")
@@ -54,13 +55,17 @@ model OrganizationMembership {
   organizationId String    @map("organization_id") @db.Uuid
   userId         String    @map("user_id") @db.Uuid
   type           String    @default("EMPLOYEE")
+  /// EMPLOYEE | FREELANCE | CONTRACTOR — how the person is engaged (not RBAC type).
+  employmentType String?   @map("employment_type")
   status         String    @default("ACTIVE")
   expiresAt      DateTime? @map("expires_at") @db.Timestamptz
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  roleAssignments RoleAssignment[]
-  designations    MemberDesignation[]
+  roleAssignments     RoleAssignment[]
+  designations        MemberDesignation[]
+  permissionOverrides MemberPermissionOverride[]
+  documents           MemberDocument[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
@@ -81,7 +86,29 @@ model MemberDesignation {
 
   @@unique([membershipId, designationId])
   @@index([organizationId])
+  @@index([organizationId, designationId])
   @@map("member_designations")
+  @@schema("access")
+}
+
+/// Direct per-member grant (ALLOW) or revocation (DENY) layered on top of role permissions.
+model MemberPermissionOverride {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  permissionId   String   @map("permission_id") @db.Uuid
+  effect         String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  createdBy      String?  @map("created_by") @db.Uuid
+
+  membership OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  permission Permission             @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  /// Explicit name: the default exceeds PostgreSQL's 63-character identifier limit.
+  @@unique([organizationId, membershipId, permissionId], map: "member_permission_overrides_org_membership_permission_key")
+  @@index([organizationId, membershipId])
+  @@map("member_permission_overrides")
   @@schema("access")
 }
 
@@ -115,5 +142,25 @@ model RoleAssignmentScope {
 
   @@index([organizationId, scopeType, resourceId])
   @@map("role_assignment_scopes")
+  @@schema("access")
+}
+
+model MemberDocument {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  membershipId   String   @map("membership_id") @db.Uuid
+  type           String
+  title          String
+  templateId     String?  @map("template_id") @db.Uuid
+  status         String   @default("SENT")
+  metadata       Json     @default("{}")
+  createdBy      String?  @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  membership OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, membershipId])
+  @@map("member_documents")
   @@schema("access")
 }

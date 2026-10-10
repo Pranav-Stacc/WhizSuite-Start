@@ -14,6 +14,8 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
+import '../../roles/application/roles_controller.dart';
+import '../../team/application/team_controller.dart';
 import '../application/workflows_controller.dart';
 import '../domain/workflow.dart';
 import '../workflows_routes.dart';
@@ -103,14 +105,14 @@ class WorkflowDetailScreen extends ConsumerWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends ConsumerWidget {
   const _Body({required this.workflow, required this.onRefresh});
 
   final Workflow workflow;
   final Future<void> Function() onRefresh;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
@@ -149,6 +151,18 @@ class _Body extends StatelessWidget {
         SizedBox(height: tokens.xl),
         FadeSlideIn(
           index: 2,
+          child: SectionCard(
+            title: l10n.workflowStageAssigneesTitle,
+            child: WorkflowStageDetailsList(
+              stages: workflow.stages,
+              roles: ref.watch(rolesProvider).value ?? const [],
+              members: ref.watch(membersProvider).value ?? const [],
+            ),
+          ),
+        ),
+        SizedBox(height: tokens.xl),
+        FadeSlideIn(
+          index: 3,
           child: LayoutBuilder(
             builder: (context, constraints) {
               final tiles = [
@@ -182,20 +196,20 @@ class _Body extends StatelessWidget {
         SizedBox(height: tokens.xl),
         if (versionId == null)
           FadeSlideIn(
-            index: 3,
+            index: 4,
             child: SectionCard(
               title: l10n.workflowVersionsTitle,
               child: Text(l10n.workflowNoVersion, style: text.bodyMedium?.copyWith(color: tokens.muted)),
             ),
           )
         else ...[
-          FadeSlideIn(index: 3, child: _VersionSection(workflow: workflow, versionId: versionId)),
+          FadeSlideIn(index: 4, child: _VersionSection(workflow: workflow, versionId: versionId)),
           SizedBox(height: tokens.xl),
-          FadeSlideIn(index: 4, child: _TransitionChecker(versionId: versionId)),
+          FadeSlideIn(index: 5, child: _TransitionChecker(versionId: versionId)),
         ],
         SizedBox(height: tokens.xl),
         FadeSlideIn(
-          index: 5,
+          index: 6,
           child: SectionCard(
             title: l10n.details,
             child: Column(

@@ -253,9 +253,7 @@ export class MediaRepository {
         ...(filters.parentId !== undefined
           ? { parentId: filters.parentId }
           : {}),
-        ...(filters.clientVisibleOnly
-          ? { visibility: 'CLIENT_VISIBLE' }
-          : {}),
+        ...(filters.clientVisibleOnly ? { visibility: 'CLIENT_VISIBLE' } : {}),
         ...(filters.allowedClientIds
           ? {
               OR: [
@@ -472,7 +470,10 @@ export class MediaRepository {
     });
   }
 
-  listReady(organizationId: string, limit: number): Promise<MediaAssetRecord[]> {
+  listReady(
+    organizationId: string,
+    limit: number,
+  ): Promise<MediaAssetRecord[]> {
     return this.prisma.mediaAsset.findMany({
       where: {
         organizationId,

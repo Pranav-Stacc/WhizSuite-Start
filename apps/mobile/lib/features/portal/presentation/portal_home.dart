@@ -197,7 +197,7 @@ class _PortalQuickActions extends ConsumerWidget {
             PermissionGate(
               anyOf: [action.permission],
               child: OutlinedButton.icon(
-                onPressed: () => context.go(action.route),
+                onPressed: () => context.push(action.route),
                 icon: Icon(action.icon, size: 18),
                 label: Text(action.label(l10n)),
               ),
@@ -225,7 +225,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.fact_check_outlined,
             value: summary,
             onRetry: () => ref.invalidate(portalContentProvider),
-            onTap: () => context.go(ContentRoutes.root),
+            onTap: () => context.push(ContentRoutes.root),
             present: (data) => (
               value: context.formats.number(data.approvals),
               caption: l10n.portalKpiApprovalsCaption(data.approvals),
@@ -238,7 +238,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.receipt_long_outlined,
             value: summary,
             onRetry: () => ref.invalidate(portalInvoicesProvider),
-            onTap: () => context.go(InvoicesRoutes.root),
+            onTap: () => context.push(InvoicesRoutes.root),
             present: (data) => (
               value: context.formats.number(data.openInvoices),
               caption: l10n.portalKpiInvoicesCaption(data.openInvoices),
@@ -251,7 +251,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.forum_outlined,
             value: summary,
             onRetry: () => ref.invalidate(portalRoomsProvider),
-            onTap: () => context.go(MessagesRoutes.root),
+            onTap: () => context.push(MessagesRoutes.root),
             present: (data) => (
               value: context.formats.number(data.openThreads),
               caption: l10n.portalKpiMessagesCaption(data.openThreads),
@@ -264,7 +264,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.folder_outlined,
             value: summary,
             onRetry: () => ref.invalidate(portalProjectsProvider),
-            onTap: () => context.go(ProjectsRoutes.root),
+            onTap: () => context.push(ProjectsRoutes.root),
             present: (data) => (
               value: context.formats.number(data.activeProjects),
               caption: l10n.portalKpiProjectsCaption(data.activeProjects),
@@ -277,7 +277,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.folder_open_outlined,
             value: ref.watch(portalFilesProvider),
             onRetry: () => ref.invalidate(portalFilesProvider),
-            onTap: () => context.go(MediaRoutes.root),
+            onTap: () => context.push(MediaRoutes.root),
             present: (files) => (
               value: context.formats.number(files.length),
               caption: l10n.portalKpiFilesCaption(files.length),
@@ -290,7 +290,7 @@ class _PortalKpis extends ConsumerWidget {
             icon: Icons.insights_outlined,
             value: ref.watch(portalAnalyticsProvider),
             onRetry: () => ref.invalidate(portalAnalyticsProvider),
-            onTap: () => context.go(ReportsRoutes.root),
+            onTap: () => context.push(ReportsRoutes.root),
             present: (series) {
               final reach = series.where((s) => s.key == 'reach').firstOrNull;
               final total = reach?.total ?? 0;
@@ -314,13 +314,13 @@ class _ApprovalsSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<PortalSummary>(
       title: l10n.portalApprovalsTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(ContentRoutes.root), label: l10n.portalApprovalsCta),
+      trailing: ViewAllButton(onPressed: () => context.push(ContentRoutes.root), label: l10n.portalApprovalsCta),
       value: ref.watch(portalSummaryProvider),
       onRetry: () => ref.invalidate(portalContentProvider),
       builder: (context, summary) => summary.approvalRows.isEmpty
           ? SectionEmpty(
               message: l10n.portalApprovalsEmpty,
-              action: TextButton(onPressed: () => context.go(ContentRoutes.root), child: Text(l10n.portalApprovalsCta)),
+              action: TextButton(onPressed: () => context.push(ContentRoutes.root), child: Text(l10n.portalApprovalsCta)),
             )
           : OverviewList(
               children: [
@@ -339,14 +339,14 @@ class _InvoicesSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<PortalSummary>(
       title: l10n.portalInvoicesTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(InvoicesRoutes.root), label: l10n.portalInvoicesCta),
+      trailing: ViewAllButton(onPressed: () => context.push(InvoicesRoutes.root), label: l10n.portalInvoicesCta),
       value: ref.watch(portalSummaryProvider),
       onRetry: () => ref.invalidate(portalInvoicesProvider),
       builder: (context, summary) => summary.openInvoiceRows.isEmpty
           ? SectionEmpty(
               message: l10n.portalInvoicesEmpty,
               icon: Icons.receipt_long_outlined,
-              action: TextButton(onPressed: () => context.go(InvoicesRoutes.root), child: Text(l10n.portalInvoicesCta)),
+              action: TextButton(onPressed: () => context.push(InvoicesRoutes.root), child: Text(l10n.portalInvoicesCta)),
             )
           : OverviewList(
               children: [
@@ -365,14 +365,14 @@ class _MessagesSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<PortalSummary>(
       title: l10n.portalMessagesTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(MessagesRoutes.root), label: l10n.portalMessagesCta),
+      trailing: ViewAllButton(onPressed: () => context.push(MessagesRoutes.root), label: l10n.portalMessagesCta),
       value: ref.watch(portalSummaryProvider),
       onRetry: () => ref.invalidate(portalRoomsProvider),
       builder: (context, summary) => summary.roomRows.isEmpty
           ? SectionEmpty(
               message: l10n.portalMessagesEmpty,
               icon: Icons.chat_bubble_outline,
-              action: TextButton(onPressed: () => context.go(MessagesRoutes.root), child: Text(l10n.portalMessagesCta)),
+              action: TextButton(onPressed: () => context.push(MessagesRoutes.root), child: Text(l10n.portalMessagesCta)),
             )
           : OverviewList(
               children: [
@@ -391,14 +391,14 @@ class _ProjectsSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<PortalSummary>(
       title: l10n.portalProjectsTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(ProjectsRoutes.root), label: l10n.portalProjectsCta),
+      trailing: ViewAllButton(onPressed: () => context.push(ProjectsRoutes.root), label: l10n.portalProjectsCta),
       value: ref.watch(portalSummaryProvider),
       onRetry: () => ref.invalidate(portalProjectsProvider),
       builder: (context, summary) => summary.projectRows.isEmpty
           ? SectionEmpty(
               message: l10n.portalProjectsEmpty,
               icon: Icons.folder_outlined,
-              action: TextButton(onPressed: () => context.go(ProjectsRoutes.root), child: Text(l10n.portalProjectsCta)),
+              action: TextButton(onPressed: () => context.push(ProjectsRoutes.root), child: Text(l10n.portalProjectsCta)),
             )
           : OverviewList(
               children: [
@@ -417,7 +417,7 @@ class _ContentSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<PortalSummary>(
       title: l10n.portalContentTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(ContentRoutes.root), label: l10n.portalContentCta),
+      trailing: ViewAllButton(onPressed: () => context.push(ContentRoutes.root), label: l10n.portalContentCta),
       value: ref.watch(portalSummaryProvider),
       onRetry: () => ref.invalidate(portalContentProvider),
       builder: (context, summary) => summary.recentContent.isEmpty
@@ -536,7 +536,7 @@ class _FilesSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<List<MediaAsset>>(
       title: l10n.portalFilesTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(MediaRoutes.root), label: l10n.portalFilesCta),
+      trailing: ViewAllButton(onPressed: () => context.push(MediaRoutes.root), label: l10n.portalFilesCta),
       value: ref.watch(portalFilesProvider),
       onRetry: () => ref.invalidate(portalFilesProvider),
       builder: (context, files) {
@@ -545,7 +545,7 @@ class _FilesSection extends ConsumerWidget {
             ? SectionEmpty(
                 message: l10n.portalFilesEmpty,
                 icon: Icons.folder_open_outlined,
-                action: TextButton(onPressed: () => context.go(MediaRoutes.root), child: Text(l10n.portalFilesCta)),
+                action: TextButton(onPressed: () => context.push(MediaRoutes.root), child: Text(l10n.portalFilesCta)),
               )
             : OverviewList(
                 children: [
@@ -565,7 +565,7 @@ class _ReportsSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return OverviewSection<List<Report>>(
       title: l10n.portalReportsTitle,
-      trailing: ViewAllButton(onPressed: () => context.go(ReportsRoutes.root), label: l10n.portalReportsCta),
+      trailing: ViewAllButton(onPressed: () => context.push(ReportsRoutes.root), label: l10n.portalReportsCta),
       value: ref.watch(portalReportsProvider),
       onRetry: () => ref.invalidate(portalReportsProvider),
       builder: (context, reports) {
@@ -574,7 +574,7 @@ class _ReportsSection extends ConsumerWidget {
             ? SectionEmpty(
                 message: l10n.portalReportsEmpty,
                 icon: Icons.insights_outlined,
-                action: TextButton(onPressed: () => context.go(ReportsRoutes.root), child: Text(l10n.portalReportsCta)),
+                action: TextButton(onPressed: () => context.push(ReportsRoutes.root), child: Text(l10n.portalReportsCta)),
               )
             : OverviewList(
                 children: [

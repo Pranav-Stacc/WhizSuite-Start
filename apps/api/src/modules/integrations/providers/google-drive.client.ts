@@ -26,8 +26,8 @@ export class GoogleDriveClient {
   isConfigured(): boolean {
     return Boolean(
       this.config.get('GOOGLE_DRIVE_CLIENT_ID', { infer: true }) &&
-        this.config.get('GOOGLE_DRIVE_CLIENT_SECRET', { infer: true }) &&
-        this.config.get('GOOGLE_DRIVE_REDIRECT_URI', { infer: true }),
+      this.config.get('GOOGLE_DRIVE_CLIENT_SECRET', { infer: true }) &&
+      this.config.get('GOOGLE_DRIVE_REDIRECT_URI', { infer: true }),
     );
   }
 

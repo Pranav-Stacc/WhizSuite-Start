@@ -135,7 +135,7 @@ export class AutomationExecutionService {
 
   private actionType(action: unknown): string {
     if (action && typeof action === 'object' && 'type' in action) {
-      const type = (action as { type: unknown }).type;
+      const type = action.type;
       return typeof type === 'string' ? type : 'noop';
     }
     return 'noop';
@@ -143,8 +143,9 @@ export class AutomationExecutionService {
 
   private actionPayload(action: unknown): Record<string, unknown> {
     if (action && typeof action === 'object' && 'payload' in action) {
-      const payload = (action as { payload: unknown }).payload;
-      if (payload && typeof payload === 'object') return payload as Record<string, unknown>;
+      const payload = action.payload;
+      if (payload && typeof payload === 'object')
+        return payload as Record<string, unknown>;
     }
     return {};
   }

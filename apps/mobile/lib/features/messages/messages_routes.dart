@@ -1,6 +1,7 @@
 abstract final class MessagesRoutes {
   static const root = '/messages';
   static const detailParam = 'threadId';
+  static const whiz = '/messages/whiz';
 
   static String detail(String id) => '$root/$id';
 

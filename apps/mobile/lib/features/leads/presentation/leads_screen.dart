@@ -62,7 +62,7 @@ class _LeadsScreenState extends ConsumerState<LeadsScreen> {
 
   Future<void> _refresh() => ref.refresh(leadsProvider.future);
 
-  void _open(Lead lead) => context.go(LeadsRoutes.detail(lead.id));
+  void _open(Lead lead) => context.push(LeadsRoutes.detail(lead.id));
 
   @override
   Widget build(BuildContext context) {

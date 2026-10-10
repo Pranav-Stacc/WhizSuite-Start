@@ -31,9 +31,7 @@ export class CreateMediaZipExportDto implements CreateMediaZipExportInput {
   filename?: string;
 }
 
-export class CreateMediaDriveTransferDto
-  implements CreateMediaDriveTransferInput
-{
+export class CreateMediaDriveTransferDto implements CreateMediaDriveTransferInput {
   @ApiProperty()
   @IsUUID()
   connectionId!: string;

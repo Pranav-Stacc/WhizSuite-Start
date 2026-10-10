@@ -166,7 +166,10 @@ export class StorageService {
     filename: string;
   }): Promise<CopiedObjectResult> {
     await this.ensureBucket();
-    const storageKey = this.buildObjectKey(input.organizationId, input.filename);
+    const storageKey = this.buildObjectKey(
+      input.organizationId,
+      input.filename,
+    );
     await this.client.send(
       new CopyObjectCommand({
         Bucket: this.bucket,
@@ -208,7 +211,10 @@ export class StorageService {
     body: Buffer;
   }): Promise<{ storageKey: string; sizeBytes: number }> {
     await this.ensureBucket();
-    const storageKey = this.buildObjectKey(input.organizationId, input.filename);
+    const storageKey = this.buildObjectKey(
+      input.organizationId,
+      input.filename,
+    );
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,

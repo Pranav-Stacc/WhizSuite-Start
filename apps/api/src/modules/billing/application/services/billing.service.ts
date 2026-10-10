@@ -94,7 +94,7 @@ export class BillingService {
 function parseEntitlementMax(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (value && typeof value === 'object' && 'max' in value) {
-    const max = (value as { max: unknown }).max;
+    const max = value.max;
     if (typeof max === 'number' && Number.isFinite(max)) return max;
   }
   return null;

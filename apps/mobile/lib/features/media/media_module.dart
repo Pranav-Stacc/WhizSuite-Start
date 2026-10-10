@@ -7,12 +7,21 @@ import 'presentation/media_detail_screen.dart';
 import 'presentation/media_screen.dart';
 
 final mediaModule = FeatureModule(
-  // Assets stay reachable via client/project screens — not a main sidebar destination.
-  destinations: const [],
+  destinations: [
+    AppDestination(
+      path: MediaRoutes.root,
+      icon: Icons.perm_media_outlined,
+      selectedIcon: Icons.perm_media,
+      label: (l10n) => l10n.navMedia,
+      anyOf: const [Permissions.filesView],
+      audiences: staffOnly,
+      group: NavGroup.content,
+    ),
+  ],
   routes: [
     destinationRoute(
       MediaRoutes.root,
-      (_) => const MediaScreen(),
+      (state) => MediaScreen(initialClientId: state.uri.queryParameters[MediaRoutes.clientQuery]),
       routes: [
         childRoute(
           ':${MediaRoutes.detailParam}',

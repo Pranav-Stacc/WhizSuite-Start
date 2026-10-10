@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -6,14 +6,26 @@ import {
   IsArray,
   IsIn,
   IsOptional,
+  IsString,
   IsUUID,
+  MaxLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import {
   ASSIGNABLE_SCOPE_TYPE_KEYS,
+  EmploymentTypes,
+  MEMBER_DESIGNATIONS_MAX,
+  MemberDocumentTypes,
+  MEMBER_PERMISSION_OVERRIDES_MAX,
   MEMBER_ROLES_MAX,
+  PERMISSION_EFFECT_KEYS,
+  PROFILE_JOB_TITLE_MAX_LENGTH,
   ROLE_SCOPES_MAX,
   type AssignableScopeType,
+  type EmploymentType,
+  type MemberDocumentType,
+  type PermissionEffect,
 } from '@agency-os/contracts';
 import {
   STAFF_MEMBERSHIP_TYPES,
@@ -59,4 +71,69 @@ export class AssignMemberRolesDto {
   @ValidateNested({ each: true })
   @Type(() => RoleAssignmentScopeDto)
   scopes?: RoleAssignmentScopeDto[];
+}
+
+export class SetMemberDesignationsDto {
+  @ApiProperty({ type: [String], format: 'uuid' })
+  @IsArray()
+  @ArrayMaxSize(MEMBER_DESIGNATIONS_MAX)
+  @IsUUID('4', { each: true })
+  designationIds!: string[];
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID('4')
+  primaryId?: string | null;
+}
+
+export class UpdateMemberProfileDto {
+  @ApiProperty({ nullable: true })
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(PROFILE_JOB_TITLE_MAX_LENGTH)
+  title!: string | null;
+}
+
+export class UpdateMemberEmploymentDto {
+  @ApiPropertyOptional({ enum: EmploymentTypes, nullable: true })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsIn(EmploymentTypes)
+  employmentType?: EmploymentType | null;
+}
+
+export class CreateMemberDocumentDto {
+  @ApiProperty({ enum: MemberDocumentTypes })
+  @IsIn(MemberDocumentTypes)
+  type!: MemberDocumentType;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(200)
+  title!: string;
+
+  @ApiPropertyOptional({ format: 'uuid', nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  templateId?: string | null;
+}
+
+export class MemberPermissionOverrideDto {
+  @ApiProperty()
+  @IsString()
+  key!: string;
+
+  @ApiProperty({ enum: PERMISSION_EFFECT_KEYS })
+  @IsIn(PERMISSION_EFFECT_KEYS)
+  effect!: PermissionEffect;
+}
+
+export class SetMemberPermissionsDto {
+  @ApiProperty({ type: [MemberPermissionOverrideDto] })
+  @IsArray()
+  @ArrayMaxSize(MEMBER_PERMISSION_OVERRIDES_MAX)
+  @ValidateNested({ each: true })
+  @Type(() => MemberPermissionOverrideDto)
+  overrides!: MemberPermissionOverrideDto[];
 }

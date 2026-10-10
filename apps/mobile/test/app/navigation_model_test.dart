@@ -1,5 +1,7 @@
 import 'package:agency_os/app/navigation/app_routes.dart';
 import 'package:agency_os/app/navigation/destinations.dart';
+import 'package:agency_os/app/navigation/shell_chrome_policy.dart';
+import 'package:agency_os/features/team/team_routes.dart';
 import 'package:agency_os/core/contracts/contracts.g.dart';
 import 'package:agency_os/features/access/domain/access_policy.dart';
 import 'package:agency_os/features/auth/domain/session.dart';
@@ -43,23 +45,83 @@ void main() {
       expect(destinationFor('/unknown'), isNull);
     });
 
-    test('staff primary tabs are Overview, Clients, Content, Calendar — not To-do', () {
+    test('staff primary tabs pin Calendar, Messages, Agency around Overview, then More', () {
       const policy = AccessPolicy({
         Permissions.orgView,
         Permissions.clientsView,
+        Permissions.chatView,
+        Permissions.calendarView,
         Permissions.contentView,
         Permissions.projectsView,
         Permissions.tasksView,
+        Permissions.membersView,
       });
       final model = NavigationModel(_session(MembershipTypes.member), policy);
       expect(model.primary.map((d) => d.path).toList(), [
-        AppRoutes.home,
-        '/clients',
-        '/content',
         '/calendar',
+        '/messages',
+        AppRoutes.home,
+        '/team',
+        AppRoutes.more,
       ]);
+      expect(model.primary.map((d) => d.path), isNot(contains('/clients')));
       expect(model.primary.map((d) => d.path), isNot(contains('/tasks')));
-      expect(model.sidebarGroups[NavGroup.work]?.map((d) => d.path), contains('/tasks'));
+    });
+
+    test('drawer sidebar omits bottom-nav pins and lists Work first', () {
+      const policy = AccessPolicy({
+        Permissions.orgView,
+        Permissions.clientsView,
+        Permissions.chatView,
+        Permissions.calendarView,
+        Permissions.projectsView,
+        Permissions.tasksView,
+        Permissions.contentView,
+        Permissions.membersView,
+      });
+      final model = NavigationModel(_session(MembershipTypes.member), policy);
+      final drawer = model.sidebarGroups(includePrimary: false);
+      expect(drawer.keys.first, NavGroup.work);
+      expect(drawer[NavGroup.work]?.map((d) => d.path), containsAll(['/tasks', '/projects']));
+      expect(drawer[NavGroup.work]?.map((d) => d.path), isNot(contains('/calendar')));
+      expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], contains('/clients'));
+      expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/messages')));
+      expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/team')));
+    });
+
+    test('Agency menus keep Team and settings; departments/roles and templates stay out of grids', () {
+      const policy = AccessPolicy({
+        Permissions.orgView,
+        Permissions.membersView,
+        Permissions.rolesManage,
+        Permissions.orgSettingsManage,
+        Permissions.orgBillingManage,
+        Permissions.auditView,
+      });
+      final model = NavigationModel(_session(MembershipTypes.member), policy);
+      expect(model.primary.map((d) => d.path), contains('/team'));
+      final agency = model.secondaryGroups[NavGroup.agency]?.map((d) => d.path).toList() ?? [];
+      expect(agency, containsAll(['/knowledge', '/billing', '/audit', AppRoutes.settings]));
+      expect(agency, isNot(contains('/team')));
+      expect(agency, isNot(contains('/departments')));
+      expect(agency, isNot(contains('/roles')));
+      expect(agency, isNot(contains('/templates')));
+      expect(agency, isNot(contains('/custom-fields')));
+      expect(agencyHubPaths, containsAll(['/departments', '/roles']));
+      expect(featurePageOnlyPaths, containsAll(['/templates', '/custom-fields']));
+    });
+  });
+
+  group('shell chrome policy', () {
+    test('shows hub actions only on root destination paths', () {
+      expect(shellActionsVisibleFor(AppRoutes.home), isTrue);
+      expect(shellActionsVisibleFor('/clients'), isTrue);
+      expect(shellActionsVisibleFor('/team'), isTrue);
+      expect(shellActionsVisibleFor('${TeamRoutes.root}${TeamRoutes.member('u1')}'), isFalse);
+      expect(shellActionsVisibleFor('/clients/c1'), isFalse);
+      expect(shellActionsVisibleFor(AppRoutes.notifications), isFalse);
+      expect(shellActionsVisibleFor(AppRoutes.settings), isFalse);
+      expect(shellActionsVisibleFor('/search'), isFalse);
     });
   });
 

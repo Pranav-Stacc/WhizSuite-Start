@@ -55,7 +55,8 @@ class _WorkflowsScreenState extends ConsumerState<WorkflowsScreen> {
         tileHeight: 220,
         searchHint: l10n.workflowsSearch,
         matches: (workflow, query) =>
-            workflow.name.toLowerCase().contains(query) || workflow.stages.any((s) => s.toLowerCase().contains(query)),
+            workflow.name.toLowerCase().contains(query) ||
+            workflow.stages.any((stage) => stage.name.toLowerCase().contains(query)),
         filter: (workflow) => _active == null || workflow.active == _active,
         header: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,7 +113,7 @@ class _WorkflowsScreenState extends ConsumerState<WorkflowsScreen> {
         ),
         itemBuilder: (context, workflow) => WorkflowCard(
           workflow: workflow,
-          onTap: () => context.go(WorkflowsRoutes.detail(workflow.id)),
+          onTap: () => context.push(WorkflowsRoutes.detail(workflow.id)),
         ),
       ),
     );

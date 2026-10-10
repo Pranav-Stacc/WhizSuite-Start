@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AccessModule } from '../access/access.module';
+import { TenancyModule } from '../tenancy/tenancy.module';
 import { AuthService } from './application/services/auth.service';
 import { IdentityService } from './application/services/identity.service';
 import { MembersService } from './application/services/members.service';
@@ -18,6 +19,7 @@ import { ProfileController } from './interface/http/controllers/profile.controll
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
     AccessModule,
+    TenancyModule,
   ],
   controllers: [AuthController, MembersController, ProfileController],
   providers: [

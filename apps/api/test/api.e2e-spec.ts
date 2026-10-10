@@ -532,11 +532,8 @@ describe('Agency OS API (e2e)', () => {
       .set(auth())
       .expect(200);
     expect(Array.isArray(feed.body)).toBe(true);
-    expect(
-      feed.body.some(
-        (row: { title?: string }) => row.title === 'Publish day',
-      ),
-    ).toBe(true);
+    const feedRows = feed.body as Array<{ title?: string }>;
+    expect(feedRows.some((row) => row.title === 'Publish day')).toBe(true);
 
     const gcal = await request(app.getHttpServer())
       .get(`/api/v1/organizations/${organizationId}/calendar/google`)
@@ -546,12 +543,19 @@ describe('Agency OS API (e2e)', () => {
       externalCalendarId: 'primary',
       defaultSyncNewEvents: false,
     });
-    expect(['DISABLED', 'AVAILABLE', 'CONNECTED', 'DISCONNECTED', 'PENDING', 'ERROR']).toContain(
-      gcal.body.status,
-    );
+    expect([
+      'DISABLED',
+      'AVAILABLE',
+      'CONNECTED',
+      'DISCONNECTED',
+      'PENDING',
+      'ERROR',
+    ]).toContain(gcal.body.status);
 
     await request(app.getHttpServer())
-      .patch(`/api/v1/organizations/${organizationId}/calendar/items/${calendarItem.body.id}`)
+      .patch(
+        `/api/v1/organizations/${organizationId}/calendar/items/${calendarItem.body.id}`,
+      )
       .set(auth())
       .send({ syncToGoogle: true })
       .expect(200);

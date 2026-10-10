@@ -21,12 +21,15 @@ export class CalendarConnectionRepository {
     });
   }
 
-  upsert(organizationId: string, input: {
-    integrationConnectionId: string;
-    externalCalendarId?: string;
-    syncDirection?: string;
-    defaultSyncNewEvents?: boolean;
-  }) {
+  upsert(
+    organizationId: string,
+    input: {
+      integrationConnectionId: string;
+      externalCalendarId?: string;
+      syncDirection?: string;
+      defaultSyncNewEvents?: boolean;
+    },
+  ) {
     return this.prisma.calendarConnection.upsert({
       where: { integrationConnectionId: input.integrationConnectionId },
       create: {
@@ -61,6 +64,8 @@ export class CalendarConnectionRepository {
   }
 
   deleteByOrganization(organizationId: string) {
-    return this.prisma.calendarConnection.deleteMany({ where: { organizationId } });
+    return this.prisma.calendarConnection.deleteMany({
+      where: { organizationId },
+    });
   }
 }

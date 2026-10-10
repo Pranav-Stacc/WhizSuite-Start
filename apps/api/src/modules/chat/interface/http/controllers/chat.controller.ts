@@ -219,7 +219,7 @@ export class ChatController {
   ) {
     return this.service.sendMessage(
       requireOrganizationId(organizationId),
-      user.userId,
+      user,
       roomId,
       body,
     );

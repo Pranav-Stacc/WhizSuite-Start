@@ -28,7 +28,8 @@ export class AgentRunQueue {
 
   enqueueRun(job: AgentRunJob) {
     return this.queue.add('run', job, {
-      jobId: `${job.organizationId}:${Date.now()}`,
+      // BullMQ custom job ids cannot contain ':' (redis key delimiter).
+      jobId: `${job.organizationId}-${Date.now()}`,
       removeOnComplete: 100,
       removeOnFail: 200,
     });
@@ -36,7 +37,7 @@ export class AgentRunQueue {
 
   enqueueScheduledRun(job: ScheduledAgentRunJob) {
     return this.queue.add('scheduled', job, {
-      jobId: `schedule:${job.scheduleId}:${Date.now()}`,
+      jobId: `schedule-${job.scheduleId}-${Date.now()}`,
       removeOnComplete: 100,
       removeOnFail: 200,
     });

@@ -5,17 +5,60 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('validateWorkflowStages', () {
     test('accepts a valid pipeline', () {
-      expect(validateWorkflowStages(['Draft', 'Review', 'Approved']), isNull);
+      expect(
+        validateWorkflowStages([
+          const WorkflowStage(name: 'Draft'),
+          const WorkflowStage(name: 'Review'),
+          const WorkflowStage(name: 'Approved'),
+        ]),
+        isNull,
+      );
     });
 
     test('enforces the stage count limits', () {
-      expect(validateWorkflowStages(['Only']), WorkflowStagesIssue.tooFew);
-      expect(validateWorkflowStages(List.filled(maxWorkflowStages + 1, 'S')), WorkflowStagesIssue.tooMany);
+      expect(
+        validateWorkflowStages(List.generate(minWorkflowStages - 1, (_) => const WorkflowStage(name: 'S'))),
+        WorkflowStagesIssue.tooFew,
+      );
+      expect(
+        validateWorkflowStages(List.generate(maxWorkflowStages + 1, (_) => const WorkflowStage(name: 'S'))),
+        WorkflowStagesIssue.tooMany,
+      );
     });
 
     test('rejects blank and overlong stage names', () {
-      expect(validateWorkflowStages(['Draft', '  ']), WorkflowStagesIssue.blank);
-      expect(validateWorkflowStages(['Draft', 'x' * (maxWorkflowStageLength + 1)]), WorkflowStagesIssue.tooLong);
+      expect(
+        validateWorkflowStages([const WorkflowStage(name: 'Draft'), const WorkflowStage(name: '  ')]),
+        WorkflowStagesIssue.blank,
+      );
+      expect(
+        validateWorkflowStages([const WorkflowStage(name: 'Draft'), WorkflowStage(name: 'x' * (maxWorkflowStageLength + 1))]),
+        WorkflowStagesIssue.tooLong,
+      );
+    });
+  });
+
+  group('parseWorkflowStagesFromJson', () {
+    test('reads rich stage objects from the API', () {
+      final stages = parseWorkflowStagesFromJson({
+        'stages': [
+          {
+            'name': 'Review',
+            'approvalRule': 'ALL',
+            'roleIds': ['role-1'],
+            'approverIds': ['user-1'],
+          },
+        ],
+      });
+      expect(stages.single.name, 'Review');
+      expect(stages.single.approvalRule, ApprovalStepRules.all);
+      expect(stages.single.roleIds, ['role-1']);
+      expect(stages.single.approverIds, ['user-1']);
+    });
+
+    test('falls back to stageNames when stages are absent', () {
+      final stages = parseWorkflowStagesFromJson({'stageNames': ['Draft', 'Done']});
+      expect(stages.map((stage) => stage.name), ['Draft', 'Done']);
     });
   });
 
@@ -58,7 +101,18 @@ void main() {
   });
 
   group('WorkflowInput.toJson', () {
-    const input = WorkflowInput(name: 'W', stages: ['A', 'B'], requiresClientApproval: true, active: true);
+    const input = WorkflowInput(
+      name: 'W',
+      stages: [WorkflowStage(name: 'A'), WorkflowStage(name: 'B', approvalRule: ApprovalStepRules.all)],
+      requiresClientApproval: true,
+      active: true,
+    );
+
+    test('serializes stage objects for the API', () {
+      final stages = input.toJson(clearEmpty: false)['stages'] as List;
+      expect(stages, hasLength(2));
+      expect((stages.last as Map)['approvalRule'], ApprovalStepRules.all);
+    });
 
     test('omits an empty SLA on create', () {
       expect(input.toJson(clearEmpty: false).containsKey('slaHours'), isFalse);

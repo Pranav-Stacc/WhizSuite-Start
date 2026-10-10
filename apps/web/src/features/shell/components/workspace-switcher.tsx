@@ -49,7 +49,6 @@ export function WorkspaceSwitcher({ module, orgSlug, canCrm }: WorkspaceSwitcher
       await switchWorkspaceModuleAction(next);
       document.cookie = `${WORKSPACE_MODULE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
       router.push(homePathForModule(next));
-      router.refresh();
     });
   };
 

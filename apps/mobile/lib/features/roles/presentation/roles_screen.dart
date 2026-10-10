@@ -31,7 +31,7 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
     final tokens = context.tokens;
     final roles = ref.watch(rolesProvider);
     final items = roles.value ?? const <Role>[];
-    void create() => context.go(RolesRoutes.create);
+    void create() => context.push(RolesRoutes.create);
 
     return PageScaffold(
       title: l10n.rolesTitle,
@@ -91,7 +91,7 @@ class _RolesScreenState extends ConsumerState<RolesScreen> {
             child: FilledButton.icon(onPressed: create, icon: const Icon(Icons.add), label: Text(l10n.roleNew)),
           ),
         ),
-        itemBuilder: (context, role) => RoleCard(role: role, onTap: () => context.go(RolesRoutes.detail(role.id))),
+        itemBuilder: (context, role) => RoleCard(role: role, onTap: () => context.push(RolesRoutes.detail(role.id))),
       ),
     );
   }

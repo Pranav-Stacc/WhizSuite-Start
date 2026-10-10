@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -30,7 +31,7 @@ import 'content_labels.dart';
 import 'content_preview.dart';
 import 'content_workflow_panel.dart';
 
-enum _MenuAction { delete }
+enum _MenuAction { copyLink, share, delete }
 
 class ContentDetailScreen extends ConsumerWidget {
   const ContentDetailScreen({required this.contentId, super.key});
@@ -58,16 +59,23 @@ class ContentDetailScreen extends ConsumerWidget {
             child: IconButton(
               tooltip: l10n.edit,
               icon: const Icon(Icons.edit_outlined),
-              onPressed: () => context.go(ContentRoutes.edit(contentId)),
+              onPressed: () => context.push(ContentRoutes.edit(contentId)),
             ),
           ),
-        if (canDelete)
-          PermissionGate(
-            anyOf: const [Permissions.contentDelete],
-            child: PopupMenuButton<_MenuAction>(
-              tooltip: l10n.moreActions,
-              onSelected: (action) => _onMenu(context, ref, loaded, action),
-              itemBuilder: (context) => [
+        if (loaded != null)
+          PopupMenuButton<_MenuAction>(
+            tooltip: l10n.moreActions,
+            onSelected: (action) => _onMenu(context, ref, loaded, action),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _MenuAction.copyLink,
+                child: ListTile(leading: const Icon(Icons.link), title: Text(l10n.contentCopyLink)),
+              ),
+              PopupMenuItem(
+                value: _MenuAction.share,
+                child: ListTile(leading: const Icon(Icons.ios_share_outlined), title: Text(l10n.contentShare)),
+              ),
+              if (canDelete)
                 PopupMenuItem(
                   value: _MenuAction.delete,
                   child: ListTile(
@@ -75,8 +83,7 @@ class ContentDetailScreen extends ConsumerWidget {
                     title: Text(l10n.delete, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
       ],
       body: AsyncValueView<Content>(
@@ -141,6 +148,18 @@ class ContentDetailScreen extends ConsumerWidget {
     if (content == null) return;
     final l10n = AppLocalizations.of(context);
     switch (action) {
+      case _MenuAction.copyLink:
+        await Clipboard.setData(ClipboardData(text: ContentRoutes.shareUrl(content.id)));
+        if (context.mounted) showToast(context, l10n.contentLinkCopied);
+      case _MenuAction.share:
+        final clientName = ref.read(clientDirectoryProvider).value?.nameOf(content.clientId) ?? l10n.valueUnknown;
+        final summary = l10n.contentShareText(
+          _titleOf(l10n, content),
+          clientName,
+          ContentRoutes.shareUrl(content.id),
+        );
+        await Clipboard.setData(ClipboardData(text: summary));
+        if (context.mounted) showToast(context, l10n.contentShareCopied);
       case _MenuAction.delete:
         final confirmed = await confirmAction(
           context,
@@ -354,14 +373,17 @@ class _DetailsSection extends ConsumerWidget {
           InfoRow(
             label: l10n.contentFieldClient,
             icon: Icons.business_outlined,
+            alignEnd: false,
             value: canOpenClient
-                ? Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: AlignmentDirectional.centerStart),
-                      onPressed: () => context.push(ClientsRoutes.detail(content.clientId)),
-                      child: Text(clientName),
+                ? TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      alignment: AlignmentDirectional.centerStart,
                     ),
+                    onPressed: () => context.push(ClientsRoutes.detail(content.clientId)),
+                    child: Text(clientName, textAlign: TextAlign.start),
                   )
                 : Text(clientName),
           ),
@@ -369,9 +391,15 @@ class _DetailsSection extends ConsumerWidget {
           InfoRow(
             label: l10n.contentFieldScheduledAt,
             icon: Icons.event_outlined,
+            alignEnd: false,
             value: Row(
               children: [
-                Expanded(child: Text(scheduledAt == null ? l10n.contentUnscheduled : formats.dateTime(scheduledAt.toLocal()))),
+                Expanded(
+                  child: Text(
+                    scheduledAt == null ? l10n.contentUnscheduled : formats.dateTime(scheduledAt.toLocal()),
+                    textAlign: TextAlign.start,
+                  ),
+                ),
                 if (canReschedule)
                   AllPermissionsGate(
                     allOf: const [Permissions.contentEdit, Permissions.socialSchedule],
@@ -390,13 +418,16 @@ class _DetailsSection extends ConsumerWidget {
             InfoRow(
               label: l10n.contentFieldCta,
               icon: Icons.link,
-              value: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: AlignmentDirectional.centerStart),
-                  onPressed: () => _openCta(context, ctaUrl),
-                  child: Text(ctaUrl, maxLines: 1, overflow: TextOverflow.ellipsis),
+              alignEnd: false,
+              value: TextButton(
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  alignment: AlignmentDirectional.centerStart,
                 ),
+                onPressed: () => _openCta(context, ctaUrl),
+                child: Text(ctaUrl, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.start),
               ),
             ),
           InfoRow(

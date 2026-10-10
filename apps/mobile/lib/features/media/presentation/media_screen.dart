@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
-import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/resource_list.dart';
@@ -28,7 +27,9 @@ import 'storage_usage_card.dart';
 import 'upload_sheet.dart';
 
 class MediaScreen extends ConsumerStatefulWidget {
-  const MediaScreen({super.key});
+  const MediaScreen({this.initialClientId, super.key});
+
+  final String? initialClientId;
 
   static const minTileWidth = 168.0;
   static const tileHeight = 224.0;
@@ -39,7 +40,7 @@ class MediaScreen extends ConsumerStatefulWidget {
 
 class _MediaScreenState extends ConsumerState<MediaScreen> {
   String? _kind;
-  String? _clientId;
+  late String? _clientId = widget.initialClientId;
   final _selected = <String>{};
   var _selecting = false;
   var _exporting = false;
@@ -99,7 +100,6 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
     final uploading = ref.watch(mediaUploadQueueProvider.select((tasks) => tasks.where((t) => !t.isFinished).length));
     final all = assets.value ?? const <MediaAsset>[];
     int kindCount(String? kind) => all.where((a) => _passes(a, ignoreKind: true) && (kind == null || a.kind == kind)).length;
-
     final usage = ref.watch(storageUsageProvider);
 
     return PageScaffold(
@@ -139,106 +139,107 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
         children: [
           Expanded(
             child: ResourceList<MediaAsset>(
-        value: assets,
-        minTileWidth: MediaScreen.minTileWidth,
-        tileHeight: MediaScreen.tileHeight,
-        onRefresh: () => ref.refresh(mediaAssetsProvider.future),
-        searchHint: l10n.mediaSearch,
-        matches: (asset, query) => asset.matches(query),
-        filter: _passes,
-        header: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            switch (usage) {
-              AsyncValue(value: final value?) => Padding(
-                  padding: EdgeInsets.only(bottom: tokens.md),
-                  child: StorageUsageCard(usage: value),
+              value: assets,
+              minTileWidth: MediaScreen.minTileWidth,
+              tileHeight: MediaScreen.tileHeight,
+              onRefresh: () => ref.refresh(mediaAssetsProvider.future),
+              searchHint: l10n.mediaSearch,
+              matches: (asset, query) => asset.matches(query),
+              filter: _passes,
+              header: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  switch (usage) {
+                    AsyncValue(value: final value?) => Padding(
+                        padding: EdgeInsets.only(bottom: tokens.md),
+                        child: StorageUsageCard(usage: value),
+                      ),
+                    _ => const SizedBox.shrink(),
+                  },
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final tiles = [
+                        MetricTile(
+                          label: l10n.mediaStatAll,
+                          icon: Icons.folder_outlined,
+                          value: '${kindCount(null)}',
+                          onTap: () => setState(() => _kind = null),
+                        ),
+                        MetricTile(
+                          label: l10n.mediaStatImages,
+                          icon: Icons.image_outlined,
+                          value: '${all.where((a) => a.kind == AssetKinds.image && _passes(a, ignoreKind: true)).length}',
+                          onTap: () => setState(() => _kind = AssetKinds.image),
+                        ),
+                        MetricTile(
+                          label: l10n.mediaStatVideos,
+                          icon: Icons.videocam_outlined,
+                          value: '${all.where((a) => a.kind == AssetKinds.video && _passes(a, ignoreKind: true)).length}',
+                          onTap: () => setState(() => _kind = AssetKinds.video),
+                        ),
+                        MetricTile(
+                          label: l10n.mediaStatDocs,
+                          icon: Icons.description_outlined,
+                          value: '${all.where((a) => a.kind == AssetKinds.document && _passes(a, ignoreKind: true)).length}',
+                          onTap: () => setState(() => _kind = AssetKinds.document),
+                        ),
+                      ];
+                      final columns = gridColumns(constraints.maxWidth, minTileWidth: 140, max: tiles.length);
+                      final width = (constraints.maxWidth - tokens.md * (columns - 1)) / columns;
+                      return Wrap(
+                        spacing: tokens.md,
+                        runSpacing: tokens.md,
+                        children: [for (final tile in tiles) SizedBox(width: width, child: tile)],
+                      );
+                    },
+                  ),
+                  SizedBox(height: tokens.md),
+                  FilterBar<String>(
+                    options: AssetKinds.values,
+                    selected: _kind,
+                    labelOf: (kind) => mediaKindLabel(l10n, kind),
+                    countOf: kindCount,
+                    onSelected: (kind) => setState(() => _kind = kind),
+                  ),
+                  if (widget.initialClientId == null && clients.entries.isNotEmpty) ...[
+                    SizedBox(height: tokens.sm),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: _ClientFilter(
+                        clients: clients,
+                        selected: _clientId,
+                        onSelected: (id) => setState(() => _clientId = id),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              empty: EmptyState(
+                icon: Icons.photo_library_outlined,
+                title: l10n.mediaEmpty,
+                body: l10n.mediaEmptyBody,
+                animate: false,
+                action: PermissionGate(
+                  anyOf: const [Permissions.filesUpload],
+                  child: FilledButton.icon(
+                    onPressed: _upload,
+                    icon: const Icon(Icons.upload_outlined),
+                    label: Text(l10n.mediaUpload),
+                  ),
                 ),
-              _ => const SizedBox.shrink(),
-            },
-            if (all.isNotEmpty) ...[
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final tiles = [
-                    MetricTile(
-                      label: l10n.mediaStatAll,
-                      icon: Icons.folder_outlined,
-                      value: '${all.length}',
-                      onTap: () => setState(() => _kind = null),
-                    ),
-                    MetricTile(
-                      label: l10n.mediaStatImages,
-                      icon: Icons.image_outlined,
-                      value: '${all.where((a) => a.kind == AssetKinds.image).length}',
-                      onTap: () => setState(() => _kind = AssetKinds.image),
-                    ),
-                    MetricTile(
-                      label: l10n.mediaStatVideos,
-                      icon: Icons.videocam_outlined,
-                      value: '${all.where((a) => a.kind == AssetKinds.video).length}',
-                      onTap: () => setState(() => _kind = AssetKinds.video),
-                    ),
-                    MetricTile(
-                      label: l10n.mediaStatDocs,
-                      icon: Icons.description_outlined,
-                      value: '${all.where((a) => a.kind == AssetKinds.document).length}',
-                      onTap: () => setState(() => _kind = AssetKinds.document),
-                    ),
-                  ];
-                  final columns = gridColumns(constraints.maxWidth, minTileWidth: 140, max: tiles.length);
-                  final width = (constraints.maxWidth - tokens.md * (columns - 1)) / columns;
-                  return Wrap(
-                    spacing: tokens.md,
-                    runSpacing: tokens.md,
-                    children: [for (final tile in tiles) SizedBox(width: width, child: tile)],
-                  );
+              ),
+              itemBuilder: (context, asset) => MediaTile(
+                asset: asset,
+                clientName: clients.nameOf(asset.clientId),
+                selected: _selecting ? _selected.contains(asset.id) : null,
+                onTap: () {
+                  if (_selecting) {
+                    _toggleSelect(asset.id);
+                  } else {
+                    context.push(MediaRoutes.detail(asset.id));
+                  }
                 },
               ),
-              SizedBox(height: tokens.md),
-            ],
-            FilterBar<String>(
-              options: AssetKinds.values,
-              selected: _kind,
-              labelOf: (kind) => mediaKindLabel(l10n, kind),
-              countOf: kindCount,
-              onSelected: (kind) => setState(() => _kind = kind),
-            ),
-            if (clients.entries.isNotEmpty) ...[
-              SizedBox(height: tokens.sm),
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: _ClientFilter(
-                  clients: clients,
-                  selected: _clientId,
-                  onSelected: (id) => setState(() => _clientId = id),
-                ),
-              ),
-            ],
-          ],
-        ),
-        empty: EmptyState(
-          icon: Icons.photo_library_outlined,
-          title: l10n.mediaEmpty,
-          body: l10n.mediaEmptyBody,
-          action: PermissionGate(
-            anyOf: const [Permissions.filesUpload],
-            child: FilledButton.icon(onPressed: _upload, icon: const Icon(Icons.upload_outlined), label: Text(l10n.mediaUpload)),
-          ),
-        ),
-        itemBuilder: (context, asset) => FadeSlideIn(
-          child: MediaTile(
-            asset: asset,
-            clientName: clients.nameOf(asset.clientId),
-            selected: _selecting ? _selected.contains(asset.id) : null,
-            onTap: () {
-              if (_selecting) {
-                _toggleSelect(asset.id);
-              } else {
-                context.go(MediaRoutes.detail(asset.id));
-              }
-            },
-          ),
-        ),
             ),
           ),
           if (_selecting && _selected.isNotEmpty)

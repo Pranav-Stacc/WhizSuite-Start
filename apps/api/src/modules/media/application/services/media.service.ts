@@ -135,7 +135,9 @@ export class MediaService {
       folderId: input.folderId,
       projectId: input.projectId,
       calendarItemId: input.calendarItemId,
-      searchText: [input.filename, ...(input.tags ?? [])].join(' ').toLowerCase(),
+      searchText: [input.filename, ...(input.tags ?? [])]
+        .join(' ')
+        .toLowerCase(),
     });
     if (input.tags?.length) {
       await this.repository.setAssetTags(organizationId, asset.id, input.tags);

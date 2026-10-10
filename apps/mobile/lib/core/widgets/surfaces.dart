@@ -72,11 +72,14 @@ class SectionCard extends StatelessWidget {
 
 /// Label/value pair for detail screens.
 class InfoRow extends StatelessWidget {
-  const InfoRow({required this.label, required this.value, this.icon, super.key});
+  const InfoRow({required this.label, required this.value, this.icon, this.alignEnd = true, super.key});
 
   final String label;
   final Widget value;
   final IconData? icon;
+
+  /// When false, values (buttons, links) start-align instead of end-align.
+  final bool alignEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +88,7 @@ class InfoRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: tokens.sm),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (icon != null) ...[Icon(icon, size: 18, color: tokens.muted), SizedBox(width: tokens.md)],
           Expanded(flex: 2, child: Text(label, style: text.bodyMedium?.copyWith(color: tokens.muted))),
@@ -93,8 +96,12 @@ class InfoRow extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: DefaultTextStyle.merge(style: text.bodyMedium, textAlign: TextAlign.end, child: value),
+              alignment: alignEnd ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+              child: DefaultTextStyle.merge(
+                style: text.bodyMedium,
+                textAlign: alignEnd ? TextAlign.end : TextAlign.start,
+                child: value,
+              ),
             ),
           ),
         ],
@@ -129,7 +136,7 @@ class MetricTile extends StatelessWidget {
     final accent = tone == StatusTone.neutral ? tokens.secondary : tone.color(tokens);
     return SurfaceCard(
       onTap: onTap,
-      padding: EdgeInsets.fromLTRB(tokens.sm + tokens.xs, tokens.sm, tokens.sm + tokens.xs, tokens.sm),
+      padding: EdgeInsets.fromLTRB(tokens.sm + 2, tokens.sm, tokens.sm + 2, tokens.sm),
       semanticLabel: '$label: $value',
       child: ExcludeSemantics(
         child: Column(
@@ -145,12 +152,13 @@ class MetricTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: text.labelSmall?.copyWith(
                       color: tokens.muted,
-                      letterSpacing: 0.4,
+                      letterSpacing: 0.3,
                       fontWeight: FontWeight.w500,
+                      fontSize: 11,
                     ),
                   ),
                 ),
-                if (icon != null) Icon(icon, size: 16, color: accent),
+                if (icon != null) Icon(icon, size: 14, color: accent),
               ],
             ),
             SizedBox(height: tokens.xs),
@@ -159,9 +167,9 @@ class MetricTile extends StatelessWidget {
               alignment: AlignmentDirectional.centerStart,
               child: Text(
                 value,
-                style: text.titleLarge?.copyWith(
+                style: text.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.2,
                   height: 1.1,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -175,6 +183,7 @@ class MetricTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: text.labelSmall?.copyWith(
                   color: tone == StatusTone.neutral ? tokens.muted : accent,
+                  fontSize: 10,
                 ),
               ),
             ],

@@ -28,6 +28,12 @@ What you can do from chat (use the matching toolIds):
 - Prefer executing tools over asking clarifying questions when intent is clear.
 - You may call multiple tools in one response (e.g. create client then create task).
 - Use conversation history for context (follow-ups, corrections, prior IDs).
+- Each tool lists `inputs` (field→type) and `required`. Use EXACT field names
+  (e.g. clients.create needs displayName, not name; leads.create needs companyName;
+  tasks.create needs title). Never invent alternate keys.
+- For demo / "test all tools" requests: run a representative set across modules
+  (reads first, then safe writes with clear demo data). Do not refuse for safety —
+  this product is for agency automation; the user is authorized.
 
 Respond with JSON only (no markdown fences):
 {"summary": string, "tool_calls": [{"toolId": string, "input": object}]}
@@ -112,18 +118,30 @@ def parse_llm_json(raw: str) -> dict[str, Any]:
 
 
 def compact_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep tool catalog small enough for the planner context window."""
+    """Keep tool catalog small but include required input field names for the planner."""
     compact: list[dict[str, Any]] = []
     for tool in tools:
-        compact.append(
-            {
-                "id": tool.get("id"),
-                "name": tool.get("name"),
-                "module": tool.get("module"),
-                "description": tool.get("description"),
-                "riskTier": tool.get("riskTier"),
-            }
-        )
+        entry: dict[str, Any] = {
+            "id": tool.get("id"),
+            "name": tool.get("name"),
+            "module": tool.get("module"),
+            "description": tool.get("description"),
+            "riskTier": tool.get("riskTier"),
+        }
+        schema = tool.get("inputSchema") or {}
+        props = schema.get("properties") if isinstance(schema, dict) else None
+        if isinstance(props, dict) and props:
+            fields: dict[str, Any] = {}
+            for name, prop in props.items():
+                if isinstance(prop, dict):
+                    fields[name] = prop.get("format") or prop.get("type") or "any"
+                else:
+                    fields[name] = "any"
+            entry["inputs"] = fields
+            required = schema.get("required")
+            if isinstance(required, list) and required:
+                entry["required"] = required
+        compact.append(entry)
     return compact
 
 
@@ -256,7 +274,7 @@ async def run_supervisor_graph_stream(
             content=(
                 f"User request: {message}\n\n"
                 f"Available tools (ranked for this request):\n"
-                f"{json.dumps(compact_tools(ranked), indent=2)[:14000]}"
+                f"{json.dumps(compact_tools(ranked), indent=2)[:18000]}"
             )
         ),
     ]

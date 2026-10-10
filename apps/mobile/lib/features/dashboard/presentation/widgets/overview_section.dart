@@ -10,6 +10,9 @@ import '../../../../l10n/app_localizations.dart';
 
 /// Titled overview card that renders its own loading skeleton and a compact inline
 /// retry, so one failing endpoint never takes the whole screen down.
+///
+/// When [showWhen] is set, the section stays hidden while loading and after load
+/// if the predicate fails — so empty cards never clutter the overview.
 class OverviewSection<T> extends StatelessWidget {
   const OverviewSection({
     required this.title,
@@ -18,6 +21,7 @@ class OverviewSection<T> extends StatelessWidget {
     required this.builder,
     this.trailing,
     this.skeletonRows = 3,
+    this.showWhen,
     super.key,
   });
 
@@ -28,9 +32,22 @@ class OverviewSection<T> extends StatelessWidget {
   final Widget? trailing;
   final int skeletonRows;
 
+  /// When set, hide the whole section unless the loaded data should be shown.
+  final bool Function(T data)? showWhen;
+
   @override
   Widget build(BuildContext context) {
     final current = value.value;
+    if (showWhen != null) {
+      if (current != null) {
+        if (!showWhen!(current)) return const SizedBox.shrink();
+      } else if (value.hasError) {
+        // Keep failures visible so a bad endpoint is never silently swallowed.
+      } else {
+        return const SizedBox.shrink();
+      }
+    }
+
     final Widget child;
     if (current != null || (value.hasValue && !value.isLoading)) {
       child = builder(context, current as T);
@@ -137,7 +154,7 @@ class SectionSkeleton extends StatelessWidget {
   }
 }
 
-/// Quiet empty message inside a section.
+/// Calm empty panel inside a section — soft fill so empty lists still feel intentional.
 class SectionEmpty extends StatelessWidget {
   const SectionEmpty({required this.message, this.icon = Icons.check_circle_outline, this.action, super.key});
 
@@ -148,19 +165,35 @@ class SectionEmpty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: tokens.md),
-      child: Column(
-        children: [
-          Icon(icon, color: tokens.muted, size: 22),
-          SizedBox(height: tokens.sm),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted),
-          ),
-          if (action != null) ...[SizedBox(height: tokens.sm), action!],
-        ],
+    final text = Theme.of(context).textTheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.subtle,
+        borderRadius: BorderRadius.circular(tokens.radius + 8),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: tokens.lg, vertical: tokens.lg + tokens.xs),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: tokens.surface,
+                borderRadius: BorderRadius.circular(tokens.radius + 8),
+                border: Border.all(color: tokens.border.withValues(alpha: 0.7)),
+              ),
+              child: Icon(icon, color: tokens.primary, size: 20),
+            ),
+            SizedBox(height: tokens.md),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: text.bodyMedium?.copyWith(color: tokens.secondary, height: 1.4),
+            ),
+            if (action != null) ...[SizedBox(height: tokens.sm), action!],
+          ],
+        ),
       ),
     );
   }

@@ -85,7 +85,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: Text(l10n.settingsAppearance),
                     subtitle: Text(l10n.settingsAppearanceBody),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go(AppRoutes.appearance),
+                    onTap: () => context.push(AppRoutes.appearance),
                   ),
                   const Divider(),
                   ListTile(
@@ -93,7 +93,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: Text(l10n.settingsNotifications),
                     subtitle: Text(l10n.settingsNotificationsBody),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go(AppRoutes.notificationPreferences),
+                    onTap: () => context.push(AppRoutes.notificationPreferences),
                   ),
                   const Divider(),
                   ListTile(
@@ -101,7 +101,7 @@ class SettingsScreen extends ConsumerWidget {
                     title: Text(l10n.storageSettingsTitle),
                     subtitle: Text(l10n.storageSettingsBody),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go(AppRoutes.storage),
+                    onTap: () => context.push(AppRoutes.storage),
                   ),
                 ],
               ),

@@ -5,5 +5,7 @@
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Debug builds talk to the local API over plain HTTP (see config/dev.example.json). -->
-    <application android:usesCleartextTraffic="true"/>
+    <application
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"/>
 </manifest>

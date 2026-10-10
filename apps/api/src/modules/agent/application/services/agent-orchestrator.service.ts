@@ -27,13 +27,19 @@ export interface AgentOrchestratorStep {
   status: string;
 }
 
+function eventText(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
 export interface AgentOrchestratorResponse {
   response: string;
   steps: AgentOrchestratorStep[];
   pendingActionId?: string;
 }
 
-export type AgentStreamCallback = (event: Record<string, unknown>) => void | Promise<void>;
+export type AgentStreamCallback = (
+  event: Record<string, unknown>,
+) => void | Promise<void>;
 
 @Injectable()
 export class AgentOrchestratorService {
@@ -41,7 +47,9 @@ export class AgentOrchestratorService {
 
   constructor(private readonly config: ConfigService<AppConfig, true>) {}
 
-  async run(request: AgentOrchestratorRequest): Promise<AgentOrchestratorResponse> {
+  async run(
+    request: AgentOrchestratorRequest,
+  ): Promise<AgentOrchestratorResponse> {
     const baseUrl = this.config.get('AGENT_SERVICE_URL', { infer: true });
     const url = `${baseUrl.replace(/\/$/, '')}/v1/run`;
 
@@ -116,9 +124,11 @@ export class AgentOrchestratorService {
       let final: AgentOrchestratorResponse | null = null;
 
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+        const chunk = await reader.read();
+        if (chunk.done) break;
+        if (chunk.value) {
+          buffer += decoder.decode(chunk.value, { stream: true });
+        }
         const chunks = buffer.split('\n\n');
         buffer = chunks.pop() ?? '';
 
@@ -143,7 +153,7 @@ export class AgentOrchestratorService {
               ? (event.steps as AgentOrchestratorStep[])
               : [];
             final = {
-              response: String(event.response ?? ''),
+              response: eventText(event.response, ''),
               steps,
               pendingActionId:
                 typeof event.pendingActionId === 'string'
@@ -164,7 +174,9 @@ export class AgentOrchestratorService {
           } else {
             await onEvent(event);
             if (event.type === 'error') {
-              return this.failureResponse(String(event.message ?? 'Agent failed'));
+              return this.failureResponse(
+                eventText(event.message, 'Agent failed'),
+              );
             }
           }
         }
@@ -172,7 +184,9 @@ export class AgentOrchestratorService {
 
       return (
         final ??
-        this.failureResponse('The AI runtime closed the stream without a result.')
+        this.failureResponse(
+          'The AI runtime closed the stream without a result.',
+        )
       );
     } catch (error) {
       this.logger.warn(`Agent stream unavailable: ${String(error)}`);

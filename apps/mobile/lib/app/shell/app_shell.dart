@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/connectivity/connectivity.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/brand_loader.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/page_scaffold.dart';
 import '../../core/widgets/shell_chrome.dart';
-import '../../core/widgets/skeleton.dart';
 import '../../core/widgets/state_views.dart';
 import '../../features/access/application/access_controller.dart';
 import '../../features/auth/application/session_controller.dart';
@@ -20,6 +21,7 @@ import '../../features/notifications/presentation/notification_links.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
+import '../navigation/shell_chrome_policy.dart';
 import 'app_sidebar.dart';
 import 'creative_bottom_nav.dart';
 import 'quick_create_sheet.dart';
@@ -28,13 +30,15 @@ import 'search_action.dart';
 /// Signed-in frame: permission-filtered navigation, offline banner, notification delivery,
 /// and a guard that blocks destinations the member's roles do not grant.
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({required this.location, required this.child, super.key});
+  const AppShell({required this.location, required this.navigationShell, super.key});
 
   /// Width at which the bottom bar becomes a permanent sidebar.
   static const railBreakpoint = 840.0;
 
   final String location;
-  final Widget child;
+
+  /// IndexedStack of shell branches — keeps off-screen tabs mounted.
+  final StatefulNavigationShell navigationShell;
 
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
@@ -90,7 +94,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final notification = feed?.where((n) => n.id == id).firstOrNull;
     if (!mounted) return;
     if (notification == null) {
-      context.go(AppRoutes.notifications);
+      context.push(AppRoutes.notifications);
     } else {
       _open(notification);
     }
@@ -98,11 +102,12 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   void _open(AppNotification notification) {
     if (!notification.isRead) ref.read(notificationsProvider.notifier).markRead(notification.id).ignore();
-    context.go(notificationLink(notification));
+    context.push(notificationLink(notification));
   }
 
   void _openSidebar() => _scaffoldKey.currentState?.openDrawer();
 
+  /// Shell destinations replace via [GoRouter.go] so IndexedStack branches stay warm.
   void _navigate(String path) {
     final navigator = _scaffoldKey.currentState;
     if (navigator?.isDrawerOpen ?? false) navigator!.closeDrawer();
@@ -120,35 +125,40 @@ class _AppShellState extends ConsumerState<AppShell> {
       for (final d in navigation.primary)
         CreativeNavTab(path: d.path, icon: d.icon, selectedIcon: d.selectedIcon, label: d.label),
     ];
-    final selected = _selectedIndex(tabs);
+    final selected = _selectedIndex(tabs, navigation);
+    final showShellChrome = shellActionsVisibleFor(widget.location);
     final body = ShellActions(
       actions: _shellActions,
+      showInAppBar: showShellChrome,
       child: Column(children: [const OfflineBanner(), Expanded(child: _guarded(navigation, access))]),
     );
 
     final sidebar = AppSidebar(
       session: session,
-      groups: navigation.sidebarGroups,
+      groups: navigation.sidebarGroups(includePrimary: false),
       location: widget.location,
       onNavigate: _navigate,
       permanent: false,
     );
 
+    final bg = context.tokens.bg;
+
     if (tabs.length < 2) {
       return ShellChrome(
         openSidebar: _openSidebar,
-        child: Scaffold(key: _scaffoldKey, drawer: sidebar, body: body),
+        child: Scaffold(key: _scaffoldKey, backgroundColor: bg, drawer: sidebar, body: body),
       );
     }
 
     final wide = MediaQuery.sizeOf(context).width >= AppShell.railBreakpoint;
     if (wide) {
       return Scaffold(
+        backgroundColor: bg,
         body: Row(
           children: [
             AppSidebar(
               session: session,
-              groups: navigation.sidebarGroups,
+              groups: navigation.sidebarGroups(includePrimary: true),
               location: widget.location,
               onNavigate: _navigate,
               permanent: true,
@@ -164,33 +174,54 @@ class _AppShellState extends ConsumerState<AppShell> {
       openSidebar: _openSidebar,
       child: Scaffold(
         key: _scaffoldKey,
+        backgroundColor: bg,
         drawer: sidebar,
         body: body,
-        bottomNavigationBar: CreativeBottomNav(
-          tabs: tabs,
-          selectedIndex: selected,
-          onSelect: (i) => context.go(tabs[i].path),
+        bottomNavigationBar: Material(
+          color: Colors.transparent,
+          child: CreativeBottomNav(
+            tabs: tabs,
+            selectedIndex: selected,
+            onSelect: (i) => context.go(tabs[i].path),
+          ),
         ),
       ),
     );
   }
 
-  /// Blocks routes whose permissions the member lacks; shows a skeleton until access is known.
+  /// Blocks routes whose permissions the member lacks; shows the brand loader until access is known.
   Widget _guarded(NavigationModel navigation, AsyncValue<Object?> access) {
+    final child = widget.navigationShell;
     final destination = destinationFor(widget.location);
-    if (destination == null || destination.anyOf.isEmpty) return widget.child;
+    if (destination == null || destination.anyOf.isEmpty) return child;
     if (access.hasError && !access.hasValue) {
       return ErrorState(error: access.error!, onRetry: () => ref.invalidate(accessProvider));
     }
-    if (!access.hasValue) return const SkeletonList();
-    return navigation.visible.contains(destination) ? widget.child : const ForbiddenState();
+    // Keep the current branch visible while access reloads in the background.
+    if (!access.hasValue) return const BrandLoader();
+    return navigation.visible.contains(destination) ? child : const ForbiddenState();
   }
 
-  /// Index of the tab owning the current location, or null when no tab owns it.
-  int? _selectedIndex(List<CreativeNavTab> tabs) {
+  /// Index of the tab owning the current location; More when on a secondary destination.
+  int? _selectedIndex(List<CreativeNavTab> tabs, NavigationModel navigation) {
     for (var i = 0; i < tabs.length; i++) {
       final path = tabs[i].path;
+      if (path == AppRoutes.more) continue;
       if (widget.location == path || widget.location.startsWith('$path/')) return i;
+    }
+    final moreIndex = tabs.indexWhere((t) => t.path == AppRoutes.more);
+    if (moreIndex < 0) return null;
+    if (widget.location == AppRoutes.more || widget.location.startsWith('${AppRoutes.more}/')) {
+      return moreIndex;
+    }
+    final pinned = navigation.primary.map((d) => d.path).toSet();
+    for (final destination in navigation.visible) {
+      if (pinned.contains(destination.path)) continue;
+      final path = destination.path;
+      if (widget.location == path || widget.location.startsWith('$path/')) return moreIndex;
+    }
+    if (widget.location.startsWith(AppRoutes.settings) || widget.location.startsWith(AppRoutes.notifications)) {
+      return moreIndex;
     }
     return null;
   }

@@ -31,7 +31,9 @@ export function parseApproverSpec(raw: unknown): ApproverSpec {
   const spec = raw as Record<string, unknown>;
   const asIds = (value: unknown) =>
     Array.isArray(value)
-      ? value.filter((id): id is string => typeof id === 'string' && id.length > 0)
+      ? value.filter(
+          (id): id is string => typeof id === 'string' && id.length > 0,
+        )
       : [];
   return {
     approverIds: asIds(spec.approverIds),

@@ -17,7 +17,6 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as {
     sessionId?: string;
     message?: string;
-    multiAgent?: boolean;
     agentDefinitionId?: string;
   } | null;
 
@@ -27,7 +26,6 @@ export async function POST(request: NextRequest) {
 
   const parsed = sendAgentMessageSchema.safeParse({
     message: body.message,
-    multiAgent: body.multiAgent,
     agentDefinitionId: body.agentDefinitionId || undefined,
   });
   if (!parsed.success) {

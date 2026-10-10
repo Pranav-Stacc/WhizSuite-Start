@@ -20,7 +20,9 @@ import 'connection_forms.dart';
 import 'integration_labels.dart';
 
 class IntegrationsScreen extends ConsumerStatefulWidget {
-  const IntegrationsScreen({super.key});
+  const IntegrationsScreen({this.initialClientId, super.key});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<IntegrationsScreen> createState() => _IntegrationsScreenState();
@@ -28,6 +30,7 @@ class IntegrationsScreen extends ConsumerStatefulWidget {
 
 class _IntegrationsScreenState extends ConsumerState<IntegrationsScreen> {
   String? _status;
+  late final String? _clientId = widget.initialClientId;
 
   Future<void> _connect() async {
     final l10n = AppLocalizations.of(context);
@@ -71,7 +74,9 @@ class _IntegrationsScreenState extends ConsumerState<IntegrationsScreen> {
           connection.accountHandle,
           clients.nameOf(connection.clientId),
         ].any((value) => value?.toLowerCase().contains(query) ?? false),
-        filter: (connection) => _status == null || connection.status == _status,
+        filter: (connection) =>
+            (_clientId == null || connection.clientId == _clientId) &&
+            (_status == null || connection.status == _status),
         sort: (a, b) {
           final byStatus = a.statusRank.compareTo(b.statusRank);
           return byStatus != 0 ? byStatus : b.updatedAt.compareTo(a.updatedAt);

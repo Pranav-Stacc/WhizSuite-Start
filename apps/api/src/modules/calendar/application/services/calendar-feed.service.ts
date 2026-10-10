@@ -68,13 +68,9 @@ export class CalendarFeedService {
     if (query.clientId && !TenantContext.canAccessClient(query.clientId)) {
       return [];
     }
-    const clientIds = query.clientId
-      ? [query.clientId]
-      : tenantScope;
+    const clientIds = query.clientId ? [query.clientId] : tenantScope;
 
-    const wanted = query.types?.length
-      ? new Set(query.types)
-      : DEFAULT_TYPES;
+    const wanted = query.types?.length ? new Set(query.types) : DEFAULT_TYPES;
 
     const layers = await Promise.all([
       wanted.has('MANUAL') ||
@@ -333,7 +329,10 @@ export class CalendarFeedService {
       }
       return items;
     } catch (error) {
-      this.logger.warn({ err: error }, 'calendar feed: campaigns layer skipped');
+      this.logger.warn(
+        { err: error },
+        'calendar feed: campaigns layer skipped',
+      );
       return [];
     }
   }

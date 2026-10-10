@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import {
   AssignableScopeTypes,
+  PermissionEffects,
   RoleKinds,
   ScopeTypes,
+  isPermission,
   type AccessRoleSummary,
   type AssignableScopeType,
+  type MemberPermissionOverride,
   type Permission,
+  type PermissionEffect,
   type RoleAssignmentScopeInput,
   type RoleKind,
   type RoleInput,
@@ -13,6 +17,14 @@ import {
 } from '@agency-os/contracts';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
+import {
+  applyPermissionOverrides,
+  type PermissionInputs,
+} from '../../application/utils/effective-permissions';
+import {
+  ACTIVE_MEMBERSHIP_STATUS,
+  OWNER_MEMBERSHIP_TYPE,
+} from '../../config/default-roles';
 
 const ROLE_SUMMARY_SELECT = {
   id: true,
@@ -50,6 +62,24 @@ function toRoleSummary(role: {
   };
 }
 
+/** Unknown stored effects fail closed as DENY. */
+export function asPermissionEffect(value: string): PermissionEffect {
+  return value === PermissionEffects.ALLOW
+    ? PermissionEffects.ALLOW
+    : PermissionEffects.DENY;
+}
+
+/** Maps stored override rows to contract overrides, dropping keys no longer in the catalog. */
+export function toOverrides(
+  rows: ReadonlyArray<{ effect: string; permission: { key: string } }>,
+): MemberPermissionOverride[] {
+  return rows.flatMap(({ effect, permission }) =>
+    isPermission(permission.key)
+      ? [{ key: permission.key, effect: asPermissionEffect(effect) }]
+      : [],
+  );
+}
+
 function defaultAssignmentScopes(
   organizationId: string,
   scopes?: readonly RoleAssignmentScopeInput[],
@@ -73,58 +103,113 @@ function defaultAssignmentScopes(
 export class AccessRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Everything the effective-permission formula needs for one membership. Inactive or
+   * unknown memberships yield no permissions at all.
+   */
+  async loadPermissionInputs(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<PermissionInputs> {
+    const membership = await this.prisma.organizationMembership.findFirst({
+      where: {
+        id: membershipId,
+        organizationId,
+        status: ACTIVE_MEMBERSHIP_STATUS,
+      },
+      select: {
+        type: true,
+        roleAssignments: {
+          select: {
+            role: {
+              select: {
+                permissions: {
+                  where: { effect: PermissionEffects.ALLOW },
+                  select: { permission: { select: { key: true } } },
+                },
+              },
+            },
+          },
+        },
+        permissionOverrides: {
+          where: { organizationId },
+          select: { effect: true, permission: { select: { key: true } } },
+        },
+      },
+    });
+    if (!membership) {
+      return { rolePermissions: [], overrides: [], isOwner: false };
+    }
+    const rolePermissions = new Set<Permission>();
+    for (const assignment of membership.roleAssignments) {
+      for (const rp of assignment.role.permissions) {
+        if (isPermission(rp.permission.key))
+          rolePermissions.add(rp.permission.key);
+      }
+    }
+    return {
+      rolePermissions,
+      overrides: toOverrides(membership.permissionOverrides),
+      isOwner: membership.type === OWNER_MEMBERSHIP_TYPE,
+    };
+  }
+
   async getEffectivePermissions(
     organizationId: string,
     membershipId: string,
   ): Promise<Permission[]> {
-    const assignments = await this.prisma.roleAssignment.findMany({
-      where: { organizationId, membershipId },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: { permission: true },
-              where: { effect: 'ALLOW' },
-            },
-          },
-        },
-      },
-    });
-
-    const set = new Set<Permission>();
-    for (const assignment of assignments) {
-      for (const rp of assignment.role.permissions) {
-        set.add(rp.permission.key as Permission);
-      }
-    }
-    return [...set];
+    return applyPermissionOverrides(
+      await this.loadPermissionInputs(organizationId, membershipId),
+    );
   }
 
+  /**
+   * Role grants for one permission plus the member's direct override of it, if any.
+   * Callers must apply the override before the role grants (DENY beats every role).
+   */
   async getPermissionGrants(
     organizationId: string,
     membershipId: string,
     permissionKey: Permission,
   ) {
-    const assignments = await this.prisma.roleAssignment.findMany({
-      where: { organizationId, membershipId },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: { permission: true },
-              where: { permission: { key: permissionKey } },
+    const [assignments, membership] = await Promise.all([
+      this.prisma.roleAssignment.findMany({
+        where: { organizationId, membershipId },
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: { permission: true },
+                where: { permission: { key: permissionKey } },
+              },
             },
           },
+          scopes: true,
         },
-        scopes: true,
-      },
-    });
+      }),
+      this.prisma.organizationMembership.findFirst({
+        where: {
+          id: membershipId,
+          organizationId,
+          status: ACTIVE_MEMBERSHIP_STATUS,
+        },
+        select: {
+          type: true,
+          permissionOverrides: {
+            where: { organizationId, permission: { key: permissionKey } },
+            select: { effect: true },
+          },
+        },
+      }),
+    ]);
 
     const grants: Array<{
       effect: string;
       scopeType: string;
       resourceId: string | null;
     }> = [];
+    if (!membership)
+      return { grants, overrideEffect: undefined, isOwner: false };
 
     for (const assignment of assignments) {
       for (const rp of assignment.role.permissions) {
@@ -145,7 +230,14 @@ export class AccessRepository {
         }
       }
     }
-    return grants;
+    const [override] = membership.permissionOverrides;
+    return {
+      grants,
+      overrideEffect: override
+        ? asPermissionEffect(override.effect)
+        : undefined,
+      isOwner: membership.type === OWNER_MEMBERSHIP_TYPE,
+    };
   }
 
   async isResourceInScope(
@@ -182,10 +274,15 @@ export class AccessRepository {
           const clientId =
             resource.type === 'content'
               ? (row as { clientId: string } | null)?.clientId
-              : (row as { project: { clientId: string } } | null)?.project.clientId;
+              : (row as { project: { clientId: string } } | null)?.project
+                  .clientId;
           return clientId === scopeResourceId;
         }
-        if (resource.type === 'media' || resource.type === 'folder' || resource.type === 'asset') {
+        if (
+          resource.type === 'media' ||
+          resource.type === 'folder' ||
+          resource.type === 'asset'
+        ) {
           const asset = await this.prisma.mediaAsset.findFirst({
             where: { id: resource.id, organizationId },
             select: { clientId: true },
@@ -227,7 +324,11 @@ export class AccessRepository {
           });
           return content?.projectId === scopeResourceId;
         }
-        if (resource.type === 'media' || resource.type === 'asset' || resource.type === 'folder') {
+        if (
+          resource.type === 'media' ||
+          resource.type === 'asset' ||
+          resource.type === 'folder'
+        ) {
           const asset = await this.prisma.mediaAsset.findFirst({
             where: { id: resource.id, organizationId },
             select: { projectId: true },
@@ -286,7 +387,12 @@ export class AccessRepository {
           scope.scopeType === 'DEPARTMENT' ||
           scope.scopeType === 'TEAM'
         ) {
-          if (scope.scopeType === 'ORGANIZATION' || scope.scopeType === 'WORKSPACE' || scope.scopeType === 'SELF' || !scope.resourceId) {
+          if (
+            scope.scopeType === 'ORGANIZATION' ||
+            scope.scopeType === 'WORKSPACE' ||
+            scope.scopeType === 'SELF' ||
+            !scope.resourceId
+          ) {
             orgWide = true;
           }
           continue;
@@ -301,7 +407,10 @@ export class AccessRepository {
       }
     }
 
-    if (orgWide || (clientIds.size === 0 && projectIds.size === 0 && contentIds.size === 0)) {
+    if (
+      orgWide ||
+      (clientIds.size === 0 && projectIds.size === 0 && contentIds.size === 0)
+    ) {
       return { orgWide: true, clientIds: [], projectIds: [], contentIds: [] };
     }
 
@@ -567,7 +676,11 @@ export class AccessRepository {
       },
     });
     if (existing) {
-      await this.ensureSystemRolePermissions(existing.id, permissionKeys, existing.permissions);
+      await this.ensureSystemRolePermissions(
+        existing.id,
+        permissionKeys,
+        existing.permissions,
+      );
       return { id: existing.id };
     }
     return this.createSystemRole(organizationId, name, [...permissionKeys]);
@@ -623,5 +736,151 @@ export class AccessRepository {
       },
     });
     return role;
+  }
+
+  /** Designation placements for every membership in the org, keyed by membership id. */
+  async designationsByMembership(
+    organizationId: string,
+  ): Promise<
+    Map<string, Array<{ designationId: string; isPrimary: boolean }>>
+  > {
+    const rows = await this.prisma.memberDesignation.findMany({
+      where: { organizationId },
+      select: { membershipId: true, designationId: true, isPrimary: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    const byMembership = new Map<
+      string,
+      Array<{ designationId: string; isPrimary: boolean }>
+    >();
+    for (const row of rows) {
+      const list = byMembership.get(row.membershipId) ?? [];
+      list.push({
+        designationId: row.designationId,
+        isPrimary: row.isPrimary,
+      });
+      byMembership.set(row.membershipId, list);
+    }
+    return byMembership;
+  }
+
+  /** Member counts per designation id (only includes designations that have rows). */
+  async designationMemberCounts(
+    organizationId: string,
+    designationIds?: readonly string[],
+  ): Promise<Map<string, number>> {
+    const grouped = await this.prisma.memberDesignation.groupBy({
+      by: ['designationId'],
+      where: {
+        organizationId,
+        ...(designationIds
+          ? { designationId: { in: [...designationIds] } }
+          : {}),
+      },
+      _count: { _all: true },
+    });
+    return new Map(grouped.map((row) => [row.designationId, row._count._all]));
+  }
+
+  replaceMembershipDesignations(
+    organizationId: string,
+    membershipId: string,
+    items: ReadonlyArray<{ designationId: string; isPrimary: boolean }>,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.memberDesignation.deleteMany({
+        where: { organizationId, membershipId },
+      });
+      if (items.length === 0) return;
+      await tx.memberDesignation.createMany({
+        data: items.map((item) => ({
+          organizationId,
+          membershipId,
+          designationId: item.designationId,
+          isPrimary: item.isPrimary,
+        })),
+      });
+    });
+  }
+
+  /** Number of direct permission overrides per membership. */
+  async overrideCountsByMembership(
+    organizationId: string,
+  ): Promise<Map<string, number>> {
+    const grouped = await this.prisma.memberPermissionOverride.groupBy({
+      by: ['membershipId'],
+      where: { organizationId },
+      _count: { _all: true },
+    });
+    return new Map(grouped.map((row) => [row.membershipId, row._count._all]));
+  }
+
+  listMemberOverrides(organizationId: string, membershipId: string) {
+    return this.prisma.memberPermissionOverride.findMany({
+      where: { organizationId, membershipId },
+      select: { effect: true, permission: { select: { key: true } } },
+    });
+  }
+
+  findPermissionsByKeys(keys: readonly string[]) {
+    return this.prisma.permission.findMany({
+      where: { key: { in: [...keys] } },
+      select: { id: true, key: true },
+    });
+  }
+
+  replaceMemberOverrides(
+    organizationId: string,
+    membershipId: string,
+    actorId: string,
+    items: ReadonlyArray<{ permissionId: string; effect: PermissionEffect }>,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.memberPermissionOverride.deleteMany({
+        where: { organizationId, membershipId },
+      });
+      if (items.length === 0) return;
+      await tx.memberPermissionOverride.createMany({
+        data: items.map((item) => ({
+          organizationId,
+          membershipId,
+          permissionId: item.permissionId,
+          effect: item.effect,
+          createdBy: actorId,
+        })),
+      });
+    });
+  }
+
+  updateEmploymentType(
+    organizationId: string,
+    membershipId: string,
+    employmentType: string | null,
+  ) {
+    return this.prisma.organizationMembership.update({
+      where: { id: membershipId, organizationId },
+      data: { employmentType },
+      select: { id: true, employmentType: true },
+    });
+  }
+
+  listMemberDocuments(organizationId: string, membershipId: string) {
+    return this.prisma.memberDocument.findMany({
+      where: { organizationId, membershipId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  createMemberDocument(input: {
+    organizationId: string;
+    membershipId: string;
+    type: string;
+    title: string;
+    templateId?: string | null;
+    status?: string;
+    metadata?: Prisma.InputJsonValue;
+    createdBy?: string | null;
+  }) {
+    return this.prisma.memberDocument.create({ data: input });
   }
 }

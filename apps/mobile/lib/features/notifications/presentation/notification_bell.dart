@@ -17,7 +17,7 @@ class NotificationBell extends ConsumerWidget {
     final label = unread > 0 ? '${l10n.navNotifications}, ${l10n.notificationsUnread(unread)}' : l10n.navNotifications;
     return IconButton(
       tooltip: label,
-      onPressed: () => context.go(AppRoutes.notifications),
+      onPressed: () => context.push(AppRoutes.notifications),
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text('$unread'),

@@ -100,4 +100,136 @@ export class TenancyRepository {
       },
     });
   }
+
+  findDepartment(organizationId: string, departmentId: string) {
+    return this.prisma.department.findFirst({
+      where: { id: departmentId, organizationId },
+      include: { designations: true, children: { select: { id: true } } },
+    });
+  }
+
+  listDepartmentNodes(organizationId: string) {
+    return this.prisma.department.findMany({
+      where: { organizationId },
+      select: {
+        id: true,
+        parentId: true,
+        name: true,
+        path: true,
+        depth: true,
+      },
+    });
+  }
+
+  applyDepartmentUpdates(
+    updates: ReadonlyArray<{
+      id: string;
+      name: string;
+      parentId: string | null;
+      path: string;
+      depth: number;
+    }>,
+  ) {
+    return this.prisma.$transaction(
+      updates.map((row) =>
+        this.prisma.department.update({
+          where: { id: row.id },
+          data: {
+            name: row.name,
+            parentId: row.parentId,
+            path: row.path,
+            depth: row.depth,
+          },
+        }),
+      ),
+    );
+  }
+
+  deleteDepartment(organizationId: string, departmentId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.designation.deleteMany({
+        where: { organizationId, departmentId },
+      });
+      await tx.department.deleteMany({
+        where: { id: departmentId, organizationId },
+      });
+    });
+  }
+
+  /** Designation rows with their department names, keyed by designation id. */
+  async designationsByIds(
+    organizationId: string,
+    designationIds: readonly string[],
+  ) {
+    type Ref = {
+      id: string;
+      name: string;
+      isHead: boolean;
+      departmentId: string;
+      departmentName: string;
+    };
+    const byId = new Map<string, Ref>();
+    if (designationIds.length === 0) return byId;
+    const rows = await this.prisma.designation.findMany({
+      where: { organizationId, id: { in: [...designationIds] } },
+      select: {
+        id: true,
+        name: true,
+        isHead: true,
+        departmentId: true,
+        department: { select: { name: true } },
+      },
+    });
+    for (const row of rows) {
+      byId.set(row.id, {
+        id: row.id,
+        name: row.name,
+        isHead: row.isHead,
+        departmentId: row.departmentId,
+        departmentName: row.department.name,
+      });
+    }
+    return byId;
+  }
+
+  findDesignation(organizationId: string, designationId: string) {
+    return this.prisma.designation.findFirst({
+      where: { id: designationId, organizationId },
+    });
+  }
+
+  createDesignation(
+    organizationId: string,
+    departmentId: string,
+    input: { name: string; isHead?: boolean },
+  ) {
+    return this.prisma.designation.create({
+      data: {
+        organizationId,
+        departmentId,
+        name: input.name,
+        isHead: input.isHead ?? false,
+      },
+    });
+  }
+
+  updateDesignation(
+    organizationId: string,
+    designationId: string,
+    input: { name?: string; isHead?: boolean },
+  ) {
+    return this.prisma.designation.updateMany({
+      where: { id: designationId, organizationId },
+      data: {
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.isHead !== undefined ? { isHead: input.isHead } : {}),
+      },
+    });
+  }
+
+  deleteDesignation(organizationId: string, designationId: string) {
+    return this.prisma.designation.deleteMany({
+      where: { id: designationId, organizationId },
+    });
+  }
 }

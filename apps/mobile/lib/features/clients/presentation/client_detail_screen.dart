@@ -16,6 +16,7 @@ import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/application/access_controller.dart';
+import '../../access/domain/access_policy.dart';
 import '../../access/presentation/permission_gate.dart';
 import '../../calendar/calendar_routes.dart';
 import '../../content/content_routes.dart';
@@ -41,73 +42,110 @@ class ClientDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final client = ref.watch(clientProvider(clientId));
     final loaded = client.value;
-    final canAgreements = ref.watch(accessPolicyProvider.select((p) => p.can(Permissions.invoicesView)));
-    final tabCount = canAgreements ? 5 : 4;
 
-    return DefaultTabController(
-      length: tabCount,
-      child: PageScaffold(
-        title: loaded?.name ?? l10n.clientsTitle,
-        actions: [
-          if (loaded != null)
-            PermissionGate(
-              anyOf: const [Permissions.clientsEdit],
-              child: IconButton(
-                tooltip: l10n.clientEdit,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () async {
-                  final saved = await showClientForm(context, ref, client: loaded);
-                  if (saved && context.mounted) showToast(context, l10n.savedToast);
-                },
-              ),
+    return PageScaffold(
+      title: loaded?.name ?? l10n.clientsTitle,
+      actions: [
+        if (loaded != null)
+          PermissionGate(
+            anyOf: const [Permissions.clientsEdit],
+            child: IconButton(
+              tooltip: l10n.clientEdit,
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () async {
+                final saved = await showClientForm(context, ref, client: loaded);
+                if (saved && context.mounted) showToast(context, l10n.savedToast);
+              },
             ),
-        ],
-        bottom: TabBar(
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: [
-            Tab(text: l10n.clientTabOverview),
-            Tab(text: l10n.clientTabManage),
-            Tab(text: l10n.clientTabBrand),
-            Tab(text: l10n.clientTabProjects),
-            if (canAgreements) Tab(text: l10n.clientTabAgreements),
-          ],
-        ),
-        body: AsyncValueView<Client>(
-          value: client,
-          onRetry: () => ref.invalidate(clientProvider(clientId)),
-          data: (client) {
-            Future<void> refresh() => ref.refresh(clientProvider(clientId).future);
-            return TabBarView(
-              children: [
-                _OverviewTab(client: client, onRefresh: refresh),
-                _ManageTab(client: client),
-                _BrandTab(client: client, onRefresh: refresh),
-                _ProjectsTab(clientId: client.id),
-                if (canAgreements) AgreementsTab(client: client),
-              ],
-            );
-          },
-        ),
+          ),
+      ],
+      body: AsyncValueView<Client>(
+        value: client,
+        onRetry: () => ref.invalidate(clientProvider(clientId)),
+        data: (client) {
+          Future<void> refresh() => ref.refresh(clientProvider(clientId).future);
+          return _ClientDetailBody(client: client, onRefresh: refresh);
+        },
       ),
     );
   }
 }
 
-class _OverviewTab extends ConsumerWidget {
-  const _OverviewTab({required this.client, required this.onRefresh});
+// ─────────────────────────────────────────────────────────────────────────────
+// Main scrollable body
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ClientDetailBody extends ConsumerWidget {
+  const _ClientDetailBody({required this.client, required this.onRefresh});
 
   final Client client;
   final Future<void> Function() onRefresh;
 
-  Future<void> _changeStatus(BuildContext context, WidgetRef ref, String status) async {
-    final l10n = AppLocalizations.of(context);
-    await runAction(
-      context,
-      () => ref.read(clientsActionsProvider).setStatus(client.id, status),
-      success: l10n.savedToast,
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final policy = ref.watch(accessPolicyProvider);
+    final canAgreements = policy.can(Permissions.invoicesView);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(tokens.md, tokens.md, tokens.md, tokens.xxl),
+        children: [
+          // ── Hero client card ──────────────────────────────────────────────
+          FadeSlideIn(child: _HeroCard(client: client, ref: ref)),
+
+          SizedBox(height: tokens.lg),
+
+          // ── 4 Quick-actions ───────────────────────────────────────────────
+          FadeSlideIn(index: 1, child: _QuickActions(client: client, policy: policy)),
+
+          SizedBox(height: tokens.lg),
+
+          // ── Manage sections (4 options) ───────────────────────────────────
+          if (policy.can(Permissions.contentView)) ...[
+            FadeSlideIn(index: 2, child: _ManageSection(client: client, policy: policy)),
+            SizedBox(height: tokens.lg),
+          ],
+
+          // ── Client details ────────────────────────────────────────────────
+          FadeSlideIn(index: 3, child: _DetailsSection(client: client)),
+
+          SizedBox(height: tokens.lg),
+
+          // ── Contacts ──────────────────────────────────────────────────────
+          FadeSlideIn(index: 4, child: _ContactsSection(client: client)),
+
+          SizedBox(height: tokens.lg),
+
+          // ── Brand kit ─────────────────────────────────────────────────────
+          FadeSlideIn(index: 5, child: _BrandSection(client: client, ref: ref)),
+
+          SizedBox(height: tokens.lg),
+
+          // ── Projects ──────────────────────────────────────────────────────
+          FadeSlideIn(index: 6, child: _ProjectsSection(clientId: client.id)),
+
+          // ── Agreements (if permitted) ─────────────────────────────────────
+          if (canAgreements) ...[
+            SizedBox(height: tokens.lg),
+            FadeSlideIn(index: 7, child: _AgreementsSection(client: client)),
+          ],
+        ],
+      ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero card — name, status, metrics (theme-aligned, no color bars)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HeroCard extends ConsumerWidget {
+  const _HeroCard({required this.client, required this.ref});
+
+  final Client client;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -115,125 +153,446 @@ class _OverviewTab extends ConsumerWidget {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
     final formats = context.formats;
-    final website = client.website;
 
-    return ReadableBody(
-      onRefresh: onRefresh,
-      children: [
-        FadeSlideIn(
-          child: Row(
+    return SurfaceCard(
+      padding: EdgeInsets.all(tokens.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               InitialsAvatar(name: client.name, seed: client.id, mark: true, size: 56),
-              SizedBox(width: tokens.lg),
+              SizedBox(width: tokens.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(client.name, style: text.headlineSmall),
+                    Text(
+                      client.name,
+                      style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                    ),
                     if (client.industry != null)
-                      Text(client.industry!, style: text.bodyMedium?.copyWith(color: tokens.muted)),
+                      Text(
+                        client.industry!,
+                        style: text.bodyMedium?.copyWith(color: tokens.muted),
+                      ),
+                    if (client.website != null)
+                      _LinkText(
+                        label: client.website!,
+                        uri: Uri.tryParse(
+                          client.website!.contains('://') ? client.website! : 'https://${client.website!}',
+                        ),
+                      ),
                   ],
                 ),
               ),
-              _StatusMenu(client: client, onSelected: (status) => _changeStatus(context, ref, status)),
+              _StatusMenu(
+                client: client,
+                onSelected: (status) async {
+                  final l = AppLocalizations.of(context);
+                  await runAction(
+                    context,
+                    () => ref.read(clientsActionsProvider).setStatus(client.id, status),
+                    success: l.savedToast,
+                  );
+                },
+              ),
             ],
           ),
-        ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 1,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final tiles = [
-                MetricTile(
-                  label: l10n.clientRetainer,
-                  icon: Icons.payments_outlined,
-                  value: client.retainerMinor > 0
-                      ? formats.money(client.retainerMinor, currency: client.currency)
-                      : l10n.valueUnknown,
+
+          SizedBox(height: tokens.lg),
+
+          Row(
+            children: [
+              _HeroMetric(
+                icon: Icons.payments_outlined,
+                label: l10n.clientRetainer,
+                value: client.retainerMinor > 0
+                    ? formats.money(client.retainerMinor, currency: client.currency)
+                    : '—',
+              ),
+              _Divider(),
+              _HeroMetric(
+                icon: Icons.calendar_today_outlined,
+                label: l10n.clientSince,
+                value: formats.date(client.createdAt),
+              ),
+              if (client.tier != null) ...[
+                _Divider(),
+                _HeroMetric(
+                  icon: Icons.workspace_premium_outlined,
+                  label: 'Tier',
+                  value: client.tier!,
                 ),
-                MetricTile(label: l10n.clientSince, icon: Icons.event_outlined, value: formats.date(client.createdAt)),
-              ];
-              final columns = gridColumns(constraints.maxWidth, minTileWidth: 200, max: 2);
-              return Wrap(
-                spacing: tokens.md,
-                runSpacing: tokens.md,
-                children: [
-                  for (final tile in tiles)
-                    SizedBox(width: (constraints.maxWidth - tokens.md * (columns - 1)) / columns, child: tile),
-                ],
-              );
-            },
-          ),
-        ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 2,
-          child: SectionCard(
-            title: l10n.clientDetails,
-            child: Column(
-              children: [
-                if (client.legalName != null) InfoRow(label: l10n.clientLegalName, value: Text(client.legalName!)),
-                InfoRow(label: l10n.clientIndustry, value: Text(client.industry ?? l10n.valueUnknown)),
-                InfoRow(
-                  label: l10n.clientWebsite,
-                  value: website == null
-                      ? Text(l10n.valueUnknown)
-                      : _LinkText(label: website, uri: Uri.tryParse(website.contains('://') ? website : 'https://$website')),
-                ),
-                if (client.tier != null) InfoRow(label: l10n.clientTier, value: Text(client.tier!)),
               ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 13, color: tokens.muted),
+              SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  style: text.labelSmall?.copyWith(color: tokens.muted, fontSize: 10),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 3),
+          Text(
+            value,
+            style: text.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 36,
+        child: VerticalDivider(color: context.tokens.border, width: 24),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick-action row (4 actions: Message, Create Post, Invoice, Assets)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({required this.client, required this.policy});
+
+  final Client client;
+  final AccessPolicy policy;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    final actions = <({IconData icon, String label, String route})>[
+      if (policy.can(Permissions.chatView))
+        (
+          icon: Icons.forum_outlined,
+          label: 'Message',
+          route: MessagesRoutes.clientRoom(client.id),
         ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 3,
-          child: SectionCard(
-            title: l10n.clientContacts,
-            child: client.contacts.isEmpty
-                ? Text(l10n.clientContactsEmpty, style: text.bodyMedium?.copyWith(color: tokens.muted))
-                : Column(
-                    children: [
-                      for (final (i, contact) in client.contacts.indexed) ...[
-                        if (i > 0) const Divider(),
-                        _ContactRow(contact: contact),
-                      ],
-                    ],
-                  ),
+      if (policy.can(Permissions.contentCreate))
+        (
+          icon: Icons.edit_note_outlined,
+          label: 'Create Post',
+          route: ContentRoutes.compose(clientId: client.id),
+        ),
+      if (policy.can(Permissions.invoicesView))
+        (
+          icon: Icons.receipt_long_outlined,
+          label: 'Invoice',
+          route: InvoicesRoutes.withClient(client.id),
+        ),
+      if (policy.can(Permissions.filesView))
+        (
+          icon: Icons.perm_media_outlined,
+          label: 'Assets',
+          route: MediaRoutes.withClient(client.id),
+        ),
+    ];
+
+    if (actions.isEmpty) return const SizedBox.shrink();
+
+    return SurfaceCard(
+      padding: EdgeInsets.symmetric(vertical: tokens.md),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          for (final action in actions)
+            _QuickActionButton(
+              icon: action.icon,
+              label: action.label,
+              onTap: () => context.push(action.route),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(tokens.radius + 4),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: tokens.sm, vertical: tokens.xs),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: tokens.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: tokens.primary, size: 20),
+            ),
+            SizedBox(height: tokens.xs + 2),
+            Text(
+              label,
+              style: text.labelSmall?.copyWith(color: tokens.fg, fontWeight: FontWeight.w600, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manage section — 4 options: Content, Content Grid, Calendar, Integrations
+// Clean, theme-aligned cards (no color stripe on the side)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ManageSection extends ConsumerWidget {
+  const _ManageSection({required this.client, required this.policy});
+
+  final Client client;
+  final AccessPolicy policy;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+
+    final items = <_ManageItem>[
+      if (policy.can(Permissions.contentView))
+        _ManageItem(
+          icon: Icons.auto_awesome_mosaic_outlined,
+          title: l10n.clientManageContent,
+          subtitle: l10n.clientManageContentBody,
+          route: ContentRoutes.home(clientId: client.id),
+        ),
+      if (policy.can(Permissions.contentView))
+        _ManageItem(
+          icon: Icons.grid_view_rounded,
+          title: l10n.clientManageGrid,
+          subtitle: l10n.clientManageGridBody,
+          route: ContentRoutes.home(clientId: client.id, tab: ContentRoutes.plannerTab),
+        ),
+      if (policy.can(Permissions.projectsView))
+        _ManageItem(
+          icon: Icons.calendar_month_outlined,
+          title: l10n.clientManageCalendar,
+          subtitle: l10n.clientManageCalendarBody,
+          route: CalendarRoutes.withClient(client.id),
+        ),
+      if (policy.can(Permissions.integrationsManage))
+        _ManageItem(
+          icon: Icons.hub_outlined,
+          title: l10n.clientManageIntegrations,
+          subtitle: l10n.clientManageIntegrationsBody,
+          route: IntegrationsRoutes.withClient(client.id),
+        ),
+    ];
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: 'Manage'),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.6,
           ),
+          itemCount: items.length,
+          itemBuilder: (context, i) => _ManageCard(item: items[i]),
         ),
       ],
     );
   }
 }
 
-class _StatusMenu extends ConsumerWidget {
-  const _StatusMenu({required this.client, required this.onSelected});
+class _ManageItem {
+  const _ManageItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.route,
+  });
 
-  final Client client;
-  final ValueChanged<String> onSelected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String route;
+}
+
+class _ManageCard extends StatelessWidget {
+  const _ManageCard({required this.item});
+
+  final _ManageItem item;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final badge = StatusBadge(label: clientStatusLabel(l10n, client.status), tone: clientStatusTone(client.status));
-    return PermissionGate(
-      anyOf: const [Permissions.clientsEdit],
-      fallback: badge,
-      child: PopupMenuButton<String>(
-        tooltip: l10n.clientStatusChange,
-        onSelected: onSelected,
-        itemBuilder: (_) => [
-          for (final status in ClientStatuses.values)
-            CheckedPopupMenuItem(
-              value: status,
-              checked: status == client.status,
-              child: Text(clientStatusLabel(l10n, status)),
-            ),
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+
+    return SurfaceCard(
+      onTap: () => context.push(item.route),
+      padding: EdgeInsets.all(tokens.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: tokens.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(tokens.radius),
+                ),
+                child: Icon(item.icon, size: 18, color: tokens.primary),
+              ),
+              const Spacer(),
+              Icon(Icons.arrow_outward_rounded, size: 14, color: tokens.muted),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            item.title,
+            style: text.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 2),
+          Text(
+            item.subtitle,
+            style: text.labelSmall?.copyWith(color: tokens.muted, fontSize: 10),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
-        child: Row(mainAxisSize: MainAxisSize.min, children: [badge, const Icon(Icons.arrow_drop_down)]),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Details section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DetailsSection extends StatelessWidget {
+  const _DetailsSection({required this.client});
+
+  final Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final website = client.website;
+
+    return SectionCard(
+      title: l10n.clientDetails,
+      child: Column(
+        children: [
+          if (client.legalName != null) InfoRow(label: l10n.clientLegalName, value: Text(client.legalName!)),
+          InfoRow(label: l10n.clientIndustry, value: Text(client.industry ?? l10n.valueUnknown)),
+          InfoRow(
+            label: l10n.clientWebsite,
+            value: website == null
+                ? Text(l10n.valueUnknown)
+                : _LinkText(
+                    label: website,
+                    uri: Uri.tryParse(website.contains('://') ? website : 'https://$website'),
+                  ),
+          ),
+          if (client.tier != null) InfoRow(label: l10n.clientTier, value: Text(client.tier!)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contacts section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ContactsSection extends StatelessWidget {
+  const _ContactsSection({required this.client});
+
+  final Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final text = Theme.of(context).textTheme;
+    final tokens = context.tokens;
+
+    return SectionCard(
+      title: l10n.clientContacts,
+      child: client.contacts.isEmpty
+          ? Text(l10n.clientContactsEmpty, style: text.bodyMedium?.copyWith(color: tokens.muted))
+          : Column(
+              children: [
+                for (final (i, contact) in client.contacts.indexed) ...[
+                  if (i > 0) const Divider(),
+                  _ContactRow(contact: contact),
+                ],
+              ],
+            ),
     );
   }
 }
@@ -278,155 +637,15 @@ class _ContactRow extends StatelessWidget {
   }
 }
 
-class _LinkText extends StatelessWidget {
-  const _LinkText({required this.label, required this.uri});
+// ─────────────────────────────────────────────────────────────────────────────
+// Brand kit section
+// ─────────────────────────────────────────────────────────────────────────────
 
-  final String label;
-  final Uri? uri;
-
-  @override
-  Widget build(BuildContext context) {
-    final target = uri;
-    final style = TextStyle(color: context.tokens.primary, decoration: TextDecoration.underline);
-    if (target == null) return Text(label);
-    return Semantics(
-      link: true,
-      child: InkWell(
-        onTap: () => launchUrl(target, mode: LaunchMode.externalApplication),
-        child: Text(label, style: style, overflow: TextOverflow.ellipsis),
-      ),
-    );
-  }
-}
-
-class _ManageTab extends ConsumerWidget {
-  const _ManageTab({required this.client});
+class _BrandSection extends ConsumerWidget {
+  const _BrandSection({required this.client, required this.ref});
 
   final Client client;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final tokens = context.tokens;
-    final text = Theme.of(context).textTheme;
-    final policy = ref.watch(accessPolicyProvider);
-    final links = <({String permission, IconData icon, String title, String body, String route})>[
-      if (policy.can(Permissions.contentView))
-        (
-          permission: Permissions.contentView,
-          icon: Icons.auto_awesome_mosaic_outlined,
-          title: l10n.clientManageContent,
-          body: l10n.clientManageContentBody,
-          route: ContentRoutes.home(clientId: client.id),
-        ),
-      if (policy.can(Permissions.contentView))
-        (
-          permission: Permissions.contentView,
-          icon: Icons.grid_view_rounded,
-          title: l10n.clientManageGrid,
-          body: l10n.clientManageGridBody,
-          route: ContentRoutes.home(clientId: client.id, tab: ContentRoutes.plannerTab),
-        ),
-      if (policy.can(Permissions.contentCreate))
-        (
-          permission: Permissions.contentCreate,
-          icon: Icons.edit_note_outlined,
-          title: l10n.clientManageCompose,
-          body: l10n.clientManageContentBody,
-          route: ContentRoutes.compose(clientId: client.id),
-        ),
-      if (policy.can(Permissions.projectsView))
-        (
-          permission: Permissions.projectsView,
-          icon: Icons.calendar_month_outlined,
-          title: l10n.clientManageCalendar,
-          body: l10n.clientManageCalendarBody,
-          route: CalendarRoutes.withClient(client.id),
-        ),
-      if (policy.can(Permissions.chatView))
-        (
-          permission: Permissions.chatView,
-          icon: Icons.forum_outlined,
-          title: l10n.clientManageMessages,
-          body: l10n.clientManageMessagesBody,
-          route: MessagesRoutes.clientRoom(client.id),
-        ),
-      if (policy.can(Permissions.filesView))
-        (
-          permission: Permissions.filesView,
-          icon: Icons.perm_media_outlined,
-          title: l10n.clientManageAssets,
-          body: l10n.clientManageAssetsBody,
-          route: MediaRoutes.root,
-        ),
-      if (policy.can(Permissions.invoicesView))
-        (
-          permission: Permissions.invoicesView,
-          icon: Icons.receipt_long_outlined,
-          title: l10n.clientManageInvoices,
-          body: l10n.clientManageInvoicesBody,
-          route: InvoicesRoutes.root,
-        ),
-      if (policy.can(Permissions.integrationsManage))
-        (
-          permission: Permissions.integrationsManage,
-          icon: Icons.hub_outlined,
-          title: l10n.clientManageIntegrations,
-          body: l10n.clientManageIntegrationsBody,
-          route: IntegrationsRoutes.root,
-        ),
-    ];
-
-    return ReadableBody(
-      children: [
-        FadeSlideIn(
-          child: SectionCard(
-            title: l10n.clientManageTitle,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(l10n.clientManageBody, style: text.bodyMedium?.copyWith(color: tokens.muted)),
-                SizedBox(height: tokens.md),
-                if (links.isEmpty)
-                  Text(l10n.valueUnknown, style: text.bodyMedium?.copyWith(color: tokens.muted))
-                else
-                  for (final (i, link) in links.indexed) ...[
-                    if (i > 0) SizedBox(height: tokens.sm),
-                    SurfaceCard(
-                      padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.sm + tokens.xs),
-                      onTap: () => context.push(link.route),
-                      child: Row(
-                        children: [
-                          Icon(link.icon, color: tokens.secondary),
-                          SizedBox(width: tokens.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(link.title, style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                                Text(link.body, style: text.bodySmall?.copyWith(color: tokens.muted)),
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right, color: tokens.muted),
-                        ],
-                      ),
-                    ),
-                  ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BrandTab extends ConsumerWidget {
-  const _BrandTab({required this.client, required this.onRefresh});
-
-  final Client client;
-  final Future<void> Function() onRefresh;
+  final WidgetRef ref;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -441,69 +660,61 @@ class _BrandTab extends ConsumerWidget {
       (l10n.clientBrandAccent, kit.accent),
     ];
 
-    return ReadableBody(
-      onRefresh: onRefresh,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FadeSlideIn(
-          child: SectionCard(
-            title: l10n.clientBrandColours,
-            trailing: PermissionGate(
-              anyOf: const [Permissions.clientsEdit],
-              child: TextButton.icon(
-                onPressed: () async {
-                  final saved = await showBrandKitForm(context, ref, client);
-                  if (saved && context.mounted) showToast(context, l10n.savedToast);
-                },
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: Text(l10n.clientBrandEdit),
-              ),
+        SectionCard(
+          title: l10n.clientBrandColours,
+          trailing: PermissionGate(
+            anyOf: const [Permissions.clientsEdit],
+            child: TextButton.icon(
+              onPressed: () async {
+                final saved = await showBrandKitForm(context, ref, client);
+                if (saved && context.mounted) showToast(context, l10n.savedToast);
+              },
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: Text(l10n.clientBrandEdit),
             ),
-            child: Row(
-              children: [
-                for (final (i, (label, hex)) in swatches.indexed) ...[
-                  if (i > 0) SizedBox(width: tokens.md),
-                  Expanded(child: _Swatch(label: label, hex: hex)),
-                ],
+          ),
+          child: Row(
+            children: [
+              for (final (i, (label, hex)) in swatches.indexed) ...[
+                if (i > 0) SizedBox(width: tokens.sm),
+                Expanded(child: _Swatch(label: label, hex: hex)),
               ],
+            ],
+          ),
+        ),
+        SizedBox(height: tokens.lg),
+        SectionCard(
+          title: l10n.clientBrandVoice,
+          child: Text(
+            kit.voice.isEmpty ? l10n.clientBrandVoiceEmpty : kit.voice,
+            style: kit.voice.isEmpty ? muted : text.bodyLarge,
+          ),
+        ),
+        if (kit.pillars.isNotEmpty) ...[
+          SizedBox(height: tokens.lg),
+          SectionCard(
+            title: l10n.clientBrandPillars,
+            child: Wrap(
+              spacing: tokens.sm,
+              runSpacing: tokens.sm,
+              children: [for (final pillar in kit.pillars) Chip(label: Text(pillar))],
             ),
           ),
-        ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 1,
-          child: SectionCard(
-            title: l10n.clientBrandVoice,
-            child: Text(kit.voice.isEmpty ? l10n.clientBrandVoiceEmpty : kit.voice, style: kit.voice.isEmpty ? muted : text.bodyLarge),
-          ),
-        ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 2,
-          child: SectionCard(
-            title: l10n.clientBrandPillars,
-            child: kit.pillars.isEmpty
-                ? Text(l10n.clientBrandNone, style: muted)
-                : Wrap(
-                    spacing: tokens.sm,
-                    runSpacing: tokens.sm,
-                    children: [for (final pillar in kit.pillars) Chip(label: Text(pillar))],
-                  ),
-          ),
-        ),
-        SizedBox(height: tokens.xl),
-        FadeSlideIn(
-          index: 3,
-          child: SectionCard(
+        ],
+        if (kit.hashtags.isNotEmpty) ...[
+          SizedBox(height: tokens.lg),
+          SectionCard(
             title: l10n.clientBrandHashtags,
-            child: kit.hashtags.isEmpty
-                ? Text(l10n.clientBrandNone, style: muted)
-                : Wrap(
-                    spacing: tokens.sm,
-                    runSpacing: tokens.sm,
-                    children: [for (final tag in kit.hashtags) TagChip(label: tag)],
-                  ),
+            child: Wrap(
+              spacing: tokens.sm,
+              runSpacing: tokens.sm,
+              children: [for (final tag in kit.hashtags) TagChip(label: tag)],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -512,7 +723,7 @@ class _BrandTab extends ConsumerWidget {
 class _Swatch extends StatelessWidget {
   const _Swatch({required this.label, required this.hex});
 
-  static const _height = 72.0;
+  static const _height = 64.0;
 
   final String label;
   final String? hex;
@@ -526,11 +737,11 @@ class _Swatch extends StatelessWidget {
       label: '$label ${hex ?? ''}',
       child: ExcludeSemantics(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(tokens.radius + 6),
+          borderRadius: BorderRadius.circular(tokens.radius + 4),
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(color: tokens.border),
-              borderRadius: BorderRadius.circular(tokens.radius + 6),
+              borderRadius: BorderRadius.circular(tokens.radius + 4),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -538,15 +749,17 @@ class _Swatch extends StatelessWidget {
                 Container(
                   height: _height,
                   color: colour ?? tokens.subtle,
-                  child: colour == null ? Icon(Icons.format_color_reset_outlined, color: tokens.muted) : null,
+                  child: colour == null
+                      ? Icon(Icons.format_color_reset_outlined, color: tokens.muted)
+                      : null,
                 ),
                 Padding(
-                  padding: EdgeInsets.all(tokens.sm),
+                  padding: EdgeInsets.all(tokens.xs + 2),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(label, style: text.labelSmall?.copyWith(color: tokens.muted)),
-                      Text(hex?.toUpperCase() ?? '—', style: text.labelMedium),
+                      Text(label, style: text.labelSmall?.copyWith(color: tokens.muted, fontSize: 9)),
+                      Text(hex?.toUpperCase() ?? '—', style: text.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),
@@ -559,8 +772,12 @@ class _Swatch extends StatelessWidget {
   }
 }
 
-class _ProjectsTab extends ConsumerWidget {
-  const _ProjectsTab({required this.clientId});
+// ─────────────────────────────────────────────────────────────────────────────
+// Projects section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ProjectsSection extends ConsumerWidget {
+  const _ProjectsSection({required this.clientId});
 
   final String clientId;
 
@@ -569,41 +786,150 @@ class _ProjectsTab extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final projects = ref.watch(projectDirectoryProvider);
-    return AsyncValueView(
-      value: projects,
-      onRetry: () => ref.invalidate(projectDirectoryProvider),
-      data: (directory) {
-        final own = directory.childrenOf(clientId);
-        return ReadableBody(
-          onRefresh: () => ref.refresh(projectDirectoryProvider.future),
-          children: [
-            if (own.isEmpty)
-              Padding(
-                padding: EdgeInsets.only(top: tokens.xxl),
-                child: Text(l10n.clientProjectsEmpty, textAlign: TextAlign.center, style: TextStyle(color: tokens.muted)),
-              )
-            else
-              for (final (i, project) in own.indexed)
-                FadeSlideIn(
-                  index: i,
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: l10n.clientTabProjects),
+        AsyncValueView(
+          value: projects,
+          onRetry: () => ref.invalidate(projectDirectoryProvider),
+          data: (directory) {
+            final own = directory.childrenOf(clientId);
+            if (own.isEmpty) {
+              return SurfaceCard(
+                child: Center(
                   child: Padding(
-                    padding: EdgeInsets.only(bottom: tokens.md),
+                    padding: EdgeInsets.symmetric(vertical: tokens.lg),
+                    child: Text(
+                      l10n.clientProjectsEmpty,
+                      style: TextStyle(color: tokens.muted),
+                    ),
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (final (i, project) in own.indexed)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: i < own.length - 1 ? tokens.sm : 0),
                     child: SurfaceCard(
                       onTap: () => context.push(ProjectsRoutes.detail(project.id)),
+                      padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.sm + 2),
                       child: Row(
                         children: [
-                          Icon(Icons.folder_outlined, color: tokens.secondary),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: tokens.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(tokens.radius),
+                            ),
+                            child: Icon(Icons.folder_outlined, color: tokens.primary, size: 20),
+                          ),
                           SizedBox(width: tokens.md),
-                          Expanded(child: Text(project.name, style: Theme.of(context).textTheme.titleSmall)),
-                          const Icon(Icons.chevron_right),
+                          Expanded(
+                            child: Text(
+                              project.name,
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, color: tokens.muted),
                         ],
                       ),
                     ),
                   ),
-                ),
-          ],
-        );
-      },
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agreements section wrapper
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AgreementsSection extends StatelessWidget {
+  const _AgreementsSection({required this.client});
+
+  final Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: l10n.clientTabAgreements),
+        AgreementsTab(client: client),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Status menu
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusMenu extends ConsumerWidget {
+  const _StatusMenu({required this.client, required this.onSelected});
+
+  final Client client;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final badge = StatusBadge(label: clientStatusLabel(l10n, client.status), tone: clientStatusTone(client.status));
+    return PermissionGate(
+      anyOf: const [Permissions.clientsEdit],
+      fallback: badge,
+      child: PopupMenuButton<String>(
+        tooltip: l10n.clientStatusChange,
+        onSelected: onSelected,
+        itemBuilder: (_) => [
+          for (final status in ClientStatuses.values)
+            CheckedPopupMenuItem(
+              value: status,
+              checked: status == client.status,
+              child: Text(clientStatusLabel(l10n, status)),
+            ),
+        ],
+        child: Row(mainAxisSize: MainAxisSize.min, children: [badge, const Icon(Icons.arrow_drop_down)]),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LinkText extends StatelessWidget {
+  const _LinkText({required this.label, required this.uri});
+
+  final String label;
+  final Uri? uri;
+
+  @override
+  Widget build(BuildContext context) {
+    final target = uri;
+    final style = TextStyle(
+      color: context.tokens.primary,
+      decoration: TextDecoration.underline,
+      fontSize: 13,
+    );
+    if (target == null) return Text(label);
+    return Semantics(
+      link: true,
+      child: InkWell(
+        onTap: () => launchUrl(target, mode: LaunchMode.externalApplication),
+        child: Text(label, style: style, overflow: TextOverflow.ellipsis),
+      ),
     );
   }
 }

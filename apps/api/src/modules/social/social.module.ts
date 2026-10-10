@@ -26,4 +26,3 @@ import { PublishWorkerService } from './jobs/publish-worker.service';
   exports: [SocialService],
 })
 export class SocialModule {}
-

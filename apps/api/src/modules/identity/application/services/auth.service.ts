@@ -208,9 +208,7 @@ export class AuthService {
     }
 
     const firstName =
-      identity.firstName?.trim() ||
-      identity.email.split('@')[0] ||
-      'User';
+      identity.firstName?.trim() || identity.email.split('@')[0] || 'User';
     const result = await this.repo.createOrganizationWithOwner({
       email: identity.email,
       passwordHash: null,

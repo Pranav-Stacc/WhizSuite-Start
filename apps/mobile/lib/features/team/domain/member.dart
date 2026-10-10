@@ -2,6 +2,7 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
 import '../../roles/domain/role.dart';
+import 'member_position.dart';
 
 /// Membership lifecycle states shown on the team screen.
 abstract final class MemberStatuses {
@@ -30,7 +31,10 @@ class Member {
     this.title,
     this.avatarUrl,
     this.roles = const [],
+    this.positions = const [],
+    this.overrideCount = 0,
     this.joinedAt,
+    this.employmentType,
   });
 
   factory Member.fromJson(Json json) {
@@ -47,7 +51,10 @@ class Member {
       membershipType: MembershipTypes.values.contains(type) ? type : MembershipTypes.member,
       status: MemberStatuses.values.contains(status) ? status : MemberStatuses.active,
       roles: json.objects('roles').map(RoleSummary.fromJson).toList(),
+      positions: json.objects('designations').map(MemberPosition.fromJson).toList(),
+      overrideCount: json.integerOrNull('overrideCount') ?? 0,
       joinedAt: json.date('createdAt'),
+      employmentType: _employmentType(json.strOrNull('employmentType')),
     );
   }
 
@@ -60,9 +67,26 @@ class Member {
   final String membershipType;
   final String status;
   final List<RoleSummary> roles;
+  final List<MemberPosition> positions;
+  final int overrideCount;
   final DateTime? joinedAt;
+  final String? employmentType;
+
+  static String? _employmentType(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    return EmploymentTypes.values.contains(raw) ? raw : null;
+  }
 
   Set<String> get roleIds => {for (final role in roles) role.id};
+
+  MemberPosition? get primaryPosition {
+    for (final position in positions) {
+      if (position.isPrimary) return position;
+    }
+    return positions.firstOrNull;
+  }
+
+  Set<String> get departmentIds => {for (final p in positions) p.departmentId};
 
   bool get isStaff => staffMembershipTypes.contains(membershipType);
 

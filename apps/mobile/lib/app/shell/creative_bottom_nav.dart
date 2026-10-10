@@ -1,9 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_tokens.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Floating pill dock with a sliding selected pill — replaces stock Material NavigationBar.
+/// Floating glassmorphic dock with a glowing center CTA.
 class CreativeBottomNav extends StatelessWidget {
   const CreativeBottomNav({
     required this.tabs,
@@ -17,65 +18,61 @@ class CreativeBottomNav extends StatelessWidget {
   final ValueChanged<int> onSelect;
 
   static const _barHeight = 64.0;
-  static const _outerPad = 12.0;
+  static const _outerPad = 16.0;
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
     final l10n = AppLocalizations.of(context);
     final bottom = MediaQuery.paddingOf(context).bottom;
+    
+    // Determine a dark glass color regardless of theme
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final bgColor = isLight
+        ? const Color(0xFF1C1C1E).withValues(alpha: 0.85)
+        : const Color(0xFF2C2C2E).withValues(alpha: 0.85);
+
+    // Find the center index by looking for the Home tab (AppRoutes.home) or just middle.
+    // In this app, AppRoutes.home is '/', but let's safely default to middle if not found.
+    int centerIndex = tabs.length ~/ 2;
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].path == '/') {
+        centerIndex = i;
+        break;
+      }
+    }
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(_outerPad, 0, _outerPad, _outerPad + bottom * 0.35),
-      child: Material(
-        elevation: 10,
-        shadowColor: tokens.fg.withValues(alpha: 0.18),
-        color: Color.lerp(tokens.surface, tokens.bg, 0.15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radius + 18),
-          side: BorderSide(color: tokens.border.withValues(alpha: 0.7)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          height: _barHeight,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final slot = constraints.maxWidth / tabs.length;
-              final selected = selectedIndex;
-              return Stack(
-                children: [
-                  if (selected != null)
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOutCubic,
-                      left: slot * selected + 6,
-                      top: 6,
-                      bottom: 6,
-                      width: slot - 12,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: tokens.primary.withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(tokens.radius + 12),
-                          border: Border.all(color: tokens.primary.withValues(alpha: 0.28)),
-                        ),
-                      ),
-                    ),
-                  Row(
-                    children: [
-                      for (var i = 0; i < tabs.length; i++)
-                        Expanded(
-                          child: _NavItem(
+      // Ensure it floats above the safe area properly without being excessively tall
+      padding: EdgeInsets.fromLTRB(_outerPad, 0, _outerPad, _outerPad + (bottom > 0 ? bottom : 16.0)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            height: _barHeight,
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+            ),
+            child: Row(
+              children: [
+                for (var i = 0; i < tabs.length; i++)
+                  Expanded(
+                    child: i == centerIndex
+                        ? _CenterNavItem(
                             tab: tabs[i],
-                            selected: selected == i,
+                            onTap: () => onSelect(i),
+                          )
+                        : _NavItem(
+                            tab: tabs[i],
+                            selected: selectedIndex == i,
                             label: tabs[i].label(l10n),
                             onTap: () => onSelect(i),
                           ),
-                        ),
-                    ],
                   ),
-                ],
-              );
-            },
+              ],
+            ),
           ),
         ),
       ),
@@ -113,10 +110,12 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final color = selected ? tokens.primary : tokens.muted;
+    final color = selected ? tokens.primary : Colors.white.withValues(alpha: 0.6);
 
     return InkWell(
       onTap: onTap,
+      splashColor: tokens.primary.withValues(alpha: 0.08),
+      highlightColor: tokens.primary.withValues(alpha: 0.05),
       child: Semantics(
         button: true,
         selected: selected,
@@ -125,22 +124,54 @@ class _NavItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             AnimatedScale(
-              scale: selected ? 1.08 : 1,
+              scale: selected ? 1.1 : 1.0,
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
               child: Icon(selected ? tab.selectedIcon : tab.icon, size: 22, color: color),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 220),
               style: Theme.of(context).textTheme.labelSmall!.copyWith(
                     color: color,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    fontSize: 11,
+                    fontSize: 10,
                   ),
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterNavItem extends StatelessWidget {
+  const _CenterNavItem({
+    required this.tab,
+    required this.onTap,
+  });
+
+  final CreativeNavTab tab;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: tokens.primary,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(tab.icon, color: tokens.onPrimary, size: 24),
         ),
       ),
     );

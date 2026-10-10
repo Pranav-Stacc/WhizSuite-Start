@@ -84,47 +84,58 @@ class ContentWorkflowPanel extends ConsumerWidget {
           Text(l10n.contentWorkflowHint(content.status), style: text.bodyMedium?.copyWith(color: tokens.secondary)),
           if (!published) ...[
             SizedBox(height: tokens.lg),
-            Wrap(
-              spacing: tokens.sm,
-              runSpacing: tokens.sm,
-              children: [
-                if (inReview)
-                  PermissionGate(
-                    anyOf: const [Permissions.approvalsApprove],
-                    fallback: Padding(
-                      padding: EdgeInsets.symmetric(vertical: tokens.sm),
-                      child: Text(l10n.contentWaitingForReview, style: text.bodySmall?.copyWith(color: tokens.muted)),
+            if (inReview)
+              PermissionGate(
+                anyOf: const [Permissions.approvalsApprove],
+                fallback: Text(l10n.contentWaitingForReview, style: text.bodySmall?.copyWith(color: tokens.muted)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(l10n.contentReviewActions, style: text.labelLarge),
+                    SizedBox(height: tokens.sm),
+                    FilledButton.icon(
+                      onPressed: () => _approve(context, ref),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: Text(l10n.contentActionApprove),
                     ),
-                    child: Wrap(
-                      spacing: tokens.sm,
-                      runSpacing: tokens.sm,
+                    SizedBox(height: tokens.sm),
+                    Row(
                       children: [
-                        FilledButton.icon(
-                          onPressed: () => _approve(context, ref),
-                          icon: const Icon(Icons.check_circle_outline),
-                          label: Text(l10n.contentActionApprove),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _decide(context, ref, ContentReviewOutcomes.changesRequested),
+                            icon: const Icon(Icons.undo),
+                            label: Text(l10n.contentActionRequestChanges),
+                          ),
                         ),
-                        OutlinedButton.icon(
-                          onPressed: () => _decide(context, ref, ContentReviewOutcomes.changesRequested),
-                          icon: const Icon(Icons.undo),
-                          label: Text(l10n.contentActionRequestChanges),
-                        ),
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
-                          onPressed: () => _decide(context, ref, ContentReviewOutcomes.draft),
-                          icon: const Icon(Icons.thumb_down_outlined),
-                          label: Text(l10n.contentActionReject),
+                        SizedBox(width: tokens.sm),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+                            onPressed: () => _decide(context, ref, ContentReviewOutcomes.draft),
+                            icon: const Icon(Icons.thumb_down_outlined),
+                            label: Text(l10n.contentActionReject),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                for (final (i, move) in moves.indexed)
-                  AllPermissionsGate(
-                    allOf: _requirements(move),
-                    child: _MoveButton(move: move, primary: i == 0 && !inReview, onPressed: () => _run(context, ref, move)),
-                  ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            if (moves.isNotEmpty) ...[
+              if (inReview) SizedBox(height: tokens.md),
+              Wrap(
+                spacing: tokens.sm,
+                runSpacing: tokens.sm,
+                children: [
+                  for (final (i, move) in moves.indexed)
+                    AllPermissionsGate(
+                      allOf: _requirements(move),
+                      child: _MoveButton(move: move, primary: i == 0 && !inReview, onPressed: () => _run(context, ref, move)),
+                    ),
+                ],
+              ),
+            ],
           ],
         ],
       ),

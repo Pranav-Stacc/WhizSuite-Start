@@ -10,7 +10,7 @@ import 'content_labels.dart';
 import 'content_media.dart';
 
 class ContentCard extends StatelessWidget {
-  const ContentCard({required this.content, required this.onTap, this.clientName, super.key});
+  const ContentCard({required this.content, required this.onTap, this.clientName, this.onMore, super.key});
 
   static const _thumbSize = 88.0;
   static const _maxPlatformChips = 3;
@@ -18,6 +18,7 @@ class ContentCard extends StatelessWidget {
   final Content content;
   final String? clientName;
   final VoidCallback onTap;
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +70,17 @@ class ContentCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: text.titleSmall)),
-                      SizedBox(width: tokens.sm),
+                      SizedBox(width: tokens.xs),
                       ContentStatusBadge(status: content.status, dense: true),
+                      if (onMore != null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          tooltip: l10n.moreActions,
+                          icon: const Icon(Icons.more_horiz, size: 20),
+                          onPressed: onMore,
+                        ),
                     ],
                   ),
                   SizedBox(height: tokens.xs),

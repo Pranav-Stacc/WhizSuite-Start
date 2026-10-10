@@ -107,6 +107,13 @@ abstract final class RoleKinds {
   static const List<String> values = <String>[access, workflow];
 }
 
+abstract final class PermissionEffects {
+  static const String allow = 'ALLOW';
+  static const String deny = 'DENY';
+
+  static const List<String> values = <String>[allow, deny];
+}
+
 abstract final class MembershipTypes {
   static const String owner = 'OWNER';
   static const String admin = 'ADMIN';
@@ -114,6 +121,32 @@ abstract final class MembershipTypes {
   static const String client = 'CLIENT';
 
   static const List<String> values = <String>[owner, admin, member, client];
+}
+
+abstract final class EmploymentTypes {
+  static const String employee = 'EMPLOYEE';
+  static const String freelance = 'FREELANCE';
+  static const String contractor = 'CONTRACTOR';
+
+  static const List<String> values = <String>[employee, freelance, contractor];
+}
+
+abstract final class MemberDocumentTypes {
+  static const String offerLetter = 'OFFER_LETTER';
+  static const String salarySlip = 'SALARY_SLIP';
+  static const String nda = 'NDA';
+  static const String employmentAgreement = 'EMPLOYMENT_AGREEMENT';
+  static const String other = 'OTHER';
+
+  static const List<String> values = <String>[offerLetter, salarySlip, nda, employmentAgreement, other];
+}
+
+abstract final class MemberDocumentStatuses {
+  static const String draft = 'DRAFT';
+  static const String sent = 'SENT';
+  static const String signed = 'SIGNED';
+
+  static const List<String> values = <String>[draft, sent, signed];
 }
 
 abstract final class ErrorCodes {
@@ -393,9 +426,9 @@ abstract final class ThemeStatusColors {
   static const List<String> values = <String>[success, warning, danger, info, violet, pink];
 }
 
-const Map<String, Object> defaultTheme = <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'};
+const Map<String, Object> defaultTheme = <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'};
 
-const List<Object> themePresets = <Object>[<String, Object>{'id': 'noir', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'editorial', 'mode': 'light', 'theme': <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'chalk', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F4F5', 'surface': '#FFFFFF', 'border': '#D4D4D8', 'primary': '#18181B', 'secondary': '#52525B', 'fg': '#18181B', 'muted': '#71717A', 'radius': 4, 'density': 'comfortable'}}, <String, Object>{'id': 'porcelain', 'mode': 'light', 'theme': <String, Object>{'bg': '#F8FAFC', 'surface': '#FFFFFF', 'border': '#D0D7E2', 'primary': '#0F172A', 'secondary': '#334155', 'fg': '#0F172A', 'muted': '#64748B', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'mist', 'mode': 'light', 'theme': <String, Object>{'bg': '#F0F4F8', 'surface': '#FFFFFF', 'border': '#C5D4E0', 'primary': '#1E3A5F', 'secondary': '#3D6B8F', 'fg': '#152536', 'muted': '#5E7388', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'daylight', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F7F5', 'surface': '#FFFFFF', 'border': '#CFE0D6', 'primary': '#0A9F4F', 'secondary': '#0F7A5A', 'fg': '#0B1513', 'muted': '#5D6B67', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sage', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F5F1', 'surface': '#FBFCF9', 'border': '#CDD5C8', 'primary': '#3F5A45', 'secondary': '#6B8570', 'fg': '#1C241E', 'muted': '#6E7A70', 'radius': 8, 'density': 'comfortable'}}, <String, Object>{'id': 'sky', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F8FC', 'surface': '#FFFFFF', 'border': '#C5D9EB', 'primary': '#0369A1', 'secondary': '#0E7490', 'fg': '#0C1929', 'muted': '#5B738A', 'radius': 10, 'density': 'comfortable'}}, <String, Object>{'id': 'linen', 'mode': 'light', 'theme': <String, Object>{'bg': '#F6F3EE', 'surface': '#FFFDF9', 'border': '#DDD5C8', 'primary': '#2C2A26', 'secondary': '#6B6560', 'fg': '#1F1D1A', 'muted': '#7A746C', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'mono', 'mode': 'dark', 'theme': <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'aurora', 'mode': 'dark', 'theme': <String, Object>{'bg': '#07050F', 'surface': '#110D1F', 'border': '#2C2150', 'primary': '#A78BFA', 'secondary': '#7DD3FC', 'fg': '#F6F5FF', 'muted': '#9A96B5', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'ocean', 'mode': 'dark', 'theme': <String, Object>{'bg': '#030B12', 'surface': '#0A1823', 'border': '#17344A', 'primary': '#38BDF8', 'secondary': '#22D3EE', 'fg': '#F2F8FC', 'muted': '#8CA3B3', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sunset', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0705', 'surface': '#1A100C', 'border': '#4A2A1A', 'primary': '#FF8A3D', 'secondary': '#FFC247', 'fg': '#FFF7F0', 'muted': '#B09A8A', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'rose', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0509', 'surface': '#1A0C13', 'border': '#4A1A2F', 'primary': '#FF4D8D', 'secondary': '#FF9AC1', 'fg': '#FFF4F8', 'muted': '#B18C9C', 'radius': 14, 'density': 'comfortable'}}];
+const List<Object> themePresets = <Object>[<String, Object>{'id': 'mono', 'mode': 'dark', 'theme': <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'noir', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'editorial', 'mode': 'light', 'theme': <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'chalk', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F4F5', 'surface': '#FFFFFF', 'border': '#D4D4D8', 'primary': '#18181B', 'secondary': '#52525B', 'fg': '#18181B', 'muted': '#71717A', 'radius': 4, 'density': 'comfortable'}}, <String, Object>{'id': 'porcelain', 'mode': 'light', 'theme': <String, Object>{'bg': '#F8FAFC', 'surface': '#FFFFFF', 'border': '#D0D7E2', 'primary': '#0F172A', 'secondary': '#334155', 'fg': '#0F172A', 'muted': '#64748B', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'mist', 'mode': 'light', 'theme': <String, Object>{'bg': '#F0F4F8', 'surface': '#FFFFFF', 'border': '#C5D4E0', 'primary': '#1E3A5F', 'secondary': '#3D6B8F', 'fg': '#152536', 'muted': '#5E7388', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'daylight', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F7F5', 'surface': '#FFFFFF', 'border': '#CFE0D6', 'primary': '#0A9F4F', 'secondary': '#0F7A5A', 'fg': '#0B1513', 'muted': '#5D6B67', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sage', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F5F1', 'surface': '#FBFCF9', 'border': '#CDD5C8', 'primary': '#3F5A45', 'secondary': '#6B8570', 'fg': '#1C241E', 'muted': '#6E7A70', 'radius': 8, 'density': 'comfortable'}}, <String, Object>{'id': 'sky', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F8FC', 'surface': '#FFFFFF', 'border': '#C5D9EB', 'primary': '#0369A1', 'secondary': '#0E7490', 'fg': '#0C1929', 'muted': '#5B738A', 'radius': 10, 'density': 'comfortable'}}, <String, Object>{'id': 'linen', 'mode': 'light', 'theme': <String, Object>{'bg': '#F6F3EE', 'surface': '#FFFDF9', 'border': '#DDD5C8', 'primary': '#2C2A26', 'secondary': '#6B6560', 'fg': '#1F1D1A', 'muted': '#7A746C', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'aurora', 'mode': 'dark', 'theme': <String, Object>{'bg': '#07050F', 'surface': '#110D1F', 'border': '#2C2150', 'primary': '#A78BFA', 'secondary': '#7DD3FC', 'fg': '#F6F5FF', 'muted': '#9A96B5', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'ocean', 'mode': 'dark', 'theme': <String, Object>{'bg': '#030B12', 'surface': '#0A1823', 'border': '#17344A', 'primary': '#38BDF8', 'secondary': '#22D3EE', 'fg': '#F2F8FC', 'muted': '#8CA3B3', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sunset', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0705', 'surface': '#1A100C', 'border': '#4A2A1A', 'primary': '#FF8A3D', 'secondary': '#FFC247', 'fg': '#FFF7F0', 'muted': '#B09A8A', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'rose', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0509', 'surface': '#1A0C13', 'border': '#4A1A2F', 'primary': '#FF4D8D', 'secondary': '#FF9AC1', 'fg': '#FFF4F8', 'muted': '#B18C9C', 'radius': 14, 'density': 'comfortable'}}];
 
 abstract final class LeadStages {
   static const String newValue = 'NEW';
@@ -492,8 +525,12 @@ abstract final class TemplateTypes {
   static const String content = 'CONTENT';
   static const String report = 'REPORT';
   static const String message = 'MESSAGE';
+  static const String offerLetter = 'OFFER_LETTER';
+  static const String salarySlip = 'SALARY_SLIP';
+  static const String nda = 'NDA';
+  static const String employmentAgreement = 'EMPLOYMENT_AGREEMENT';
 
-  static const List<String> values = <String>[project, task, content, report, message];
+  static const List<String> values = <String>[project, task, content, report, message, offerLetter, salarySlip, nda, employmentAgreement];
 }
 
 abstract final class TemplateScopes {
@@ -609,8 +646,9 @@ abstract final class ChatMentionTypes {
   static const String content = 'CONTENT';
   static const String calendarEvent = 'CALENDAR_EVENT';
   static const String lead = 'LEAD';
+  static const String agent = 'AGENT';
 
-  static const List<String> values = <String>[user, client, task, project, content, calendarEvent, lead];
+  static const List<String> values = <String>[user, client, task, project, content, calendarEvent, lead, agent];
 }
 
 abstract final class ChatMessageTypes {
@@ -638,6 +676,10 @@ abstract final class ChatNotificationLevels {
 
   static const List<String> values = <String>[all, mentions, none];
 }
+
+const String whizAgentTargetId = 'a0000000-0000-4000-8000-000000000001';
+
+const String whizAgentDisplay = 'Whiz';
 
 const int resourceNameMinLength = 2;
 
@@ -710,6 +752,16 @@ const int roleNameMaxLength = 60;
 const int roleDescriptionMaxLength = 280;
 
 const int memberRolesMax = 10;
+
+const int memberDesignationsMax = 10;
+
+const int designationNameMaxLength = 80;
+
+const int designationNameMinLength = 1;
+
+const int departmentNameMinLength = 2;
+
+const int departmentNameMaxLength = 80;
 
 const String workflowStageSeparator = ',';
 

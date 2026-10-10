@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { Permission, ScopeType } from '@agency-os/contracts';
+import {
+  PermissionEffects,
+  type Permission,
+  type ScopeType,
+} from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { RedisService } from '../../../../shared/cache/redis.service';
 import { AccessRepository } from '../../infrastructure/repositories/access.repository';
@@ -45,11 +49,15 @@ export class AuthorizationService {
     permission: Permission,
     resource?: { type: string; id: string },
   ): Promise<boolean> {
-    const grants = await this.repo.getPermissionGrants(
-      organizationId,
-      membershipId,
-      permission,
-    );
+    const { grants, overrideEffect, isOwner } =
+      await this.repo.getPermissionGrants(
+        organizationId,
+        membershipId,
+        permission,
+      );
+    if (isOwner) return true;
+    if (overrideEffect === PermissionEffects.DENY) return false;
+    if (overrideEffect === PermissionEffects.ALLOW) return true;
     if (!grants.length) return false;
 
     for (const grant of grants) {

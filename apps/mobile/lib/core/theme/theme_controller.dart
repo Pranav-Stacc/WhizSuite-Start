@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../storage/preferences.dart';
 import 'theme_settings.dart';
 
-/// The device's appearance settings; persisted locally like the web `ao_theme` cookie.
+/// The device's appearance settings; persisted locally like the web `ao_theme_v2` cookie.
 class ThemeController extends Notifier<ThemeSettings> {
-  /// Bumped so existing installs pick up the dark mobile default once.
-  static const _storageKey = 'appearance.theme.v2';
+  /// Bumped so existing installs pick up the mono default (radius 14) once.
+  static const _storageKey = 'appearance.theme.v4';
 
   @override
   ThemeSettings build() {
@@ -17,7 +17,8 @@ class ThemeController extends Notifier<ThemeSettings> {
     if (raw == null) return defaultThemeSettings;
     try {
       final decoded = jsonDecode(raw);
-      return decoded is Map<String, Object?> ? ThemeSettings.tryParse(decoded) ?? defaultThemeSettings : defaultThemeSettings;
+      if (decoded is! Map<String, Object?>) return defaultThemeSettings;
+      return _coerceLegacyDefault(ThemeSettings.tryParse(decoded) ?? defaultThemeSettings);
     } on FormatException {
       return defaultThemeSettings;
     }
@@ -34,11 +35,26 @@ class ThemeController extends Notifier<ThemeSettings> {
   void reset() => _save(defaultThemeSettings);
 
   /// Applies the agency theme after login so every team and client member sees the same colours.
-  void hydrateFromOrganization(ThemeSettings theme) => _save(theme);
+  void hydrateFromOrganization(ThemeSettings theme) => _save(_coerceLegacyDefault(theme));
 
   void _save(ThemeSettings next) {
-    state = next;
-    ref.read(sharedPreferencesProvider).setString(_storageKey, jsonEncode(next.toJson()));
+    final resolved = _coerceLegacyDefault(next);
+    state = resolved;
+    ref.read(sharedPreferencesProvider).setString(_storageKey, jsonEncode(resolved.toJson()));
+  }
+
+  /// Former product default was noir (radius 2). Upgrade those sessions to mono.
+  ThemeSettings _coerceLegacyDefault(ThemeSettings theme) {
+    final isLegacy = theme.radius == 2 &&
+        toHex(theme.bg) == '#0E0E0D' &&
+        toHex(theme.surface) == '#161615' &&
+        toHex(theme.border) == '#2E2D2A' &&
+        toHex(theme.primary) == '#F2F0EB' &&
+        toHex(theme.secondary) == '#B8B5AE' &&
+        toHex(theme.fg) == '#F2F0EB' &&
+        toHex(theme.muted) == '#8C8A85';
+    if (!isLegacy) return theme;
+    return contractDefaultThemeSettings.copyWith(density: theme.density);
   }
 }
 

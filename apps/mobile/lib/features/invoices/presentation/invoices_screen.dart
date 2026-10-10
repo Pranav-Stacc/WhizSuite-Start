@@ -22,7 +22,9 @@ import 'invoice_status.dart';
 import '../../../core/widgets/menu_filter_chip.dart';
 
 class InvoicesScreen extends ConsumerStatefulWidget {
-  const InvoicesScreen({super.key});
+  const InvoicesScreen({this.initialClientId, super.key});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<InvoicesScreen> createState() => _InvoicesScreenState();
@@ -30,9 +32,9 @@ class InvoicesScreen extends ConsumerStatefulWidget {
 
 class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
   String? _status;
-  String? _clientId;
+  late String? _clientId = widget.initialClientId;
 
-  void _create() => context.go(InvoicesRoutes.create);
+  void _create() => context.push(InvoicesRoutes.create);
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +76,7 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
               onStatus: (s) => setState(() => _status = s),
             ),
             SizedBox(height: context.tokens.md),
-            if (!isPortal && clientIds.length > 1) ...[
+            if (!isPortal && widget.initialClientId == null && clientIds.length > 1) ...[
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: MenuFilterChip<String>(
@@ -109,7 +111,7 @@ class _InvoicesScreenState extends ConsumerState<InvoicesScreen> {
         itemBuilder: (context, invoice) => InvoiceCard(
           invoice: invoice,
           clientName: clientName(invoice),
-          onTap: () => context.go(InvoicesRoutes.detail(invoice.id)),
+          onTap: () => context.push(InvoicesRoutes.detail(invoice.id)),
         ),
       ),
     );

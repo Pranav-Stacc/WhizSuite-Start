@@ -174,7 +174,8 @@ export class RedeemPortalAccessDto {
 
   @ApiProperty({
     required: false,
-    description: 'Required for permanent links or when the email already has a password',
+    description:
+      'Required for permanent links or when the email already has a password',
   })
   @IsOptional()
   @IsString()

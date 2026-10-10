@@ -122,7 +122,7 @@ class _TemplatesScreenState extends ConsumerState<TemplatesScreen> {
         itemBuilder: (context, template) => TemplateCard(
           template: template,
           clientName: clients.nameOf(template.definition.clientId),
-          onTap: () => context.go(TemplatesRoutes.detail(template.id)),
+          onTap: () => context.push(TemplatesRoutes.detail(template.id)),
         ),
       ),
     );

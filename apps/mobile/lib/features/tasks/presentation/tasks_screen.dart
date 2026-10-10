@@ -49,7 +49,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     if (created && mounted) showToast(context, l10n.createdToast);
   }
 
-  void _open(Task task) => context.go(TasksRoutes.detail(task.id));
+  void _open(Task task) => context.push(TasksRoutes.detail(task.id));
 
   Future<void> _move(Task task, String status) async {
     final l10n = AppLocalizations.of(context);

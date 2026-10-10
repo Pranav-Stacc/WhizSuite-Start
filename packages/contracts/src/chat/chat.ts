@@ -18,8 +18,14 @@ export const ChatMentionTypes = [
   'CONTENT',
   'CALENDAR_EVENT',
   'LEAD',
+  'AGENT',
 ] as const;
 export type ChatMentionType = (typeof ChatMentionTypes)[number];
+
+/** Stable targetId for @Whiz AGENT mentions (not a real user). */
+export const WHIZ_AGENT_TARGET_ID =
+  'a0000000-0000-4000-8000-000000000001' as const;
+export const WHIZ_AGENT_DISPLAY = 'Whiz' as const;
 
 export const ChatNotificationLevels = ['ALL', 'MENTIONS', 'NONE'] as const;
 export type ChatNotificationLevel = (typeof ChatNotificationLevels)[number];

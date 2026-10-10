@@ -11,7 +11,7 @@ import '../domain/platform_limits.dart';
 import 'content_labels.dart';
 import 'content_media.dart';
 
-/// Multi-select of networks; flags ones the client has no connected account for.
+/// Compact multi-select of networks via a dropdown sheet; flags disconnected accounts.
 class PlatformPicker extends StatelessWidget {
   const PlatformPicker({required this.options, required this.selected, required this.connected, required this.onChanged, super.key});
 
@@ -22,29 +22,113 @@ class PlatformPicker extends StatelessWidget {
   final Set<String>? connected;
   final ValueChanged<List<String>> onChanged;
 
+  Future<void> _open(BuildContext context) async {
+    final next = await showModalBottomSheet<List<String>>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (context) => _PlatformSheet(options: options, selected: selected, connected: connected),
+    );
+    if (next != null) onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final summary = selected.isEmpty
+        ? l10n.contentPlatformsSelect
+        : selected.map((p) => contentPlatformLabel(l10n, p)).join(', ');
+    return InkWell(
+      onTap: () => _open(context),
+      borderRadius: context.tokens.borderRadius,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: l10n.contentFieldPlatforms,
+          suffixIcon: const Icon(Icons.arrow_drop_down),
+        ),
+        isEmpty: selected.isEmpty,
+        child: Row(
+          children: [
+            if (selected.isNotEmpty) ...[
+              Icon(contentPlatformIcon(selected.first), size: 18, color: context.tokens.muted),
+              SizedBox(width: context.tokens.sm),
+            ],
+            Expanded(
+              child: Text(
+                summary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: selected.isEmpty
+                    ? Theme.of(context).textTheme.bodyLarge?.copyWith(color: context.tokens.muted)
+                    : Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlatformSheet extends StatefulWidget {
+  const _PlatformSheet({required this.options, required this.selected, required this.connected});
+
+  final List<String> options;
+  final List<String> selected;
+  final Set<String>? connected;
+
+  @override
+  State<_PlatformSheet> createState() => _PlatformSheetState();
+}
+
+class _PlatformSheetState extends State<_PlatformSheet> {
+  late List<String> _selected = [...widget.selected];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    final known = connected;
-    return Wrap(
-      spacing: tokens.sm,
-      runSpacing: tokens.sm,
-      children: [
-        for (final platform in options)
-          FilterChip(
-            avatar: Icon(contentPlatformIcon(platform), size: 18),
-            label: Text(
-              known != null && !known.contains(platform)
-                  ? l10n.contentPlatformNotConnected(contentPlatformLabel(l10n, platform))
-                  : contentPlatformLabel(l10n, platform),
-            ),
-            selected: selected.contains(platform),
-            onSelected: (on) => onChanged(
-              on ? [...selected, platform] : selected.where((p) => p != platform).toList(),
-            ),
+    final known = widget.connected;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(tokens.lg, 0, tokens.lg, tokens.lg),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Semantics(
+                header: true,
+                child: Text(l10n.contentFieldPlatforms, style: Theme.of(context).textTheme.titleMedium),
+              ),
+              SizedBox(height: tokens.sm),
+              Text(l10n.contentPlatformsHint, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.muted)),
+              SizedBox(height: tokens.md),
+              for (final platform in widget.options)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  secondary: Icon(contentPlatformIcon(platform)),
+                  title: Text(
+                    known != null && !known.contains(platform)
+                        ? l10n.contentPlatformNotConnected(contentPlatformLabel(l10n, platform))
+                        : contentPlatformLabel(l10n, platform),
+                  ),
+                  value: _selected.contains(platform),
+                  onChanged: (on) => setState(() {
+                    _selected = on == true
+                        ? [..._selected, platform]
+                        : _selected.where((p) => p != platform).toList();
+                  }),
+                ),
+              SizedBox(height: tokens.md),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(_selected),
+                child: Text(l10n.mediaUploadDone),
+              ),
+            ],
           ),
-      ],
+        ),
+      ),
     );
   }
 }

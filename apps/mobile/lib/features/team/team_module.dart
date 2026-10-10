@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/contracts/contracts.g.dart';
 import '../../core/navigation/feature_module.dart';
-import 'presentation/team_screen.dart';
+import 'presentation/agency/agency_screen.dart';
+import 'presentation/member/member_screen.dart';
 import 'team_routes.dart';
 
 final teamModule = FeatureModule(
@@ -18,5 +19,16 @@ final teamModule = FeatureModule(
       primary: true,
     ),
   ],
-  routes: [destinationRoute(TeamRoutes.root, (_) => const TeamScreen())],
+  routes: [
+    destinationRoute(
+      TeamRoutes.root,
+      (_) => const AgencyScreen(),
+      routes: [
+        childRoute(
+          '${TeamRoutes.membersSegment}/:${TeamRoutes.memberParam}',
+          (state) => MemberScreen(userId: state.pathParameters[TeamRoutes.memberParam]!),
+        ),
+      ],
+    ),
+  ],
 );

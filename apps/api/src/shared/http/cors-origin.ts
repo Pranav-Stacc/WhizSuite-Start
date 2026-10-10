@@ -2,7 +2,12 @@
  * CORS allow-list with optional wildcard hosts.
  * Supports exact origins and single-label patterns like `https://*.whizsuite.com`.
  */
-export function createCorsOriginChecker(raw: string): (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => void {
+export function createCorsOriginChecker(
+  raw: string,
+): (
+  origin: string | undefined,
+  cb: (err: Error | null, allow?: boolean) => void,
+) => void {
   const entries = raw
     .split(',')
     .map((o) => o.trim())
@@ -12,7 +17,9 @@ export function createCorsOriginChecker(raw: string): (origin: string | undefine
   const patterns = entries
     .filter((o) => o.includes('*'))
     .map((pattern) => {
-      const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^.]+');
+      const escaped = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '[^.]+');
       return new RegExp(`^${escaped}$`, 'i');
     });
 

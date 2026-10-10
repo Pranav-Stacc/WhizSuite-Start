@@ -24,11 +24,11 @@ async function login(page: import('@playwright/test').Page, creds: Creds): Promi
 test.describe('Agency OS live smoke', () => {
   test('login and portal-access keep product Noir auth chrome', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.locator('[data-marketing="noir"][data-theme-lock="product"]')).toBeVisible();
+    await expect(page.locator('[data-marketing="mono"][data-theme-lock="product"]')).toBeVisible();
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
 
     await page.goto('/portal-access');
-    await expect(page.locator('[data-marketing="noir"][data-theme-lock="product"]')).toBeVisible();
+    await expect(page.locator('[data-marketing="mono"][data-theme-lock="product"]')).toBeVisible();
   });
 
   test('owner can sign in and reach core pages', async ({ page }) => {

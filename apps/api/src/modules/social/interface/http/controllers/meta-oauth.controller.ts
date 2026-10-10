@@ -1,9 +1,7 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import {
-  ProblemDetailsException,
-} from '../../../../../shared/errors/problem-details.exception';
+import { ProblemDetailsException } from '../../../../../shared/errors/problem-details.exception';
 import { MetaOauthService } from '../../../application/services/meta-oauth.service';
 
 /**
@@ -26,7 +24,9 @@ export class MetaOauthController {
   ) {
     if (error || !code || !state) {
       return res.redirect(
-        this.metaOauth.webFailureRedirect(errorDescription ?? error ?? 'denied'),
+        this.metaOauth.webFailureRedirect(
+          errorDescription ?? error ?? 'denied',
+        ),
       );
     }
     try {

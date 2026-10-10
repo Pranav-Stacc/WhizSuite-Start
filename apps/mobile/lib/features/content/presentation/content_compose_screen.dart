@@ -29,10 +29,11 @@ import 'content_preview.dart';
 
 /// Create (no [contentId]) or edit a post.
 class ContentComposeScreen extends ConsumerWidget {
-  const ContentComposeScreen({this.contentId, this.initialClientId, super.key});
+  const ContentComposeScreen({this.contentId, this.initialClientId, this.initialScheduledAt, super.key});
 
   final String? contentId;
   final String? initialClientId;
+  final DateTime? initialScheduledAt;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,10 +69,11 @@ class ContentComposeScreen extends ConsumerWidget {
 }
 
 class _Composer extends ConsumerStatefulWidget {
-  const _Composer({this.existing, this.initialClientId, super.key});
+  const _Composer({this.existing, this.initialClientId, this.initialScheduledAt, super.key});
 
   final Content? existing;
   final String? initialClientId;
+  final DateTime? initialScheduledAt;
 
   @override
   ConsumerState<_Composer> createState() => _ComposerState();
@@ -83,7 +85,7 @@ class _ComposerState extends ConsumerState<_Composer> {
   static const _formMaxWidth = 720.0;
   static const _aiHashtagCount = 10;
   static const _topicMaxLength = 300;
-  static const _captionLines = 6;
+  static const _captionLines = 3;
   static const _allowedSchemes = {'http', 'https'};
 
   final _formKey = GlobalKey<FormState>();
@@ -91,6 +93,7 @@ class _ComposerState extends ConsumerState<_Composer> {
   late final TextEditingController _caption;
   late final TextEditingController _pillar;
   late final TextEditingController _cta;
+  final _hashtagsText = TextEditingController();
   String? _clientId;
   late String _type;
   late List<String> _platforms;
@@ -117,8 +120,9 @@ class _ComposerState extends ConsumerState<_Composer> {
     _type = c?.contentType ?? ContentTypes.post;
     _platforms = [...?c?.platforms];
     _hashtags = [...?c?.hashtags];
+    _hashtagsText.text = _hashtags.join(' ');
     _media = [...?c?.media];
-    _scheduledAt = c?.scheduledAt?.toLocal();
+    _scheduledAt = c?.scheduledAt?.toLocal() ?? widget.initialScheduledAt;
   }
 
   @override
@@ -127,7 +131,19 @@ class _ComposerState extends ConsumerState<_Composer> {
     _caption.dispose();
     _pillar.dispose();
     _cta.dispose();
+    _hashtagsText.dispose();
     super.dispose();
+  }
+
+  void _setHashtags(List<String> tags) {
+    _hashtags = tags;
+    final text = tags.join(' ');
+    if (_hashtagsText.text != text) {
+      _hashtagsText.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+    }
   }
 
   void _refresh() => setState(() {});
@@ -207,7 +223,7 @@ class _ComposerState extends ConsumerState<_Composer> {
       final previousTags = _hashtags;
       setState(() {
         _caption.text = suggestion.caption;
-        if (_hashtags.isEmpty) _hashtags = normalizeHashtags(suggestion.hashtags);
+        if (_hashtags.isEmpty) _setHashtags(normalizeHashtags(suggestion.hashtags));
       });
       showToast(
         context,
@@ -218,7 +234,7 @@ class _ComposerState extends ConsumerState<_Composer> {
             if (!mounted) return;
             setState(() {
               _caption.text = previousCaption;
-              _hashtags = previousTags;
+              _setHashtags(previousTags);
             });
           },
         ),
@@ -245,7 +261,7 @@ class _ComposerState extends ConsumerState<_Composer> {
           .suggestHashtags(topic: topic, count: room < _aiHashtagCount ? room : _aiHashtagCount);
       if (!mounted) return;
       final before = _hashtags.length;
-      setState(() => _hashtags = normalizeHashtags([..._hashtags, ...tags]));
+      setState(() => _setHashtags(normalizeHashtags([..._hashtags, ...tags])));
       showToast(context, l10n.contentHashtagsAdded(_hashtags.length - before));
     } on ApiException catch (error) {
       if (mounted) showToast(context, describeError(l10n, error));
@@ -323,7 +339,7 @@ class _ComposerState extends ConsumerState<_Composer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_isEdit)
+                if (_isEdit || widget.initialClientId != null)
                   InfoRow(label: l10n.contentFieldClient, icon: Icons.business_outlined, value: Text(clientName))
                 else if (clients.hasValue && directory.entries.isEmpty)
                   _Notice(icon: Icons.warning_amber_outlined, text: l10n.contentNoClients)
@@ -348,26 +364,17 @@ class _ComposerState extends ConsumerState<_Composer> {
                   decoration: InputDecoration(labelText: l10n.contentFieldTitle, hintText: l10n.contentFieldTitleHint),
                   validator: Validators(l10n).required,
                 ),
-                SizedBox(height: tokens.sm),
-                Text(l10n.contentFieldType, style: Theme.of(context).textTheme.labelLarge),
-                SizedBox(height: tokens.sm),
-                Wrap(
-                  spacing: tokens.sm,
-                  runSpacing: tokens.sm,
-                  children: [
-                    for (final type in ContentTypes.values)
-                      ChoiceChip(
-                        avatar: Icon(contentTypeIcon(type), size: 18),
-                        label: Text(contentTypeLabel(l10n, type)),
-                        selected: _type == type,
-                        showCheckmark: false,
-                        onSelected: (_) => setState(() => _type = type),
-                      ),
-                  ],
+                SizedBox(height: tokens.md),
+                OptionField<String>(
+                  label: l10n.contentFieldType,
+                  value: _type,
+                  options: ContentTypes.values,
+                  labelOf: (type) => contentTypeLabel(l10n, type),
+                  onChanged: (value) {
+                    if (value != null) setState(() => _type = value);
+                  },
                 ),
-                SizedBox(height: tokens.lg),
-                Text(l10n.contentFieldPlatforms, style: Theme.of(context).textTheme.labelLarge),
-                SizedBox(height: tokens.sm),
+                SizedBox(height: tokens.md),
                 PlatformPicker(
                   options: Platforms.values,
                   selected: _platforms,
@@ -416,33 +423,37 @@ class _ComposerState extends ConsumerState<_Composer> {
                   ),
                 ),
                 _CaptionCounter(caption: _caption.text, hashtags: _hashtags, platforms: _platforms),
-                SizedBox(height: tokens.lg),
-                TagsField(
-                  label: l10n.contentFieldHashtags,
-                  values: _hashtags,
-                  maxTags: contentHashtagsMaxDefault,
-                  normalize: (raw) => normalizeHashtag(raw) ?? raw,
-                  onChanged: (value) => setState(() => _hashtags = normalizeHashtags(value)),
-                ),
-                SizedBox(height: tokens.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        l10n.contentHashtagsCount(_hashtags.length, contentHashtagsMaxDefault),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tokens.muted),
-                      ),
-                    ),
-                    if (canAi)
-                      _AiButton(label: l10n.contentAiSuggestHashtags, busy: _suggesting, onPressed: _suggestHashtags),
-                  ],
+                SizedBox(height: tokens.md),
+                TextFormField(
+                  controller: _hashtagsText,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: l10n.contentFieldHashtags,
+                    hintText: l10n.contentFieldHashtagsHint,
+                    helperText: l10n.contentHashtagsCount(_hashtags.length, contentHashtagsMaxDefault),
+                    suffixIcon: canAi
+                        ? IconButton(
+                            tooltip: l10n.contentAiSuggestHashtags,
+                            onPressed: _suggesting ? null : _suggestHashtags,
+                            icon: _suggesting
+                                ? const SizedBox.square(
+                                    dimension: _AiButton._spinner,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.auto_awesome_outlined),
+                          )
+                        : null,
+                  ),
+                  onChanged: (raw) => setState(
+                    () => _hashtags = normalizeHashtags(raw.split(RegExp(r'\s+'))),
+                  ),
                 ),
                 SuggestionChips(
                   label: l10n.contentBrandHashtags,
                   suggestions: normalizeHashtags(brand.hashtags)
                       .where((tag) => !_hashtags.any((h) => h.toLowerCase() == tag.toLowerCase()))
                       .toList(),
-                  onPick: (tag) => setState(() => _hashtags = normalizeHashtags([..._hashtags, tag])),
+                  onPick: (tag) => setState(() => _setHashtags(normalizeHashtags([..._hashtags, tag]))),
                 ),
               ],
             ),

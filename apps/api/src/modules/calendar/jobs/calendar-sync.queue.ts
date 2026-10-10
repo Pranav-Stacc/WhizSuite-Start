@@ -20,8 +20,7 @@ export type CalendarSyncInboundJob = {
 };
 
 export type CalendarSyncJobPayload =
-  | CalendarSyncOutboundJob
-  | CalendarSyncInboundJob;
+  CalendarSyncOutboundJob | CalendarSyncInboundJob;
 
 @Injectable()
 export class CalendarSyncQueue {

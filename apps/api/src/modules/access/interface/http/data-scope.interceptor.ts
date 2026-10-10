@@ -20,7 +20,9 @@ export class DataScopeInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<unknown>> {
-    const request = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: AuthenticatedUser }>();
     const user = request.user;
     if (
       user?.organizationId &&
@@ -36,8 +38,10 @@ export class DataScopeInterceptor implements NestInterceptor {
         // (CLIENT-only staff still see all projects/content for their clients).
         TenantContext.bindDataScope({
           clientIds: scope.clientIds,
-          projectIds: scope.projectIds.length > 0 ? scope.projectIds : undefined,
-          contentIds: scope.contentIds.length > 0 ? scope.contentIds : undefined,
+          projectIds:
+            scope.projectIds.length > 0 ? scope.projectIds : undefined,
+          contentIds:
+            scope.contentIds.length > 0 ? scope.contentIds : undefined,
         });
       }
     }

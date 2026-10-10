@@ -23,7 +23,7 @@ final invoicesModule = FeatureModule(
   routes: [
     destinationRoute(
       InvoicesRoutes.root,
-      (_) => const InvoicesScreen(),
+      (state) => InvoicesScreen(initialClientId: state.uri.queryParameters[InvoicesRoutes.clientQuery]),
       routes: [
         childRoute(InvoicesRoutes.createSegment, (_) => const InvoiceFormScreen()),
         childRoute(

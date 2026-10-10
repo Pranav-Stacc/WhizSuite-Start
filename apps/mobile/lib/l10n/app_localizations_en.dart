@@ -30,26 +30,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLoginSubmit => 'Sign in';
 
   @override
-  String get authOrEmail => 'or use email';
-
-  @override
-  String get authGoogleButton => 'Continue with Google';
-
-  @override
-  String get authGoogleCancelled => 'Google sign-in was cancelled.';
-
-  @override
-  String get authGoogleNoAccount =>
-      'No account for that Google email. Create a workspace first.';
-
-  @override
-  String get authGoogleInvalid => 'Google sign-in was rejected. Try again.';
-
-  @override
-  String get authGoogleWorkspaceRequired =>
-      'Enter an agency name and workspace URL before continuing with Google.';
-
-  @override
   String get authLoginInvalid => 'Incorrect email or password.';
 
   @override
@@ -116,46 +96,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authSignedOut => 'You have been signed out.';
-
-  @override
-  String authInviteTitle(String organization) {
-    return 'Join $organization';
-  }
-
-  @override
-  String authInviteSubtitle(String email) {
-    return 'You were invited as $email.';
-  }
-
-  @override
-  String authInviteSubtitleExisting(String email) {
-    return 'Accept as $email.';
-  }
-
-  @override
-  String get authInvitePassword => 'Your password';
-
-  @override
-  String get authInviteSetPasswordHint =>
-      'Choose a password (12+ characters) to join.';
-
-  @override
-  String get authInviteSubmit => 'Accept invitation';
-
-  @override
-  String get authInviteInvalid =>
-      'This invitation link is invalid, already used or expired. Ask the sender for a new one.';
-
-  @override
-  String get authInviteInvalidTitle => 'Invitation unavailable';
-
-  @override
-  String get authInviteWrongPassword =>
-      'That password does not match the existing account for this email.';
-
-  @override
-  String get authInviteAlreadyMember =>
-      'This account is already a member of the workspace. Sign in instead.';
 
   @override
   String get validationRequired => 'Required';
@@ -231,9 +171,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navMore => 'More';
-
-  @override
-  String get navMenu => 'Menu';
 
   @override
   String get navGroupWork => 'Work';
@@ -379,38 +316,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get createdToast => 'Created';
-
-  @override
-  String get quickCreateTitle => 'Create';
-
-  @override
-  String get quickCreateSubtitle =>
-      'Start something new without leaving your flow.';
-
-  @override
-  String get quickCreateEmpty =>
-      'You don\'t have permission to create anything yet.';
-
-  @override
-  String get quickCreateTask => 'New task';
-
-  @override
-  String get quickCreateContent => 'New post';
-
-  @override
-  String get quickCreateProject => 'New project';
-
-  @override
-  String get quickCreateClient => 'New client';
-
-  @override
-  String get quickCreateLead => 'New lead';
-
-  @override
-  String get quickCreateInvoice => 'New invoice';
-
-  @override
-  String get quickCreateShoot => 'Plan shoot';
 
   @override
   String get deletedToast => 'Deleted';
@@ -1678,59 +1583,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarNew => 'New event';
 
   @override
-  String get calendarCreate => 'Create';
-
-  @override
-  String get calendarNewEventHint => 'Meeting, deadline or manual block';
-
-  @override
-  String get calendarPlanShoot => 'Plan shoot';
-
-  @override
-  String get calendarPlanShootHint => 'Shoot day with folders and tasks';
-
-  @override
-  String get calendarShootHeading => 'Plan a shoot';
-
-  @override
-  String get calendarShootDesc =>
-      'Schedule a shoot day, optionally create media folders and checklist tasks.';
-
-  @override
-  String get calendarShootSubmit => 'Plan shoot';
-
-  @override
-  String get calendarShootTitle => 'Shoot title';
-
-  @override
-  String get calendarShootTitleHint => 'e.g. Spring campaign on-location';
-
-  @override
-  String get calendarShootClient => 'Client';
-
-  @override
-  String get calendarShootProject => 'Project';
-
-  @override
-  String get calendarShootStarts => 'Starts';
-
-  @override
-  String get calendarShootEnds => 'Ends';
-
-  @override
-  String get calendarShootCreateFolders => 'Create media folders';
-
-  @override
-  String get calendarShootCreateFoldersHint =>
-      'Raw / Selects / Finals / Deliverables under Shoots';
-
-  @override
-  String get calendarShootTasks => 'Checklist tasks';
-
-  @override
-  String get calendarShootTasksHint => 'One task per line (needs a project)';
-
-  @override
   String get calendarEdit => 'Edit event';
 
   @override
@@ -1774,7 +1626,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarFilterType => 'Type';
 
   @override
+  String get calendarFilters => 'Filters';
+
+  @override
+  String get calendarFiltersBody =>
+      'Narrow the calendar without cluttering the main view.';
+
+  @override
   String get calendarFiltersClear => 'Clear filters';
+
+  @override
+  String get calendarDayAgenda => 'Day agenda';
 
   @override
   String get calendarOpenTask => 'Open task';
@@ -1889,172 +1751,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientTabOverview => 'Overview';
 
   @override
-  String get clientTabManage => 'Manage';
-
-  @override
   String get clientTabBrand => 'Brand kit';
 
   @override
   String get clientTabProjects => 'Projects';
-
-  @override
-  String get clientManageTitle => 'Workspace';
-
-  @override
-  String get clientManageBody => 'Jump into every area for this client.';
-
-  @override
-  String get clientManageContent => 'Content';
-
-  @override
-  String get clientManageContentBody => 'Posts, captions and planner';
-
-  @override
-  String get clientManageCalendar => 'Calendar';
-
-  @override
-  String get clientManageCalendarBody => 'Schedule and deadlines';
-
-  @override
-  String get clientManageMessages => 'Messages';
-
-  @override
-  String get clientManageMessagesBody => 'Feedback and conversations';
-
-  @override
-  String get clientManageAssets => 'Assets';
-
-  @override
-  String get clientManageAssetsBody => 'Files and brand media';
-
-  @override
-  String get clientManageInvoices => 'Invoices';
-
-  @override
-  String get clientManageInvoicesBody => 'Billing and retainers';
-
-  @override
-  String get clientManageIntegrations => 'Integrations';
-
-  @override
-  String get clientManageIntegrationsBody => 'Connected accounts';
-
-  @override
-  String get clientManageCompose => 'New post';
-
-  @override
-  String get clientManageAgreements => 'Agreements';
-
-  @override
-  String get clientManageAgreementsBody => 'Contracts, NDAs and signatures';
-
-  @override
-  String get clientManageGrid => 'Content grid';
-
-  @override
-  String get clientManageGridBody => 'Instagram-style feed planner';
-
-  @override
-  String get clientTabAgreements => 'Agreements';
-
-  @override
-  String get agreementsEmptyTitle => 'No agreements yet';
-
-  @override
-  String get agreementsEmptyBody =>
-      'Create an NDA, MSA or SOW and upload the signed PDF when ready.';
-
-  @override
-  String get agreementsNew => 'New agreement';
-
-  @override
-  String get agreementsNewHint =>
-      'Start a draft contract for this client. You can upload a PDF and collect a signature next.';
-
-  @override
-  String get agreementsTitleLabel => 'Title';
-
-  @override
-  String get agreementsTypeLabel => 'Type';
-
-  @override
-  String get agreementsTypeNda => 'NDA';
-
-  @override
-  String get agreementsTypeMsa => 'MSA';
-
-  @override
-  String get agreementsTypeSow => 'SOW';
-
-  @override
-  String get agreementsTypeOther => 'Other';
-
-  @override
-  String get agreementsStart => 'Start date';
-
-  @override
-  String get agreementsEnd => 'End date';
-
-  @override
-  String get agreementsStatTotal => 'Total';
-
-  @override
-  String get agreementsStatSigned => 'Signed';
-
-  @override
-  String get agreementsStatDraft => 'Drafts';
-
-  @override
-  String get agreementsDownload => 'Download';
-
-  @override
-  String get agreementsDownloadStarted => 'Opening agreement…';
-
-  @override
-  String get agreementsUploadPdf => 'Upload PDF';
-
-  @override
-  String get agreementsPdfUploaded => 'PDF uploaded';
-
-  @override
-  String get agreementsSign => 'Sign';
-
-  @override
-  String get agreementsSignTitle => 'Sign agreement';
-
-  @override
-  String get agreementsSignHint =>
-      'Type your full legal name to sign. A snapshot of the PDF is locked at signing time.';
-
-  @override
-  String get agreementsSignerName => 'Full name';
-
-  @override
-  String get agreementsMarkSigned => 'Mark signed';
-
-  @override
-  String get agreementsSignedToast => 'Agreement signed';
-
-  @override
-  String get agreementsCreatedToast => 'Agreement created';
-
-  @override
-  String get agreementsStatusDraft => 'Draft';
-
-  @override
-  String get agreementsStatusSent => 'Sent';
-
-  @override
-  String get agreementsStatusSigned => 'Signed';
-
-  @override
-  String get agreementsStatusActive => 'Active';
-
-  @override
-  String get agreementsStatusExpired => 'Expired';
-
-  @override
-  String get agreementsStatusVoid => 'Void';
 
   @override
   String get clientProjectsEmpty => 'No projects for this client yet.';
@@ -2190,6 +1890,104 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contentFilterPlatform => 'Platform';
+
+  @override
+  String get contentFilterStatus => 'Status';
+
+  @override
+  String get contentFilters => 'Filters';
+
+  @override
+  String get contentFiltersBody =>
+      'Narrow the library without cluttering the main view.';
+
+  @override
+  String get contentFiltersClear => 'Clear filters';
+
+  @override
+  String get contentOpenPost => 'Open post';
+
+  @override
+  String get contentSetReminder => 'Set reminder';
+
+  @override
+  String get contentSetReminderBody => 'Pick a publish date and time';
+
+  @override
+  String get contentReminderSet => 'Reminder saved';
+
+  @override
+  String get contentPlannerViewGrid => 'Grid';
+
+  @override
+  String get contentPlannerViewSheet => 'Sheet';
+
+  @override
+  String get contentPlannerPlatforms => 'Platforms';
+
+  @override
+  String get contentPlannerPlatformsAll => 'All';
+
+  @override
+  String get contentPlannerPending => 'Needs action';
+
+  @override
+  String contentPlannerPendingReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count in review',
+      one: '1 in review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String contentPlannerPendingChanges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count need changes',
+      one: '1 needs changes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get contentSheetEmpty => 'No scheduled posts this month';
+
+  @override
+  String get contentSheetRowType => 'Type';
+
+  @override
+  String get contentSheetRowName => 'Name';
+
+  @override
+  String get contentSheetRowVisual => 'Visual';
+
+  @override
+  String get contentSheetRowCaption => 'Caption';
+
+  @override
+  String get contentSheetRowHashtags => 'Hashtags';
+
+  @override
+  String get contentSheetRowCta => 'CTA';
+
+  @override
+  String get contentSheetRowPillar => 'Pillar';
+
+  @override
+  String get contentSheetRowStatus => 'Status';
+
+  @override
+  String get contentSheetNewSlot => 'New post';
+
+  @override
+  String get contentSheetHideEmpty => 'Hide empty days';
+
+  @override
+  String get calendarModeSheet => 'Sheet';
 
   @override
   String contentScheduledFor(String date) {
@@ -2859,6 +2657,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardQuickLogTime => 'Log time';
 
   @override
+  String get homeBoardEyebrow => 'YOUR DESK';
+
+  @override
+  String get homeBoardNow => 'Right now';
+
+  @override
+  String get homeBoardNext => 'Coming up';
+
+  @override
+  String get homeBoardCreate => 'Create';
+
+  @override
+  String homeBoardAttentionTasks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count urgent tasks',
+      one: '1 urgent task',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeBoardAttentionApprovals(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count approvals waiting',
+      one: '1 approval waiting',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String homeBoardAttentionContent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts need review',
+      one: '1 post needs review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get homeBoardAttentionInvoices => 'Overdue invoices to collect';
+
+  @override
   String get dashboardEmptyTitle => 'Your home is quiet';
 
   @override
@@ -3208,226 +3054,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get departmentTeamCreated => 'Team created';
 
   @override
-  String get navInbox => 'Inbox';
+  String get departmentHead => 'Head';
 
   @override
-  String get inboxTitle => 'Inbox';
-
-  @override
-  String get inboxSearch => 'Search author or message';
-
-  @override
-  String get inboxEmpty => 'Inbox zero';
-
-  @override
-  String get inboxEmptyBody =>
-      'Comments, DMs and mentions from your clients\' channels will land here.';
-
-  @override
-  String get inboxStatOpen => 'Open';
-
-  @override
-  String get inboxStatOpenHint => 'Needs a reply';
-
-  @override
-  String get inboxStatUrgent => 'Urgent';
-
-  @override
-  String get inboxStatUrgentHint => 'High or urgent priority';
-
-  @override
-  String get inboxStatMine => 'Mine';
-
-  @override
-  String get inboxStatMineHint => 'Assigned to you';
-
-  @override
-  String inboxStatus(String status) {
-    String _temp0 = intl.Intl.selectLogic(status, {
-      'OPEN': 'Open',
-      'REPLIED': 'Replied',
-      'ARCHIVED': 'Archived',
-      'other': '$status',
-    });
-    return '$_temp0';
-  }
-
-  @override
-  String inboxType(String type) {
-    String _temp0 = intl.Intl.selectLogic(type, {
-      'COMMENT': 'Comment',
-      'DM': 'Direct message',
-      'MENTION': 'Mention',
-      'other': '$type',
-    });
-    return '$_temp0';
-  }
-
-  @override
-  String inboxSentiment(String sentiment) {
-    String _temp0 = intl.Intl.selectLogic(sentiment, {
-      'POSITIVE': 'Positive',
-      'NEUTRAL': 'Neutral',
-      'NEGATIVE': 'Negative',
-      'other': 'Not rated',
-    });
-    return '$_temp0';
-  }
-
-  @override
-  String inboxPriority(String priority) {
-    String _temp0 = intl.Intl.selectLogic(priority, {
-      'LOW': 'Low',
-      'NORMAL': 'Normal',
-      'HIGH': 'High',
-      'URGENT': 'Urgent',
-      'other': '$priority',
-    });
-    return '$_temp0';
-  }
-
-  @override
-  String inboxPlatform(String platform) {
-    String _temp0 = intl.Intl.selectLogic(platform, {
-      'instagram': 'Instagram',
-      'facebook': 'Facebook',
-      'linkedin': 'LinkedIn',
-      'x': 'X',
-      'youtube': 'YouTube',
-      'tiktok': 'TikTok',
-      'other': '$platform',
-    });
-    return '$_temp0';
-  }
-
-  @override
-  String get inboxFilterType => 'Type';
-
-  @override
-  String get inboxFilterSentiment => 'Sentiment';
-
-  @override
-  String get inboxFilterPriority => 'Priority';
-
-  @override
-  String get inboxFilterClient => 'Client';
-
-  @override
-  String get inboxFilterMine => 'Assigned to me';
-
-  @override
-  String get inboxClearFilters => 'Clear filters';
-
-  @override
-  String get inboxUnknownAuthor => 'Unknown author';
-
-  @override
-  String get inboxNoPreview => 'No message text';
-
-  @override
-  String get inboxSelectTitle => 'Select a conversation';
-
-  @override
-  String get inboxSelectBody =>
-      'Pick a message to read the thread, triage it and reply.';
-
-  @override
-  String get inboxMetaClient => 'Client';
-
-  @override
-  String get inboxMetaReceived => 'Received';
-
-  @override
-  String get inboxMetaSentiment => 'Sentiment';
-
-  @override
-  String get inboxMetaPriority => 'Priority';
-
-  @override
-  String get inboxMetaAssignee => 'Assignee';
-
-  @override
-  String inboxPriorityValue(String priority) {
-    return 'Priority: $priority';
-  }
-
-  @override
-  String get inboxChangeStatus => 'Change status';
-
-  @override
-  String get inboxChangeSentiment => 'Change sentiment';
-
-  @override
-  String get inboxChangePriority => 'Change priority';
-
-  @override
-  String get inboxChangeAssignee => 'Change assignee';
-
-  @override
-  String get inboxAssignMe => 'Assign to me';
-
-  @override
-  String get inboxUnassign => 'Unassign';
-
-  @override
-  String get inboxArchive => 'Archive';
-
-  @override
-  String get inboxReopen => 'Reopen';
-
-  @override
-  String get inboxArchivedToast => 'Conversation archived';
-
-  @override
-  String get inboxReopenedToast => 'Conversation reopened';
-
-  @override
-  String inboxReplyHint(String name) {
-    return 'Reply to $name…';
-  }
-
-  @override
-  String get inboxReplySend => 'Send reply';
-
-  @override
-  String get inboxReplySent => 'Reply sent';
-
-  @override
-  String get inboxReplyReadOnly =>
-      'Your role can read this conversation but not reply to it.';
-
-  @override
-  String get inboxMessagesEmpty => 'No messages in this thread yet.';
-
-  @override
-  String get inboxSending => 'Sending…';
-
-  @override
-  String inboxCharacterCount(int count, int max) {
-    return '$count / $max';
-  }
-
-  @override
-  String get inboxYou => 'You';
-
-  @override
-  String get inboxTeam => 'Team';
-
-  @override
-  String get inboxToday => 'Today';
-
-  @override
-  String get inboxYesterday => 'Yesterday';
-
-  @override
-  String inboxMessageLabel(String author, String time, String body) {
-    return '$author, $time: $body';
-  }
-
-  @override
-  String inboxRowLabel(String author, String status, String time) {
-    return '$author, $status, $time';
-  }
+  String get departmentPositionNameHint => 'e.g. Senior designer';
 
   @override
   String get navIntegrations => 'Integrations';
@@ -4580,7 +4210,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messagesSend => 'Send';
 
   @override
-  String get messagesComposerHint => 'Write a message…';
+  String get messagesComposerHint => 'Message…';
+
+  @override
+  String get messagesWhiz => 'Whiz';
+
+  @override
+  String get messagesWhizHint => 'Assign tasks, schedule posts, set reminders…';
 
   @override
   String get messagesResolve => 'Resolve';
@@ -4650,6 +4286,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messagesContentConversation => 'Content feedback';
 
   @override
+  String get agentNewSession => 'New chat';
+
+  @override
+  String get agentSessions => 'History';
+
+  @override
+  String get agentUntitledSession => 'Untitled chat';
+
+  @override
+  String get agentEmptyTitle => 'Say what you need';
+
+  @override
+  String get agentEmptyBody =>
+      'One chat for everything: create clients, assign tasks, draft content, schedule reminders, and more.';
+
+  @override
+  String get agentComposerHint => 'Tell me what to do…';
+
+  @override
+  String get agentSend => 'Send';
+
+  @override
+  String get agentSendFailed => 'Whiz could not send that message. Try again.';
+
+  @override
+  String get agentConfirm => 'Approve';
+
+  @override
+  String get agentPhasePlanning => 'Planning the next steps…';
+
+  @override
+  String get agentPhaseWorking => 'Working on it…';
+
+  @override
+  String get agentPhaseWriting => 'Writing your answer…';
+
+  @override
   String messagesStatus(String status) {
     String _temp0 = intl.Intl.selectLogic(status, {
       'OPEN': 'Open',
@@ -4692,12 +4365,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portalQuickProjects => 'View projects';
-
-  @override
-  String get portalQuickFiles => 'Open files';
-
-  @override
-  String get portalQuickReports => 'View reports';
 
   @override
   String get portalKpiAria => 'Portal summary';
@@ -4811,45 +4478,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portalContentCta => 'Browse content';
-
-  @override
-  String get portalKpiFiles => 'Shared files';
-
-  @override
-  String portalKpiFilesCaption(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count files',
-      one: '1 file',
-      zero: 'Nothing shared yet',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get portalKpiReports => 'Reach (30 days)';
-
-  @override
-  String get portalKpiReportsCaption => 'Across your connected channels';
-
-  @override
-  String get portalFilesTitle => 'Files';
-
-  @override
-  String get portalFilesEmpty => 'No files have been shared with you yet.';
-
-  @override
-  String get portalFilesCta => 'Browse files';
-
-  @override
-  String get portalReportsTitle => 'Reports';
-
-  @override
-  String get portalReportsEmpty => 'No reports are ready yet.';
-
-  @override
-  String get portalReportsCta => 'View reports';
 
   @override
   String portalContentStatus(String status) {
@@ -5851,10 +5479,136 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navTeam => 'Agency';
 
   @override
+  String get teamOrgStructure => 'Structure & access';
+
+  @override
   String get teamTabMembers => 'Members';
 
   @override
   String get teamTabInvitations => 'Invitations';
+
+  @override
+  String get agencyTabHrDocuments => 'HR docs';
+
+  @override
+  String get memberTabOverview => 'Overview';
+
+  @override
+  String get memberTabWork => 'Work';
+
+  @override
+  String get memberTabContent => 'Content';
+
+  @override
+  String get memberTabTime => 'Time';
+
+  @override
+  String get memberTabPay => 'Pay';
+
+  @override
+  String get memberTabDocuments => 'Documents';
+
+  @override
+  String get memberWorkEmpty => 'No tasks assigned to this person yet.';
+
+  @override
+  String get memberContentEmpty => 'No posts or content from this person yet.';
+
+  @override
+  String get memberTimeEmpty => 'No time logged yet.';
+
+  @override
+  String get memberDocumentsEmpty => 'No documents sent yet.';
+
+  @override
+  String get memberEmploymentType => 'Employment type';
+
+  @override
+  String memberEmploymentTypeLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'EMPLOYEE': 'Employee',
+      'FREELANCE': 'Freelance',
+      'CONTRACTOR': 'Contractor',
+      'other': 'Not set',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String memberDocumentTypeLabel(String type) {
+    String _temp0 = intl.Intl.selectLogic(type, {
+      'OFFER_LETTER': 'Offer letter',
+      'SALARY_SLIP': 'Salary slip',
+      'NDA': 'NDA',
+      'EMPLOYMENT_AGREEMENT': 'Employment agreement',
+      'OTHER': 'Document',
+      'other': '$type',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get memberSendDocument => 'Send document';
+
+  @override
+  String get memberPickDocumentType => 'Choose document type';
+
+  @override
+  String get memberPickTemplate => 'Choose template';
+
+  @override
+  String memberDocumentSent(String name) {
+    return 'Document sent to $name.';
+  }
+
+  @override
+  String get memberFilterTitle => 'Filter members';
+
+  @override
+  String get memberFilterApply => 'Apply filters';
+
+  @override
+  String get memberFilterClear => 'Clear all';
+
+  @override
+  String get memberActiveFilters => 'Active filters';
+
+  @override
+  String memberTasksAssigned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks assigned',
+      one: '1 task assigned',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String memberContentAuthored(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts',
+      one: '1 post',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String memberHoursLogged(String hours) {
+    return '$hours logged';
+  }
+
+  @override
+  String get hrTemplatesTitle => 'HR document templates';
+
+  @override
+  String get hrTemplatesBody =>
+      'Create templates for offer letters, salary slips, NDAs and employment agreements.';
+
+  @override
+  String get hrTemplatesEmpty => 'No HR templates yet';
 
   @override
   String get teamSearch => 'Search people, emails or roles';
@@ -6127,6 +5881,128 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teamStatClients => 'Clients';
 
   @override
+  String get agencyTabOverview => 'Overview';
+
+  @override
+  String get agencyBoardEyebrow => 'STUDIO COMMAND';
+
+  @override
+  String get agencyBoardTitle => 'Run the agency';
+
+  @override
+  String get agencyBoardSubtitle =>
+      'People, structure, and permissions — your creative control room.';
+
+  @override
+  String get agencyBoardPeople => 'People';
+
+  @override
+  String get agencyBoardStructure => 'Structure';
+
+  @override
+  String get agencyBoardAccess => 'Access';
+
+  @override
+  String get agencyBoardPlaybook => 'Playbook';
+
+  @override
+  String get agencyBoardOnTheFloor => 'On the floor';
+
+  @override
+  String get agencyBoardLaunchPad => 'Launch pad';
+
+  @override
+  String get agencyBoardNeedsAttention => 'Needs attention';
+
+  @override
+  String get agencyBoardOpenRoster => 'Open roster';
+
+  @override
+  String agencyBoardStaffLine(int staff, int clients) {
+    return '$staff staff · $clients clients';
+  }
+
+  @override
+  String agencyBoardUnassignedHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people without a department',
+      one: '1 person without a department',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agencyOverviewTitle => 'Your organisation at a glance';
+
+  @override
+  String get agencyUnassignedMembers => 'Not in a department';
+
+  @override
+  String get agencyAssignMember => 'Assign';
+
+  @override
+  String agencyPendingInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pending invitations',
+      one: '1 pending invitation',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get agencyQuickActions => 'Quick actions';
+
+  @override
+  String get agencyCustomAccess => 'Custom access';
+
+  @override
+  String get memberPositions => 'Departments & positions';
+
+  @override
+  String get memberPositionsEmpty => 'Not assigned to any department yet.';
+
+  @override
+  String get memberAddPosition => 'Add to department';
+
+  @override
+  String get memberPrimaryPosition => 'Primary';
+
+  @override
+  String get memberPickDepartment => 'Choose a department';
+
+  @override
+  String get memberPickPosition => 'Choose a position';
+
+  @override
+  String get memberNoPositionsInDepartment =>
+      'This department has no positions yet. Create one from the department page.';
+
+  @override
+  String get memberEditTitle => 'Edit job title';
+
+  @override
+  String get memberTitleHint => 'e.g. Creative director';
+
+  @override
+  String get memberPermissions => 'Direct permissions';
+
+  @override
+  String memberPermissionsSummary(int effective, int overrides) {
+    return '$effective effective · $overrides custom overrides';
+  }
+
+  @override
+  String get memberPermissionsReadOnly =>
+      'This member\'s permissions cannot be edited here.';
+
+  @override
+  String get memberSavePermissions => 'Save permission changes';
+
+  @override
   String get navTemplates => 'Templates';
 
   @override
@@ -6162,6 +6038,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'CONTENT': 'Content',
       'REPORT': 'Report',
       'MESSAGE': 'Message',
+      'OFFER_LETTER': 'Offer letter',
+      'SALARY_SLIP': 'Salary slip',
+      'NDA': 'NDA',
+      'EMPLOYMENT_AGREEMENT': 'Employment agreement',
       'other': '$type',
     });
     return '$_temp0';
@@ -6547,7 +6427,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String workflowStagesTooFew(int min) {
-    return 'Add at least $min stage(s)';
+    return 'Add at least $min stages';
   }
 
   @override
@@ -6566,6 +6446,52 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workflowStagesVersionNote =>
       'Changing the stages publishes a new version. Content already in progress keeps its version.';
+
+  @override
+  String get workflowStageApprovalRule => 'Approval rule';
+
+  @override
+  String get workflowStageRuleAny => 'Any one approver';
+
+  @override
+  String get workflowStageRuleAll => 'Everyone must approve';
+
+  @override
+  String get workflowStageRuleQuorum => 'Quorum (N of pool)';
+
+  @override
+  String get workflowStageQuorum => 'Approvals needed';
+
+  @override
+  String get workflowStageQuorumHint =>
+      'How many people from the pool must approve.';
+
+  @override
+  String get workflowStageRoles => 'Approver roles';
+
+  @override
+  String get workflowStageRolesHint =>
+      'Pick any access role. People with that role can approve this stage.';
+
+  @override
+  String get workflowStageRolesEmpty =>
+      'No roles available yet — create a role under Agency → Roles first.';
+
+  @override
+  String get workflowStagePeople => 'Named people';
+
+  @override
+  String get workflowStagePeopleHint =>
+      'Add specific people who can approve this stage.';
+
+  @override
+  String get workflowStagePeopleEmpty => 'No active team members to pick.';
+
+  @override
+  String get workflowStageAssigneesTitle => 'Stage assignees';
+
+  @override
+  String get workflowStageNoAssignees => 'No roles or people assigned yet.';
 
   @override
   String get workflowSlaField => 'Response time';
@@ -6695,17 +6621,443 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get storageTitle => 'Storage used';
+  String get agreementsCreatedToast => 'Agreement created';
 
   @override
-  String storageUsedOf(String used, String limit) {
-    return '$used of $limit';
+  String get agreementsDownload => 'Download';
+
+  @override
+  String get agreementsDownloadStarted => 'Opening agreement…';
+
+  @override
+  String get agreementsEmptyBody =>
+      'Create an NDA, MSA or SOW and upload the signed PDF when ready.';
+
+  @override
+  String get agreementsEmptyTitle => 'No agreements yet';
+
+  @override
+  String get agreementsEnd => 'End date';
+
+  @override
+  String get agreementsMarkSigned => 'Mark signed';
+
+  @override
+  String get agreementsNew => 'New agreement';
+
+  @override
+  String get agreementsNewHint =>
+      'Start a draft contract for this client. You can upload a PDF and collect a signature next.';
+
+  @override
+  String get agreementsPdfUploaded => 'PDF uploaded';
+
+  @override
+  String get agreementsSign => 'Sign';
+
+  @override
+  String get agreementsSignedToast => 'Agreement signed';
+
+  @override
+  String get agreementsSignerName => 'Full name';
+
+  @override
+  String get agreementsSignHint =>
+      'Type your full legal name to sign. A snapshot of the PDF is locked at signing time.';
+
+  @override
+  String get agreementsSignTitle => 'Sign agreement';
+
+  @override
+  String get agreementsStart => 'Start date';
+
+  @override
+  String get agreementsStatDraft => 'Drafts';
+
+  @override
+  String get agreementsStatSigned => 'Signed';
+
+  @override
+  String get agreementsStatTotal => 'Total';
+
+  @override
+  String get agreementsStatusActive => 'Active';
+
+  @override
+  String get agreementsStatusDraft => 'Draft';
+
+  @override
+  String get agreementsStatusExpired => 'Expired';
+
+  @override
+  String get agreementsStatusSent => 'Sent';
+
+  @override
+  String get agreementsStatusSigned => 'Signed';
+
+  @override
+  String get agreementsStatusVoid => 'Void';
+
+  @override
+  String get agreementsTitleLabel => 'Title';
+
+  @override
+  String get agreementsTypeLabel => 'Type';
+
+  @override
+  String get agreementsTypeMsa => 'MSA';
+
+  @override
+  String get agreementsTypeNda => 'NDA';
+
+  @override
+  String get agreementsTypeOther => 'Other';
+
+  @override
+  String get agreementsTypeSow => 'SOW';
+
+  @override
+  String get agreementsUploadPdf => 'Upload PDF';
+
+  @override
+  String get authGoogleButton => 'Continue with Google';
+
+  @override
+  String get authGoogleCancelled => 'Google sign-in was cancelled.';
+
+  @override
+  String get authGoogleInvalid => 'Google sign-in was rejected. Try again.';
+
+  @override
+  String get authGoogleNoAccount =>
+      'No account for that Google email. Create a workspace first.';
+
+  @override
+  String get authGoogleWorkspaceRequired =>
+      'Enter an agency name and workspace URL before continuing with Google.';
+
+  @override
+  String get authInviteAlreadyMember =>
+      'This account is already a member of the workspace. Sign in instead.';
+
+  @override
+  String get authInviteInvalid =>
+      'This invitation link is invalid, already used or expired. Ask the sender for a new one.';
+
+  @override
+  String get authInviteInvalidTitle => 'Invitation unavailable';
+
+  @override
+  String get authInvitePassword => 'Your password';
+
+  @override
+  String get authInviteSetPasswordHint =>
+      'Choose a password (12+ characters) to join.';
+
+  @override
+  String get authInviteSubmit => 'Accept invitation';
+
+  @override
+  String authInviteSubtitle(String email) {
+    return 'You were invited as $email.';
   }
 
   @override
-  String storageUsedUnlimited(String used) {
-    return '$used used';
+  String authInviteSubtitleExisting(String email) {
+    return 'Accept as $email.';
   }
+
+  @override
+  String authInviteTitle(String organization) {
+    return 'Join $organization';
+  }
+
+  @override
+  String get authInviteWrongPassword =>
+      'That password does not match the existing account for this email.';
+
+  @override
+  String get authOrEmail => 'or use email';
+
+  @override
+  String get calendarCreate => 'Create';
+
+  @override
+  String get calendarNewEventHint => 'Meeting, deadline or manual block';
+
+  @override
+  String get calendarPlanShoot => 'Plan shoot';
+
+  @override
+  String get calendarPlanShootHint => 'Shoot day with folders and tasks';
+
+  @override
+  String get calendarShootClient => 'Client';
+
+  @override
+  String get calendarShootCreateFolders => 'Create media folders';
+
+  @override
+  String get calendarShootCreateFoldersHint =>
+      'Raw / Selects / Finals / Deliverables under Shoots';
+
+  @override
+  String get calendarShootDesc =>
+      'Schedule a shoot day, optionally create media folders and checklist tasks.';
+
+  @override
+  String get calendarShootEnds => 'Ends';
+
+  @override
+  String get calendarShootHeading => 'Plan a shoot';
+
+  @override
+  String get calendarShootProject => 'Project';
+
+  @override
+  String get calendarShootStarts => 'Starts';
+
+  @override
+  String get calendarShootSubmit => 'Plan shoot';
+
+  @override
+  String get calendarShootTasks => 'Checklist tasks';
+
+  @override
+  String get calendarShootTasksHint => 'One task per line (needs a project)';
+
+  @override
+  String get calendarShootTitle => 'Shoot title';
+
+  @override
+  String get calendarShootTitleHint => 'e.g. Spring campaign on-location';
+
+  @override
+  String get clientManageCalendar => 'Calendar';
+
+  @override
+  String get clientManageCalendarBody => 'Schedule and deadlines';
+
+  @override
+  String get clientManageContent => 'Content';
+
+  @override
+  String get clientManageContentBody => 'Posts, captions and planner';
+
+  @override
+  String get clientManageGrid => 'Content grid';
+
+  @override
+  String get clientManageGridBody => 'Instagram-style feed planner';
+
+  @override
+  String get clientManageIntegrations => 'Integrations';
+
+  @override
+  String get clientManageIntegrationsBody => 'Connected accounts';
+
+  @override
+  String get clientTabAgreements => 'Agreements';
+
+  @override
+  String get contentCopyLink => 'Copy link';
+
+  @override
+  String get contentFieldHashtagsHint => '#brand #launch';
+
+  @override
+  String get contentLinkCopied => 'Post link copied';
+
+  @override
+  String get contentPlatformsHint =>
+      'Choose one or more networks for this post.';
+
+  @override
+  String get contentPlatformsSelect => 'Select platforms';
+
+  @override
+  String get contentReviewActions => 'Review decision';
+
+  @override
+  String get contentShare => 'Share';
+
+  @override
+  String get contentShareCopied => 'Share text copied';
+
+  @override
+  String contentShareText(String title, String client, String url) {
+    return '$title · $client\n$url';
+  }
+
+  @override
+  String get dashboardFocusClearSubtitle => 'Nothing urgent. Space to think.';
+
+  @override
+  String dashboardFocusSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things need you today.',
+      one: '1 thing needs you today.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get messagesCreateGroup => 'Create group';
+
+  @override
+  String get messagesDeleted => 'Message deleted';
+
+  @override
+  String get messagesGroupNameLabel => 'Group name';
+
+  @override
+  String get messagesGroupPickMembers => 'Pick at least one teammate';
+
+  @override
+  String messagesGroupSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get messagesNewPortalBody =>
+      'Start a chat with your agency team. They will see it in the client room.';
+
+  @override
+  String get messagesNoContacts => 'No people match that search';
+
+  @override
+  String get messagesSearchContacts => 'Search name or email';
+
+  @override
+  String get messagesTabClients => 'Clients';
+
+  @override
+  String get messagesTabGroup => 'Group';
+
+  @override
+  String get messagesTabTeam => 'Team';
+
+  @override
+  String get navMenu => 'Menu';
+
+  @override
+  String get portalFilesCta => 'Browse files';
+
+  @override
+  String get portalFilesEmpty => 'No files have been shared with you yet.';
+
+  @override
+  String get portalFilesTitle => 'Files';
+
+  @override
+  String get portalKpiFiles => 'Shared files';
+
+  @override
+  String portalKpiFilesCaption(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files',
+      one: '1 file',
+      zero: 'Nothing shared yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get portalKpiReports => 'Reach (30 days)';
+
+  @override
+  String get portalKpiReportsCaption => 'Across your connected channels';
+
+  @override
+  String get portalQuickFiles => 'Open files';
+
+  @override
+  String get portalQuickReports => 'View reports';
+
+  @override
+  String get portalReportsCta => 'View reports';
+
+  @override
+  String get portalReportsEmpty => 'No reports are ready yet.';
+
+  @override
+  String get portalReportsTitle => 'Reports';
+
+  @override
+  String get quickCreateClient => 'New client';
+
+  @override
+  String get quickCreateContent => 'New post';
+
+  @override
+  String get quickCreateEmpty =>
+      'You don\'t have permission to create anything yet.';
+
+  @override
+  String get quickCreateInvoice => 'New invoice';
+
+  @override
+  String get quickCreateLead => 'New lead';
+
+  @override
+  String get quickCreateProject => 'New project';
+
+  @override
+  String get quickCreateShoot => 'Plan shoot';
+
+  @override
+  String get quickCreateSubtitle =>
+      'Start something new without leaving your flow.';
+
+  @override
+  String get quickCreateTask => 'New task';
+
+  @override
+  String get quickCreateTitle => 'Create';
+
+  @override
+  String get storageClearSelection => 'Clear selection';
+
+  @override
+  String get storageDriveConnect => 'Connect Google Drive';
+
+  @override
+  String get storageDriveConnectFailed =>
+      'Could not start Google Drive connect.';
+
+  @override
+  String get storageDriveDisconnect => 'Disconnect';
+
+  @override
+  String get storageDriveDisconnected => 'Google Drive disconnected.';
+
+  @override
+  String get storageDriveDisconnectFailed =>
+      'Could not disconnect Google Drive.';
+
+  @override
+  String get storageDriveNotConfigured =>
+      'Ask your platform admin to set Google Drive OAuth credentials.';
+
+  @override
+  String get storageDriveTransferAll => 'Transfer all to Drive';
+
+  @override
+  String get storageDriveTransferFailed =>
+      'Could not start the Drive transfer.';
+
+  @override
+  String get storageDriveTransferStarted => 'Drive transfer started.';
 
   @override
   String storageFileCount(int count) {
@@ -6719,74 +7071,58 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get storageSettingsTitle => 'Storage';
+  String storageSelectedCount(int count) {
+    return '$count selected';
+  }
 
   @override
   String get storageSettingsBody => 'Usage, data sources, and Google Drive';
 
   @override
-  String get storageSourcesTitle => 'Data sources';
-
-  @override
-  String get storageSourcesBody =>
-      'Connect external libraries and manage where agency files live.';
-
-  @override
-  String get storageSourcePlatformBody =>
-      'Secure platform storage used across media, clients, and the portal.';
+  String get storageSettingsTitle => 'Storage';
 
   @override
   String get storageSourceDriveBody =>
       'Connect Google Drive to import files or transfer copies out.';
 
   @override
-  String get storageStatusConnected => 'Connected';
+  String get storageSourcePlatformBody =>
+      'Secure platform storage used across media, clients, and the portal.';
+
+  @override
+  String get storageSourcesBody =>
+      'Connect external libraries and manage where agency files live.';
+
+  @override
+  String get storageSourcesTitle => 'Data sources';
 
   @override
   String get storageStatusAvailable => 'Ready';
 
   @override
-  String get storageStatusPending => 'Connecting';
-
-  @override
-  String get storageStatusError => 'Error';
+  String get storageStatusConnected => 'Connected';
 
   @override
   String get storageStatusDisabled => 'Not configured';
 
   @override
-  String get storageDriveConnect => 'Connect Google Drive';
+  String get storageStatusError => 'Error';
 
   @override
-  String get storageDriveDisconnect => 'Disconnect';
+  String get storageStatusPending => 'Connecting';
 
   @override
-  String get storageDriveTransferAll => 'Transfer all to Drive';
+  String get storageTitle => 'Storage used';
 
   @override
-  String get storageDriveNotConfigured =>
-      'Ask your platform admin to set Google Drive OAuth credentials.';
+  String storageUsedOf(String used, String limit) {
+    return '$used of $limit';
+  }
 
   @override
-  String get storageDriveConnectFailed =>
-      'Could not start Google Drive connect.';
-
-  @override
-  String get storageDriveDisconnectFailed =>
-      'Could not disconnect Google Drive.';
-
-  @override
-  String get storageDriveDisconnected => 'Google Drive disconnected.';
-
-  @override
-  String get storageDriveTransferFailed =>
-      'Could not start the Drive transfer.';
-
-  @override
-  String get storageDriveTransferStarted => 'Drive transfer started.';
-
-  @override
-  String get storageZipSelect => 'Select files';
+  String storageUsedUnlimited(String used) {
+    return '$used used';
+  }
 
   @override
   String get storageZipDownload => 'Download ZIP';
@@ -6795,52 +7131,5 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageZipFailed => 'Could not build the ZIP.';
 
   @override
-  String storageSelectedCount(int count) {
-    return '$count selected';
-  }
-
-  @override
-  String get storageClearSelection => 'Clear selection';
-
-  @override
-  String get messagesDeleted => 'Message deleted';
-
-  @override
-  String get messagesGroupConversation => 'Group chat';
-
-  @override
-  String get messagesGroupNameLabel => 'Group name';
-
-  @override
-  String get agentTitle => 'AI Agent';
-
-  @override
-  String get agentNewSession => 'New session';
-
-  @override
-  String get agentMultiAgent => 'Multi-agent mode';
-
-  @override
-  String get agentUntitledSession => 'Untitled session';
-
-  @override
-  String agentToolsCount(int count) {
-    return '$count tools available';
-  }
-
-  @override
-  String get agentConfirm => 'Confirm';
-
-  @override
-  String get agentEmptyTitle => 'Ask the agent to work for you';
-
-  @override
-  String get agentEmptyBody =>
-      'Create a session to draft content, manage tasks, summarize data, and more — under your permissions.';
-
-  @override
-  String get agentComposerHint => 'Ask the agent…';
-
-  @override
-  String get agentSendFailed => 'Could not send your message.';
+  String get storageZipSelect => 'Select files';
 }

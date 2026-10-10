@@ -86,29 +86,44 @@ class AgentPendingAction {
   final DateTime expiresAt;
 }
 
-class CapabilityTool {
-  const CapabilityTool({
-    required this.id,
-    required this.module,
-    required this.name,
-    required this.description,
-    required this.riskTier,
-    required this.requiresConfirmation,
-  });
+/// Phase reported while the agent works, before answer text arrives.
+enum AgentStreamPhase { planning, working, writing }
 
-  factory CapabilityTool.fromJson(Json json) => CapabilityTool(
-        id: json.str('id'),
-        module: json.str('module'),
-        name: json.str('name'),
-        description: json.str('description'),
-        riskTier: json.str('riskTier'),
-        requiresConfirmation: json.flag('requiresConfirmation'),
-      );
+/// One event from `POST agent/sessions/:id/messages/stream` (SSE).
+sealed class AgentStreamEvent {
+  const AgentStreamEvent();
 
-  final String id;
-  final String module;
-  final String name;
-  final String description;
-  final String riskTier;
-  final bool requiresConfirmation;
+  /// Returns null for event types the UI does not render (plans, tool details).
+  static AgentStreamEvent? fromJson(Json json) => switch (json.str('type')) {
+        'status' => AgentStreamStatus(switch (json.str('phase')) {
+            'summarizing' => AgentStreamPhase.writing,
+            'executing' => AgentStreamPhase.working,
+            _ => AgentStreamPhase.planning,
+          }),
+        'tool.start' || 'tool.result' => const AgentStreamStatus(AgentStreamPhase.working),
+        'summary.delta' => AgentStreamDelta(json.str('text')),
+        'done' => AgentStreamDone(json.str('response')),
+        'error' => AgentStreamError(json.str('message')),
+        _ => null,
+      };
+}
+
+class AgentStreamStatus extends AgentStreamEvent {
+  const AgentStreamStatus(this.phase);
+  final AgentStreamPhase phase;
+}
+
+class AgentStreamDelta extends AgentStreamEvent {
+  const AgentStreamDelta(this.text);
+  final String text;
+}
+
+class AgentStreamDone extends AgentStreamEvent {
+  const AgentStreamDone(this.response);
+  final String response;
+}
+
+class AgentStreamError extends AgentStreamEvent {
+  const AgentStreamError(this.message);
+  final String message;
 }

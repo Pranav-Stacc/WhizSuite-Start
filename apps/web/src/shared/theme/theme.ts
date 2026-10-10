@@ -3,13 +3,15 @@ import {
   DEFAULT_THEME,
   THEME_COMPACT_DENSITY_FACTOR,
   ThemeStatusColors,
+  coerceProductDefaultTheme,
   contrastOn,
   isLightColor,
   themeSchema,
   type ThemeSettings,
 } from '@agency-os/contracts';
 
-export const THEME_COOKIE = 'ao_theme';
+/** Bumped when the product default palette changes so existing cookies pick up DEFAULT_THEME once. */
+export const THEME_COOKIE = 'ao_theme_v2';
 export const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function themeToVars(theme: ThemeSettings): Record<string, string> {
@@ -40,7 +42,7 @@ export function parseTheme(raw: string | undefined): ThemeSettings {
   if (!raw) return DEFAULT_THEME;
   try {
     const parsed = themeSchema.safeParse(JSON.parse(decodeURIComponent(raw)));
-    return parsed.success ? parsed.data : DEFAULT_THEME;
+    return parsed.success ? coerceProductDefaultTheme(parsed.data) : DEFAULT_THEME;
   } catch {
     return DEFAULT_THEME;
   }

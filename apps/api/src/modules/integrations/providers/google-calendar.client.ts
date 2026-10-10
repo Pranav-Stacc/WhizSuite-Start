@@ -53,7 +53,9 @@ export class GoogleCalendarClient {
     return this.requestTokens(body);
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<GoogleCalendarTokens> {
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<GoogleCalendarTokens> {
     const body = new URLSearchParams({
       refresh_token: refreshToken,
       client_id: this.clientId(),
@@ -143,7 +145,7 @@ export class GoogleCalendarClient {
       orderBy: 'startTime',
       maxResults: '250',
     });
-    const url = `${CALENDAR_API}/calendars/${encodeURIComponent(input.calendarId)}/events?${params}`;
+    const url = `${CALENDAR_API}/calendars/${encodeURIComponent(input.calendarId)}/events?${params.toString()}`;
     const response = await fetch(url, {
       headers: { authorization: `Bearer ${input.accessToken}` },
     });
@@ -162,7 +164,9 @@ export class GoogleCalendarClient {
     return json.items ?? [];
   }
 
-  private toGoogleEvent(event: GoogleCalendarEventPayload): Record<string, unknown> {
+  private toGoogleEvent(
+    event: GoogleCalendarEventPayload,
+  ): Record<string, unknown> {
     if (event.allDay) {
       const startDate = event.startsAt.slice(0, 10);
       const endDate = (event.endsAt ?? event.startsAt).slice(0, 10);
@@ -180,12 +184,16 @@ export class GoogleCalendarClient {
       end: {
         dateTime:
           event.endsAt ??
-          new Date(new Date(event.startsAt).getTime() + 60 * 60 * 1000).toISOString(),
+          new Date(
+            new Date(event.startsAt).getTime() + 60 * 60 * 1000,
+          ).toISOString(),
       },
     };
   }
 
-  private async requestTokens(body: URLSearchParams): Promise<GoogleCalendarTokens> {
+  private async requestTokens(
+    body: URLSearchParams,
+  ): Promise<GoogleCalendarTokens> {
     const response = await fetch(OAUTH_TOKEN, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },

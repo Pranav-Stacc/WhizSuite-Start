@@ -72,7 +72,7 @@ export async function AppShell({ session, children }: { session: Session; childr
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-[1600px] animate-fade-up px-4 pb-28 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
+      <main id="main" className="mx-auto max-w-[1600px] px-4 pb-28 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
         <ModuleTabs permissions={permissions} badges={badges} module={workspace.module} />
         {children}
       </main>

@@ -97,7 +97,13 @@ export const NAV_GROUPS: NavGroup[] = [
     desc: 'nav.group.automate.desc',
     icon: Zap,
     items: [
-      { href: '/agent', label: 'nav.agent', desc: 'nav.agent.desc', icon: Sparkles, permission: Permissions.AI_CHAT },
+      {
+        href: '/chat?whiz=1',
+        label: 'nav.agent',
+        desc: 'nav.agent.desc',
+        icon: Sparkles,
+        permission: Permissions.AI_CHAT,
+      },
       { href: '/automations', label: 'nav.automations', desc: 'nav.automations.desc', icon: Zap, permission: Permissions.AUTOMATIONS_MANAGE },
       { href: '/workflows', label: 'nav.workflows', desc: 'nav.workflows.desc', icon: Workflow, permission: Permissions.WORKFLOWS_MANAGE },
       { href: '/integrations', label: 'nav.integrations', desc: 'nav.integrations.desc', icon: Plug, permission: Permissions.INTEGRATIONS_MANAGE },

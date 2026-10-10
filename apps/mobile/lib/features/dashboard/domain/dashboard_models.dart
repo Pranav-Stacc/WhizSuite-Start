@@ -152,36 +152,6 @@ class InvoiceRef {
   }
 }
 
-class ClientRef {
-  const ClientRef({required this.id, required this.name, required this.status});
-
-  factory ClientRef.fromJson(Json json) => ClientRef(
-        id: json.str('id'),
-        name: json.strOrNull('displayName') ?? json.str('name'),
-        status: json.str('status', ClientStatuses.onboarding),
-      );
-
-  final String id;
-  final String name;
-  final String status;
-}
-
-class LeadRef {
-  const LeadRef({required this.id, required this.stage, required this.valueMinor, required this.currency});
-
-  factory LeadRef.fromJson(Json json) => LeadRef(
-        id: json.str('id'),
-        stage: json.str('stage', LeadStages.newValue),
-        valueMinor: json.integer('valueMinor'),
-        currency: json.str('currency'),
-      );
-
-  final String id;
-  final String stage;
-  final int valueMinor;
-  final String currency;
-}
-
 class CalendarEntry {
   const CalendarEntry({
     required this.id,
@@ -207,31 +177,4 @@ class CalendarEntry {
   final String title;
   final DateTime? startsAt;
   final bool allDay;
-}
-
-class ActivityEntry {
-  const ActivityEntry({
-    required this.id,
-    required this.entityType,
-    required this.entityId,
-    required this.summary,
-    this.actorId,
-    this.createdAt,
-  });
-
-  factory ActivityEntry.fromJson(Json json) => ActivityEntry(
-        id: json.str('id'),
-        actorId: json.strOrNull('actorId'),
-        entityType: json.str('entityType'),
-        entityId: json.str('entityId'),
-        summary: json.strOrNull('summary') ?? json.str('verb'),
-        createdAt: json.date('createdAt'),
-      );
-
-  final String id;
-  final String? actorId;
-  final String entityType;
-  final String entityId;
-  final String summary;
-  final DateTime? createdAt;
 }

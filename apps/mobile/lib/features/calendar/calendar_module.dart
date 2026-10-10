@@ -12,7 +12,7 @@ final calendarModule = FeatureModule(
       icon: Icons.calendar_month_outlined,
       selectedIcon: Icons.calendar_month,
       label: (l10n) => l10n.navCalendar,
-      anyOf: const [Permissions.projectsView],
+      anyOf: const [Permissions.calendarView],
       audiences: staffOnly,
       group: NavGroup.work,
       primary: true,

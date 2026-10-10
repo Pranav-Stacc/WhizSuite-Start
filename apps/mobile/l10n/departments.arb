@@ -31,5 +31,7 @@
   "departmentTeamName": "Team name",
   "departmentTeamNameHint": "e.g. Retail pod",
   "departmentTeamDescription": "Description (optional)",
-  "departmentTeamCreated": "Team created"
+  "departmentTeamCreated": "Team created",
+  "departmentHead": "Head",
+  "departmentPositionNameHint": "e.g. Senior designer"
 }

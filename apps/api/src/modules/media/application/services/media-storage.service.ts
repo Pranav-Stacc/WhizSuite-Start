@@ -19,9 +19,7 @@ export class MediaStorageService {
       this.billing.limitMax(organizationId, STORAGE_BYTES_ENTITLEMENT),
     ]);
     const ratio =
-      limitBytes && limitBytes > 0
-        ? Math.min(1, usedBytes / limitBytes)
-        : 0;
+      limitBytes && limitBytes > 0 ? Math.min(1, usedBytes / limitBytes) : 0;
     return { usedBytes, limitBytes, assetCount, ratio };
   }
 

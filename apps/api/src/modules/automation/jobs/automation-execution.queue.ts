@@ -20,7 +20,8 @@ export class AutomationExecutionQueue {
 
   enqueue(job: AutomationExecutionJob) {
     return this.queue.add('execute', job, {
-      jobId: `automation:${job.runId}`,
+      // BullMQ custom job ids cannot contain ':' (redis key delimiter).
+      jobId: `automation-${job.runId}`,
       removeOnComplete: 200,
       removeOnFail: 200,
     });

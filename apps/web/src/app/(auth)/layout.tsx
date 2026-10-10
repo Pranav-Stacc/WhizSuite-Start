@@ -17,7 +17,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="max-w-md">
             <h2 className="display text-balance text-3xl text-foreground xl:text-4xl">{t('auth.hero.title')}</h2>
             <p className="mt-5 text-sm leading-relaxed text-muted">{t('auth.hero.body')}</p>
-            <ul className="mt-10 space-y-0 border border-border-soft">
+            <ul className="mt-10 space-y-0 overflow-hidden rounded-lg border border-border-soft bg-surface">
               {POINTS.map((key) => (
                 <li key={key} className="border-b border-border-soft px-4 py-3 text-sm text-foreground last:border-b-0">
                   {t(key)}
@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </aside>
 
         <main id="main" className="flex items-center justify-center bg-surface/40 px-4 py-8 sm:p-10">
-          <div className="w-full max-w-md animate-fade-up">
+          <div className="card-surface w-full max-w-md animate-fade-up p-6 sm:p-8">
             <Link href="/" className="mb-8 inline-block lg:hidden">
               <Logo />
             </Link>

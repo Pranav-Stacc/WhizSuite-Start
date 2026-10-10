@@ -5,17 +5,25 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../roles/application/roles_controller.dart';
+import '../../team/application/team_controller.dart';
+import '../../team/domain/member.dart';
 import '../application/workflows_controller.dart';
 import '../domain/workflow.dart';
 import 'workflow_stages_editor.dart';
 
 /// Create (when [workflow] is null) or edit a workflow. Resolves to true when saved.
-Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? workflow}) {
+Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? workflow}) async {
   final l10n = AppLocalizations.of(context);
+  final roles = await ref.read(assignableRolesProvider.future);
+  final members = (await ref.read(membersProvider.future))
+      .where((member) => member.status == MemberStatuses.active)
+      .toList();
+  if (!context.mounted) return false;
   final name = TextEditingController(text: workflow?.name);
-  final sla = TextEditingController(text: workflow?.slaHours?.toString());
-  var stages = workflow?.stages ?? const <String>[];
-  var requiresClientApproval = workflow?.requiresClientApproval ?? false;
+  final sla = TextEditingController(text: workflow?.slaHours?.toString() ?? (workflow == null ? '48' : ''));
+  var stages = workflow?.stages ?? const <WorkflowStage>[];
+  var requiresClientApproval = workflow?.requiresClientApproval ?? true;
   var active = workflow?.active ?? true;
   final actions = ref.read(workflowsActionsProvider);
 
@@ -38,7 +46,12 @@ Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? wo
         maxLength: resourceNameMaxLength,
         validator: Validators(l10n).minLength(resourceNameMinLength),
       ),
-      WorkflowStagesEditor(initial: stages, onChanged: (value) => stages = value),
+      WorkflowStagesEditor(
+        initial: stages,
+        roles: roles,
+        members: members,
+        onChanged: (value) => stages = value,
+      ),
       if (workflow != null && workflow.stages.isNotEmpty)
         Text(l10n.workflowStagesVersionNote, style: Theme.of(context).textTheme.bodySmall),
       TextFormField(
@@ -69,7 +82,7 @@ Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? wo
     onSubmit: () async {
       final input = WorkflowInput(
         name: name.text.trim(),
-        stages: stages.map((s) => s.trim()).toList(),
+        stages: stages,
         slaHours: parseWorkflowSla(sla.text).hours,
         requiresClientApproval: requiresClientApproval,
         active: active,

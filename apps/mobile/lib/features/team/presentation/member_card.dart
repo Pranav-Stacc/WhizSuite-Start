@@ -10,13 +10,14 @@ import '../domain/member.dart';
 import 'team_labels.dart';
 
 class MemberCard extends StatelessWidget {
-  const MemberCard({required this.member, required this.onTap, this.isYou = false, super.key});
+  const MemberCard({required this.member, required this.onTap, this.isYou = false, this.compact = false, super.key});
 
   static const _previewRoles = 3;
 
   final Member member;
   final VoidCallback onTap;
   final bool isYou;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -65,8 +66,13 @@ class MemberCard extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        [?member.title, member.email].join(' · '),
-                        maxLines: 1,
+                        [
+                          ?member.title,
+                          if (member.primaryPosition != null)
+                            '${member.primaryPosition!.name} · ${member.primaryPosition!.departmentName}',
+                          member.email,
+                        ].join(' · '),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: text.bodySmall?.copyWith(color: tokens.muted),
                       ),
@@ -83,29 +89,33 @@ class MemberCard extends StatelessWidget {
               runSpacing: tokens.xs,
               children: [
                 StatusBadge(label: typeLabel, tone: membershipTypeTone(member.membershipType), dense: true),
+                if (member.overrideCount > 0)
+                  TagChip(label: l10n.agencyCustomAccess, icon: Icons.tune),
                 for (final role in roles)
                   TagChip(label: role.name, icon: role.isSystem ? Icons.lock_outline : Icons.shield_outlined),
                 if (member.roles.length > roles.length)
                   TagChip(label: l10n.rolePermissionsMore(member.roles.length - roles.length)),
               ],
             ),
-            SizedBox(height: tokens.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _Stat(
-                    label: l10n.teamRoles,
-                    value: member.roles.isEmpty ? l10n.valueUnknown : '${member.roles.length}',
+            if (!compact) ...[
+              SizedBox(height: tokens.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: _Stat(
+                      label: l10n.teamRoles,
+                      value: member.roles.isEmpty ? l10n.valueUnknown : '${member.roles.length}',
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _Stat(
-                    label: l10n.teamJoined,
-                    value: joined == null ? l10n.valueUnknown : formats.shortDate(joined),
+                  Expanded(
+                    child: _Stat(
+                      label: l10n.teamJoined,
+                      value: joined == null ? l10n.valueUnknown : formats.shortDate(joined),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -85,8 +85,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final validators = Validators(l10n);
     final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
     final googleEnabled = ref.watch(appConfigProvider).googleSignInEnabled;
     final busy = _submitting || _googleSubmitting;
+    final fieldGap = SizedBox(height: tokens.lg);
+
     return AuthLayout(
       title: l10n.authLoginTitle,
       subtitle: l10n.authLoginSubtitle,
@@ -99,21 +102,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             if (googleEnabled) ...[
               OutlinedButton.icon(
                 onPressed: busy ? null : _submitGoogle,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: tokens.fg,
+                  side: BorderSide(color: tokens.border),
+                  backgroundColor: tokens.surface.withValues(alpha: 0.55),
+                  minimumSize: const Size(64, 52),
+                  textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
                 icon: _googleSubmitting
                     ? SizedBox.square(
                         dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: tokens.primary),
                       )
-                    : const Icon(Icons.g_mobiledata_rounded),
+                    : Icon(Icons.g_mobiledata_rounded, size: 22, color: tokens.secondary),
                 label: Text(l10n.authGoogleButton),
               ),
-              SizedBox(height: tokens.lg),
-              Text(
-                l10n.authOrEmail,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              SizedBox(height: tokens.lg),
+              SizedBox(height: tokens.xl),
+              _AuthOrDivider(label: l10n.authOrEmail),
+              SizedBox(height: tokens.xl),
             ],
             TextFormField(
               controller: _email,
@@ -121,25 +127,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               autofillHints: const [AutofillHints.email, AutofillHints.username],
               textInputAction: TextInputAction.next,
               validator: validators.email,
-              decoration: InputDecoration(labelText: l10n.authEmail, hintText: l10n.authEmailPlaceholder),
+              style: text.bodyLarge?.copyWith(color: tokens.fg),
+              decoration: InputDecoration(
+                labelText: l10n.authEmail,
+                hintText: l10n.authEmailPlaceholder,
+                contentPadding: EdgeInsets.symmetric(horizontal: tokens.lg, vertical: tokens.md + 2),
+              ),
             ),
-            SizedBox(height: tokens.lg),
+            fieldGap,
             PasswordField(
               controller: _password,
               label: l10n.authPassword,
               validator: validators.required,
               onSubmitted: (_) => _submit(),
             ),
-            SizedBox(height: tokens.xl),
-            PrimaryButton(label: l10n.authLoginSubmit, loading: _submitting, onPressed: busy ? null : _submit, icon: Icons.arrow_forward),
+            SizedBox(height: tokens.xl + tokens.sm),
+            PrimaryButton(
+              label: l10n.authLoginSubmit,
+              loading: _submitting,
+              onPressed: busy ? null : _submit,
+              icon: Icons.arrow_forward_rounded,
+            ),
           ],
         ),
       ),
       footer: AuthSwitchLink(
         prompt: l10n.authNoAccount,
         action: l10n.authCreateWorkspace,
-        onPressed: () => context.go(AppRoutes.register),
+        onPressed: () => context.push(AppRoutes.register),
       ),
+    );
+  }
+}
+
+/// Hairline rule with centered label — quieter than a card divider.
+class _AuthOrDivider extends StatelessWidget {
+  const _AuthOrDivider({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: tokens.muted,
+          letterSpacing: 1.4,
+          fontWeight: FontWeight.w500,
+        );
+    return Row(
+      children: [
+        Expanded(child: Divider(color: tokens.border, height: 1)),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: tokens.md),
+          child: Text(label.toUpperCase(), style: style),
+        ),
+        Expanded(child: Divider(color: tokens.border, height: 1)),
+      ],
     );
   }
 }

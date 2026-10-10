@@ -48,7 +48,10 @@ const REACTION_SELECT = {
 } satisfies Prisma.ChatReactionSelect;
 
 const MESSAGE_INCLUDE = {
-  attachments: { orderBy: { sortOrder: 'asc' as const }, select: ATTACHMENT_SELECT },
+  attachments: {
+    orderBy: { sortOrder: 'asc' as const },
+    select: ATTACHMENT_SELECT,
+  },
   mentions: { select: MENTION_SELECT },
   reactions: { select: REACTION_SELECT },
 } satisfies Prisma.ChatMessageInclude;
@@ -77,7 +80,9 @@ export type ChatMemberRecord = Prisma.ChatRoomMemberGetPayload<{
 export type ChatMessageRecord = Prisma.ChatMessageGetPayload<{
   include: typeof MESSAGE_INCLUDE;
 }>;
-export type ChatRoomRecord = Prisma.ChatRoomGetPayload<{ select: typeof ROOM_SELECT }>;
+export type ChatRoomRecord = Prisma.ChatRoomGetPayload<{
+  select: typeof ROOM_SELECT;
+}>;
 
 export interface MemberSeed {
   userId: string;
@@ -88,7 +93,8 @@ export interface MemberSeed {
 }
 
 export interface MessageCreateInput {
-  senderId: string;
+  /** Null for system / agent replies (e.g. @Whiz). */
+  senderId: string | null;
   clientMessageId?: string;
   type: string;
   body: string;
@@ -121,7 +127,12 @@ export class ChatRepository {
 
   listRoomsForUser(organizationId: string, userId: string, limit: number) {
     return this.prisma.chatRoomMember.findMany({
-      where: { organizationId, userId, leftAt: null, room: { deletedAt: null } },
+      where: {
+        organizationId,
+        userId,
+        leftAt: null,
+        room: { deletedAt: null },
+      },
       orderBy: [
         { pinnedAt: { sort: 'desc', nulls: 'last' } },
         { room: { lastMessageAt: { sort: 'desc', nulls: 'last' } } },
@@ -455,13 +466,20 @@ export class ChatRepository {
         },
       });
 
-      await tx.chatRoomMember.updateMany({
-        where: { organizationId, roomId, userId: input.senderId, leftAt: null },
-        data: {
-          lastReadMessageId: message.id,
-          lastReadAt: message.createdAt,
-        },
-      });
+      if (input.senderId) {
+        await tx.chatRoomMember.updateMany({
+          where: {
+            organizationId,
+            roomId,
+            userId: input.senderId,
+            leftAt: null,
+          },
+          data: {
+            lastReadMessageId: message.id,
+            lastReadAt: message.createdAt,
+          },
+        });
+      }
 
       return message;
     });

@@ -125,8 +125,7 @@ export class ApprovalsRepository {
             order: index + 1,
             name: step.name,
             rule: step.rule,
-            approverSpec:
-              toInputJson(step.approverSpec) ?? Prisma.JsonNull,
+            approverSpec: toInputJson(step.approverSpec) ?? Prisma.JsonNull,
             status: 'PENDING',
           })),
         },

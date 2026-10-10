@@ -73,7 +73,8 @@ class FeatureModule {
   final List<RouteBase> routes;
 }
 
-/// Route without a transition, for top-level destinations switched from navigation.
+/// Top-level shell destination (no transition). Use [GoRouter.go] for tab/rail switches;
+/// use [GoRouter.push] when opening from another screen so back can pop.
 GoRoute destinationRoute(String path, Widget Function(GoRouterState state) build, {List<RouteBase> routes = const []}) =>
     GoRoute(
       path: path,
@@ -81,6 +82,6 @@ GoRoute destinationRoute(String path, Widget Function(GoRouterState state) build
       routes: routes,
     );
 
-/// Child route with the platform's default push transition.
+/// Nested detail/create/edit route. Always open with [GoRouter.push] (not [GoRouter.go]).
 GoRoute childRoute(String path, Widget Function(GoRouterState state) build, {List<RouteBase> routes = const []}) =>
     GoRoute(path: path, builder: (context, state) => build(state), routes: routes);

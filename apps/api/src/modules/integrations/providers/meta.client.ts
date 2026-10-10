@@ -52,9 +52,9 @@ export class MetaClient {
   isConfigured(): boolean {
     return Boolean(
       this.config.get('META_APP_ID', { infer: true }) &&
-        this.config.get('META_APP_SECRET', { infer: true }) &&
-        this.config.get('META_REDIRECT_URI', { infer: true }) &&
-        this.config.get('META_LOGIN_CONFIG_ID', { infer: true }),
+      this.config.get('META_APP_SECRET', { infer: true }) &&
+      this.config.get('META_REDIRECT_URI', { infer: true }) &&
+      this.config.get('META_LOGIN_CONFIG_ID', { infer: true }),
     );
   }
 
@@ -220,7 +220,9 @@ export class MetaClient {
   async listLinkedAccounts(tokens: MetaTokenSet): Promise<MetaLinkedAccount[]> {
     const fromAccounts = await this.listMeAccounts(tokens.accessToken);
     if (fromAccounts.length > 0) {
-      this.logger.log(`Meta linked accounts via /me/accounts: ${fromAccounts.length}`);
+      this.logger.log(
+        `Meta linked accounts via /me/accounts: ${fromAccounts.length}`,
+      );
       return fromAccounts;
     }
 
@@ -273,7 +275,9 @@ export class MetaClient {
     return [];
   }
 
-  private async listMeAccounts(accessToken: string): Promise<MetaLinkedAccount[]> {
+  private async listMeAccounts(
+    accessToken: string,
+  ): Promise<MetaLinkedAccount[]> {
     const fields =
       'id,name,access_token,instagram_business_account{id,username,name}';
     const params = this.withAuth(accessToken, { fields });
@@ -490,7 +494,8 @@ export class MetaClient {
       const existing = byId.get(page.pageId);
       if (
         !existing ||
-        (!existing.instagramBusinessAccountId && page.instagramBusinessAccountId)
+        (!existing.instagramBusinessAccountId &&
+          page.instagramBusinessAccountId)
       ) {
         byId.set(page.pageId, page);
       }
@@ -611,7 +616,9 @@ export class MetaClient {
     const text = await response.text();
     if (!response.ok) {
       this.logger.warn(`Meta IG media container failed: ${text}`);
-      throw new Error(`Instagram media container failed: ${text.slice(0, 300)}`);
+      throw new Error(
+        `Instagram media container failed: ${text.slice(0, 300)}`,
+      );
     }
     const json = JSON.parse(text) as { id?: string };
     if (!json.id) throw new Error('Instagram media container returned no id');
@@ -632,7 +639,9 @@ export class MetaClient {
       const text = await response.text();
       if (!response.ok) {
         this.logger.warn(`Meta IG container status failed: ${text}`);
-        throw new Error(`Instagram container status failed: ${text.slice(0, 300)}`);
+        throw new Error(
+          `Instagram container status failed: ${text.slice(0, 300)}`,
+        );
       }
       const json = JSON.parse(text) as {
         status_code?: string;
@@ -710,7 +719,9 @@ export class MetaClient {
       const response = await fetch(url, { method: 'DELETE' });
       if (!response.ok) {
         const text = await response.text();
-        this.logger.warn(`Meta revoke permissions failed: ${text.slice(0, 200)}`);
+        this.logger.warn(
+          `Meta revoke permissions failed: ${text.slice(0, 200)}`,
+        );
       }
     } catch (error) {
       this.logger.warn(

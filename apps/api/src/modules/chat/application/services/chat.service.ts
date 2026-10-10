@@ -1,10 +1,18 @@
-﻿import { HttpStatus, Injectable } from '@nestjs/common';
+﻿import {
+  forwardRef,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CHAT_PREVIEW_MAX_LENGTH,
   DomainEventTypes,
   ErrorCodes,
   RealtimeEvents,
+  WHIZ_AGENT_DISPLAY,
+  WHIZ_AGENT_TARGET_ID,
   type ChatAttachmentDto,
   type ChatLinkPreviewDto,
   type ChatMemberDto,
@@ -18,12 +26,15 @@ import {
 } from '@agency-os/contracts';
 import type { Prisma } from '@prisma/client';
 import type { AppConfig } from '../../../../shared/config/app.config';
+import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
 import {
   notFound,
   problem,
 } from '../../../../shared/errors/problem-details.exception';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
+import { AgentRunService } from '../../../agent/application/services/agent-run.service';
+import { AgentSessionService } from '../../../agent/application/services/agent-session.service';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { RealtimeService } from '../../../realtime/application/services/realtime.service';
 import { chatRoomChannel } from '../../../realtime/application/ports/realtime.port';
@@ -49,6 +60,8 @@ import type {
 const ENTITY_ROOM = 'chatRoom';
 const ENTITY_MESSAGE = 'chatMessage';
 
+const WHIZ_BODY_MENTION = /(?:^|[\s([{])@whiz\b/i;
+
 function iso(date: Date | null | undefined): string | null {
   return date ? date.toISOString() : null;
 }
@@ -63,10 +76,9 @@ function previewOf(body: string, hasAttachments: boolean): string {
   return hasAttachments ? 'ðŸ“Ž Attachment' : '';
 }
 
-function capabilitiesFor(role: ChatMemberRole): Omit<
-  MemberSeed,
-  'userId' | 'role'
-> {
+function capabilitiesFor(
+  role: ChatMemberRole,
+): Omit<MemberSeed, 'userId' | 'role'> {
   switch (role) {
     case 'OWNER':
     case 'ADMIN':
@@ -85,7 +97,8 @@ function toMemberDto(row: ChatMemberRecord): ChatMemberDto {
     canPost: row.canPost,
     canAddMembers: row.canAddMembers,
     canManage: row.canManage,
-    notificationLevel: row.notificationLevel as ChatMemberDto['notificationLevel'],
+    notificationLevel:
+      row.notificationLevel as ChatMemberDto['notificationLevel'],
     mutedUntil: iso(row.mutedUntil),
     lastReadMessageId: row.lastReadMessageId,
     lastReadAt: iso(row.lastReadAt),
@@ -143,19 +156,25 @@ function toReactions(
   return [...map.values()];
 }
 
-function parseLinkPreview(value: Prisma.JsonValue | null): ChatLinkPreviewDto | null {
+function parseLinkPreview(
+  value: Prisma.JsonValue | null,
+): ChatLinkPreviewDto | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const url = value.url;
   if (typeof url !== 'string' || !url) return null;
   return {
     url,
     title: typeof value.title === 'string' ? value.title : null,
-    description: typeof value.description === 'string' ? value.description : null,
+    description:
+      typeof value.description === 'string' ? value.description : null,
     imageUrl: typeof value.imageUrl === 'string' ? value.imageUrl : null,
   };
 }
 
-function toMessageDto(row: ChatMessageRecord, viewerId: string): ChatMessageDto {
+function toMessageDto(
+  row: ChatMessageRecord,
+  viewerId: string,
+): ChatMessageDto {
   const linkPreview = parseLinkPreview(row.linkPreview);
   return {
     id: row.id,
@@ -177,12 +196,18 @@ function toMessageDto(row: ChatMessageRecord, viewerId: string): ChatMessageDto 
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     private readonly repository: ChatRepository,
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
     private readonly realtime: RealtimeService,
     private readonly config: ConfigService<AppConfig, true>,
+    @Inject(forwardRef(() => AgentSessionService))
+    private readonly agentSessions: AgentSessionService,
+    @Inject(forwardRef(() => AgentRunService))
+    private readonly agentRuns: AgentRunService,
   ) {}
 
   private roomLimit() {
@@ -254,7 +279,10 @@ export class ChatService {
     };
   }
 
-  async listRooms(organizationId: string, userId: string): Promise<ChatRoomDto[]> {
+  async listRooms(
+    organizationId: string,
+    userId: string,
+  ): Promise<ChatRoomDto[]> {
     const rows = await this.repository.listRoomsForUser(
       organizationId,
       userId,
@@ -262,7 +290,10 @@ export class ChatService {
     );
     const rooms: ChatRoomDto[] = [];
     for (const row of rows) {
-      if (row.room.clientId && !TenantContext.canAccessClient(row.room.clientId)) {
+      if (
+        row.room.clientId &&
+        !TenantContext.canAccessClient(row.room.clientId)
+      ) {
         continue;
       }
       rooms.push(await this.toRoomDto(organizationId, row.room, row));
@@ -271,7 +302,10 @@ export class ChatService {
   }
 
   async unreadTotal(organizationId: string, userId: string): Promise<number> {
-    const rows = await this.repository.totalUnreadForUser(organizationId, userId);
+    const rows = await this.repository.totalUnreadForUser(
+      organizationId,
+      userId,
+    );
     return Number(rows[0]?.count ?? 0);
   }
 
@@ -436,7 +470,11 @@ export class ChatService {
       actorId,
     );
     if (!membership.canManage) {
-      throw problem(HttpStatus.FORBIDDEN, 'Cannot manage room', ErrorCodes.FORBIDDEN);
+      throw problem(
+        HttpStatus.FORBIDDEN,
+        'Cannot manage room',
+        ErrorCodes.FORBIDDEN,
+      );
     }
     await this.repository.updateRoom(organizationId, roomId, {
       name: input.name,
@@ -480,10 +518,18 @@ export class ChatService {
       actorId,
     );
     if (room.type === 'DM') {
-      throw problem(HttpStatus.BAD_REQUEST, 'Cannot add members to DM', ErrorCodes.VALIDATION_FAILED);
+      throw problem(
+        HttpStatus.BAD_REQUEST,
+        'Cannot add members to DM',
+        ErrorCodes.VALIDATION_FAILED,
+      );
     }
     if (!membership.canAddMembers) {
-      throw problem(HttpStatus.FORBIDDEN, 'Cannot add members', ErrorCodes.FORBIDDEN);
+      throw problem(
+        HttpStatus.FORBIDDEN,
+        'Cannot add members',
+        ErrorCodes.FORBIDDEN,
+      );
     }
     const role = input.role ?? 'MEMBER';
     await this.repository.addMembers(
@@ -558,28 +604,37 @@ export class ChatService {
         input.canAddMembers !== undefined ||
         input.canManage !== undefined)
     ) {
-      throw problem(HttpStatus.FORBIDDEN, 'Cannot manage member', ErrorCodes.FORBIDDEN);
+      throw problem(
+        HttpStatus.FORBIDDEN,
+        'Cannot manage member',
+        ErrorCodes.FORBIDDEN,
+      );
     }
 
-    await this.repository.updateMembership(organizationId, roomId, targetUserId, {
-      notificationLevel: input.notificationLevel,
-      mutedUntil:
-        input.mutedUntil === undefined
-          ? undefined
-          : input.mutedUntil
-            ? new Date(input.mutedUntil)
-            : null,
-      pinnedAt:
-        input.pinned === undefined
-          ? undefined
-          : input.pinned
-            ? new Date()
-            : null,
-      role: input.role,
-      canPost: input.canPost,
-      canAddMembers: input.canAddMembers,
-      canManage: input.canManage,
-    });
+    await this.repository.updateMembership(
+      organizationId,
+      roomId,
+      targetUserId,
+      {
+        notificationLevel: input.notificationLevel,
+        mutedUntil:
+          input.mutedUntil === undefined
+            ? undefined
+            : input.mutedUntil
+              ? new Date(input.mutedUntil)
+              : null,
+        pinnedAt:
+          input.pinned === undefined
+            ? undefined
+            : input.pinned
+              ? new Date()
+              : null,
+        role: input.role,
+        canPost: input.canPost,
+        canAddMembers: input.canAddMembers,
+        canManage: input.canManage,
+      },
+    );
 
     const updated = await this.repository.findMembership(
       organizationId,
@@ -617,10 +672,11 @@ export class ChatService {
 
   async sendMessage(
     organizationId: string,
-    actorId: string,
+    user: AuthenticatedUser,
     roomId: string,
     input: SendMessageDto,
   ): Promise<ChatMessageDto> {
+    const actorId = user.userId;
     const { membership } = await this.requireMembership(
       organizationId,
       roomId,
@@ -653,7 +709,9 @@ export class ChatService {
       {
         senderId: actorId,
         clientMessageId: input.clientMessageId,
-        type: input.type ?? (hasAttachments && !input.body.trim() ? 'MEDIA' : 'TEXT'),
+        type:
+          input.type ??
+          (hasAttachments && !input.body.trim() ? 'MEDIA' : 'TEXT'),
         body: input.body,
         replyToId: input.replyToId,
         linkPreview: input.linkPreview
@@ -729,7 +787,139 @@ export class ChatService {
       after: { roomId, type: message.type },
     });
 
+    if (this.mentionsWhiz(input)) {
+      void this.invokeWhizInRoom(organizationId, user, roomId, dto).catch(
+        (error: unknown) => {
+          this.logger.error(
+            `Whiz chat invoke failed room=${roomId} message=${dto.id}`,
+            error instanceof Error ? error.stack : String(error),
+          );
+        },
+      );
+    }
+
     return dto;
+  }
+
+  private mentionsWhiz(input: SendMessageDto): boolean {
+    const mentions = input.mentions ?? [];
+    if (
+      mentions.some(
+        (m) =>
+          m.type === 'AGENT' ||
+          m.targetId === WHIZ_AGENT_TARGET_ID ||
+          m.displayText.toLowerCase() === WHIZ_AGENT_DISPLAY.toLowerCase(),
+      )
+    ) {
+      return true;
+    }
+    return WHIZ_BODY_MENTION.test(input.body);
+  }
+
+  /**
+   * Runs the org agent for an @Whiz mention and posts the reply into the same room.
+   */
+  private async invokeWhizInRoom(
+    organizationId: string,
+    user: AuthenticatedUser,
+    roomId: string,
+    trigger: ChatMessageDto,
+  ): Promise<void> {
+    const sessionTitle = `Chat room ${roomId}`;
+    const session = await this.agentSessions.getOrCreateSession(
+      organizationId,
+      user.userId,
+      sessionTitle,
+    );
+
+    const members = await this.repository.listActiveMemberUserIds(
+      organizationId,
+      roomId,
+    );
+    const memberHint = members
+      .map((m) => m.userId)
+      .slice(0, 20)
+      .join(', ');
+
+    const prompt = [
+      'You are Whiz, mentioned with @Whiz in a team chat room.',
+      'Use available tools to fulfill the request (clients, tasks, content, calendar, reminders, chat, etc.).',
+      'Prefer executing tools when intent is clear. Use exact tool input field names.',
+      'Reply concisely in plain text suitable for chat — no markdown fences.',
+      `Organization context: roomId=${roomId}; memberUserIds=[${memberHint}]`,
+      `Trigger message ID: ${trigger.id}`,
+      trigger.replyToId ? `In reply to message: ${trigger.replyToId}` : '',
+      `User request: ${trigger.body}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    let replyBody: string;
+    try {
+      const result = await this.agentRuns.sendMessage(
+        organizationId,
+        user,
+        session.id,
+        { message: prompt, multiAgent: true },
+      );
+      replyBody =
+        result.response?.trim() ||
+        'I could not complete that request. Try again or open the Agent screen.';
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Whiz agent run failed room=${roomId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      replyBody =
+        'Whiz could not complete that right now. Try again or open the Agent screen.';
+    }
+
+    const message = await this.repository.createMessage(
+      organizationId,
+      roomId,
+      {
+        senderId: null,
+        type: 'SYSTEM',
+        body: replyBody,
+        replyToId: trigger.id,
+      },
+      previewOf(replyBody, false),
+    );
+
+    const dto = toMessageDto(message, user.userId);
+    this.realtime.publishToRoom(
+      chatRoomChannel(organizationId, roomId),
+      RealtimeEvents.CHAT_MESSAGE_CREATED,
+      dto,
+    );
+
+    const recipientIds = members.map((m) => m.userId);
+
+    await this.outbox.write({
+      type: DomainEventTypes.CHAT_MESSAGE_CREATED,
+      version: 1,
+      organizationId,
+      payload: {
+        roomId,
+        messageId: message.id,
+        senderId: WHIZ_AGENT_TARGET_ID,
+        preview: previewOf(replyBody, false),
+        recipientIds,
+        mentionedUserIds: [] as string[],
+      },
+      actor: { id: user.userId, type: 'user' },
+    });
+
+    await this.audit.record({
+      organizationId,
+      actorId: user.userId,
+      actorType: 'user',
+      action: 'chat/messages.whiz_reply',
+      entityType: ENTITY_MESSAGE,
+      entityId: message.id,
+      after: { roomId, type: message.type, triggerMessageId: trigger.id },
+    });
   }
 
   async editMessage(
@@ -747,7 +937,11 @@ export class ChatService {
     );
     if (!existing || existing.deletedAt) throw notFound();
     if (existing.senderId !== actorId) {
-      throw problem(HttpStatus.FORBIDDEN, 'Cannot edit message', ErrorCodes.FORBIDDEN);
+      throw problem(
+        HttpStatus.FORBIDDEN,
+        'Cannot edit message',
+        ErrorCodes.FORBIDDEN,
+      );
     }
     await this.repository.updateMessageBody(
       organizationId,

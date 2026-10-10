@@ -1,6 +1,9 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Permissions, type CapabilityExecuteRequest } from '@agency-os/contracts';
+import {
+  Permissions,
+  type CapabilityExecuteRequest,
+} from '@agency-os/contracts';
 import {
   CurrentUser,
   type AuthenticatedUser,

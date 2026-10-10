@@ -15,6 +15,7 @@ import {
   type CapabilityContext,
 } from './capability-handlers.service';
 import { CapabilityRegistryService } from './capability-registry.service';
+import { normalizeCapabilityInput } from '../utils/normalize-capability-input';
 
 export interface ExecuteCapabilityInput {
   toolId: string;
@@ -57,53 +58,59 @@ export class CapabilityExecutorService {
       );
     }
 
-    const parsed = def.inputSchema.safeParse(request.input);
+    const pending = request.pendingActionId
+      ? await this.loadConfirmablePendingAction(organizationId, actor, request)
+      : null;
+
+    // A confirmation executes exactly what was approved, never a resubmitted input.
+    const normalized = normalizeCapabilityInput(
+      request.toolId,
+      pending
+        ? (pending.input as Record<string, unknown>)
+        : (request.input ?? {}),
+    );
+    const parsed = def.inputSchema.safeParse(normalized);
     if (!parsed.success) {
+      const detail = parsed.error.issues
+        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('; ');
       throw problem(
         HttpStatus.BAD_REQUEST,
         'Bad Request',
         ErrorCodes.VALIDATION_FAILED,
-        parsed.error.message,
+        detail || parsed.error.message,
       );
     }
 
-    const needsConfirm =
-      this.registry.requiresConfirmation(def) && !request.pendingActionId;
+    const needsConfirm = this.registry.requiresConfirmation(def) && !pending;
 
     if (needsConfirm && request.runId) {
-      const pending = await this.agentRepo.createPendingAction({
+      const created = await this.agentRepo.createPendingAction({
         organizationId,
         runId: request.runId,
         userId: actor.userId,
         toolId: request.toolId,
         input: parsed.data as Record<string, unknown>,
-        summary: this.summarizeAction(def, parsed.data as Record<string, unknown>),
+        summary: this.summarizeAction(
+          def,
+          parsed.data as Record<string, unknown>,
+        ),
         expiresAt: new Date(
           Date.now() +
-            this.config.get('AGENT_PENDING_ACTION_TTL_SECONDS', { infer: true }) *
+            this.config.get('AGENT_PENDING_ACTION_TTL_SECONDS', {
+              infer: true,
+            }) *
               1000,
         ),
       });
       return {
         status: 'pending_confirmation',
-        pendingActionId: pending.id,
-        message: pending.summary,
+        pendingActionId: created.id,
+        message: created.summary,
       };
     }
 
-    if (request.pendingActionId) {
-      const pending = await this.agentRepo.findPendingAction(
-        organizationId,
-        request.pendingActionId,
-      );
-      if (!pending || pending.userId !== actor.userId || pending.status !== 'PENDING') {
-        throw problem(
-          HttpStatus.BAD_REQUEST,
-          'Bad Request',
-          ErrorCodes.VALIDATION_FAILED,
-          'Invalid or expired pending action',
-        );
-      }
+    if (pending) {
       await this.agentRepo.resolvePendingAction(pending.id, 'CONFIRMED');
     }
 
@@ -114,18 +121,48 @@ export class CapabilityExecutorService {
       ctx,
     );
 
+    // entityId is UUID-typed in audit — never store toolId there.
     await this.audit.record({
       organizationId,
       actorId: actor.userId,
       actorType: 'user',
       action: `capability.${request.toolId}`,
       entityType: 'capability',
-      entityId: request.toolId,
-      after: { input: this.redact(parsed.data as Record<string, unknown>) },
+      after: {
+        toolId: request.toolId,
+        input: this.redact(parsed.data as Record<string, unknown>),
+      },
+      metadata: { toolId: request.toolId, riskTier: def.riskTier },
       outcome: 'SUCCESS',
     });
 
     return { status: 'ok', output };
+  }
+
+  private async loadConfirmablePendingAction(
+    organizationId: string,
+    actor: AuthenticatedUser,
+    request: ExecuteCapabilityInput,
+  ) {
+    const pending = await this.agentRepo.findPendingAction(
+      organizationId,
+      request.pendingActionId ?? '',
+    );
+    const valid =
+      pending &&
+      pending.userId === actor.userId &&
+      pending.status === 'PENDING' &&
+      pending.toolId === request.toolId &&
+      pending.expiresAt.getTime() > Date.now();
+    if (!valid) {
+      throw problem(
+        HttpStatus.BAD_REQUEST,
+        'Bad Request',
+        ErrorCodes.VALIDATION_FAILED,
+        'Invalid or expired pending action',
+      );
+    }
+    return pending;
   }
 
   private summarizeAction(

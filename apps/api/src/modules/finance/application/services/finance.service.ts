@@ -63,7 +63,10 @@ export class FinanceService {
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
-  async listContracts(organizationId: string, clientId?: string): Promise<ContractDto[]> {
+  async listContracts(
+    organizationId: string,
+    clientId?: string,
+  ): Promise<ContractDto[]> {
     const records = await this.repository.listContracts(
       organizationId,
       clientId,
@@ -122,7 +125,11 @@ export class FinanceService {
             ? new Date(input.startDate)
             : null,
       endDate:
-        input.endDate === undefined ? undefined : input.endDate ? new Date(input.endDate) : null,
+        input.endDate === undefined
+          ? undefined
+          : input.endDate
+            ? new Date(input.endDate)
+            : null,
       signedAt:
         input.signedAt === undefined
           ? undefined
@@ -179,9 +186,14 @@ export class FinanceService {
     };
   }
 
-  async completeContractUpload(organizationId: string, actorId: string, id: string) {
+  async completeContractUpload(
+    organizationId: string,
+    actorId: string,
+    id: string,
+  ) {
     const contract = await this.requireContract(organizationId, id);
-    if (!contract.storageKey) throw unprocessable('No upload in progress for this agreement');
+    if (!contract.storageKey)
+      throw unprocessable('No upload in progress for this agreement');
     const meta = await this.storage.getObjectMetadata(contract.storageKey);
     if (!meta) throw unprocessable('Uploaded PDF was not found in storage');
     await this.audit.record({
@@ -204,7 +216,9 @@ export class FinanceService {
   ): Promise<ContractDto> {
     const existing = await this.requireContract(organizationId, id);
     if (!existing.storageKey) {
-      throw unprocessable('Upload the agreement PDF before collecting a signature');
+      throw unprocessable(
+        'Upload the agreement PDF before collecting a signature',
+      );
     }
     if (existing.status === 'SIGNED' && existing.signedStorageKey) {
       throw unprocessable('This agreement is already signed');
@@ -541,7 +555,9 @@ function toContractDto(record: {
   };
 }
 
-function toSignatureMethod(value: string | null | undefined): ContractSignatureMethod | null {
+function toSignatureMethod(
+  value: string | null | undefined,
+): ContractSignatureMethod | null {
   if (value === 'TYPED' || value === 'DRAWN') return value;
   return null;
 }

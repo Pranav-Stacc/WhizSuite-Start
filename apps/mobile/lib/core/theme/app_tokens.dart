@@ -86,6 +86,7 @@ abstract final class AppMotion {
   static const medium = Duration(milliseconds: 250);
   static const slow = Duration(milliseconds: 400);
   static const shimmer = Duration(milliseconds: 1600);
+  static const brandLoop = Duration(milliseconds: 2000);
   static const Curve standard = Curves.easeOutCubic;
   /// Same curve as the web `fade-up` / `slide-in` animations.
   static const Curve emphasized = Cubic(0.16, 1, 0.3, 1);

@@ -16,9 +16,7 @@ const DAY_KEY_LENGTH = 10;
 const STAFF_TYPES = new Set(['OWNER', 'ADMIN', 'MEMBER']);
 
 @Injectable()
-export class InvoiceReminderScheduler
-  implements OnModuleInit, OnModuleDestroy
-{
+export class InvoiceReminderScheduler implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(InvoiceReminderScheduler.name);
   private timer?: NodeJS.Timeout;
   private running = false;

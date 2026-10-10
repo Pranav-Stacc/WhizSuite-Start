@@ -6,6 +6,7 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/theme/theme_settings.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../l10n/app_localizations.dart';
 
@@ -300,8 +301,8 @@ class _ColorRow extends StatelessWidget {
         ),
       ),
       onTap: () async {
-        final picked = await showDialog<Color>(
-          context: context,
+        final picked = await showAppDialog<Color>(
+          context,
           builder: (_) => _HexColorDialog(title: label, initial: color),
         );
         if (picked != null) onChanged(picked);
@@ -337,10 +338,17 @@ class _HexColorDialogState extends State<_HexColorDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    return AlertDialog(
-      title: Text(widget.title),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+    return AppDialog(
+      title: widget.title,
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
+        FilledButton(
+          onPressed: _preview == null ? null : () => Navigator.of(context).pop(_preview),
+          child: Text(l10n.themeApply),
+        ),
+      ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AnimatedContainer(
             duration: AppMotion.fast,
@@ -365,13 +373,6 @@ class _HexColorDialogState extends State<_HexColorDialog> {
           ),
         ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.cancel)),
-        FilledButton(
-          onPressed: _preview == null ? null : () => Navigator.of(context).pop(_preview),
-          child: Text(l10n.themeApply),
-        ),
-      ],
     );
   }
 }

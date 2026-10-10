@@ -355,8 +355,10 @@ export class InvitationsService {
       expiresAt: link.expiresAt,
       passwordRequired: link.accessMode === PORTAL_ACCESS_MODE.PERMANENT,
       allowedDomains: link.allowedDomains,
-      appStoreUrl: this.config.get('MOBILE_APP_STORE_URL') || null,
-      playStoreUrl: this.config.get('MOBILE_PLAY_STORE_URL') || null,
+      appStoreUrl:
+        this.config.get('MOBILE_APP_STORE_URL', { infer: true }) || null,
+      playStoreUrl:
+        this.config.get('MOBILE_PLAY_STORE_URL', { infer: true }) || null,
     };
   }
 
@@ -370,8 +372,7 @@ export class InvitationsService {
     const link = await this.findActiveLink(input.token);
     this.assertAllowedDomain(link.allowedDomains, input.email);
 
-    const requirePassword =
-      link.accessMode === PORTAL_ACCESS_MODE.PERMANENT;
+    const requirePassword = link.accessMode === PORTAL_ACCESS_MODE.PERMANENT;
     const user = await this.auth.resolvePortalAccessUser(link.organizationId, {
       email: input.email,
       firstName: input.firstName,

@@ -40,7 +40,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
     final id = await showProjectForm(context, ref, clientId: _clientId);
     if (id == null || !mounted) return;
     showToast(context, l10n.createdToast);
-    context.go(ProjectsRoutes.detail(id));
+    context.push(ProjectsRoutes.detail(id));
   }
 
   @override
@@ -155,7 +155,7 @@ class _ProjectsScreenState extends ConsumerState<ProjectsScreen> {
         itemBuilder: (context, project) => ProjectCard(
           project: project,
           progress: progress == null ? null : (progress[project.id] ?? ProjectProgress.empty),
-          onTap: () => context.go(ProjectsRoutes.detail(project.id)),
+          onTap: () => context.push(ProjectsRoutes.detail(project.id)),
         ),
       ),
     );

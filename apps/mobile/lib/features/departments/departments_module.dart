@@ -4,6 +4,7 @@ import '../../core/contracts/contracts.g.dart';
 import '../../core/navigation/feature_module.dart';
 import 'departments_routes.dart';
 import 'presentation/departments_screen.dart';
+import 'presentation/detail/department_detail_screen.dart';
 
 final departmentsModule = FeatureModule(
   destinations: [
@@ -17,5 +18,16 @@ final departmentsModule = FeatureModule(
       group: NavGroup.agency,
     ),
   ],
-  routes: [destinationRoute(DepartmentsRoutes.root, (_) => const DepartmentsScreen())],
+  routes: [
+    destinationRoute(
+      DepartmentsRoutes.root,
+      (_) => const DepartmentsScreen(),
+      routes: [
+        childRoute(
+          ':${DepartmentsRoutes.detailParam}',
+          (state) => DepartmentDetailScreen(departmentId: state.pathParameters[DepartmentsRoutes.detailParam]!),
+        ),
+      ],
+    ),
+  ],
 );

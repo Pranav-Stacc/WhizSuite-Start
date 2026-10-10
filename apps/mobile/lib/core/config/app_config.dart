@@ -8,6 +8,7 @@ class AppConfig {
     required this.realtimeUrl,
     required this.connectTimeout,
     required this.receiveTimeout,
+    required this.agentStreamTimeout,
     required this.pushEnabled,
     required this.androidNotificationChannelId,
     required this.pageSize,
@@ -33,6 +34,10 @@ class AppConfig {
     const receiveTimeoutMs = int.fromEnvironment(
       'HTTP_RECEIVE_TIMEOUT_MS',
       defaultValue: 20000,
+    );
+    const agentStreamTimeoutMs = int.fromEnvironment(
+      'AGENT_STREAM_TIMEOUT_MS',
+      defaultValue: 180000,
     );
     const pushEnabled = bool.fromEnvironment(
       'PUSH_ENABLED',
@@ -69,6 +74,7 @@ class AppConfig {
       if (Uri.tryParse(realtimeUrl)?.hasAuthority != true) 'REALTIME_URL',
       if (connectTimeoutMs <= 0) 'HTTP_CONNECT_TIMEOUT_MS',
       if (receiveTimeoutMs <= 0) 'HTTP_RECEIVE_TIMEOUT_MS',
+      if (agentStreamTimeoutMs <= 0) 'AGENT_STREAM_TIMEOUT_MS',
       if (channelId.isEmpty) 'PUSH_ANDROID_CHANNEL_ID',
       if (pageSize <= 0) 'PAGE_SIZE',
       if (accessRefreshSeconds <= 0) 'ACCESS_REFRESH_INTERVAL_SECONDS',
@@ -86,6 +92,7 @@ class AppConfig {
       realtimeUrl: Uri.parse(realtimeUrl),
       connectTimeout: const Duration(milliseconds: connectTimeoutMs),
       receiveTimeout: const Duration(milliseconds: receiveTimeoutMs),
+      agentStreamTimeout: const Duration(milliseconds: agentStreamTimeoutMs),
       pushEnabled: pushEnabled,
       androidNotificationChannelId: channelId,
       pageSize: pageSize,
@@ -102,6 +109,9 @@ class AppConfig {
   final Uri realtimeUrl;
   final Duration connectTimeout;
   final Duration receiveTimeout;
+
+  /// Max idle gap between agent stream events (tool runs can be slow).
+  final Duration agentStreamTimeout;
   final bool pushEnabled;
   final String androidNotificationChannelId;
   final int pageSize;

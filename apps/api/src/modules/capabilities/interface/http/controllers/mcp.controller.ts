@@ -38,7 +38,11 @@ export class McpController {
     @Body() body: McpJsonRpcRequest,
   ) {
     const orgId = requireOrganizationId(organizationId);
-    const tools = await this.registry.listForUserCached(orgId, user.userId, user.permissions ?? []);
+    const tools = await this.registry.listForUserCached(
+      orgId,
+      user.userId,
+      user.permissions ?? [],
+    );
 
     switch (body.method) {
       case 'tools/list':

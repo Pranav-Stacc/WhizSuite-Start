@@ -27,20 +27,8 @@ final dashboardInvoicesProvider = FutureProvider.autoDispose<List<InvoiceRef>>(
   (ref) => ref.watch(dashboardRepositoryProvider).invoices(),
 );
 
-final dashboardClientsProvider = FutureProvider.autoDispose<List<ClientRef>>(
-  (ref) => ref.watch(dashboardRepositoryProvider).clients(),
-);
-
-final dashboardLeadsProvider = FutureProvider.autoDispose<List<LeadRef>>(
-  (ref) => ref.watch(dashboardRepositoryProvider).leads(),
-);
-
 final dashboardCalendarProvider = FutureProvider.autoDispose<List<CalendarEntry>>(
   (ref) => ref.watch(dashboardRepositoryProvider).calendar(),
-);
-
-final dashboardActivityProvider = FutureProvider.autoDispose<List<ActivityEntry>>(
-  (ref) => ref.watch(dashboardRepositoryProvider).activity(),
 );
 
 // Summaries derived from the sources.
@@ -63,18 +51,6 @@ final receivablesProvider = FutureProvider.autoDispose<ReceivablesSummary>(
   (ref) async => ReceivablesSummary.of(await ref.watch(dashboardInvoicesProvider.future), now: DateTime.now()),
 );
 
-final revenueProvider = FutureProvider.autoDispose<RevenueSeries>(
-  (ref) async => RevenueSeries.of(await ref.watch(dashboardInvoicesProvider.future), now: DateTime.now()),
-);
-
-final clientSummaryProvider = FutureProvider.autoDispose<ClientSummary>(
-  (ref) async => ClientSummary.of(await ref.watch(dashboardClientsProvider.future)),
-);
-
-final pipelineProvider = FutureProvider.autoDispose<PipelineSummary>(
-  (ref) async => PipelineSummary.of(await ref.watch(dashboardLeadsProvider.future)),
-);
-
 /// Calendar items (projects.view) and scheduled content (content.view), whichever are permitted.
 final upcomingProvider = FutureProvider.autoDispose<List<UpcomingItem>>((ref) async {
   final policy = ref.watch(accessPolicyProvider);
@@ -87,16 +63,83 @@ final upcomingProvider = FutureProvider.autoDispose<List<UpcomingItem>>((ref) as
   return upcomingItems(calendar: calendar, content: content, now: DateTime.now());
 });
 
+/// Counts that drive the overview greeting and "all clear" state.
+/// Each source is read only when the member may see it, so permissions stay honest.
+final dashboardFocusProvider = Provider.autoDispose<DashboardFocus>((ref) {
+  final policy = ref.watch(accessPolicyProvider);
+
+  var ready = true;
+  T? take<T>(bool allowed, AsyncValue<T> value) {
+    if (!allowed) return null;
+    if (!value.hasValue && !value.hasError) ready = false;
+    return value.value;
+  }
+
+  final work = take(policy.can(Permissions.tasksView), ref.watch(myWorkProvider));
+  final approvals = take(policy.can(Permissions.approvalsView), ref.watch(approvalSummaryProvider));
+  final upcoming = take(
+    policy.canAny(const [Permissions.projectsView, Permissions.contentView]),
+    ref.watch(upcomingProvider),
+  );
+  final receivables = take(policy.can(Permissions.invoicesView), ref.watch(receivablesProvider));
+  final content = take(policy.can(Permissions.contentView), ref.watch(contentSummaryProvider));
+
+  return DashboardFocus(
+    ready: ready,
+    urgentTasks: work?.urgent ?? 0,
+    openTasks: work?.open ?? 0,
+    pendingApprovals: approvals?.pending.length ?? 0,
+    upcoming: upcoming?.length ?? 0,
+    outstandingMinor: receivables?.outstandingMinor ?? 0,
+    contentWaiting: (content?.inReview ?? 0) + (content?.changesRequested ?? 0),
+    canSeeWork: policy.canAny(const [
+      Permissions.tasksView,
+      Permissions.approvalsView,
+      Permissions.projectsView,
+      Permissions.contentView,
+      Permissions.invoicesView,
+    ]),
+  );
+});
+
+/// Actionable signals for the staff overview greeting and empty state.
+class DashboardFocus {
+  const DashboardFocus({
+    required this.ready,
+    required this.urgentTasks,
+    required this.openTasks,
+    required this.pendingApprovals,
+    required this.upcoming,
+    required this.outstandingMinor,
+    required this.contentWaiting,
+    required this.canSeeWork,
+  });
+
+  /// False while any permitted source is still loading — avoids a false "all clear".
+  final bool ready;
+  final int urgentTasks;
+  final int openTasks;
+  final int pendingApprovals;
+  final int upcoming;
+  final int outstandingMinor;
+  final int contentWaiting;
+  final bool canSeeWork;
+
+  /// Items that need a decision or action today.
+  int get attentionCount => urgentTasks + pendingApprovals + (outstandingMinor > 0 ? 1 : 0) + contentWaiting;
+
+  bool get hasLists => openTasks > 0 || pendingApprovals > 0 || upcoming > 0;
+
+  bool get isClear => ready && canSeeWork && attentionCount == 0 && !hasLists;
+}
+
 /// Every source with the permission that unlocks it; drives pull-to-refresh.
 final List<({String permission, FutureProvider<Object?> source})> dashboardSources = [
   (permission: Permissions.tasksView, source: dashboardTasksProvider),
   (permission: Permissions.contentView, source: dashboardContentProvider),
   (permission: Permissions.approvalsView, source: dashboardApprovalsProvider),
   (permission: Permissions.invoicesView, source: dashboardInvoicesProvider),
-  (permission: Permissions.clientsView, source: dashboardClientsProvider),
-  (permission: Permissions.leadsView, source: dashboardLeadsProvider),
   (permission: Permissions.projectsView, source: dashboardCalendarProvider),
-  (permission: Permissions.orgView, source: dashboardActivityProvider),
 ];
 
 /// Reloads every permitted section plus the profile and access policy.

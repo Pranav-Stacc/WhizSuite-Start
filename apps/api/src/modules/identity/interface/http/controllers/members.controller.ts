@@ -12,7 +12,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Permissions } from '@agency-os/contracts';
+import {
+  Permissions,
+  type MemberPermissionOverride,
+} from '@agency-os/contracts';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -22,7 +25,15 @@ import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { MembersService } from '../../../application/services/members.service';
-import { AssignMemberRolesDto, UpdateMemberDto } from '../dto/member.dto';
+import {
+  AssignMemberRolesDto,
+  CreateMemberDocumentDto,
+  SetMemberDesignationsDto,
+  SetMemberPermissionsDto,
+  UpdateMemberDto,
+  UpdateMemberEmploymentDto,
+  UpdateMemberProfileDto,
+} from '../dto/member.dto';
 
 @ApiTags('members')
 @ApiBearerAuth()
@@ -67,6 +78,115 @@ export class MembersController {
       userId,
       dto.roleIds,
       dto.scopes,
+    );
+  }
+
+  @Put(':userId/designations')
+  @RequirePermissions(Permissions.MEMBERS_EDIT)
+  setDesignations(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: SetMemberDesignationsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.members.setDesignations(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      dto.designationIds,
+      dto.primaryId,
+    );
+  }
+
+  @Get(':userId/documents')
+  @RequirePermissions(Permissions.MEMBERS_VIEW)
+  listDocuments(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.members.listDocuments(requireOrganizationId(organizationId), userId);
+  }
+
+  @Post(':userId/documents')
+  @RequirePermissions(Permissions.MEMBERS_EDIT)
+  sendDocument(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: CreateMemberDocumentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.members.sendDocument(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      dto,
+    );
+  }
+
+  @Patch(':userId/employment')
+  @RequirePermissions(Permissions.MEMBERS_EDIT)
+  updateEmployment(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: UpdateMemberEmploymentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const employmentType =
+      dto.employmentType === undefined ? undefined : dto.employmentType ?? null;
+    if (employmentType === undefined) {
+      return { id: userId };
+    }
+    return this.members.updateEmployment(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      employmentType,
+    );
+  }
+
+  @Patch(':userId/profile')
+  @RequirePermissions(Permissions.MEMBERS_EDIT)
+  updateProfile(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: UpdateMemberProfileDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const title =
+      typeof dto.title === 'string' ? dto.title.trim() || null : null;
+    return this.members.updateProfile(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      title,
+    );
+  }
+
+  @Get(':userId/access')
+  @RequirePermissions(Permissions.ROLES_MANAGE)
+  getAccess(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.members.getAccess(
+      requireOrganizationId(organizationId),
+      userId,
+    );
+  }
+
+  @Put(':userId/permissions')
+  @RequirePermissions(Permissions.ROLES_MANAGE)
+  setPermissions(
+    @Param('organizationId') organizationId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Body() dto: SetMemberPermissionsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.members.setPermissions(
+      requireOrganizationId(organizationId),
+      user.userId,
+      userId,
+      dto.overrides as MemberPermissionOverride[],
     );
   }
 

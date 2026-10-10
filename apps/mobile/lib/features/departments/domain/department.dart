@@ -1,5 +1,6 @@
 import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
+import 'position.dart';
 
 class Department {
   const Department({
@@ -19,7 +20,7 @@ class Department {
         parentId: json.strOrNull('parentId'),
         path: json.str('path'),
         depth: json.integer('depth'),
-        positions: [for (final d in json.objects('designations')) ?d.strOrNull('name')],
+        positions: json.objects('designations').map(Position.fromJson).toList(),
         createdAt: json.date('createdAt'),
       );
 
@@ -30,7 +31,7 @@ class Department {
   /// Slash-separated ancestry (`Creative/Video`).
   final String path;
   final int depth;
-  final List<String> positions;
+  final List<Position> positions;
   final DateTime? createdAt;
 }
 

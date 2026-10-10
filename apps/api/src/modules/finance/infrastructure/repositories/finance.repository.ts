@@ -239,7 +239,12 @@ export class FinanceRepository {
       signatureUserAgent?: string | null;
     },
   ) {
-    await this.prisma.contract.updateMany({ where: { id, organizationId }, data });
-    return this.prisma.contract.findFirstOrThrow({ where: { id, organizationId } });
+    await this.prisma.contract.updateMany({
+      where: { id, organizationId },
+      data,
+    });
+    return this.prisma.contract.findFirstOrThrow({
+      where: { id, organizationId },
+    });
   }
 }

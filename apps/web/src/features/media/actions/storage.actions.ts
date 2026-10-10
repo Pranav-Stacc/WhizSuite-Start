@@ -1,10 +1,10 @@
 'use server';
 
 import { Permissions } from '@agency-os/contracts';
-import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
+import { refreshData, refreshPage } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import {
   beginGoogleDriveConnect,
@@ -30,8 +30,9 @@ export async function disconnectGoogleDriveAction(connectionId: string): Promise
   if (!isLiveMode) return fail(t('media.storage.drive.liveOnly'));
   try {
     await disconnectGoogleDrive(connectionId);
-    revalidatePath('/settings');
-    revalidatePath('/media');
+    await refreshData('media', 'integrations');
+    await refreshPage('/settings');
+    await refreshPage('/media');
     return succeed();
   } catch (error) {
     return fail(error instanceof Error ? error.message : t('media.storage.drive.disconnectFailed'));
@@ -66,8 +67,9 @@ export async function transferAllToDriveAction(connectionId: string): Promise<Ac
       assetIds: [],
     });
     if (job.status === 'FAILED') return fail(job.error ?? t('media.export.drive.failed'));
-    revalidatePath('/media');
-    revalidatePath('/settings');
+    await refreshData('media');
+    await refreshPage('/media');
+    await refreshPage('/settings');
     return succeed();
   } catch (error) {
     return fail(error instanceof Error ? error.message : t('media.export.drive.failed'));

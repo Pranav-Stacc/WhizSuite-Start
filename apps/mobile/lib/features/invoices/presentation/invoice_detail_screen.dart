@@ -105,7 +105,7 @@ class InvoiceDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     switch (action) {
       case _MenuAction.edit:
-        context.go(InvoicesRoutes.edit(invoice.id));
+        context.push(InvoicesRoutes.edit(invoice.id));
       case _MenuAction.copyNumber:
         await Clipboard.setData(ClipboardData(text: invoice.number));
         if (context.mounted) showToast(context, l10n.invoiceCopied);
@@ -177,7 +177,7 @@ class _ActionBar extends ConsumerWidget {
       children: [
         if (invoice.isDraft)
           OutlinedButton.icon(
-            onPressed: () => context.go(InvoicesRoutes.edit(invoice.id)),
+            onPressed: () => context.push(InvoicesRoutes.edit(invoice.id)),
             icon: const Icon(Icons.edit_outlined),
             label: Text(l10n.edit),
           ),

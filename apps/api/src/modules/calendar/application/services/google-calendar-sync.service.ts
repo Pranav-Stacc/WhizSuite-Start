@@ -34,7 +34,9 @@ export class GoogleCalendarSyncService {
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
 
-  async getConnection(organizationId: string): Promise<GoogleCalendarConnectionDto> {
+  async getConnection(
+    organizationId: string,
+  ): Promise<GoogleCalendarConnectionDto> {
     const oauthConfigured = this.google.isConfigured();
     const integration = await this.integrations.findByProviderKey(
       organizationId,
@@ -378,7 +380,9 @@ export class GoogleCalendarSyncService {
 
     if (creds.refreshToken) {
       try {
-        const refreshed = await this.google.refreshAccessToken(creds.refreshToken);
+        const refreshed = await this.google.refreshAccessToken(
+          creds.refreshToken,
+        );
         const encryptedData = JSON.stringify({
           accessToken: refreshed.accessToken,
           refreshToken: refreshed.refreshToken ?? creds.refreshToken,
@@ -400,9 +404,7 @@ export class GoogleCalendarSyncService {
   }
 }
 
-function mapStatus(
-  status: string,
-): GoogleCalendarConnectionDto['status'] {
+function mapStatus(status: string): GoogleCalendarConnectionDto['status'] {
   if (status === 'CONNECTED') return 'CONNECTED';
   if (status === 'PENDING') return 'PENDING';
   if (status === 'ERROR') return 'ERROR';

@@ -27,7 +27,9 @@ export class AgentRunProcessor extends WorkerHost {
     await this.processRun(job as Job<AgentRunJob>);
   }
 
-  private async processScheduled(job: Job<ScheduledAgentRunJob>): Promise<void> {
+  private async processScheduled(
+    job: Job<ScheduledAgentRunJob>,
+  ): Promise<void> {
     const data = job.data;
     const session = await this.repo.createSession(
       data.organizationId,

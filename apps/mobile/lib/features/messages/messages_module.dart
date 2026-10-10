@@ -5,6 +5,7 @@ import '../../core/navigation/feature_module.dart';
 import 'messages_routes.dart';
 import 'presentation/conversation_screen.dart';
 import 'presentation/messages_screen.dart';
+import 'presentation/whiz_chat_screen.dart';
 
 final messagesModule = FeatureModule(
   destinations: [
@@ -16,7 +17,7 @@ final messagesModule = FeatureModule(
       anyOf: const [Permissions.chatView],
       audiences: everyAudience,
       group: NavGroup.clients,
-      primary: false,
+      primary: true,
     ),
   ],
   routes: [
@@ -24,6 +25,10 @@ final messagesModule = FeatureModule(
       MessagesRoutes.root,
       (_) => const MessagesScreen(),
       routes: [
+        childRoute(
+          'whiz',
+          (_) => const WhizChatScreen(),
+        ),
         childRoute(
           ':${MessagesRoutes.detailParam}',
           (state) => ConversationScreen(threadId: state.pathParameters[MessagesRoutes.detailParam] ?? ''),

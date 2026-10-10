@@ -7,61 +7,79 @@ import 'fade_slide_in.dart';
 
 /// Centered icon, title, optional body and action. Base for empty, error and forbidden states.
 class StatusMessage extends StatelessWidget {
-  const StatusMessage({required this.icon, required this.title, this.body, this.action, super.key});
+  const StatusMessage({
+    required this.icon,
+    required this.title,
+    this.body,
+    this.action,
+    this.animate = true,
+    super.key,
+  });
 
   final IconData icon;
   final String title;
   final String? body;
   final Widget? action;
 
+  /// Disabled inside sliver fill regions where [FadeSlideIn] can trip layout.
+  final bool animate;
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
+    final content = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.all(tokens.lg),
+            decoration: BoxDecoration(
+              color: tokens.subtle,
+              borderRadius: BorderRadius.circular(tokens.radius + 12),
+              border: Border.all(color: tokens.border),
+            ),
+            child: Icon(icon, size: 28, color: tokens.secondary),
+          ),
+          SizedBox(height: tokens.lg),
+          Text(title, style: text.titleMedium, textAlign: TextAlign.center),
+          if (body != null) ...[
+            SizedBox(height: tokens.sm),
+            Text(body!, style: text.bodyMedium?.copyWith(color: tokens.muted), textAlign: TextAlign.center),
+          ],
+          if (action != null) ...[SizedBox(height: tokens.lg), action!],
+        ],
+      ),
+    );
     return Center(
       child: SingleChildScrollView(
         padding: EdgeInsets.all(tokens.xl),
-        child: FadeSlideIn(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(tokens.lg),
-                  decoration: BoxDecoration(
-                    color: tokens.subtle,
-                    borderRadius: BorderRadius.circular(tokens.radius + 12),
-                    border: Border.all(color: tokens.border),
-                  ),
-                  child: Icon(icon, size: 28, color: tokens.secondary),
-                ),
-                SizedBox(height: tokens.lg),
-                Text(title, style: text.titleMedium, textAlign: TextAlign.center),
-                if (body != null) ...[
-                  SizedBox(height: tokens.sm),
-                  Text(body!, style: text.bodyMedium?.copyWith(color: tokens.muted), textAlign: TextAlign.center),
-                ],
-                if (action != null) ...[SizedBox(height: tokens.lg), action!],
-              ],
-            ),
-          ),
-        ),
+        child: animate ? FadeSlideIn(child: content) : content,
       ),
     );
   }
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({required this.title, this.body, this.icon = Icons.inbox_outlined, this.action, super.key});
+  const EmptyState({
+    required this.title,
+    this.body,
+    this.icon = Icons.inbox_outlined,
+    this.action,
+    this.animate = true,
+    super.key,
+  });
 
   final String title;
   final String? body;
   final IconData icon;
   final Widget? action;
+  final bool animate;
 
   @override
-  Widget build(BuildContext context) => StatusMessage(icon: icon, title: title, body: body, action: action);
+  Widget build(BuildContext context) =>
+      StatusMessage(icon: icon, title: title, body: body, action: action, animate: animate);
 }
 
 class ErrorState extends StatelessWidget {

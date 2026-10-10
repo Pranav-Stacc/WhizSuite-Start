@@ -30,6 +30,14 @@ interface SocketIdentity {
   organizationId: string;
 }
 
+interface RealtimeSocketData {
+  identity?: SocketIdentity;
+}
+
+function socketData(client: Socket): RealtimeSocketData {
+  return client.data as RealtimeSocketData;
+}
+
 function handshakeToken(client: Socket): string | undefined {
   const fromAuth: unknown = client.handshake.auth?.token;
   if (typeof fromAuth === 'string' && fromAuth) return fromAuth;
@@ -58,7 +66,7 @@ export class RealtimeGateway implements OnGatewayConnection, RealtimeEmitter {
       client.disconnect(true);
       return;
     }
-    client.data.identity = identity;
+    socketData(client).identity = identity;
     const org = orgRoom(identity.organizationId);
     await client.join([org, `${org}:${userRoom(identity.userId)}`]);
     client.emit(RealtimeEvents.CONNECTED, { status: 'ok' });
@@ -80,7 +88,7 @@ export class RealtimeGateway implements OnGatewayConnection, RealtimeEmitter {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId?: string },
   ) {
-    const identity = client.data.identity as SocketIdentity | undefined;
+    const identity = socketData(client).identity;
     if (!identity || typeof data?.roomId !== 'string') return { ok: false };
     await client.join(chatRoomChannel(identity.organizationId, data.roomId));
     return { ok: true };
@@ -91,7 +99,7 @@ export class RealtimeGateway implements OnGatewayConnection, RealtimeEmitter {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId?: string },
   ) {
-    const identity = client.data.identity as SocketIdentity | undefined;
+    const identity = socketData(client).identity;
     if (!identity || typeof data?.roomId !== 'string') return { ok: false };
     await client.leave(chatRoomChannel(identity.organizationId, data.roomId));
     return { ok: true };

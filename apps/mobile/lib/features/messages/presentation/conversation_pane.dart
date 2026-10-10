@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/formatting/formats.dart';
@@ -18,6 +20,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
 import '../../auth/application/session_controller.dart';
 import '../../directory/application/directory_providers.dart';
+import '../../team/team_routes.dart';
 import '../application/messages_providers.dart';
 import '../domain/chat_models.dart';
 import 'conversation_labels.dart';
@@ -70,8 +73,14 @@ class _ConversationState extends ConsumerState<_Conversation> {
   List<MentionCandidate> _mentionCandidates() {
     final members = ref.watch(memberDirectoryProvider).value;
     final me = ref.watch(sessionProvider).value?.userId;
-    if (members == null) return const [];
+    final whiz = MentionCandidate(
+      id: whizAgentTargetId,
+      label: whizAgentDisplay,
+      type: ChatMentionTypes.agent,
+    );
+    if (members == null) return [whiz];
     return [
+      whiz,
       for (final entry in members.entries)
         if (entry.id != me)
           MentionCandidate(
@@ -245,8 +254,18 @@ class _MessageListState extends ConsumerState<_MessageList> {
                       author: names.of(message),
                       parentAuthor: parent == null ? null : names.of(parent),
                       mine: names.isMine(message),
-                      showAuthor: i == 0 || day.messages[i - 1].senderId != message.senderId,
+                      showAuthor: i == 0 ||
+                          day.messages[i - 1].senderId != message.senderId ||
+                          day.messages[i - 1].isSystem != message.isSystem,
                       onReply: () => widget.onReply(message),
+                      onOpenProfile: message.isSystem || message.senderId.isEmpty
+                          ? null
+                          : () => context.push(TeamRoutes.member(message.senderId)),
+                      onMentionTap: (mention) {
+                        if (mention.type == ChatMentionTypes.user) {
+                          context.push(TeamRoutes.member(mention.targetId));
+                        }
+                      },
                     );
                   },
                 ),
@@ -302,6 +321,8 @@ class _Bubble extends StatefulWidget {
     required this.onReply,
     this.parent,
     this.parentAuthor,
+    this.onOpenProfile,
+    this.onMentionTap,
   });
 
   final ChatMessage message;
@@ -311,6 +332,8 @@ class _Bubble extends StatefulWidget {
   final bool mine;
   final bool showAuthor;
   final VoidCallback onReply;
+  final VoidCallback? onOpenProfile;
+  final ValueChanged<ChatMention>? onMentionTap;
 
   @override
   State<_Bubble> createState() => _BubbleState();
@@ -367,18 +390,19 @@ class _BubbleState extends State<_Bubble> {
       onHorizontalDragCancel: () => setState(() => _drag = 0),
       child: Transform.translate(
         offset: Offset(_drag, 0),
-        child: Stack(
-          clipBehavior: Clip.none,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (_drag.abs() > 12)
-              Positioned(
-                top: 0,
-                bottom: 0,
-                left: mine ? null : -28,
-                right: mine ? -28 : null,
-                child: Opacity(
-                  opacity: (_drag.abs() / _replyThreshold).clamp(0.0, 1.0),
-                  child: Icon(Icons.reply, size: 18, color: tokens.muted),
+            if (!mine && _drag.abs() > 12)
+              ExcludeSemantics(
+                child: Padding(
+                  padding: EdgeInsets.only(right: tokens.xs),
+                  child: Icon(
+                    Icons.reply,
+                    size: 18,
+                    color: tokens.muted.withValues(alpha: (_drag.abs() / _replyThreshold).clamp(0.0, 1.0)),
+                  ),
                 ),
               ),
             Container(
@@ -422,10 +446,26 @@ class _BubbleState extends State<_Bubble> {
                         ],
                       ),
                     ),
-                  _MentionText(body: body, mentions: message.mentions, style: text.bodyMedium?.copyWith(height: 1.35)),
+                  _MentionText(
+                    body: body,
+                    mentions: message.mentions,
+                    style: text.bodyMedium?.copyWith(height: 1.35),
+                    onMentionTap: widget.onMentionTap,
+                  ),
                 ],
               ),
             ),
+            if (mine && _drag.abs() > 12)
+              ExcludeSemantics(
+                child: Padding(
+                  padding: EdgeInsets.only(left: tokens.xs),
+                  child: Icon(
+                    Icons.reply,
+                    size: 18,
+                    color: tokens.muted.withValues(alpha: (_drag.abs() / _replyThreshold).clamp(0.0, 1.0)),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -437,7 +477,14 @@ class _BubbleState extends State<_Bubble> {
         if (showAuthor && !mine)
           Padding(
             padding: EdgeInsets.only(left: tokens.xs, bottom: tokens.xs),
-            child: Text(widget.author, style: text.labelSmall?.copyWith(color: tokens.muted, fontWeight: FontWeight.w600)),
+            child: InkWell(
+              onTap: widget.onOpenProfile,
+              borderRadius: BorderRadius.circular(tokens.radius),
+              child: Text(
+                widget.author,
+                style: text.labelSmall?.copyWith(color: tokens.muted, fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
         bubble,
         Padding(
@@ -489,14 +536,24 @@ class _BubbleState extends State<_Bubble> {
                     showAuthor
                         ? Padding(
                             padding: EdgeInsets.only(top: tokens.lg),
-                            child: InitialsAvatar(name: widget.author, seed: message.senderId, size: _avatarSize),
+                            child: InkWell(
+                              onTap: widget.onOpenProfile,
+                              customBorder: const CircleBorder(),
+                              child: InitialsAvatar(
+                                name: widget.author,
+                                seed: message.senderId.isEmpty ? whizAgentTargetId : message.senderId,
+                                size: _avatarSize,
+                              ),
+                            ),
                           )
                         : const SizedBox(width: _avatarSize),
                     SizedBox(width: tokens.sm),
                   ],
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: maxWidth),
-                    child: Opacity(opacity: message.pending ? _pendingOpacity : 1, child: column),
+                    child: message.pending
+                        ? Opacity(opacity: _pendingOpacity, alwaysIncludeSemantics: true, child: column)
+                        : column,
                   ),
                 ],
               );
@@ -508,35 +565,74 @@ class _BubbleState extends State<_Bubble> {
   }
 }
 
-class _MentionText extends StatelessWidget {
-  const _MentionText({required this.body, required this.mentions, this.style});
+class _MentionText extends StatefulWidget {
+  const _MentionText({
+    required this.body,
+    required this.mentions,
+    this.style,
+    this.onMentionTap,
+  });
 
   final String body;
   final List<ChatMention> mentions;
   final TextStyle? style;
+  final ValueChanged<ChatMention>? onMentionTap;
+
+  @override
+  State<_MentionText> createState() => _MentionTextState();
+}
+
+class _MentionTextState extends State<_MentionText> {
+  final _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  void _disposeRecognizers() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (mentions.isEmpty) return SelectableText(body, style: style);
+    if (widget.mentions.isEmpty) return SelectableText(widget.body, style: widget.style);
+    _disposeRecognizers();
     final tokens = context.tokens;
     final spans = <TextSpan>[];
     var cursor = 0;
-    final ordered = [...mentions]..sort((a, b) => (a.startOffset ?? 0).compareTo(b.startOffset ?? 0));
+    final ordered = [...widget.mentions]..sort((a, b) => (a.startOffset ?? 0).compareTo(b.startOffset ?? 0));
     for (final mention in ordered) {
-      final start = mention.startOffset ?? body.indexOf('@${mention.displayText}');
+      final start = mention.startOffset ?? widget.body.indexOf('@${mention.displayText}');
       if (start < cursor || start < 0) continue;
-      if (start > cursor) spans.add(TextSpan(text: body.substring(cursor, start)));
+      if (start > cursor) spans.add(TextSpan(text: widget.body.substring(cursor, start)));
       final end = mention.endOffset ?? start + mention.displayText.length + 1;
+      final tappable = mention.type == ChatMentionTypes.user && widget.onMentionTap != null;
+      TapGestureRecognizer? recognizer;
+      if (tappable) {
+        recognizer = TapGestureRecognizer()..onTap = () => widget.onMentionTap!(mention);
+        _recognizers.add(recognizer);
+      }
       spans.add(
         TextSpan(
-          text: body.substring(start, end.clamp(0, body.length)),
-          style: style?.copyWith(color: tokens.primary, fontWeight: FontWeight.w600),
+          text: widget.body.substring(start, end.clamp(0, widget.body.length)),
+          style: widget.style?.copyWith(
+            color: tokens.primary,
+            fontWeight: FontWeight.w600,
+            decoration: tappable ? TextDecoration.underline : null,
+            decorationColor: tokens.primary.withValues(alpha: 0.35),
+          ),
+          recognizer: recognizer,
         ),
       );
       cursor = end;
     }
-    if (cursor < body.length) spans.add(TextSpan(text: body.substring(cursor)));
-    return SelectableText.rich(TextSpan(style: style, children: spans));
+    if (cursor < widget.body.length) spans.add(TextSpan(text: widget.body.substring(cursor)));
+    return SelectableText.rich(TextSpan(style: widget.style, children: spans));
   }
 }
 
@@ -558,7 +654,7 @@ class _Composer extends ConsumerStatefulWidget {
 }
 
 class _ComposerState extends ConsumerState<_Composer> {
-  static const _maxLines = 6;
+  static const _maxLines = 4;
 
   final _controller = TextEditingController();
   final _focus = FocusNode();
@@ -584,7 +680,7 @@ class _ComposerState extends ConsumerState<_Composer> {
       final caret = _controller.selection.baseOffset.clamp(0, text.length);
       final before = text.substring(0, caret);
       final match = RegExp(r'(?:^|\s)@([\w.-]*)$').firstMatch(before);
-      _mentionQuery = match != null ? match.group(1) : null;
+      _mentionQuery = match?.group(1);
     });
   }
 
@@ -640,7 +736,7 @@ class _ComposerState extends ConsumerState<_Composer> {
     return SafeArea(
       top: false,
       child: Container(
-        padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.sm, tokens.sm),
+        padding: EdgeInsets.fromLTRB(tokens.sm, tokens.xs, tokens.xs, tokens.xs),
         decoration: BoxDecoration(border: Border(top: BorderSide(color: tokens.border))),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -682,6 +778,11 @@ class _ComposerState extends ConsumerState<_Composer> {
                     for (final candidate in _suggestions)
                       ListTile(
                         dense: true,
+                        leading: Icon(
+                          candidate.type == ChatMentionTypes.agent ? Icons.auto_awesome : Icons.person_outline,
+                          size: 18,
+                          color: tokens.primary,
+                        ),
                         title: Text('@${candidate.label}'),
                         onTap: () => _insertMention(candidate),
                       ),
@@ -710,6 +811,8 @@ class _ComposerState extends ConsumerState<_Composer> {
                         hintText: l10n.messagesComposerHint,
                         isDense: true,
                         counterText: '',
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(tokens.radius + 8)),
                       ),
                     ),
                   ),

@@ -26,6 +26,7 @@ export * from './integrations/google-calendar.js';
 
 export * from './theme/theme.js';
 export * from './tenancy/branding.js';
+export * from './tenancy/departments.js';
 export * from './capabilities/types.js';
 export * from './capabilities/schemas.js';
 export * from './capabilities/catalog.js';

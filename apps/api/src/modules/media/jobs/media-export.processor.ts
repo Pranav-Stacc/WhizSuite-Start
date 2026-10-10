@@ -114,7 +114,8 @@ export class MediaExportProcessor extends WorkerHost {
     job: Job<MediaExportJobPayload, MediaExportJobResult>,
   ): Promise<MediaExportJobResult> {
     const data = job.data;
-    if (data.kind !== 'DRIVE_TRANSFER') throw new Error('Invalid drive payload');
+    if (data.kind !== 'DRIVE_TRANSFER')
+      throw new Error('Invalid drive payload');
     const connection = await this.integrations.findById(
       data.organizationId,
       data.connectionId,

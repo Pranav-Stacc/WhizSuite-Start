@@ -15,8 +15,27 @@ export class AgentSessionService {
   ) {}
 
   async createSession(organizationId: string, userId: string, title?: string) {
-    const session = await this.repo.createSession(organizationId, userId, title);
+    const session = await this.repo.createSession(
+      organizationId,
+      userId,
+      title,
+    );
     return this.toSessionDto(session);
+  }
+
+  /** Reuse a titled session when present so chat @Whiz keeps conversation context. */
+  async getOrCreateSession(
+    organizationId: string,
+    userId: string,
+    title: string,
+  ) {
+    const existing = await this.repo.findSessionByTitle(
+      organizationId,
+      userId,
+      title,
+    );
+    if (existing) return this.toSessionDto(existing);
+    return this.createSession(organizationId, userId, title);
   }
 
   async getSession(organizationId: string, sessionId: string) {

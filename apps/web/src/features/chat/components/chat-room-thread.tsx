@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChatMessageDto } from '@agency-os/contracts';
 import { ChatMessageList } from './chat-message-list';
 import { SendMessageForm, type MentionCandidate } from './send-message-form';
@@ -21,16 +21,21 @@ export function ChatRoomThread({
   canPost: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<ChatMessageDto | null>(null);
+  const [localMessages, setLocalMessages] = useState(messages);
   const names =
     membersById instanceof Map
       ? membersById
       : new Map(Object.entries(membersById));
 
+  useEffect(() => {
+    setLocalMessages(messages);
+  }, [messages]);
+
   return (
     <>
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <ChatMessageList
-          messages={messages}
+          messages={localMessages}
           viewerId={viewerId}
           membersById={names}
           onReply={setReplyTo}
@@ -45,6 +50,7 @@ export function ChatRoomThread({
             replyTo={replyTo}
             onClearReply={() => setReplyTo(null)}
             membersById={names}
+            onSent={(message) => setLocalMessages((current) => [...current, message])}
           />
         </div>
       ) : null}

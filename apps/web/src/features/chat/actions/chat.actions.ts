@@ -6,10 +6,10 @@ import {
   createChatGroupSchema,
   type ChatMentionType,
 } from '@agency-os/contracts';
-import { revalidatePath } from 'next/cache';
 import { authorize } from '@/shared/auth/permissions';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { parseInput } from '@/shared/data/action-utils';
+import { refreshData, refreshPage } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
 import { openClientRoom, openDm, openGroup, sendMessage } from '../services/chat.service';
 
@@ -31,8 +31,7 @@ export async function sendChatMessageAction(
   const trimmed = body.trim();
   if (!trimmed) return { ok: false as const, error: 'empty' };
   const message = await sendMessage(roomId, trimmed, mentions, replyToId);
-  revalidatePath('/chat');
-  revalidatePath('/portal/messages');
+  await refreshData('chat');
   return { ok: true as const, message };
 }
 
@@ -43,7 +42,8 @@ export async function createDmFormAction(
   const parsed = parseInput(createChatDmSchema, values);
   if (!parsed.ok) return parsed.result;
   const room = await openDm(parsed.data.userId);
-  revalidatePath('/chat');
+  await refreshData('chat');
+  await refreshPage('/chat');
   return succeed({ href: `/chat?room=${room.id}` }, t('chat.new.created'));
 }
 
@@ -54,14 +54,15 @@ export async function createGroupFormAction(
   const parsed = parseInput(createChatGroupSchema, values);
   if (!parsed.ok) return parsed.result;
   const room = await openGroup(parsed.data.name, parsed.data.memberUserIds ?? []);
-  revalidatePath('/chat');
+  await refreshData('chat');
+  await refreshPage('/chat');
   return succeed({ href: `/chat?room=${room.id}` }, t('chat.new.created'));
 }
 
 export async function openClientChatAction(clientId: string, name: string) {
   await authorize(Permissions.CHAT_VIEW);
   const room = await openClientRoom(clientId, name);
-  revalidatePath('/chat');
+  await refreshData('chat');
   return { ok: true as const, roomId: room.id };
 }
 
@@ -78,8 +79,9 @@ export async function sendClientChatMessageAction(
   if (!body) return fail(t('validation.required'));
   const room = await openClientRoom(clientId, clientName);
   await sendMessage(room.id, body);
-  revalidatePath('/chat');
-  revalidatePath(`/clients/${clientId}/messages`);
-  revalidatePath('/portal/messages');
+  await refreshData('chat');
+  await refreshPage('/chat');
+  await refreshPage(`/clients/${clientId}/messages`);
+  await refreshPage('/portal/messages');
   return succeed(undefined, t('portal.messages.sent'));
 }

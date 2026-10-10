@@ -24,6 +24,31 @@ class DepartmentsActions {
     _ref.invalidate(departmentsProvider);
   }
 
+  Future<void> update(String id, {String? name, String? parentId, bool clearParent = false}) async {
+    await _repo.update(id, name: name, parentId: parentId, clearParent: clearParent);
+    _ref.invalidate(departmentsProvider);
+  }
+
+  Future<void> delete(String id) async {
+    await _repo.delete(id);
+    _ref.invalidate(departmentsProvider);
+  }
+
+  Future<void> createPosition(String departmentId, {required String name, bool isHead = false}) async {
+    await _repo.createPosition(departmentId, name: name, isHead: isHead);
+    _ref.invalidate(departmentsProvider);
+  }
+
+  Future<void> updatePosition(String id, {String? name, bool? isHead}) async {
+    await _repo.updatePosition(id, name: name, isHead: isHead);
+    _ref.invalidate(departmentsProvider);
+  }
+
+  Future<void> deletePosition(String id) async {
+    await _repo.deletePosition(id);
+    _ref.invalidate(departmentsProvider);
+  }
+
   /// Teams have no list endpoint yet, so nothing on screen needs refreshing.
   Future<void> createTeam({required String name, String? description}) =>
       _repo.createTeam(name: name, description: description);

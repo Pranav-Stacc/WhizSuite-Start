@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 import '../formatting/formats.dart';
 import '../network/api_exception.dart';
 import '../theme/app_tokens.dart';
+import 'app_dialog.dart';
 import 'buttons.dart';
 import 'error_message.dart';
 
@@ -47,7 +48,7 @@ class FormErrorBanner extends StatelessWidget {
   }
 }
 
-/// Opens a modal form sheet; resolves to true when the form was submitted successfully.
+/// Opens a centered dialog form; resolves to true when submitted successfully.
 Future<bool> showFormSheet(
   BuildContext context, {
   required String title,
@@ -55,12 +56,14 @@ Future<bool> showFormSheet(
   required List<Widget> Function(BuildContext context, StateSetter setState) fields,
   required Future<void> Function() onSubmit,
 }) async {
-  final saved = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (_) => FormSheet(title: title, submitLabel: submitLabel, fields: fields, onSubmit: onSubmit),
+  final saved = await showAppDialog<bool>(
+    context,
+    builder: (dialogContext) => FormSheet(
+      title: title,
+      submitLabel: submitLabel,
+      fields: fields,
+      onSubmit: onSubmit,
+    ),
   );
   return saved ?? false;
 }
@@ -75,7 +78,7 @@ class FormSheet extends StatefulWidget {
     super.key,
   });
 
-  static const _maxWidth = 640.0;
+  static const maxWidth = AppDialogLayout.defaultMaxWidth;
 
   final String title;
   final String submitLabel;
@@ -114,24 +117,50 @@ class _FormSheetState extends State<FormSheet> {
     final fields = widget.fields(context, setState);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: Center(
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: FormSheet._maxWidth),
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              shrinkWrap: true,
-              padding: EdgeInsets.fromLTRB(tokens.xl, 0, tokens.xl, tokens.xl),
-              children: [
-                Semantics(header: true, child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge)),
-                SizedBox(height: tokens.lg),
-                FormErrorBanner(message: _error),
-                for (final field in fields) Padding(padding: EdgeInsets.only(bottom: tokens.md), child: field),
-                SizedBox(height: tokens.sm),
-                PrimaryButton(label: widget.submitLabel, loading: _submitting, onPressed: _submit),
-              ],
-            ),
+      child: ConstrainedBox(
+        constraints: AppDialogLayout.constraintsOf(context, maxWidth: FormSheet.maxWidth),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.sm, tokens.md),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: MaterialLocalizations.of(context).closeButtonLabel,
+                      onPressed: () => Navigator.of(context).pop(false),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: tokens.border),
+              Flexible(
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.md),
+                  children: [
+                    FormErrorBanner(message: _error),
+                    for (final field in fields)
+                      Padding(padding: EdgeInsets.only(bottom: tokens.lg), child: field),
+                  ],
+                ),
+              ),
+              Divider(height: 1, color: tokens.border),
+              Padding(
+                padding: EdgeInsets.fromLTRB(tokens.lg, tokens.md, tokens.lg, tokens.lg),
+                child: PrimaryButton(label: widget.submitLabel, loading: _submitting, onPressed: _submit),
+              ),
+            ],
           ),
         ),
       ),

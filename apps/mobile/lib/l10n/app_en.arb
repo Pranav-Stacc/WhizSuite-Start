@@ -7,12 +7,6 @@
   "authEmailPlaceholder": "you@agency.com",
   "authPassword": "Password",
   "authLoginSubmit": "Sign in",
-  "authOrEmail": "or use email",
-  "authGoogleButton": "Continue with Google",
-  "authGoogleCancelled": "Google sign-in was cancelled.",
-  "authGoogleNoAccount": "No account for that Google email. Create a workspace first.",
-  "authGoogleInvalid": "Google sign-in was rejected. Try again.",
-  "authGoogleWorkspaceRequired": "Enter an agency name and workspace URL before continuing with Google.",
   "authLoginInvalid": "Incorrect email or password.",
   "authLoginExpired": "Your session expired. Please sign in again.",
   "authNoAccount": "New to WhizSuite?",
@@ -41,37 +35,6 @@
   "authHeroEyebrow": "WhizSuite",
   "authHeroTitle": "Every client, post and invoice in one calm cockpit.",
   "authSignedOut": "You have been signed out.",
-  "authInviteTitle": "Join {organization}",
-  "@authInviteTitle": {
-    "placeholders": {
-      "organization": {
-        "type": "String"
-      }
-    }
-  },
-  "authInviteSubtitle": "You were invited as {email}.",
-  "@authInviteSubtitle": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "authInviteSubtitleExisting": "Accept as {email}.",
-  "@authInviteSubtitleExisting": {
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
-  },
-  "authInvitePassword": "Your password",
-  "authInviteSetPasswordHint": "Choose a password (12+ characters) to join.",
-  "authInviteSubmit": "Accept invitation",
-  "authInviteInvalid": "This invitation link is invalid, already used or expired. Ask the sender for a new one.",
-  "authInviteInvalidTitle": "Invitation unavailable",
-  "authInviteWrongPassword": "That password does not match the existing account for this email.",
-  "authInviteAlreadyMember": "This account is already a member of the workspace. Sign in instead.",
   "validationRequired": "Required",
   "validationEmail": "Enter a valid email address",
   "validationMinLength": "Use at least {min} characters",
@@ -102,7 +65,6 @@
   "navNotifications": "Notifications",
   "navSettings": "Settings",
   "navMore": "More",
-  "navMenu": "Menu",
   "navGroupWork": "Work",
   "navGroupContent": "Content",
   "navGroupClients": "Clients",
@@ -167,16 +129,6 @@
   "details": "Details",
   "savedToast": "Saved",
   "createdToast": "Created",
-  "quickCreateTitle": "Create",
-  "quickCreateSubtitle": "Start something new without leaving your flow.",
-  "quickCreateEmpty": "You don't have permission to create anything yet.",
-  "quickCreateTask": "New task",
-  "quickCreateContent": "New post",
-  "quickCreateProject": "New project",
-  "quickCreateClient": "New client",
-  "quickCreateLead": "New lead",
-  "quickCreateInvoice": "New invoice",
-  "quickCreateShoot": "Plan shoot",
   "deletedToast": "Deleted",
   "deleteConfirmTitle": "Delete {name}?",
   "@deleteConfirmTitle": {
@@ -947,23 +899,6 @@
     }
   },
   "calendarNew": "New event",
-  "calendarCreate": "Create",
-  "calendarNewEventHint": "Meeting, deadline or manual block",
-  "calendarPlanShoot": "Plan shoot",
-  "calendarPlanShootHint": "Shoot day with folders and tasks",
-  "calendarShootHeading": "Plan a shoot",
-  "calendarShootDesc": "Schedule a shoot day, optionally create media folders and checklist tasks.",
-  "calendarShootSubmit": "Plan shoot",
-  "calendarShootTitle": "Shoot title",
-  "calendarShootTitleHint": "e.g. Spring campaign on-location",
-  "calendarShootClient": "Client",
-  "calendarShootProject": "Project",
-  "calendarShootStarts": "Starts",
-  "calendarShootEnds": "Ends",
-  "calendarShootCreateFolders": "Create media folders",
-  "calendarShootCreateFoldersHint": "Raw / Selects / Finals / Deliverables under Shoots",
-  "calendarShootTasks": "Checklist tasks",
-  "calendarShootTasksHint": "One task per line (needs a project)",
   "calendarEdit": "Edit event",
   "calendarTitleLabel": "Title",
   "calendarTitleHint": "e.g. Campaign kickoff call",
@@ -978,7 +913,10 @@
   "calendarWhen": "When",
   "calendarFilterClient": "Client",
   "calendarFilterType": "Type",
+  "calendarFilters": "Filters",
+  "calendarFiltersBody": "Narrow the calendar without cluttering the main view.",
   "calendarFiltersClear": "Clear filters",
+  "calendarDayAgenda": "Day agenda",
   "calendarOpenTask": "Open task",
   "calendarOpenContent": "Open content",
   "calendarOpenProject": "Open project {name}",
@@ -1045,61 +983,8 @@
     }
   },
   "clientTabOverview": "Overview",
-  "clientTabManage": "Manage",
   "clientTabBrand": "Brand kit",
   "clientTabProjects": "Projects",
-  "clientManageTitle": "Workspace",
-  "clientManageBody": "Jump into every area for this client.",
-  "clientManageContent": "Content",
-  "clientManageContentBody": "Posts, captions and planner",
-  "clientManageCalendar": "Calendar",
-  "clientManageCalendarBody": "Schedule and deadlines",
-  "clientManageMessages": "Messages",
-  "clientManageMessagesBody": "Feedback and conversations",
-  "clientManageAssets": "Assets",
-  "clientManageAssetsBody": "Files and brand media",
-  "clientManageInvoices": "Invoices",
-  "clientManageInvoicesBody": "Billing and retainers",
-  "clientManageIntegrations": "Integrations",
-  "clientManageIntegrationsBody": "Connected accounts",
-  "clientManageCompose": "New post",
-  "clientManageAgreements": "Agreements",
-  "clientManageAgreementsBody": "Contracts, NDAs and signatures",
-  "clientManageGrid": "Content grid",
-  "clientManageGridBody": "Instagram-style feed planner",
-  "clientTabAgreements": "Agreements",
-  "agreementsEmptyTitle": "No agreements yet",
-  "agreementsEmptyBody": "Create an NDA, MSA or SOW and upload the signed PDF when ready.",
-  "agreementsNew": "New agreement",
-  "agreementsNewHint": "Start a draft contract for this client. You can upload a PDF and collect a signature next.",
-  "agreementsTitleLabel": "Title",
-  "agreementsTypeLabel": "Type",
-  "agreementsTypeNda": "NDA",
-  "agreementsTypeMsa": "MSA",
-  "agreementsTypeSow": "SOW",
-  "agreementsTypeOther": "Other",
-  "agreementsStart": "Start date",
-  "agreementsEnd": "End date",
-  "agreementsStatTotal": "Total",
-  "agreementsStatSigned": "Signed",
-  "agreementsStatDraft": "Drafts",
-  "agreementsDownload": "Download",
-  "agreementsDownloadStarted": "Opening agreement…",
-  "agreementsUploadPdf": "Upload PDF",
-  "agreementsPdfUploaded": "PDF uploaded",
-  "agreementsSign": "Sign",
-  "agreementsSignTitle": "Sign agreement",
-  "agreementsSignHint": "Type your full legal name to sign. A snapshot of the PDF is locked at signing time.",
-  "agreementsSignerName": "Full name",
-  "agreementsMarkSigned": "Mark signed",
-  "agreementsSignedToast": "Agreement signed",
-  "agreementsCreatedToast": "Agreement created",
-  "agreementsStatusDraft": "Draft",
-  "agreementsStatusSent": "Sent",
-  "agreementsStatusSigned": "Signed",
-  "agreementsStatusActive": "Active",
-  "agreementsStatusExpired": "Expired",
-  "agreementsStatusVoid": "Void",
   "clientProjectsEmpty": "No projects for this client yet.",
   "clientBrandColours": "Colours",
   "clientBrandEdit": "Edit brand kit",
@@ -1161,6 +1046,47 @@
   "contentFilterClient": "Client",
   "contentFilterType": "Type",
   "contentFilterPlatform": "Platform",
+  "contentFilterStatus": "Status",
+  "contentFilters": "Filters",
+  "contentFiltersBody": "Narrow the library without cluttering the main view.",
+  "contentFiltersClear": "Clear filters",
+  "contentOpenPost": "Open post",
+  "contentSetReminder": "Set reminder",
+  "contentSetReminderBody": "Pick a publish date and time",
+  "contentReminderSet": "Reminder saved",
+  "contentPlannerViewGrid": "Grid",
+  "contentPlannerViewSheet": "Sheet",
+  "contentPlannerPlatforms": "Platforms",
+  "contentPlannerPlatformsAll": "All",
+  "contentPlannerPending": "Needs action",
+  "contentPlannerPendingReview": "{count, plural, =1{1 in review} other{{count} in review}}",
+  "@contentPlannerPendingReview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contentPlannerPendingChanges": "{count, plural, =1{1 needs changes} other{{count} need changes}}",
+  "@contentPlannerPendingChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "contentSheetEmpty": "No scheduled posts this month",
+  "contentSheetRowType": "Type",
+  "contentSheetRowName": "Name",
+  "contentSheetRowVisual": "Visual",
+  "contentSheetRowCaption": "Caption",
+  "contentSheetRowHashtags": "Hashtags",
+  "contentSheetRowCta": "CTA",
+  "contentSheetRowPillar": "Pillar",
+  "contentSheetRowStatus": "Status",
+  "contentSheetNewSlot": "New post",
+  "contentSheetHideEmpty": "Hide empty days",
+  "calendarModeSheet": "Sheet",
   "contentScheduledFor": "Scheduled {date}",
   "@contentScheduledFor": {
     "placeholders": {
@@ -1586,6 +1512,29 @@
   "dashboardQuickNewPost": "New post",
   "dashboardQuickNewClient": "New client",
   "dashboardQuickLogTime": "Log time",
+  "homeBoardEyebrow": "YOUR DESK",
+  "homeBoardNow": "Right now",
+  "homeBoardNext": "Coming up",
+  "homeBoardCreate": "Create",
+  "homeBoardAttentionTasks": "{count, plural, =1{1 urgent task} other{{count} urgent tasks}}",
+  "@homeBoardAttentionTasks": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "homeBoardAttentionApprovals": "{count, plural, =1{1 approval waiting} other{{count} approvals waiting}}",
+  "@homeBoardAttentionApprovals": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "homeBoardAttentionContent": "{count, plural, =1{1 post needs review} other{{count} posts need review}}",
+  "@homeBoardAttentionContent": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "homeBoardAttentionInvoices": "Overdue invoices to collect",
   "dashboardEmptyTitle": "Your home is quiet",
   "dashboardEmptyBody": "Nothing is available for your role yet. Ask an admin if you expected to see work here.",
   "dashboardMyWorkTitle": "My work",
@@ -1794,146 +1743,8 @@
   "departmentTeamNameHint": "e.g. Retail pod",
   "departmentTeamDescription": "Description (optional)",
   "departmentTeamCreated": "Team created",
-  "navInbox": "Inbox",
-  "inboxTitle": "Inbox",
-  "inboxSearch": "Search author or message",
-  "inboxEmpty": "Inbox zero",
-  "inboxEmptyBody": "Comments, DMs and mentions from your clients' channels will land here.",
-  "inboxStatOpen": "Open",
-  "inboxStatOpenHint": "Needs a reply",
-  "inboxStatUrgent": "Urgent",
-  "inboxStatUrgentHint": "High or urgent priority",
-  "inboxStatMine": "Mine",
-  "inboxStatMineHint": "Assigned to you",
-  "inboxStatus": "{status, select, OPEN{Open} REPLIED{Replied} ARCHIVED{Archived} other{{status}}}",
-  "@inboxStatus": {
-    "placeholders": {
-      "status": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxType": "{type, select, COMMENT{Comment} DM{Direct message} MENTION{Mention} other{{type}}}",
-  "@inboxType": {
-    "placeholders": {
-      "type": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxSentiment": "{sentiment, select, POSITIVE{Positive} NEUTRAL{Neutral} NEGATIVE{Negative} other{Not rated}}",
-  "@inboxSentiment": {
-    "placeholders": {
-      "sentiment": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxPriority": "{priority, select, LOW{Low} NORMAL{Normal} HIGH{High} URGENT{Urgent} other{{priority}}}",
-  "@inboxPriority": {
-    "placeholders": {
-      "priority": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxPlatform": "{platform, select, instagram{Instagram} facebook{Facebook} linkedin{LinkedIn} x{X} youtube{YouTube} tiktok{TikTok} other{{platform}}}",
-  "@inboxPlatform": {
-    "placeholders": {
-      "platform": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxFilterType": "Type",
-  "inboxFilterSentiment": "Sentiment",
-  "inboxFilterPriority": "Priority",
-  "inboxFilterClient": "Client",
-  "inboxFilterMine": "Assigned to me",
-  "inboxClearFilters": "Clear filters",
-  "inboxUnknownAuthor": "Unknown author",
-  "inboxNoPreview": "No message text",
-  "inboxSelectTitle": "Select a conversation",
-  "inboxSelectBody": "Pick a message to read the thread, triage it and reply.",
-  "inboxMetaClient": "Client",
-  "inboxMetaReceived": "Received",
-  "inboxMetaSentiment": "Sentiment",
-  "inboxMetaPriority": "Priority",
-  "inboxMetaAssignee": "Assignee",
-  "inboxPriorityValue": "Priority: {priority}",
-  "@inboxPriorityValue": {
-    "placeholders": {
-      "priority": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxChangeStatus": "Change status",
-  "inboxChangeSentiment": "Change sentiment",
-  "inboxChangePriority": "Change priority",
-  "inboxChangeAssignee": "Change assignee",
-  "inboxAssignMe": "Assign to me",
-  "inboxUnassign": "Unassign",
-  "inboxArchive": "Archive",
-  "inboxReopen": "Reopen",
-  "inboxArchivedToast": "Conversation archived",
-  "inboxReopenedToast": "Conversation reopened",
-  "inboxReplyHint": "Reply to {name}…",
-  "@inboxReplyHint": {
-    "placeholders": {
-      "name": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxReplySend": "Send reply",
-  "inboxReplySent": "Reply sent",
-  "inboxReplyReadOnly": "Your role can read this conversation but not reply to it.",
-  "inboxMessagesEmpty": "No messages in this thread yet.",
-  "inboxSending": "Sending…",
-  "inboxCharacterCount": "{count} / {max}",
-  "@inboxCharacterCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      },
-      "max": {
-        "type": "int"
-      }
-    }
-  },
-  "inboxYou": "You",
-  "inboxTeam": "Team",
-  "inboxToday": "Today",
-  "inboxYesterday": "Yesterday",
-  "inboxMessageLabel": "{author}, {time}: {body}",
-  "@inboxMessageLabel": {
-    "placeholders": {
-      "author": {
-        "type": "String"
-      },
-      "time": {
-        "type": "String"
-      },
-      "body": {
-        "type": "String"
-      }
-    }
-  },
-  "inboxRowLabel": "{author}, {status}, {time}",
-  "@inboxRowLabel": {
-    "placeholders": {
-      "author": {
-        "type": "String"
-      },
-      "status": {
-        "type": "String"
-      },
-      "time": {
-        "type": "String"
-      }
-    }
-  },
+  "departmentHead": "Head",
+  "departmentPositionNameHint": "e.g. Senior designer",
   "navIntegrations": "Integrations",
   "integrationsTitle": "Integrations",
   "integrationsSearch": "Search providers, handles or clients",
@@ -2733,7 +2544,9 @@
   "messagesClientLabel": "Client",
   "messagesFirstMessageLabel": "Message",
   "messagesSend": "Send",
-  "messagesComposerHint": "Write a message…",
+  "messagesComposerHint": "Message…",
+  "messagesWhiz": "Whiz",
+  "messagesWhizHint": "Assign tasks, schedule posts, set reminders…",
   "messagesResolve": "Resolve",
   "messagesReopen": "Reopen",
   "messagesReopenHint": "This conversation is resolved. Sending a message will reopen it.",
@@ -2777,6 +2590,18 @@
   "messagesAgencyConversation": "Your agency",
   "messagesClientConversation": "Client",
   "messagesContentConversation": "Content feedback",
+  "agentNewSession": "New chat",
+  "agentSessions": "History",
+  "agentUntitledSession": "Untitled chat",
+  "agentEmptyTitle": "Say what you need",
+  "agentEmptyBody": "One chat for everything: create clients, assign tasks, draft content, schedule reminders, and more.",
+  "agentComposerHint": "Tell me what to do…",
+  "agentSend": "Send",
+  "agentSendFailed": "Whiz could not send that message. Try again.",
+  "agentConfirm": "Approve",
+  "agentPhasePlanning": "Planning the next steps…",
+  "agentPhaseWorking": "Working on it…",
+  "agentPhaseWriting": "Writing your answer…",
   "messagesStatus": "{status, select, OPEN{Open} RESOLVED{Resolved} other{{status}}}",
   "@messagesStatus": {
     "placeholders": {
@@ -2802,8 +2627,6 @@
   "portalQuickInvoices": "Open invoices",
   "portalQuickMessage": "Message agency",
   "portalQuickProjects": "View projects",
-  "portalQuickFiles": "Open files",
-  "portalQuickReports": "View reports",
   "portalKpiAria": "Portal summary",
   "portalKpiRetry": "Couldn't load · tap to retry",
   "portalKpiApprovals": "Awaiting your review",
@@ -2857,23 +2680,6 @@
   "portalContentTitle": "Recent content",
   "portalContentEmpty": "No published or scheduled posts to show yet.",
   "portalContentCta": "Browse content",
-  "portalKpiFiles": "Shared files",
-  "portalKpiFilesCaption": "{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}",
-  "@portalKpiFilesCaption": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "portalKpiReports": "Reach (30 days)",
-  "portalKpiReportsCaption": "Across your connected channels",
-  "portalFilesTitle": "Files",
-  "portalFilesEmpty": "No files have been shared with you yet.",
-  "portalFilesCta": "Browse files",
-  "portalReportsTitle": "Reports",
-  "portalReportsEmpty": "No reports are ready yet.",
-  "portalReportsCta": "View reports",
   "portalContentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
   "@portalContentStatus": {
     "placeholders": {
@@ -3550,8 +3356,67 @@
   },
   "taskNoProjects": "No projects yet — you can still create an inbox task.",
   "navTeam": "Agency",
+  "teamOrgStructure": "Structure & access",
   "teamTabMembers": "Members",
   "teamTabInvitations": "Invitations",
+  "agencyTabHrDocuments": "HR docs",
+  "memberTabOverview": "Overview",
+  "memberTabWork": "Work",
+  "memberTabContent": "Content",
+  "memberTabTime": "Time",
+  "memberTabPay": "Pay",
+  "memberTabDocuments": "Documents",
+  "memberWorkEmpty": "No tasks assigned to this person yet.",
+  "memberContentEmpty": "No posts or content from this person yet.",
+  "memberTimeEmpty": "No time logged yet.",
+  "memberDocumentsEmpty": "No documents sent yet.",
+  "memberEmploymentType": "Employment type",
+  "memberEmploymentTypeLabel": "{type, select, EMPLOYEE{Employee} FREELANCE{Freelance} CONTRACTOR{Contractor} other{Not set}}",
+  "@memberEmploymentTypeLabel": {
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "memberDocumentTypeLabel": "{type, select, OFFER_LETTER{Offer letter} SALARY_SLIP{Salary slip} NDA{NDA} EMPLOYMENT_AGREEMENT{Employment agreement} OTHER{Document} other{{type}}}",
+  "@memberDocumentTypeLabel": {
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "memberSendDocument": "Send document",
+  "memberPickDocumentType": "Choose document type",
+  "memberPickTemplate": "Choose template",
+  "memberDocumentSent": "Document sent to {name}.",
+  "@memberDocumentSent": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "memberFilterTitle": "Filter members",
+  "memberFilterApply": "Apply filters",
+  "memberFilterClear": "Clear all",
+  "memberActiveFilters": "Active filters",
+  "memberTasksAssigned": "{count, plural, =1{1 task assigned} other{{count} tasks assigned}}",
+  "@memberTasksAssigned": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "memberContentAuthored": "{count, plural, =1{1 post} other{{count} posts}}",
+  "@memberContentAuthored": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "memberHoursLogged": "{hours} logged",
+  "@memberHoursLogged": {
+    "placeholders": {
+      "hours": { "type": "String" }
+    }
+  },
+  "hrTemplatesTitle": "HR document templates",
+  "hrTemplatesBody": "Create templates for offer letters, salary slips, NDAs and employment agreements.",
+  "hrTemplatesEmpty": "No HR templates yet",
   "teamSearch": "Search people, emails or roles",
   "teamFilterByRole": "Filter by role",
   "teamEmpty": "No one here yet",
@@ -3741,6 +3606,67 @@
   "teamStatMembers": "People",
   "teamStatStaff": "Staff",
   "teamStatClients": "Clients",
+  "agencyTabOverview": "Overview",
+  "agencyBoardEyebrow": "STUDIO COMMAND",
+  "agencyBoardTitle": "Run the agency",
+  "agencyBoardSubtitle": "People, structure, and permissions — your creative control room.",
+  "agencyBoardPeople": "People",
+  "agencyBoardStructure": "Structure",
+  "agencyBoardAccess": "Access",
+  "agencyBoardPlaybook": "Playbook",
+  "agencyBoardOnTheFloor": "On the floor",
+  "agencyBoardLaunchPad": "Launch pad",
+  "agencyBoardNeedsAttention": "Needs attention",
+  "agencyBoardOpenRoster": "Open roster",
+  "agencyBoardStaffLine": "{staff} staff · {clients} clients",
+  "@agencyBoardStaffLine": {
+    "placeholders": {
+      "staff": { "type": "int" },
+      "clients": { "type": "int" }
+    }
+  },
+  "agencyBoardUnassignedHint": "{count, plural, =1{1 person without a department} other{{count} people without a department}}",
+  "@agencyBoardUnassignedHint": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "agencyOverviewTitle": "Your organisation at a glance",
+  "agencyUnassignedMembers": "Not in a department",
+  "agencyAssignMember": "Assign",
+  "agencyPendingInvites": "{count, plural, =1{1 pending invitation} other{{count} pending invitations}}",
+  "@agencyPendingInvites": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "agencyQuickActions": "Quick actions",
+  "agencyCustomAccess": "Custom access",
+  "memberPositions": "Departments & positions",
+  "memberPositionsEmpty": "Not assigned to any department yet.",
+  "memberAddPosition": "Add to department",
+  "memberPrimaryPosition": "Primary",
+  "memberPickDepartment": "Choose a department",
+  "memberPickPosition": "Choose a position",
+  "memberNoPositionsInDepartment": "This department has no positions yet. Create one from the department page.",
+  "memberEditTitle": "Edit job title",
+  "memberTitleHint": "e.g. Creative director",
+  "memberPermissions": "Direct permissions",
+  "memberPermissionsSummary": "{effective} effective · {overrides} custom overrides",
+  "@memberPermissionsSummary": {
+    "placeholders": {
+      "effective": {
+        "type": "int"
+      },
+      "overrides": {
+        "type": "int"
+      }
+    }
+  },
+  "memberPermissionsReadOnly": "This member's permissions cannot be edited here.",
+  "memberSavePermissions": "Save permission changes",
   "navTemplates": "Templates",
   "templatesTitle": "Templates",
   "templatesSearch": "Search templates",
@@ -3750,7 +3676,7 @@
   "templateEdit": "Edit template",
   "templateName": "Name",
   "templateNameHint": "e.g. Monthly social retainer kickoff",
-  "templateType": "{type, select, PROJECT{Project} TASK{Task} CONTENT{Content} REPORT{Report} MESSAGE{Message} other{{type}}}",
+  "templateType": "{type, select, PROJECT{Project} TASK{Task} CONTENT{Content} REPORT{Report} MESSAGE{Message} OFFER_LETTER{Offer letter} SALARY_SLIP{Salary slip} NDA{NDA} EMPLOYMENT_AGREEMENT{Employment agreement} other{{type}}}",
   "@templateType": {
     "placeholders": {
       "type": {
@@ -4033,7 +3959,7 @@
       }
     }
   },
-  "workflowStagesTooFew": "Add at least {min} stage(s)",
+  "workflowStagesTooFew": "Add at least {min} stages",
   "@workflowStagesTooFew": {
     "placeholders": {
       "min": {
@@ -4059,6 +3985,20 @@
     }
   },
   "workflowStagesVersionNote": "Changing the stages publishes a new version. Content already in progress keeps its version.",
+  "workflowStageApprovalRule": "Approval rule",
+  "workflowStageRuleAny": "Any one approver",
+  "workflowStageRuleAll": "Everyone must approve",
+  "workflowStageRuleQuorum": "Quorum (N of pool)",
+  "workflowStageQuorum": "Approvals needed",
+  "workflowStageQuorumHint": "How many people from the pool must approve.",
+  "workflowStageRoles": "Approver roles",
+  "workflowStageRolesHint": "Pick any access role. People with that role can approve this stage.",
+  "workflowStageRolesEmpty": "No roles available yet — create a role under Agency → Roles first.",
+  "workflowStagePeople": "Named people",
+  "workflowStagePeopleHint": "Add specific people who can approve this stage.",
+  "workflowStagePeopleEmpty": "No active team members to pick.",
+  "workflowStageAssigneesTitle": "Stage assignees",
+  "workflowStageNoAssignees": "No roles or people assigned yet.",
   "workflowSlaField": "Response time",
   "workflowSlaHint": "How long each approval may take. Leave empty for no limit.",
   "workflowSlaSuffix": "hours",
@@ -4137,72 +4077,238 @@
       }
     }
   },
+  "agreementsCreatedToast": "Agreement created",
+  "agreementsDownload": "Download",
+  "agreementsDownloadStarted": "Opening agreement…",
+  "agreementsEmptyBody": "Create an NDA, MSA or SOW and upload the signed PDF when ready.",
+  "agreementsEmptyTitle": "No agreements yet",
+  "agreementsEnd": "End date",
+  "agreementsMarkSigned": "Mark signed",
+  "agreementsNew": "New agreement",
+  "agreementsNewHint": "Start a draft contract for this client. You can upload a PDF and collect a signature next.",
+  "agreementsPdfUploaded": "PDF uploaded",
+  "agreementsSign": "Sign",
+  "agreementsSignedToast": "Agreement signed",
+  "agreementsSignerName": "Full name",
+  "agreementsSignHint": "Type your full legal name to sign. A snapshot of the PDF is locked at signing time.",
+  "agreementsSignTitle": "Sign agreement",
+  "agreementsStart": "Start date",
+  "agreementsStatDraft": "Drafts",
+  "agreementsStatSigned": "Signed",
+  "agreementsStatTotal": "Total",
+  "agreementsStatusActive": "Active",
+  "agreementsStatusDraft": "Draft",
+  "agreementsStatusExpired": "Expired",
+  "agreementsStatusSent": "Sent",
+  "agreementsStatusSigned": "Signed",
+  "agreementsStatusVoid": "Void",
+  "agreementsTitleLabel": "Title",
+  "agreementsTypeLabel": "Type",
+  "agreementsTypeMsa": "MSA",
+  "agreementsTypeNda": "NDA",
+  "agreementsTypeOther": "Other",
+  "agreementsTypeSow": "SOW",
+  "agreementsUploadPdf": "Upload PDF",
+  "authGoogleButton": "Continue with Google",
+  "authGoogleCancelled": "Google sign-in was cancelled.",
+  "authGoogleInvalid": "Google sign-in was rejected. Try again.",
+  "authGoogleNoAccount": "No account for that Google email. Create a workspace first.",
+  "authGoogleWorkspaceRequired": "Enter an agency name and workspace URL before continuing with Google.",
+  "authInviteAlreadyMember": "This account is already a member of the workspace. Sign in instead.",
+  "authInviteInvalid": "This invitation link is invalid, already used or expired. Ask the sender for a new one.",
+  "authInviteInvalidTitle": "Invitation unavailable",
+  "authInvitePassword": "Your password",
+  "authInviteSetPasswordHint": "Choose a password (12+ characters) to join.",
+  "authInviteSubmit": "Accept invitation",
+  "authInviteSubtitle": "You were invited as {email}.",
+  "@authInviteSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authInviteSubtitleExisting": "Accept as {email}.",
+  "@authInviteSubtitleExisting": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authInviteTitle": "Join {organization}",
+  "@authInviteTitle": {
+    "placeholders": {
+      "organization": {
+        "type": "String"
+      }
+    }
+  },
+  "authInviteWrongPassword": "That password does not match the existing account for this email.",
+  "authOrEmail": "or use email",
+  "calendarCreate": "Create",
+  "calendarNewEventHint": "Meeting, deadline or manual block",
+  "calendarPlanShoot": "Plan shoot",
+  "calendarPlanShootHint": "Shoot day with folders and tasks",
+  "calendarShootClient": "Client",
+  "calendarShootCreateFolders": "Create media folders",
+  "calendarShootCreateFoldersHint": "Raw / Selects / Finals / Deliverables under Shoots",
+  "calendarShootDesc": "Schedule a shoot day, optionally create media folders and checklist tasks.",
+  "calendarShootEnds": "Ends",
+  "calendarShootHeading": "Plan a shoot",
+  "calendarShootProject": "Project",
+  "calendarShootStarts": "Starts",
+  "calendarShootSubmit": "Plan shoot",
+  "calendarShootTasks": "Checklist tasks",
+  "calendarShootTasksHint": "One task per line (needs a project)",
+  "calendarShootTitle": "Shoot title",
+  "calendarShootTitleHint": "e.g. Spring campaign on-location",
+  "clientManageCalendar": "Calendar",
+  "clientManageCalendarBody": "Schedule and deadlines",
+  "clientManageContent": "Content",
+  "clientManageContentBody": "Posts, captions and planner",
+  "clientManageGrid": "Content grid",
+  "clientManageGridBody": "Instagram-style feed planner",
+  "clientManageIntegrations": "Integrations",
+  "clientManageIntegrationsBody": "Connected accounts",
+  "clientTabAgreements": "Agreements",
+  "contentCopyLink": "Copy link",
+  "contentFieldHashtagsHint": "#brand #launch",
+  "contentLinkCopied": "Post link copied",
+  "contentPlatformsHint": "Choose one or more networks for this post.",
+  "contentPlatformsSelect": "Select platforms",
+  "contentReviewActions": "Review decision",
+  "contentShare": "Share",
+  "contentShareCopied": "Share text copied",
+  "contentShareText": "{title} · {client}\n{url}",
+  "@contentShareText": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "client": {
+        "type": "String"
+      },
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "dashboardFocusClearSubtitle": "Nothing urgent. Space to think.",
+  "dashboardFocusSubtitle": "{count, plural, =1{1 thing needs you today.} other{{count} things need you today.}}",
+  "@dashboardFocusSubtitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "messagesCreateGroup": "Create group",
+  "messagesDeleted": "Message deleted",
+  "messagesGroupNameLabel": "Group name",
+  "messagesGroupPickMembers": "Pick at least one teammate",
+  "messagesGroupSelected": "{count, plural, =1{1 selected} other{{count} selected}}",
+  "@messagesGroupSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "messagesNewPortalBody": "Start a chat with your agency team. They will see it in the client room.",
+  "messagesNoContacts": "No people match that search",
+  "messagesSearchContacts": "Search name or email",
+  "messagesTabClients": "Clients",
+  "messagesTabGroup": "Group",
+  "messagesTabTeam": "Team",
+  "navMenu": "Menu",
+  "portalFilesCta": "Browse files",
+  "portalFilesEmpty": "No files have been shared with you yet.",
+  "portalFilesTitle": "Files",
+  "portalKpiFiles": "Shared files",
+  "portalKpiFilesCaption": "{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}",
+  "@portalKpiFilesCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalKpiReports": "Reach (30 days)",
+  "portalKpiReportsCaption": "Across your connected channels",
+  "portalQuickFiles": "Open files",
+  "portalQuickReports": "View reports",
+  "portalReportsCta": "View reports",
+  "portalReportsEmpty": "No reports are ready yet.",
+  "portalReportsTitle": "Reports",
+  "quickCreateClient": "New client",
+  "quickCreateContent": "New post",
+  "quickCreateEmpty": "You don't have permission to create anything yet.",
+  "quickCreateInvoice": "New invoice",
+  "quickCreateLead": "New lead",
+  "quickCreateProject": "New project",
+  "quickCreateShoot": "Plan shoot",
+  "quickCreateSubtitle": "Start something new without leaving your flow.",
+  "quickCreateTask": "New task",
+  "quickCreateTitle": "Create",
+  "storageClearSelection": "Clear selection",
+  "storageDriveConnect": "Connect Google Drive",
+  "storageDriveConnectFailed": "Could not start Google Drive connect.",
+  "storageDriveDisconnect": "Disconnect",
+  "storageDriveDisconnected": "Google Drive disconnected.",
+  "storageDriveDisconnectFailed": "Could not disconnect Google Drive.",
+  "storageDriveNotConfigured": "Ask your platform admin to set Google Drive OAuth credentials.",
+  "storageDriveTransferAll": "Transfer all to Drive",
+  "storageDriveTransferFailed": "Could not start the Drive transfer.",
+  "storageDriveTransferStarted": "Drive transfer started.",
+  "storageFileCount": "{count, plural, =1{1 file} other{{count} files}}",
+  "@storageFileCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storageSelectedCount": "{count} selected",
+  "@storageSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storageSettingsBody": "Usage, data sources, and Google Drive",
+  "storageSettingsTitle": "Storage",
+  "storageSourceDriveBody": "Connect Google Drive to import files or transfer copies out.",
+  "storageSourcePlatformBody": "Secure platform storage used across media, clients, and the portal.",
+  "storageSourcesBody": "Connect external libraries and manage where agency files live.",
+  "storageSourcesTitle": "Data sources",
+  "storageStatusAvailable": "Ready",
+  "storageStatusConnected": "Connected",
+  "storageStatusDisabled": "Not configured",
+  "storageStatusError": "Error",
+  "storageStatusPending": "Connecting",
   "storageTitle": "Storage used",
   "storageUsedOf": "{used} of {limit}",
   "@storageUsedOf": {
     "placeholders": {
-      "used": { "type": "String" },
-      "limit": { "type": "String" }
+      "used": {
+        "type": "String"
+      },
+      "limit": {
+        "type": "String"
+      }
     }
   },
   "storageUsedUnlimited": "{used} used",
   "@storageUsedUnlimited": {
     "placeholders": {
-      "used": { "type": "String" }
+      "used": {
+        "type": "String"
+      }
     }
   },
-  "storageFileCount": "{count, plural, =1{1 file} other{{count} files}}",
-  "@storageFileCount": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "storageSettingsTitle": "Storage",
-  "storageSettingsBody": "Usage, data sources, and Google Drive",
-  "storageSourcesTitle": "Data sources",
-  "storageSourcesBody": "Connect external libraries and manage where agency files live.",
-  "storageSourcePlatformBody": "Secure platform storage used across media, clients, and the portal.",
-  "storageSourceDriveBody": "Connect Google Drive to import files or transfer copies out.",
-  "storageStatusConnected": "Connected",
-  "storageStatusAvailable": "Ready",
-  "storageStatusPending": "Connecting",
-  "storageStatusError": "Error",
-  "storageStatusDisabled": "Not configured",
-  "storageDriveConnect": "Connect Google Drive",
-  "storageDriveDisconnect": "Disconnect",
-  "storageDriveTransferAll": "Transfer all to Drive",
-  "storageDriveNotConfigured": "Ask your platform admin to set Google Drive OAuth credentials.",
-  "storageDriveConnectFailed": "Could not start Google Drive connect.",
-  "storageDriveDisconnectFailed": "Could not disconnect Google Drive.",
-  "storageDriveDisconnected": "Google Drive disconnected.",
-  "storageDriveTransferFailed": "Could not start the Drive transfer.",
-  "storageDriveTransferStarted": "Drive transfer started.",
-  "storageZipSelect": "Select files",
   "storageZipDownload": "Download ZIP",
   "storageZipFailed": "Could not build the ZIP.",
-  "storageSelectedCount": "{count} selected",
-  "@storageSelectedCount": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "storageClearSelection": "Clear selection",
-  "messagesDeleted": "Message deleted",
-  "messagesGroupConversation": "Group chat",
-  "messagesGroupNameLabel": "Group name",
-  "agentTitle": "AI Agent",
-  "agentNewSession": "New session",
-  "agentMultiAgent": "Multi-agent mode",
-  "agentUntitledSession": "Untitled session",
-  "agentToolsCount": "{count} tools available",
-  "@agentToolsCount": {
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-  "agentConfirm": "Confirm",
-  "agentEmptyTitle": "Ask the agent to work for you",
-  "agentEmptyBody": "Create a session to draft content, manage tasks, summarize data, and more — under your permissions.",
-  "agentComposerHint": "Ask the agent…",
-  "agentSendFailed": "Could not send your message."
+  "storageZipSelect": "Select files"
 }

@@ -9,6 +9,7 @@
     "^.+\\.(t|j)s$": ["ts-jest", { "tsconfig": "<rootDir>/tsconfig.json" }]
   },
   "moduleNameMapper": {
-    "^@agency-os/contracts$": "<rootDir>/../../../packages/contracts/dist/index.js"
+    "^@agency-os/contracts$": "<rootDir>/../../../packages/contracts/dist/index.js",
+    "^archiver$": "<rootDir>/stubs/archiver.cjs"
   }
 }

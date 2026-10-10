@@ -103,7 +103,7 @@ class OverviewColumns extends StatelessWidget {
 class MetricGrid extends StatelessWidget {
   const MetricGrid({required this.tiles, required this.semanticLabel, super.key});
 
-  static const _minTileWidth = 140.0;
+  static const _minTileWidth = 120.0;
   static const _maxColumns = 4;
   static const _minColumns = 2;
 
@@ -188,9 +188,9 @@ class AsyncMetricTile<T> extends StatelessWidget {
 class _MetricSkeleton extends StatelessWidget {
   const _MetricSkeleton({required this.label, required this.icon});
 
-  static const _valueHeight = 22.0;
-  static const _valueWidth = 56.0;
-  static const _captionWidth = 80.0;
+  static const _valueHeight = 18.0;
+  static const _valueWidth = 40.0;
+  static const _captionWidth = 64.0;
 
   final String label;
   final IconData icon;
@@ -200,7 +200,7 @@ class _MetricSkeleton extends StatelessWidget {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
     return SurfaceCard(
-      padding: EdgeInsets.fromLTRB(tokens.sm + tokens.xs, tokens.sm, tokens.sm + tokens.xs, tokens.sm),
+      padding: EdgeInsets.fromLTRB(tokens.sm + 2, tokens.sm, tokens.sm + 2, tokens.sm),
       semanticLabel: label,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,10 +212,10 @@ class _MetricSkeleton extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: text.labelSmall?.copyWith(color: tokens.muted),
+                  style: text.labelSmall?.copyWith(color: tokens.muted, fontSize: 11),
                 ),
               ),
-              Icon(icon, size: 16, color: tokens.border),
+              Icon(icon, size: 14, color: tokens.border),
             ],
           ),
           SizedBox(height: tokens.xs),
@@ -224,8 +224,8 @@ class _MetricSkeleton extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonBox(width: _valueWidth, height: _valueHeight),
-                SizedBox(height: 6),
-                SkeletonBox(width: _captionWidth, height: 10),
+                SizedBox(height: 4),
+                SkeletonBox(width: _captionWidth, height: 8),
               ],
             ),
           ),

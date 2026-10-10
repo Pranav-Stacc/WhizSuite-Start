@@ -4,11 +4,8 @@ import 'dashboard_models.dart';
 /// Days ahead the overview treats as "soon" / "upcoming".
 const int dashboardHorizonDays = 7;
 
-/// Months shown in the revenue chart.
-const int dashboardRevenueMonths = 6;
-
 /// Rows shown in each overview list before "View all".
-const int dashboardListLimit = 5;
+const int dashboardListLimit = 4;
 
 DateTime _startOfDay(DateTime value) => DateTime(value.year, value.month, value.day);
 
@@ -150,82 +147,6 @@ class ReceivablesSummary {
 
   /// Open invoices in [currency], earliest due first.
   final List<InvoiceRef> open;
-}
-
-typedef MonthTotal = ({DateTime month, int minor});
-
-/// Paid revenue per calendar month for the last [months] months (oldest first),
-/// in the dominant currency of paid invoices.
-class RevenueSeries {
-  const RevenueSeries({required this.currency, required this.months});
-
-  factory RevenueSeries.of(List<InvoiceRef> invoices, {required DateTime now, int months = dashboardRevenueMonths}) {
-    final paid = invoices.where((i) => i.status == InvoiceStatuses.paid && i.paidAt != null).toList();
-    final currency = dominantCurrency(paid.map((i) => i.currency));
-    final buckets = [for (var i = months - 1; i >= 0; i--) DateTime(now.year, now.month - i)];
-    final totals = {for (final month in buckets) month: 0};
-    for (final invoice in paid) {
-      if (currency != null && invoice.currency != currency) continue;
-      final at = invoice.paidAt?.toLocal();
-      if (at == null) continue;
-      final key = DateTime(at.year, at.month);
-      final current = totals[key];
-      if (current != null) totals[key] = current + invoice.totalMinor;
-    }
-    return RevenueSeries(currency: currency, months: [for (final month in buckets) (month: month, minor: totals[month] ?? 0)]);
-  }
-
-  final String? currency;
-  final List<MonthTotal> months;
-
-  int get totalMinor => months.fold(0, (sum, m) => sum + m.minor);
-}
-
-typedef StageTotal = ({String stage, int count, int valueMinor});
-
-/// Open pipeline value per stage, in the dominant lead currency. Lost deals are excluded.
-class PipelineSummary {
-  const PipelineSummary({required this.currency, required this.stages});
-
-  factory PipelineSummary.of(List<LeadRef> leads) {
-    final live = leads.where((l) => l.stage != LeadStages.lost).toList();
-    final currency = dominantCurrency(live.map((l) => l.currency));
-    final counts = <String, int>{};
-    final values = <String, int>{};
-    for (final lead in live) {
-      counts[lead.stage] = (counts[lead.stage] ?? 0) + 1;
-      if (currency == null || lead.currency == currency) {
-        values[lead.stage] = (values[lead.stage] ?? 0) + lead.valueMinor;
-      }
-    }
-    return PipelineSummary(
-      currency: currency,
-      stages: [
-        for (final stage in LeadStages.values)
-          if (stage != LeadStages.lost) (stage: stage, count: counts[stage] ?? 0, valueMinor: values[stage] ?? 0),
-      ],
-    );
-  }
-
-  final String? currency;
-  final List<StageTotal> stages;
-
-  /// Value still to be won (everything except won deals).
-  int get openMinor => stages.where((s) => s.stage != LeadStages.won).fold(0, (sum, s) => sum + s.valueMinor);
-
-  bool get isEmpty => stages.every((s) => s.count == 0);
-}
-
-class ClientSummary {
-  const ClientSummary({required this.active, required this.onboarding});
-
-  factory ClientSummary.of(List<ClientRef> clients) => ClientSummary(
-        active: clients.where((c) => c.status == ClientStatuses.active).length,
-        onboarding: clients.where((c) => c.status == ClientStatuses.onboarding).length,
-      );
-
-  final int active;
-  final int onboarding;
 }
 
 /// Something happening soon: a calendar item or scheduled content.

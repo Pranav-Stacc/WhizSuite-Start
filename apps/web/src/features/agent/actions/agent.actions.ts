@@ -1,14 +1,13 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { getSession } from '@/shared/auth/session';
+import { refreshData, refreshPage } from '@/shared/data/refresh';
 import {
   confirmAgentPending,
   createAgentDefinition,
   createAgentSchedule,
   createAgentSession,
   rejectAgentPending,
-  sendAgentMessage,
   updateAgentScheduleStatus,
 } from '../services/agent.service';
 
@@ -18,36 +17,31 @@ async function orgId(): Promise<string> {
   return session.orgId;
 }
 
-export async function createSessionAction(title?: string) {
-  const created = await createAgentSession(await orgId(), title);
-  revalidatePath('/agent');
-  return created;
+async function refreshAgentSurfaces(sessionId?: string) {
+  await refreshData('agent', 'chat');
+  await refreshPage('/agent');
+  await refreshPage('/chat');
+  if (sessionId) {
+    await refreshPage(`/agent?session=${sessionId}`);
+    await refreshPage(`/chat?whiz=1&session=${sessionId}`);
+  }
 }
 
-export async function sendMessageAction(
-  sessionId: string,
-  message: string,
-  multiAgent = true,
-  agentDefinitionId?: string,
-) {
-  const result = await sendAgentMessage(await orgId(), sessionId, message, {
-    multiAgent,
-    agentDefinitionId,
-  });
-  revalidatePath('/agent');
-  revalidatePath(`/agent?session=${sessionId}`);
-  return result;
+export async function createSessionAction(title?: string) {
+  const created = await createAgentSession(await orgId(), title);
+  await refreshAgentSurfaces(created.id);
+  return created;
 }
 
 export async function confirmPendingAction(pendingId: string) {
   const result = await confirmAgentPending(await orgId(), pendingId);
-  revalidatePath('/agent');
+  await refreshData('agent');
   return result;
 }
 
 export async function rejectPendingAction(pendingId: string) {
   const result = await rejectAgentPending(await orgId(), pendingId);
-  revalidatePath('/agent');
+  await refreshData('agent');
   return result;
 }
 
@@ -73,7 +67,8 @@ export async function createDefinitionAction(formData: FormData) {
     description,
     subAgents,
   });
-  revalidatePath('/agent');
+  await refreshData('agent');
+  await refreshPage('/agent');
 }
 
 export async function createScheduleAction(formData: FormData) {
@@ -84,15 +79,18 @@ export async function createScheduleAction(formData: FormData) {
     timezone: String(formData.get('timezone') ?? 'UTC').trim() || 'UTC',
     agentDefinitionId: String(formData.get('agentDefinitionId') ?? '').trim() || undefined,
   });
-  revalidatePath('/agent');
+  await refreshData('agent');
+  await refreshPage('/agent');
 }
 
 export async function pauseScheduleAction(scheduleId: string) {
   await updateAgentScheduleStatus(await orgId(), scheduleId, 'PAUSED');
-  revalidatePath('/agent');
+  await refreshData('agent');
+  await refreshPage('/agent');
 }
 
 export async function resumeScheduleAction(scheduleId: string) {
   await updateAgentScheduleStatus(await orgId(), scheduleId, 'ACTIVE');
-  revalidatePath('/agent');
+  await refreshData('agent');
+  await refreshPage('/agent');
 }

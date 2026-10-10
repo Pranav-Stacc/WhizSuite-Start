@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { t } from '@/shared/i18n/t';
 import { completeUploadAction, requestUploadAction } from '../actions/media.actions';
@@ -47,7 +46,6 @@ function toItems(files: Iterable<File>): UploadItem[] {
 
 /** Presign → PUT to storage → complete, sequentially, with per-file progress. */
 export function useAssetUpload() {
-  const router = useRouter();
   const [items, setItems] = useState<UploadItem[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -76,7 +74,6 @@ export function useAssetUpload() {
       }
     }
     setBusy(false);
-    router.refresh();
     if (failed === 0) toast.success(t('media.upload.allDone', { count: queue.length }));
     else toast.error(t('media.upload.someFailed', { count: failed }));
     return { failed, assetIds };

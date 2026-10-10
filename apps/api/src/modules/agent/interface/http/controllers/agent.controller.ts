@@ -133,7 +133,10 @@ export class AgentController {
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.runs.listRuns(requireOrganizationId(organizationId), user.userId);
+    return this.runs.listRuns(
+      requireOrganizationId(organizationId),
+      user.userId,
+    );
   }
 
   @Get('runs/:runId')
@@ -151,7 +154,10 @@ export class AgentController {
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.runs.listPending(requireOrganizationId(organizationId), user.userId);
+    return this.runs.listPending(
+      requireOrganizationId(organizationId),
+      user.userId,
+    );
   }
 
   @Post('pending/:pendingId/confirm')

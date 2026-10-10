@@ -4,6 +4,7 @@ export const DomainEventTypes = {
   ORGANIZATION_UPDATED: 'organization.updated.v1',
   WORKSPACE_CREATED: 'workspace.created.v1',
   MEMBER_JOINED: 'member.joined.v1',
+  MEMBER_PERMISSIONS_CHANGED: 'member.permissions_changed.v1',
   INVITATION_SENT: 'invitation.sent.v1',
   INVITATION_ACCEPTED: 'invitation.accepted.v1',
   PORTAL_ACCESS_LINK_CREATED: 'portal_access_link.created.v1',

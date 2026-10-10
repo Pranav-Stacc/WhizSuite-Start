@@ -31,7 +31,7 @@ export async function PortalShell({ session, children }: { session: Session; chi
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-7xl animate-fade-up px-3 pb-28 pt-5 sm:px-6 sm:pt-6 md:pb-6">{children}</main>
+      <main id="main" className="mx-auto max-w-7xl px-3 pb-28 pt-5 sm:px-6 sm:pt-6 md:pb-6">{children}</main>
       <PortalMobileDock badges={summary} />
     </div>
   );

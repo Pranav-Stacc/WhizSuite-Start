@@ -3,12 +3,12 @@ import { z } from 'zod';
 /** Minimal JSON Schema export for MCP / agent tool definitions. */
 export function zodToJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
   if (schema instanceof z.ZodObject) {
-    const shape = schema.shape;
+    const shape = schema.shape as Record<string, z.ZodTypeAny>;
     const properties: Record<string, unknown> = {};
     const required: string[] = [];
     for (const [key, value] of Object.entries(shape)) {
-      properties[key] = zodFieldToSchema(value as z.ZodTypeAny);
-      if (!(value as z.ZodTypeAny).isOptional()) required.push(key);
+      properties[key] = zodFieldToSchema(value);
+      if (!value.isOptional()) required.push(key);
     }
     return { type: 'object', properties, required };
   }
@@ -34,7 +34,8 @@ function zodFieldToSchema(field: z.ZodTypeAny): Record<string, unknown> {
   }
   if (field instanceof z.ZodNumber) return { type: 'number' };
   if (field instanceof z.ZodBoolean) return { type: 'boolean' };
-  if (field instanceof z.ZodEnum) return { type: 'string', enum: field._def.values };
+  if (field instanceof z.ZodEnum)
+    return { type: 'string', enum: field._def.values };
   if (field instanceof z.ZodArray) {
     return {
       type: 'array',

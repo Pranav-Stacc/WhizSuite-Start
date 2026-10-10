@@ -70,7 +70,10 @@ export class WorkflowStageDto {
   @IsIn(ApprovalStepRules)
   approvalRule?: ApprovalStepRule;
 
-  @ApiProperty({ required: false, description: 'Required when approvalRule is QUORUM' })
+  @ApiProperty({
+    required: false,
+    description: 'Required when approvalRule is QUORUM',
+  })
   @ValidateIf((stage: WorkflowStageDto) => stage.approvalRule === 'QUORUM')
   @IsInt()
   @Min(1)

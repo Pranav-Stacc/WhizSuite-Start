@@ -41,7 +41,7 @@ class MessagesRepository {
             body: {
               'body': body,
               if (mentions.isNotEmpty) 'mentions': mentions.map((m) => m.toJson()).toList(),
-              if (replyToId != null) 'replyToId': replyToId,
+              'replyToId': ?replyToId,
             },
           ),
         ),

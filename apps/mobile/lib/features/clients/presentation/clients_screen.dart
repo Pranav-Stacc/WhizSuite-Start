@@ -88,7 +88,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
         ),
         itemBuilder: (context, client) => ClientCard(
           client: client,
-          onTap: () => context.go(ClientsRoutes.detail(client.id)),
+          onTap: () => context.push(ClientsRoutes.detail(client.id)),
         ),
       ),
     );

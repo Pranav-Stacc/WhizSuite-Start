@@ -25,18 +25,9 @@ class DashboardRepository {
   /// invoices.view
   Future<List<InvoiceRef>> invoices() async => (await _list('invoices')).map(InvoiceRef.fromJson).toList();
 
-  /// clients.view
-  Future<List<ClientRef>> clients() async => (await _list('clients')).map(ClientRef.fromJson).toList();
-
-  /// leads.view
-  Future<List<LeadRef>> leads() async => (await _list('leads')).map(LeadRef.fromJson).toList();
-
   /// projects.view
   Future<List<CalendarEntry>> calendar() async =>
       (await _list('calendar/items')).map(CalendarEntry.fromJson).toList();
-
-  /// org.view
-  Future<List<ActivityEntry>> activity() async => (await _list('activity')).map(ActivityEntry.fromJson).toList();
 }
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>(

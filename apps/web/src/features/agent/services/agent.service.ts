@@ -5,15 +5,15 @@ import type {
   AgentRunDto,
   AgentScheduleDto,
   AgentSessionDto,
-  CapabilityToolDescriptor,
 } from '@agency-os/contracts';
 import { apiFetch } from '@/shared/api/api-client';
 import { orgPath } from '@/shared/api/live/utils';
 
 const base = (orgId: string) => orgPath(orgId, 'agent');
+const tags = (orgId: string) => [`org:${orgId}:agent`];
 
 export async function listAgentSessions(orgId: string): Promise<AgentSessionDto[]> {
-  return apiFetch(`${base(orgId)}/sessions`);
+  return apiFetch(`${base(orgId)}/sessions`, { tags: tags(orgId) });
 }
 
 export async function createAgentSession(orgId: string, title?: string): Promise<AgentSessionDto> {
@@ -27,35 +27,15 @@ export async function getAgentSession(orgId: string, sessionId: string) {
     messages: Array<{ id: string; role: string; content: string; createdAt: string }>;
     createdAt: string;
     updatedAt: string;
-  }>(`${base(orgId)}/sessions/${sessionId}`);
-}
-
-export async function sendAgentMessage(
-  orgId: string,
-  sessionId: string,
-  message: string,
-  options: { multiAgent?: boolean; agentDefinitionId?: string } = {},
-) {
-  return apiFetch<{ run: AgentRunDto; response: string; pendingActionId?: string }>(
-    `${base(orgId)}/sessions/${sessionId}/messages`,
-    {
-      method: 'POST',
-      body: {
-        message,
-        multiAgent: options.multiAgent ?? true,
-        agentDefinitionId: options.agentDefinitionId,
-      },
-      timeoutMs: 180_000,
-    },
-  );
+  }>(`${base(orgId)}/sessions/${sessionId}`, { tags: tags(orgId) });
 }
 
 export async function listAgentRuns(orgId: string): Promise<AgentRunDto[]> {
-  return apiFetch(`${base(orgId)}/runs`);
+  return apiFetch(`${base(orgId)}/runs`, { tags: tags(orgId) });
 }
 
 export async function listAgentPending(orgId: string): Promise<AgentPendingActionDto[]> {
-  return apiFetch(`${base(orgId)}/pending`);
+  return apiFetch(`${base(orgId)}/pending`, { tags: tags(orgId) });
 }
 
 export async function confirmAgentPending(orgId: string, pendingId: string) {
@@ -66,13 +46,9 @@ export async function rejectAgentPending(orgId: string, pendingId: string) {
   return apiFetch(`${base(orgId)}/pending/${pendingId}/reject`, { method: 'POST' });
 }
 
-export async function listCapabilities(orgId: string): Promise<CapabilityToolDescriptor[]> {
-  return apiFetch(orgPath(orgId, 'capabilities'));
-}
-
 export async function listAgentDefinitions(orgId: string): Promise<AgentDefinitionDto[]> {
   try {
-    return await apiFetch(`${base(orgId)}/definitions`);
+    return await apiFetch(`${base(orgId)}/definitions`, { tags: tags(orgId) });
   } catch {
     return [];
   }
@@ -93,7 +69,7 @@ export async function createAgentDefinition(
 
 export async function listAgentSchedules(orgId: string): Promise<AgentScheduleDto[]> {
   try {
-    return await apiFetch(`${base(orgId)}/schedules`);
+    return await apiFetch(`${base(orgId)}/schedules`, { tags: tags(orgId) });
   } catch {
     return [];
   }

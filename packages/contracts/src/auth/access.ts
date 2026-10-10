@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { MembershipType } from '../domain/statuses.js';
+import { PROFILE_JOB_TITLE_MAX_LENGTH } from './profile.js';
 import {
   ASSIGNABLE_SCOPE_TYPE_KEYS,
   AssignableScopeTypes,
@@ -166,6 +167,83 @@ export const roleInputSchema = z
     }
   });
 export type RoleInput = z.infer<typeof roleInputSchema>;
+
+/** Direct per-member grant or revocation layered on top of the member's role permissions. */
+export const PermissionEffects = {
+  ALLOW: 'ALLOW',
+  DENY: 'DENY',
+} as const;
+
+export type PermissionEffect = (typeof PermissionEffects)[keyof typeof PermissionEffects];
+
+export const PERMISSION_EFFECT_KEYS = Object.values(PermissionEffects) as [PermissionEffect, ...PermissionEffect[]];
+
+export const MEMBER_PERMISSION_OVERRIDES_MAX = PERMISSION_KEYS.length;
+export const MEMBER_DESIGNATIONS_MAX = 10;
+export const DESIGNATION_NAME_MAX_LENGTH = 80;
+
+export const memberPermissionOverrideSchema = z.object({
+  key: z.enum(PERMISSION_KEYS),
+  effect: z.enum(PERMISSION_EFFECT_KEYS),
+});
+export type MemberPermissionOverride = z.infer<typeof memberPermissionOverrideSchema>;
+
+/** Replaces the member's full set of direct overrides; an empty list clears them. */
+export const setMemberPermissionsSchema = z.object({
+  overrides: z
+    .array(memberPermissionOverrideSchema)
+    .max(MEMBER_PERMISSION_OVERRIDES_MAX)
+    .refine((items) => new Set(items.map((o) => o.key)).size === items.length, 'Duplicate permission key'),
+});
+export type SetMemberPermissionsInput = z.infer<typeof setMemberPermissionsSchema>;
+
+/** Response of `GET .../members/:userId/access`. */
+export interface MemberAccess {
+  roles: AccessRoleSummary[];
+  overrides: MemberPermissionOverride[];
+  /** (role permissions ∪ ALLOW overrides) − DENY overrides. */
+  effectivePermissions: Permission[];
+}
+
+/**
+ * Replaces the member's full set of department positions. `primaryId` must be one of
+ * `designationIds`; when omitted the first id becomes primary.
+ */
+export const setMemberDesignationsSchema = z
+  .object({
+    designationIds: z
+      .array(z.string().uuid())
+      .max(MEMBER_DESIGNATIONS_MAX)
+      .refine((ids) => new Set(ids).size === ids.length, 'Duplicate designation id'),
+    primaryId: z.string().uuid().nullish(),
+  })
+  .refine((data) => !data.primaryId || data.designationIds.includes(data.primaryId), {
+    path: ['primaryId'],
+    message: 'Primary designation must be one of designationIds',
+  });
+export type SetMemberDesignationsInput = z.infer<typeof setMemberDesignationsSchema>;
+
+/** A department position held by a member, as returned with team members. */
+export interface MemberDesignationSummary {
+  /** Designation id. */
+  id: string;
+  name: string;
+  departmentId: string;
+  departmentName: string;
+  isHead: boolean;
+  isPrimary: boolean;
+}
+
+/** Admin edit of another member's job title; blank clears it. */
+export const updateMemberProfileSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .max(PROFILE_JOB_TITLE_MAX_LENGTH)
+    .nullable()
+    .transform((value) => value || null),
+});
+export type UpdateMemberProfileInput = z.infer<typeof updateMemberProfileSchema>;
 
 export const assignMemberRolesSchema = z.object({
   roleIds: z.array(z.string().min(1)).min(1).max(MEMBER_ROLES_MAX),

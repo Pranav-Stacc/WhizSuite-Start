@@ -14,7 +14,7 @@ final customFieldsModule = FeatureModule(
       label: (l10n) => l10n.navCustomFields,
       anyOf: const [Permissions.orgSettingsManage],
       audiences: staffOnly,
-      group: NavGroup.agency,
+      // Opened from feature screens (projects, tasks, …) — not top-level nav.
     ),
   ],
   routes: [destinationRoute(CustomFieldsRoutes.root, (_) => const CustomFieldsScreen())],

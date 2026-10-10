@@ -69,7 +69,17 @@ export type CustomFieldType = (typeof CustomFieldTypes)[number];
 export const ReportStatuses = ['DRAFT', 'READY', 'SENT'] as const;
 export type ReportStatus = (typeof ReportStatuses)[number];
 
-export const TemplateTypes = ['PROJECT', 'TASK', 'CONTENT', 'REPORT', 'MESSAGE'] as const;
+export const TemplateTypes = [
+  'PROJECT',
+  'TASK',
+  'CONTENT',
+  'REPORT',
+  'MESSAGE',
+  'OFFER_LETTER',
+  'SALARY_SLIP',
+  'NDA',
+  'EMPLOYMENT_AGREEMENT',
+] as const;
 export type TemplateType = (typeof TemplateTypes)[number];
 
 export const TemplateScopes = ['ORGANIZATION', 'CLIENT'] as const;

@@ -1,6 +1,6 @@
 import 'server-only';
 import { cookies } from 'next/headers';
-import { DEFAULT_THEME, themeSchema, type ThemeSettings } from '@agency-os/contracts';
+import { DEFAULT_THEME, coerceProductDefaultTheme, themeSchema, type ThemeSettings } from '@agency-os/contracts';
 import { apiFetch } from '@/shared/api/api-client';
 import { orgPath } from '@/shared/api/live/utils';
 import { isLiveMode } from '@/shared/config/env';
@@ -18,7 +18,7 @@ export async function applyOrganizationTheme(input: {
       organizationId: input.orgId,
     });
     const parsed = themeSchema.safeParse(response.theme);
-    const theme = parsed.success ? parsed.data : DEFAULT_THEME;
+    const theme = coerceProductDefaultTheme(parsed.success ? parsed.data : DEFAULT_THEME);
     const store = await cookies();
     store.set(THEME_COOKIE, serializeTheme(theme), {
       path: '/',

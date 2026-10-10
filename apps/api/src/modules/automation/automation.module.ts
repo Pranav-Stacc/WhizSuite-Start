@@ -28,6 +28,10 @@ import { AutomationExecutionProcessor } from './jobs/automation-execution.proces
     AutomationExecutionQueue,
     AutomationExecutionProcessor,
   ],
-  exports: [AutomationService, AutomationRepository, AutomationExecutionService],
+  exports: [
+    AutomationService,
+    AutomationRepository,
+    AutomationExecutionService,
+  ],
 })
 export class AutomationModule {}

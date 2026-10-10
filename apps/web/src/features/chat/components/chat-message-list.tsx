@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import type { ChatMessageDto } from '@agency-os/contracts';
 import { ExternalLink, FileIcon, MessageSquare, Reply } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
@@ -14,7 +15,9 @@ const REPLY_DRAG_THRESHOLD = 56;
 
 function renderBody(body: string, mentions: ChatMessageDto['mentions']) {
   if (!mentions.length) return body;
-  const parts: Array<string | { key: string; text: string }> = [];
+  const parts: Array<
+    string | { key: string; text: string; userId?: string }
+  > = [];
   let cursor = 0;
   const ordered = [...mentions]
     .filter((m) => m.startOffset != null && m.endOffset != null)
@@ -24,7 +27,11 @@ function renderBody(body: string, mentions: ChatMessageDto['mentions']) {
     const end = mention.endOffset ?? start;
     if (start < cursor || end > body.length) continue;
     if (start > cursor) parts.push(body.slice(cursor, start));
-    parts.push({ key: mention.id, text: body.slice(start, end) || `@${mention.displayText}` });
+    parts.push({
+      key: mention.id,
+      text: body.slice(start, end) || `@${mention.displayText}`,
+      userId: mention.type === 'USER' ? mention.targetId : undefined,
+    });
     cursor = end;
   }
   if (cursor < body.length) parts.push(body.slice(cursor));
@@ -32,6 +39,14 @@ function renderBody(body: string, mentions: ChatMessageDto['mentions']) {
   return parts.map((part, index) =>
     typeof part === 'string' ? (
       <span key={`t-${index}`}>{part}</span>
+    ) : part.userId ? (
+      <Link
+        key={part.key}
+        href={`/team/${part.userId}`}
+        className="font-medium text-primary underline-offset-2 hover:underline"
+      >
+        {part.text}
+      </Link>
     ) : (
       <span key={part.key} className="font-medium text-primary">
         {part.text}
@@ -103,8 +118,29 @@ function MessageBubble({
         ) : null}
 
         <div className="mb-1 flex items-center gap-2 text-xs text-muted">
-          {!own ? <Avatar name={author} size="xs" /> : null}
-          <span className="font-medium text-foreground">{author}</span>
+          {!own ? (
+            message.senderId ? (
+              <Link
+                href={`/team/${message.senderId}`}
+                className="rounded-full outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={author}
+              >
+                <Avatar name={author} size="xs" />
+              </Link>
+            ) : (
+              <Avatar name={author} size="xs" />
+            )
+          ) : null}
+          {message.senderId && !own ? (
+            <Link
+              href={`/team/${message.senderId}`}
+              className="font-medium text-foreground hover:underline"
+            >
+              {author}
+            </Link>
+          ) : (
+            <span className="font-medium text-foreground">{author}</span>
+          )}
           <time dateTime={message.createdAt}>{formatDateTime(message.createdAt)}</time>
           {onReply && !message.deletedAt ? (
             <button
@@ -144,10 +180,19 @@ function MessageBubble({
             <ul className="mt-2 flex flex-wrap gap-1">
               {message.mentions.map((m) => (
                 <li key={m.id}>
-                  <Badge tone="neutral">
-                    @{m.displayText}
-                    <span className="opacity-60"> · {m.type.toLowerCase()}</span>
-                  </Badge>
+                  {m.type === 'USER' ? (
+                    <Link href={`/team/${m.targetId}`}>
+                      <Badge tone="neutral">
+                        @{m.displayText}
+                        <span className="opacity-60"> · {m.type.toLowerCase()}</span>
+                      </Badge>
+                    </Link>
+                  ) : (
+                    <Badge tone="neutral">
+                      @{m.displayText}
+                      <span className="opacity-60"> · {m.type.toLowerCase()}</span>
+                    </Badge>
+                  )}
                 </li>
               ))}
             </ul>
@@ -248,12 +293,18 @@ export function ChatMessageList({
         <li className="text-center text-[11px] text-muted">{t('chat.reply.hint')}</li>
       ) : null}
       {messages.map((message) => {
-        const own = message.senderId === viewerId;
-        const author =
-          (message.senderId && membersById.get(message.senderId)) || t('chat.unknown');
+        const isWhiz = message.type === 'SYSTEM' && !message.senderId;
+        const own = !isWhiz && message.senderId === viewerId;
+        const author = isWhiz
+          ? t('chat.whiz')
+          : (message.senderId && membersById.get(message.senderId)) || t('chat.unknown');
         const parent = message.replyToId ? (byId.get(message.replyToId) ?? null) : null;
-        const parentAuthor = parent?.senderId
-          ? (membersById.get(parent.senderId) ?? t('chat.unknown'))
+        const parentAuthor = parent
+          ? parent.type === 'SYSTEM' && !parent.senderId
+            ? t('chat.whiz')
+            : parent.senderId
+              ? (membersById.get(parent.senderId) ?? t('chat.unknown'))
+              : t('chat.unknown')
           : null;
         return (
           <MessageBubble

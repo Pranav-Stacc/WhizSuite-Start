@@ -7,6 +7,7 @@ import '../../../core/formatting/formats.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../core/widgets/surfaces.dart';
@@ -138,21 +139,23 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
 
 /// Shows the accept link after an invitation is sent, with copy actions for sharing it manually.
 Future<void> showInviteLinkSheet(BuildContext context, {required String email, required InvitationLink link}) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
-    builder: (context) => _InviteLinkSheet(email: email, link: link),
+  final l10n = AppLocalizations.of(context);
+  return showAppDialog<void>(
+    context,
+    builder: (dialogContext) => AppDialog(
+      title: l10n.teamInviteSent,
+      subtitle: l10n.teamInviteSentBody(email),
+      actions: [
+        FilledButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(l10n.close)),
+      ],
+      child: _InviteLinkSheet(link: link),
+    ),
   );
 }
 
 class _InviteLinkSheet extends StatelessWidget {
-  const _InviteLinkSheet({required this.email, required this.link});
+  const _InviteLinkSheet({required this.link});
 
-  static const _maxWidth = 640.0;
-
-  final String email;
   final InvitationLink link;
 
   Future<void> _copy(BuildContext context, String value, String toast) async {
@@ -168,58 +171,38 @@ class _InviteLinkSheet extends StatelessWidget {
     final expiresAt = link.expiresAt;
     final message = l10n.teamInviteShareText(link.acceptUrl);
 
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxWidth),
-        child: ListView(
-          shrinkWrap: true,
-          padding: EdgeInsets.fromLTRB(tokens.xl, 0, tokens.xl, tokens.xl),
-          children: [
-            Icon(Icons.mark_email_read_outlined, size: 40, color: tokens.secondary),
-            SizedBox(height: tokens.md),
-            Semantics(
-              header: true,
-              child: Text(l10n.teamInviteSent, textAlign: TextAlign.center, style: text.titleLarge),
-            ),
-            SizedBox(height: tokens.sm),
-            Text(
-              l10n.teamInviteSentBody(email),
-              textAlign: TextAlign.center,
-              style: text.bodyMedium?.copyWith(color: tokens.secondary),
-            ),
-            SizedBox(height: tokens.lg),
-            SurfaceCard(
-              padding: EdgeInsets.all(tokens.md),
-              child: SelectableText(
-                link.acceptUrl,
-                style: text.bodySmall?.copyWith(fontFamily: 'monospace', color: tokens.fg),
-              ),
-            ),
-            if (expiresAt != null) ...[
-              SizedBox(height: tokens.sm),
-              Text(
-                l10n.teamInviteExpires(context.formats.dateTime(expiresAt)),
-                style: text.bodySmall?.copyWith(color: tokens.muted),
-              ),
-            ],
-            SizedBox(height: tokens.lg),
-            FilledButton.icon(
-              onPressed: () => _copy(context, link.acceptUrl, l10n.teamLinkCopied),
-              icon: const Icon(Icons.link),
-              label: Text(l10n.teamCopyLink),
-            ),
-            SizedBox(height: tokens.sm),
-            OutlinedButton.icon(
-              onPressed: () => _copy(context, message, l10n.teamMessageCopied),
-              icon: const Icon(Icons.content_copy_outlined),
-              label: Text(l10n.teamCopyMessage),
-            ),
-            SizedBox(height: tokens.sm),
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(l10n.close)),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(Icons.mark_email_read_outlined, size: 40, color: tokens.secondary),
+        SizedBox(height: tokens.lg),
+        SurfaceCard(
+          padding: EdgeInsets.all(tokens.md),
+          child: SelectableText(
+            link.acceptUrl,
+            style: text.bodySmall?.copyWith(fontFamily: 'monospace', color: tokens.fg),
+          ),
         ),
-      ),
+        if (expiresAt != null) ...[
+          SizedBox(height: tokens.sm),
+          Text(
+            l10n.teamInviteExpires(context.formats.dateTime(expiresAt)),
+            style: text.bodySmall?.copyWith(color: tokens.muted),
+          ),
+        ],
+        SizedBox(height: tokens.lg),
+        FilledButton.icon(
+          onPressed: () => _copy(context, link.acceptUrl, l10n.teamLinkCopied),
+          icon: const Icon(Icons.link),
+          label: Text(l10n.teamCopyLink),
+        ),
+        SizedBox(height: tokens.sm),
+        OutlinedButton.icon(
+          onPressed: () => _copy(context, message, l10n.teamMessageCopied),
+          icon: const Icon(Icons.content_copy_outlined),
+          label: Text(l10n.teamCopyMessage),
+        ),
+      ],
     );
   }
 }

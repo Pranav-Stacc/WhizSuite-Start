@@ -15,7 +15,7 @@ final templatesModule = FeatureModule(
       label: (l10n) => l10n.navTemplates,
       anyOf: const [Permissions.orgSettingsManage],
       audiences: staffOnly,
-      group: NavGroup.agency,
+      // Opened from feature screens (projects, tasks, …) — not top-level nav.
     ),
   ],
   routes: [

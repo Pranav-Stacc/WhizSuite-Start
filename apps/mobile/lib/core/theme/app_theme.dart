@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -72,8 +71,9 @@ ThemeData buildAppTheme(ThemeSettings settings) {
       dense: settings.density == ThemeDensity.compact,
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: settings.surface,
+      backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
       indicatorColor: settings.primary.withValues(alpha: 0.12),
       indicatorShape: shape,
       elevation: 0,
@@ -81,6 +81,12 @@ ThemeData buildAppTheme(ThemeSettings settings) {
       iconTheme: WidgetStateProperty.resolveWith(
         (states) => IconThemeData(color: states.contains(WidgetState.selected) ? settings.primary : settings.muted),
       ),
+    ),
+    bottomAppBarTheme: BottomAppBarThemeData(
+      color: Colors.transparent,
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
     ),
     navigationRailTheme: NavigationRailThemeData(
       backgroundColor: settings.surface,
@@ -144,6 +150,7 @@ ThemeData buildAppTheme(ThemeSettings settings) {
     dialogTheme: DialogThemeData(
       backgroundColor: settings.surface,
       surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: shape.copyWith(side: hairline),
     ),
     snackBarTheme: SnackBarThemeData(

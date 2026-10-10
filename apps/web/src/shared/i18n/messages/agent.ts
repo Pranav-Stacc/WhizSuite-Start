@@ -1,6 +1,6 @@
 export const agentMessages = {
-  'nav.agent': 'AI Agent',
-  'nav.agent.desc': 'Multi-agent assistant for your agency',
+  'nav.agent': 'Whiz AI',
+  'nav.agent.desc': 'Open Whiz inside Chat — same tools and sessions',
   'agent.title': 'Agency AI',
   'agent.description':
     'Just chat — the AI plans and runs agency work for you within your permissions.',
@@ -13,7 +13,6 @@ export const agentMessages = {
   'agent.placeholder':
     'Tell me what to do — create a client, schedule a Monday reminder, draft a post…',
   'agent.send': 'Send',
-  'agent.multiAgent': 'Multi-agent',
   'agent.thinking': 'Working on it…',
   'agent.empty.title': 'Say what you need',
   'agent.empty.body':
@@ -23,17 +22,12 @@ export const agentMessages = {
   'agent.empty.suggestions.tasks':
     'Create an agent named Research Lead that summarizes client health weekly',
   'agent.empty.suggestions.tools': 'List what you can do, grouped by module',
-  'agent.step.planner': 'Planning',
-  'agent.step.executor': 'Tools',
-  'agent.step.critic': 'Writing',
   'agent.phase.planning': 'Planning the next steps…',
   'agent.phase.summarizing': 'Writing your answer…',
   'agent.error.stream': 'The agent stream failed. Please try again.',
   'agent.runs.empty': 'No runs yet',
   'agent.confirm': 'Approve',
   'agent.reject': 'Reject',
-  'agent.tools': 'Available tools',
-  'agent.tools.count': '{count} tools',
   'agent.run.status': 'Status',
   'agent.schedule.new': 'New schedule',
   'agent.agent.new': 'New agent',

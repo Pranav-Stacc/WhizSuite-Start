@@ -39,9 +39,11 @@ class AuthorNames {
   final bool _isPortal;
   final Directory? _members;
 
-  bool isMine(ChatMessage message) => message.pending || (_me != null && message.senderId == _me);
+  bool isMine(ChatMessage message) =>
+      !message.isSystem && (message.pending || (_me != null && message.senderId == _me));
 
   String of(ChatMessage message) {
+    if (message.isSystem || message.senderId.isEmpty) return _l10n.messagesWhiz;
     if (isMine(message)) return _l10n.messagesYou;
     final known = _members?.nameOf(message.senderId);
     return known ?? (_isPortal ? _l10n.messagesAgency : _l10n.valueUnknown);

@@ -71,6 +71,22 @@ export type AutomationAction = (typeof AutomationActions)[number];
 export const MembershipTypes = ['OWNER', 'ADMIN', 'MEMBER', 'CLIENT'] as const;
 export type MembershipType = (typeof MembershipTypes)[number];
 
+/** How the person is engaged with the agency (distinct from RBAC membership type). */
+export const EmploymentTypes = ['EMPLOYEE', 'FREELANCE', 'CONTRACTOR'] as const;
+export type EmploymentType = (typeof EmploymentTypes)[number];
+
+export const MemberDocumentTypes = [
+  'OFFER_LETTER',
+  'SALARY_SLIP',
+  'NDA',
+  'EMPLOYMENT_AGREEMENT',
+  'OTHER',
+] as const;
+export type MemberDocumentType = (typeof MemberDocumentTypes)[number];
+
+export const MemberDocumentStatuses = ['DRAFT', 'SENT', 'SIGNED'] as const;
+export type MemberDocumentStatus = (typeof MemberDocumentStatuses)[number];
+
 /** Shareable portal access link: temporary guest session vs permanent account. */
 export const PortalAccessModes = ['TEMPORARY', 'PERMANENT'] as const;
 export type PortalAccessMode = (typeof PortalAccessModes)[number];

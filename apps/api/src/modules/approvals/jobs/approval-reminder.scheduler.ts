@@ -8,9 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { DomainEventTypes } from '@agency-os/contracts';
 import type { AppConfig } from '../../../shared/config/app.config';
 import { OutboxService } from '../../../shared/events/outbox.service';
-import {
-  approverIdsOf,
-} from '../application/domain/approval-evaluation';
+import { approverIdsOf } from '../application/domain/approval-evaluation';
 import { ApprovalsRepository } from '../infrastructure/repositories/approvals.repository';
 
 const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';

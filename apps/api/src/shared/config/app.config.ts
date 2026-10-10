@@ -166,7 +166,11 @@ export const appConfigSchema = z
     WEB_APP_URL: z.string().url().default('http://localhost:3000'),
     INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
     /** How long a shareable portal access link stays redeemable. */
-    PORTAL_ACCESS_LINK_TTL_HOURS: z.coerce.number().int().positive().default(720),
+    PORTAL_ACCESS_LINK_TTL_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(720),
     /** Default temporary portal membership duration after redeem. */
     PORTAL_ACCESS_TEMP_MEMBERSHIP_HOURS: z.coerce
       .number()
@@ -289,9 +293,21 @@ export const appConfigSchema = z
     META_GRAPH_API_VERSION: z.string().default('v21.0'),
 
     AGENT_SERVICE_URL: z.string().url().default('http://localhost:8000'),
-    AGENT_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
-    CAPABILITIES_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(90),
-    AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+    AGENT_SERVICE_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(120_000),
+    CAPABILITIES_CACHE_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(90),
+    AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(900),
     AGENT_PENDING_ACTION_TTL_SECONDS: z.coerce
       .number()
       .int()
@@ -323,7 +339,10 @@ export const appConfigSchema = z
           });
       }
     }
-    if (config.GOOGLE_AUTH_ENABLED && config.GOOGLE_OAUTH_CLIENT_IDS.length === 0) {
+    if (
+      config.GOOGLE_AUTH_ENABLED &&
+      config.GOOGLE_OAUTH_CLIENT_IDS.length === 0
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['GOOGLE_OAUTH_CLIENT_IDS'],

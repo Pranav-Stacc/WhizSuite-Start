@@ -117,7 +117,11 @@ export class MediaFoldersService {
       action: 'media/folders.create',
       entityType: ENTITY,
       entityId: folder.id,
-      after: { name: folder.name, path: folder.path, visibility: folder.visibility },
+      after: {
+        name: folder.name,
+        path: folder.path,
+        visibility: folder.visibility,
+      },
     });
     return toMediaFolderDto(folder);
   }
@@ -287,9 +291,9 @@ export class MediaFoldersService {
     );
     const shootsRoot =
       roots.find((f) => f.name === 'Shoots') ??
-      (
-        await this.list(organizationId, { clientId: input.clientId })
-      ).find((f) => f.name === 'Shoots');
+      (await this.list(organizationId, { clientId: input.clientId })).find(
+        (f) => f.name === 'Shoots',
+      );
     if (!shootsRoot) throw notFound('Shoots root folder missing');
 
     const shootPath = joinPath(shootsRoot.path, input.shootTitle);

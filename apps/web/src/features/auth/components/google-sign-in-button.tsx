@@ -136,7 +136,7 @@ export function GoogleSignInButton({
   return (
     <div className="space-y-3">
       <div className="relative py-1 text-center text-xs text-muted before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-border-soft">
-        <span className="relative bg-background px-3">{t('auth.login.orGoogle')}</span>
+        <span className="relative bg-surface px-3">{t('auth.login.orGoogle')}</span>
       </div>
       <div className="flex min-h-11 flex-col items-center justify-center gap-2">
         {pending ? (

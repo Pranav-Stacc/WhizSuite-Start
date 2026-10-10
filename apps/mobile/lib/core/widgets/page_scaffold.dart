@@ -6,15 +6,28 @@ import 'shell_chrome.dart';
 /// App-bar actions every page shows (e.g. the notification bell), injected by the app shell
 /// so shared widgets never depend on feature code.
 class ShellActions extends InheritedWidget {
-  const ShellActions({required this.actions, required super.child, super.key});
+  const ShellActions({
+    required this.actions,
+    required this.showInAppBar,
+    required super.child,
+    super.key,
+  });
 
   final List<Widget> actions;
 
-  static List<Widget> of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<ShellActions>()?.actions ?? const [];
+  /// When false, hub actions stay out of nested/detail app bars.
+  final bool showInAppBar;
+
+  static ShellActions? _maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ShellActions>();
+
+  static List<Widget> of(BuildContext context) => _maybeOf(context)?.actions ?? const [];
+
+  static bool showInAppBarOf(BuildContext context) => _maybeOf(context)?.showInAppBar ?? false;
 
   @override
-  bool updateShouldNotify(ShellActions oldWidget) => actions != oldWidget.actions;
+  bool updateShouldNotify(ShellActions oldWidget) =>
+      actions != oldWidget.actions || showInAppBar != oldWidget.showInAppBar;
 }
 
 /// Standard page frame: title bar with page + shell actions, optional FAB and bottom area.
@@ -25,7 +38,9 @@ class PageScaffold extends StatelessWidget {
     this.actions = const [],
     this.floatingActionButton,
     this.bottom,
-    this.showShellActions = true,
+    this.endDrawer,
+    this.scaffoldKey,
+    this.showShellActions,
     super.key,
   });
 
@@ -34,18 +49,27 @@ class PageScaffold extends StatelessWidget {
   final List<Widget> actions;
   final Widget? floatingActionButton;
   final PreferredSizeWidget? bottom;
-  final bool showShellActions;
+  final Widget? endDrawer;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
+
+  /// When null, follows [ShellActions.showInAppBar] from the app shell (hub screens only).
+  final bool? showShellActions;
 
   @override
   Widget build(BuildContext context) {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
     final showMenu = !canPop && ShellChrome.maybeOf(context) != null;
+    final tokens = context.tokens;
+    final includeShell = showShellActions ?? ShellActions.showInAppBarOf(context);
     return Scaffold(
+      key: scaffoldKey,
+      backgroundColor: tokens.bg,
+      endDrawer: endDrawer,
       appBar: AppBar(
         leading: showMenu ? const SidebarMenuButton() : null,
         title: Text(title),
         bottom: bottom,
-        actions: [...actions, if (showShellActions) ...ShellActions.of(context)],
+        actions: [...actions, if (includeShell) ...ShellActions.of(context)],
       ),
       floatingActionButton: floatingActionButton,
       body: body,

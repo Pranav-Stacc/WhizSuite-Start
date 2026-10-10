@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 
-const asJson = (value: Record<string, unknown> | undefined): Prisma.InputJsonValue | undefined =>
+const asJson = (
+  value: Record<string, unknown> | undefined,
+): Prisma.InputJsonValue | undefined =>
   value as Prisma.InputJsonValue | undefined;
 
 @Injectable()
@@ -29,6 +31,13 @@ export class AgentRepository {
       where: { organizationId, userId },
       orderBy: { updatedAt: 'desc' },
       take: limit,
+    });
+  }
+
+  findSessionByTitle(organizationId: string, userId: string, title: string) {
+    return this.prisma.agentSession.findFirst({
+      where: { organizationId, userId, title },
+      orderBy: { updatedAt: 'desc' },
     });
   }
 
@@ -96,7 +105,10 @@ export class AgentRepository {
   findRun(organizationId: string, id: string) {
     return this.prisma.agentRun.findFirst({
       where: { id, organizationId },
-      include: { steps: { orderBy: { startedAt: 'asc' } }, pendingActions: true },
+      include: {
+        steps: { orderBy: { startedAt: 'asc' } },
+        pendingActions: true,
+      },
     });
   }
 

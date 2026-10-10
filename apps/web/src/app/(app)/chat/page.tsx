@@ -1,6 +1,6 @@
 import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
-import { requirePermission } from '@/shared/auth/permissions';
+import { requirePermission, can } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { PageHeader } from '@/shared/ui/page-header';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
@@ -10,6 +10,15 @@ import { NewChatDialogs } from '@/features/chat/components/new-chat-dialogs';
 import { getRoom, listMessages, listRooms, markRead } from '@/features/chat/services/chat.service';
 import { chatRoomsRepository } from '@/features/chat/data/chat.repository';
 import { isLiveMode } from '@/shared/config/env';
+import {
+  createAgentSession,
+  getAgentSession,
+  listAgentDefinitions,
+  listAgentPending,
+  listAgentRuns,
+  listAgentSchedules,
+  listAgentSessions,
+} from '@/features/agent/services/agent.service';
 
 export const metadata: Metadata = { title: t('chat.title') };
 
@@ -17,13 +26,57 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const session = await requirePermission(Permissions.CHAT_VIEW);
   const sp = await searchParams;
   const roomId = param(sp, 'room');
+  const whizParam = param(sp, 'whiz');
+  const canUseWhiz = await can(Permissions.AI_CHAT);
+  const whizActive = canUseWhiz && (whizParam === '1' || whizParam === 'true');
+  let agentSessionId = param(sp, 'session');
 
   const [rooms, membersMap, allMembers] = await Promise.all([
     listRooms(),
     membersById(),
     listMembers(),
   ]);
-  const selected = roomId ? await getRoom(roomId) : (rooms[0] ?? null);
+
+  let whizProps = null;
+  if (canUseWhiz) {
+    const orgId = session.orgId!;
+    let sessions = await listAgentSessions(orgId).catch(() => []);
+    if (sessions.length === 0) {
+      try {
+        const created = await createAgentSession(orgId);
+        sessions = [created];
+        agentSessionId = created.id;
+      } catch {
+        sessions = [];
+      }
+    }
+    if (!agentSessionId) agentSessionId = sessions[0]?.id;
+
+    const canManageAgents = await can(Permissions.AI_AGENTS_MANAGE);
+    const [detail, runs, pending, definitions, schedules] = await Promise.all([
+      agentSessionId ? getAgentSession(orgId, agentSessionId).catch(() => null) : null,
+      listAgentRuns(orgId).catch(() => []),
+      listAgentPending(orgId).catch(() => []),
+      canManageAgents ? listAgentDefinitions(orgId) : Promise.resolve([]),
+      canManageAgents ? listAgentSchedules(orgId) : Promise.resolve([]),
+    ]);
+
+    const selectedSession = sessions.find((s) => s.id === agentSessionId) ?? sessions[0] ?? null;
+    whizProps = {
+      sessions,
+      selectedSession,
+      messages: detail?.messages ?? [],
+      runs,
+      pendingActions: pending,
+      definitions,
+      schedules,
+      sessionId: agentSessionId,
+      canManageAgents,
+    };
+  }
+
+  const selected =
+    whizActive ? null : roomId ? await getRoom(roomId) : (rooms[0] ?? null);
   const page = selected
     ? await listMessages(selected.id)
     : { items: [], nextCursor: null, hasMore: false };
@@ -74,6 +127,9 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         roomTitles={roomTitles}
         viewerId={session.userId}
         mentionCandidates={mentionCandidates}
+        showWhiz={canUseWhiz}
+        whizActive={whizActive}
+        whiz={whizProps}
       />
     </div>
   );

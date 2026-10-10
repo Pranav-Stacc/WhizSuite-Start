@@ -96,7 +96,7 @@ export class IdentityRepository {
   findMembershipOfUser(organizationId: string, userId: string) {
     return this.prisma.organizationMembership.findFirst({
       where: { organizationId, userId, status: MEMBERSHIP_ACTIVE },
-      select: { id: true, type: true },
+      select: { id: true, type: true, employmentType: true },
     });
   }
 
@@ -264,6 +264,7 @@ export class IdentityRepository {
         id: true,
         userId: true,
         type: true,
+        employmentType: true,
         status: true,
         createdAt: true,
       },

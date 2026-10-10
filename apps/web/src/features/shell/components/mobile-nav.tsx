@@ -47,16 +47,26 @@ export function MobileMenu({
       </Button>
       <Sheet open={open} onOpenChange={setOpen} title={t('shell.menu')} width="max-w-sm">
         <nav className="space-y-6" aria-label={t('shell.menu')}>
-          <ModuleLink
-            href={homeHref}
-            currentModule={module}
-            orgSlug={orgSlug}
-            onClick={() => setOpen(false)}
-            className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground"
-          >
-            <HomeIcon className="size-3.5" />
-            {t(HOME_ITEM.label)}
-          </ModuleLink>
+          <section>
+            <h3 className="eyebrow mb-2 px-1">{t(HOME_ITEM.label)}</h3>
+            <ul className="grid grid-cols-2 gap-px border border-border-soft bg-border-soft">
+              <li>
+                <ModuleLink
+                  href={homeHref}
+                  currentModule={module}
+                  orgSlug={orgSlug}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex items-center gap-2.5 bg-surface px-3 py-3 text-[13px] transition-colors',
+                    isActivePath(pathname, homeHref) ? 'text-foreground underline underline-offset-4' : 'text-muted hover:text-foreground',
+                  )}
+                >
+                  <HomeIcon className="size-3.5 shrink-0" />
+                  <span className="truncate">{t(HOME_ITEM.label)}</span>
+                </ModuleLink>
+              </li>
+            </ul>
+          </section>
           {groups.map((group) => (
             <section key={group.id}>
               <h3 className="eyebrow mb-2 px-1">{t(group.label)}</h3>

@@ -42,16 +42,19 @@ export type ThemeSettings = z.infer<typeof themeSchema>;
 export const ThemeColorKeys = ['primary', 'secondary', 'bg', 'surface', 'border', 'fg', 'muted'] as const;
 export type ThemeColorKey = (typeof ThemeColorKeys)[number];
 
-/** Dark monochrome — default for new sessions and orgs (quiet ink workspace). */
+/**
+ * Product default for web + mobile (new sessions, orgs without a saved appearance theme).
+ * Keep in sync with apps/web globals.css :root and mobile contracts.g.dart `defaultTheme`.
+ */
 export const DEFAULT_THEME: ThemeSettings = {
-  bg: '#0E0E0D',
-  surface: '#161615',
-  border: '#2E2D2A',
-  primary: '#F2F0EB',
-  secondary: '#B8B5AE',
-  fg: '#F2F0EB',
-  muted: '#8C8A85',
-  radius: 2,
+  bg: '#040109',
+  surface: '#0B0B0B',
+  border: '#2A2A2A',
+  primary: '#FFFFFF',
+  secondary: '#D1D1D1',
+  fg: '#FFFFFF',
+  muted: '#8D9B98',
+  radius: 14,
   density: 'comfortable',
 };
 
@@ -68,20 +71,38 @@ const EDITORIAL_THEME: ThemeSettings = {
   density: 'comfortable',
 };
 
-const NOIR_THEME: ThemeSettings = DEFAULT_THEME;
-
-/** The original dark, rounded look — kept as a preset. */
-const MONO_THEME: ThemeSettings = {
-  bg: '#040109',
-  surface: '#0B0B0B',
-  border: '#2A2A2A',
-  primary: '#FFFFFF',
-  secondary: '#D1D1D1',
-  fg: '#FFFFFF',
-  muted: '#8D9B98',
-  radius: 14,
+/** Quiet ink workspace — near-square corners; kept as a preset. */
+const NOIR_THEME: ThemeSettings = {
+  bg: '#0E0E0D',
+  surface: '#161615',
+  border: '#2E2D2A',
+  primary: '#F2F0EB',
+  secondary: '#B8B5AE',
+  fg: '#F2F0EB',
+  muted: '#8C8A85',
+  radius: 2,
   density: 'comfortable',
 };
+
+/** Alias of the default dark rounded palette (also listed as the `mono` preset). */
+const MONO_THEME: ThemeSettings = DEFAULT_THEME;
+
+/** True when `theme` is the former product default (noir, radius 2) still stored on devices/orgs. */
+export function isLegacyProductDefaultTheme(theme: ThemeSettings): boolean {
+  return (
+    theme.radius === NOIR_THEME.radius &&
+    ThemeColorKeys.every((key) => theme[key].toLowerCase() === NOIR_THEME[key].toLowerCase())
+  );
+}
+
+/**
+ * Upgrades sessions/orgs still on the old noir product default to the current mono default.
+ * Preserves density. Explicit custom themes and other presets are left unchanged.
+ */
+export function coerceProductDefaultTheme(theme: ThemeSettings): ThemeSettings {
+  if (!isLegacyProductDefaultTheme(theme)) return theme;
+  return { ...DEFAULT_THEME, density: theme.density };
+}
 
 export interface ThemePreset {
   id: string;
@@ -91,6 +112,7 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
+  { id: 'mono', mode: 'dark', theme: MONO_THEME },
   { id: 'noir', mode: 'dark', theme: NOIR_THEME },
   { id: 'editorial', mode: 'light', theme: EDITORIAL_THEME },
   {
@@ -198,7 +220,6 @@ export const THEME_PRESETS: ThemePreset[] = [
       density: 'comfortable',
     },
   },
-  { id: 'mono', mode: 'dark', theme: MONO_THEME },
   {
     id: 'aurora',
     mode: 'dark',

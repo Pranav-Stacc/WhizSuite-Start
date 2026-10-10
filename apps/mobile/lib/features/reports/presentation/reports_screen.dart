@@ -51,7 +51,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> with SingleTicker
     final id = await showReportForm(context, ref);
     if (id == null || !mounted) return;
     showToast(context, l10n.createdToast);
-    context.go(ReportsRoutes.detail(id));
+    context.push(ReportsRoutes.detail(id));
   }
 
   @override
@@ -188,7 +188,7 @@ class _ReportsListState extends ConsumerState<_ReportsList> with AutomaticKeepAl
       itemBuilder: (context, report) => ReportCard(
         report: report,
         clientName: nameOf(report.clientId),
-        onTap: () => context.go(ReportsRoutes.detail(report.id)),
+        onTap: () => context.push(ReportsRoutes.detail(report.id)),
       ),
     );
   }

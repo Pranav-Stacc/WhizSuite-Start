@@ -29,3 +29,25 @@ StatusTone invitationStatusTone(String status) => switch (status) {
       InvitationStatuses.expired => StatusTone.danger,
       _ => StatusTone.neutral,
     };
+
+String employmentTypeLabel(AppLocalizations l10n, String? type) =>
+    l10n.memberEmploymentTypeLabel(type ?? '');
+
+String memberDocumentTypeLabel(AppLocalizations l10n, String type) => l10n.memberDocumentTypeLabel(type);
+
+const hrTemplateTypes = <String>[
+  TemplateTypes.offerLetter,
+  TemplateTypes.salarySlip,
+  TemplateTypes.nda,
+  TemplateTypes.employmentAgreement,
+];
+
+bool isHrTemplate(String type) => hrTemplateTypes.contains(type);
+
+String? hrDocumentTypeForTemplate(String templateType) => switch (templateType) {
+      TemplateTypes.offerLetter => MemberDocumentTypes.offerLetter,
+      TemplateTypes.salarySlip => MemberDocumentTypes.salarySlip,
+      TemplateTypes.nda => MemberDocumentTypes.nda,
+      TemplateTypes.employmentAgreement => MemberDocumentTypes.employmentAgreement,
+      _ => null,
+    };

@@ -42,7 +42,9 @@ export class CalendarFeedQueryDto {
   @IsDateString()
   to?: string;
 
-  @ApiPropertyOptional({ description: 'Narrow to one client (must be in scope)' })
+  @ApiPropertyOptional({
+    description: 'Narrow to one client (must be in scope)',
+  })
   @IsOptional()
   @IsUUID('4')
   clientId?: string;

@@ -19,8 +19,7 @@ export type MediaDriveTransferJobPayload = {
 };
 
 export type MediaExportJobPayload =
-  | MediaZipExportJobPayload
-  | MediaDriveTransferJobPayload;
+  MediaZipExportJobPayload | MediaDriveTransferJobPayload;
 
 export type MediaExportJobResult = {
   downloadUrl: string | null;

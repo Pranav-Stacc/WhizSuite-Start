@@ -165,8 +165,7 @@ export function ContentComposer({
         if (result.ok) {
           toast.success(result.message ?? t('toast.created'));
           close(false);
-          if (stayOnSave) router.refresh();
-          else if (result.data?.href) router.push(result.data.href);
+          if (!stayOnSave && result.data?.href) router.push(result.data.href);
           return;
         }
         for (const [name, message] of Object.entries(result.fieldErrors ?? {})) form.setError(name as keyof ContentFormValues, { message });

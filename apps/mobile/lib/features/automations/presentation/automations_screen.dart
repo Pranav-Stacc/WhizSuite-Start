@@ -125,7 +125,7 @@ class _RulesTabState extends ConsumerState<_RulesTab> {
       ),
       itemBuilder: (context, automation) => AutomationCard(
         automation: automation,
-        onTap: () => context.go(AutomationsRoutes.detail(automation.id)),
+        onTap: () => context.push(AutomationsRoutes.detail(automation.id)),
       ),
     );
   }
@@ -204,7 +204,7 @@ class _RunsTabState extends ConsumerState<_RunsTab> {
       ),
       empty: EmptyState(icon: Icons.history, title: l10n.automationRunsEmpty, body: l10n.automationRunsEmptyBody),
       itemBuilder: (context, run) => SurfaceCard(
-        onTap: run.automationId.isEmpty ? null : () => context.go(AutomationsRoutes.detail(run.automationId)),
+        onTap: run.automationId.isEmpty ? null : () => context.push(AutomationsRoutes.detail(run.automationId)),
         child: AutomationRunTile(run: run),
       ),
     );

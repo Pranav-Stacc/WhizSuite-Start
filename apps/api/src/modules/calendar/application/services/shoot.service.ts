@@ -22,7 +22,11 @@ export class ShootService {
   /**
    * Plans a shoot day: calendar event (optionally on a project) + media folder tree + optional tasks.
    */
-  async create(organizationId: string, actorId: string, input: CreateShootInput) {
+  async create(
+    organizationId: string,
+    actorId: string,
+    input: CreateShootInput,
+  ) {
     if (!TenantContext.canAccessClient(input.clientId))
       throw notFound('Client not found');
     if (input.projectId) {

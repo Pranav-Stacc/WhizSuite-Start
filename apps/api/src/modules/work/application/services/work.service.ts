@@ -323,12 +323,8 @@ export class WorkService {
       dto,
     );
     const changed = await this.repository.updateTask(organizationId, taskId, {
-      projectId:
-        links === undefined
-          ? undefined
-          : (links.projectId ?? null),
-      clientId:
-        links === undefined ? undefined : (links.clientId ?? null),
+      projectId: links === undefined ? undefined : (links.projectId ?? null),
+      clientId: links === undefined ? undefined : (links.clientId ?? null),
       title: dto.title,
       description: dto.description,
       priority: dto.priority,

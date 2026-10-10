@@ -40,10 +40,7 @@ export class ApprovalsService {
   }
 
   /** Pending approvals for the calendar feed (dueAt, else createdAt). */
-  listPendingInRange(
-    organizationId: string,
-    range: { from: Date; to: Date },
-  ) {
+  listPendingInRange(organizationId: string, range: { from: Date; to: Date }) {
     return this.repository.listPendingInRange(
       organizationId,
       range,
@@ -74,7 +71,7 @@ export class ApprovalsService {
         return {
           name: step.name,
           rule: step.rule ?? DEFAULT_STEP_RULE,
-          approverSpec: { ...resolved } as Record<string, unknown>,
+          approverSpec: { ...resolved },
         };
       }),
     );

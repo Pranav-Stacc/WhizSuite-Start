@@ -55,7 +55,8 @@ export class MetaOauthService {
       );
     }
 
-    const provider = await this.integrations.findProviderByKey(META_PROVIDER_KEY);
+    const provider =
+      await this.integrations.findProviderByKey(META_PROVIDER_KEY);
     if (!provider) {
       throw unprocessable('Meta provider is not seeded');
     }
@@ -116,8 +117,8 @@ export class MetaOauthService {
     const withInstagram = pages.filter((p) => p.instagramBusinessAccountId);
     const selected =
       parsed.platform === 'instagram'
-        ? withInstagram[0] ?? pages[0]
-        : pages[0] ?? withInstagram[0];
+        ? (withInstagram[0] ?? pages[0])
+        : (pages[0] ?? withInstagram[0]);
 
     if (!selected) {
       const scopeList = tokens.scopes.join(', ') || 'none';
@@ -133,7 +134,8 @@ export class MetaOauthService {
       );
     }
 
-    const provider = await this.integrations.findProviderByKey(META_PROVIDER_KEY);
+    const provider =
+      await this.integrations.findProviderByKey(META_PROVIDER_KEY);
     if (!provider) throw unprocessable('Meta provider is not seeded');
 
     const existing = await this.integrations.findByProviderKeyAndClient(
@@ -235,7 +237,9 @@ export class MetaOauthService {
 
   webFailureRedirect(reason?: string): string {
     const webOrigin = this.config.get('WEB_APP_URL', { infer: true });
-    const q = reason ? `&reason=${encodeURIComponent(reason.slice(0, 80))}` : '';
+    const q = reason
+      ? `&reason=${encodeURIComponent(reason.slice(0, 80))}`
+      : '';
     return `${webOrigin}/integrations?meta=error${q}`;
   }
 
@@ -263,18 +267,16 @@ export class MetaOauthService {
       input.organizationId,
       account.id,
     );
-    await this.social.markAccountDisconnected(
-      input.organizationId,
-      account.id,
-    );
+    await this.social.markAccountDisconnected(input.organizationId, account.id);
 
     const connectionId = account.connectionId;
     if (connectionId) {
-      const stillConnected = await this.social.countConnectedAccountsForConnection(
-        input.organizationId,
-        connectionId,
-        account.id,
-      );
+      const stillConnected =
+        await this.social.countConnectedAccountsForConnection(
+          input.organizationId,
+          connectionId,
+          account.id,
+        );
       if (stillConnected === 0) {
         const credential = await this.integrations.findCredential(connectionId);
         if (credential?.accessToken) {

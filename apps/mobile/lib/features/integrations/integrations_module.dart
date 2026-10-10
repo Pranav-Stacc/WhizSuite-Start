@@ -17,5 +17,10 @@ final integrationsModule = FeatureModule(
       group: NavGroup.automate,
     ),
   ],
-  routes: [destinationRoute(IntegrationsRoutes.root, (_) => const IntegrationsScreen())],
+  routes: [
+    destinationRoute(
+      IntegrationsRoutes.root,
+      (state) => IntegrationsScreen(initialClientId: state.uri.queryParameters[IntegrationsRoutes.clientQuery]),
+    ),
+  ],
 );

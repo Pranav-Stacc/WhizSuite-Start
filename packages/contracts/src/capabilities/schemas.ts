@@ -8,6 +8,7 @@ import {
   Priorities,
   TaskStatuses,
 } from '../domain/statuses.js';
+import { ArticleCategories } from '../schemas/forms.js';
 
 export const uuid = z.string().uuid();
 export const optionalUuid = z.string().uuid().optional();
@@ -337,13 +338,13 @@ export const knowledgeGetInput = z.object({ articleId: uuid });
 export const knowledgeCreateInput = z.object({
   title: z.string().min(1).max(300),
   body: z.string().min(1).max(100_000),
-  category: z.string().max(100).optional(),
+  category: z.enum(ArticleCategories).optional(),
 });
 export const knowledgeUpdateInput = z.object({
   articleId: uuid,
   title: z.string().min(1).max(300).optional(),
   body: z.string().min(1).max(100_000).optional(),
-  category: z.string().max(100).optional(),
+  category: z.enum(ArticleCategories).optional(),
 });
 export const knowledgeDeleteInput = z.object({ articleId: uuid });
 

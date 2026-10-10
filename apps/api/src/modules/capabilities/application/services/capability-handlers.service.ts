@@ -1,4 +1,5 @@
 import {
+  HttpException,
   HttpStatus,
   Inject,
   Injectable,
@@ -18,7 +19,6 @@ import {
   type FeedbackThreadStatus,
   type IntegrationConnectionStatus,
   type LeadStage,
-  type MediaDownloadDisposition,
   type Permission,
   type Platform,
   type Priority,
@@ -73,6 +73,7 @@ export class CapabilityHandlersService {
     private readonly calendar: CalendarService,
     private readonly calendarFeed: CalendarFeedService,
     private readonly shoot: ShootService,
+    @Inject(forwardRef(() => ChatService))
     private readonly chat: ChatService,
     private readonly media: MediaService,
     private readonly mediaFolders: MediaFoldersService,
@@ -197,17 +198,10 @@ export class CapabilityHandlersService {
           },
         );
       case 'leads.delete':
-        await this.crm.remove(
-          organizationId,
-          actorId,
-          input.leadId as string,
-        );
+        await this.crm.remove(organizationId, actorId, input.leadId as string);
         return { ok: true as const };
       case 'leads.convert': {
-        const lead = await this.crm.get(
-          organizationId,
-          input.leadId as string,
-        );
+        const lead = await this.crm.get(organizationId, input.leadId as string);
         const workspaceId =
           (input.workspaceId as string | undefined) ??
           (await this.tenancy.defaultWorkspaceId(organizationId));
@@ -226,7 +220,7 @@ export class CapabilityHandlersService {
         });
         return this.crm.update(organizationId, actorId, lead.id, {
           convertedClientId: client.id,
-          stage: 'WON' as LeadStage,
+          stage: 'WON',
         });
       }
 
@@ -415,9 +409,7 @@ export class CapabilityHandlersService {
         );
 
       case 'calendar.list': {
-        const from = input.from
-          ? new Date(input.from as string)
-          : new Date();
+        const from = input.from ? new Date(input.from as string) : new Date();
         const to = input.to
           ? new Date(input.to as string)
           : new Date(from.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -479,7 +471,7 @@ export class CapabilityHandlersService {
       case 'chat.messages.send':
         return this.chat.sendMessage(
           organizationId,
-          actorId,
+          actor,
           input.roomId as string,
           { body: input.body as string },
         );
@@ -566,7 +558,7 @@ export class CapabilityHandlersService {
           organizationId,
           actorId,
           input.assetId as string,
-          'attachment' as MediaDownloadDisposition,
+          'attachment',
         );
       case 'media.upload':
         return this.media.createPresignedUpload(organizationId, actorId, {
@@ -699,8 +691,7 @@ export class CapabilityHandlersService {
           actorId,
           input.contractId as string,
           {
-            signerName:
-              (input.signerName as string | undefined) ?? actor.email,
+            signerName: (input.signerName as string | undefined) ?? actor.email,
             method: (input.method as 'TYPED' | 'DRAWN' | undefined) ?? 'TYPED',
           },
         );
@@ -848,8 +839,8 @@ export class CapabilityHandlersService {
           entityType: (input.entityType as string) ?? 'CONTENT',
           stages: input.stages as Array<{ name: string; key: string }>,
           slaHours: input.slaHours as number | undefined,
-          requiresClientApproval:
-            input.requiresClientApproval as boolean | undefined,
+          requiresClientApproval: input.requiresClientApproval as
+            boolean | undefined,
           active: input.active as boolean | undefined,
         });
       case 'workflows.update':
@@ -969,10 +960,7 @@ export class CapabilityHandlersService {
       case 'members.invite':
         return this.invitations.invite(organizationId, actorId, {
           email: input.email as string,
-          membershipType: input.membershipType as
-            | 'ADMIN'
-            | 'MEMBER'
-            | 'CLIENT',
+          membershipType: input.membershipType as 'ADMIN' | 'MEMBER' | 'CLIENT',
           clientId: input.clientId as string | undefined,
         });
       case 'members.assign_roles':
@@ -1050,8 +1038,7 @@ export class CapabilityHandlersService {
       case 'org.get':
         return this.tenancy.getOrganization(organizationId);
       case 'org.theme.update': {
-        const current =
-          await this.tenancy.getAppearanceTheme(organizationId);
+        const current = await this.tenancy.getAppearanceTheme(organizationId);
         return this.tenancy.updateAppearanceTheme(organizationId, actorId, {
           ...current,
           ...(input.primary !== undefined
@@ -1077,7 +1064,16 @@ export class CapabilityHandlersService {
       case 'billing.plans.list':
         return this.billing.listPlans();
       case 'billing.subscription.get':
-        return this.billing.getSubscription(organizationId);
+        try {
+          return {
+            subscription: await this.billing.getSubscription(organizationId),
+          };
+        } catch (error) {
+          if (error instanceof HttpException && error.getStatus() === 404) {
+            return { subscription: null };
+          }
+          throw error;
+        }
 
       case 'agents.definitions.list':
         return this.agents.listDefinitions(organizationId);

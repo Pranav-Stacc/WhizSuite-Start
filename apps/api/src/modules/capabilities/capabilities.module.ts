@@ -38,7 +38,7 @@ import { McpController } from './interface/http/controllers/mcp.controller';
     WorkModule,
     SocialModule,
     CalendarModule,
-    ChatModule,
+    forwardRef(() => ChatModule),
     MediaModule,
     ApprovalsModule,
     FinanceModule,

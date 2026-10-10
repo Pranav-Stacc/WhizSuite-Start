@@ -220,7 +220,7 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
 
     final sections = <Widget>[
       if (role != null && !role.isEditable)
-        _ReadOnlyBanner(onDuplicate: () => context.go(RolesRoutes.duplicate(role.id))),
+        _ReadOnlyBanner(onDuplicate: () => context.push(RolesRoutes.duplicate(role.id))),
       SectionCard(
         title: l10n.details,
         trailing: role == null ? null : StatusBadge(label: l10n.roleKind(RoleOrigins.of(role)), tone: roleKindTone(role)),
@@ -325,7 +325,7 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
               child: IconButton(
                 tooltip: l10n.roleDuplicate,
                 icon: const Icon(Icons.copy_all_outlined),
-                onPressed: () => context.go(RolesRoutes.duplicate(role.id)),
+                onPressed: () => context.push(RolesRoutes.duplicate(role.id)),
               ),
             ),
         ],
