@@ -19,8 +19,9 @@ export const agentMessages = {
   'agent.empty.body':
     'One chat for everything: create clients, assign tasks, draft content, schedule reminders, and more — no forms required.',
   'agent.empty.suggestions.createClient': 'Create a client called Acme Corp',
-  'agent.empty.suggestions.summarize': 'Summarize my organization health',
-  'agent.empty.suggestions.tasks': 'Every Monday at 9am, list urgent tasks',
+  'agent.empty.suggestions.summarize': 'Every Monday at 9am UTC, list urgent tasks',
+  'agent.empty.suggestions.tasks':
+    'Create an agent named Research Lead that summarizes client health weekly',
   'agent.step.planner': 'Planner',
   'agent.step.executor': 'Executor',
   'agent.step.critic': 'Critic',

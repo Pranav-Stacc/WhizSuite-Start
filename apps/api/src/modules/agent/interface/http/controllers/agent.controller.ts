@@ -142,13 +142,13 @@ export class AgentController {
   }
 
   @Get('definitions')
-  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  @RequirePermissions(Permissions.AI_CHAT)
   listDefinitions(@Param('organizationId') organizationId: string) {
     return this.runs.listDefinitions(requireOrganizationId(organizationId));
   }
 
   @Post('definitions')
-  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  @RequirePermissions(Permissions.AI_CHAT)
   createDefinition(
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -162,13 +162,13 @@ export class AgentController {
   }
 
   @Get('schedules')
-  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  @RequirePermissions(Permissions.AI_CHAT)
   listSchedules(@Param('organizationId') organizationId: string) {
     return this.runs.listSchedules(requireOrganizationId(organizationId));
   }
 
   @Post('schedules')
-  @RequirePermissions(Permissions.AI_AGENTS_MANAGE)
+  @RequirePermissions(Permissions.AI_CHAT)
   createSchedule(
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthenticatedUser,

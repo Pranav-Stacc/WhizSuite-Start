@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, TypedDict
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -9,6 +10,27 @@ from langgraph.graph import END, StateGraph
 
 from app.config import settings
 from app.tools.nest_client import NestCapabilityClient
+
+DEFAULT_PLANNER_PROMPT = """
+You are WhizSuite Agency OS AI. The product UI is chat-only — the user never fills
+agent/schedule forms. You execute requests with tools.
+
+What you can do from chat (use the matching toolIds):
+- Domain work: create/update clients, tasks, content, calendar, finance, team, etc.
+- Schedules: if the user wants something recurring ("every Monday", "daily at 9"),
+  call agents.schedules.create with name, prompt, cron, timezone (default UTC).
+  Cron examples: daily 9am = "0 9 * * *", every Monday 9am = "0 9 * * 1".
+- Custom agents: call agents.definitions.create ONLY when the user asks to save a
+  reusable specialist agent, OR a complex ongoing workflow truly needs a named
+  agent with its own systemPrompt/subAgents. Do NOT create agents for simple
+  one-shot asks (e.g. "create a client").
+- Prefer executing tools over asking clarifying questions when intent is clear.
+- You may call multiple tools in one response (e.g. create client then create task).
+
+Respond with JSON only (no markdown fences):
+{"summary": string, "tool_calls": [{"toolId": string, "input": object}]}
+If no tools are needed, return {"summary": string, "tool_calls": []}.
+""".strip()
 
 
 class AgentState(TypedDict, total=False):
@@ -47,6 +69,41 @@ def build_chat_model() -> BaseChatModel:
     )
 
 
+def parse_llm_json(raw: str) -> dict[str, Any]:
+    text = str(raw).strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    try:
+        parsed = json.loads(text)
+        return parsed if isinstance(parsed, dict) else {}
+    except json.JSONDecodeError:
+        match = re.search(r"\{[\s\S]*\}", text)
+        if not match:
+            return {}
+        try:
+            parsed = json.loads(match.group(0))
+            return parsed if isinstance(parsed, dict) else {}
+        except json.JSONDecodeError:
+            return {}
+
+
+def compact_tools(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep tool catalog small enough for the planner context window."""
+    compact: list[dict[str, Any]] = []
+    for tool in tools:
+        compact.append(
+            {
+                "id": tool.get("id"),
+                "name": tool.get("name"),
+                "module": tool.get("module"),
+                "description": tool.get("description"),
+                "riskTier": tool.get("riskTier"),
+            }
+        )
+    return compact
+
+
 async def run_supervisor_graph(
     *,
     message: str,
@@ -65,16 +122,16 @@ async def run_supervisor_graph(
         tools = [t for t in tools if t["id"] in allowed]
 
     model = build_chat_model()
-
-    planner_prompt = system_prompt or (
-        "You are WhizSuite Agency OS AI. The user talks only in chat — you must execute "
-        "their requests with tools (create clients, tasks, schedules, content, etc.). "
-        "Prefer calling tools over asking clarifying questions when the intent is clear. "
-        'Respond with JSON only: {"summary": string, "tool_calls": [{"toolId": string, "input": object}]}'
-    )
+    planner_prompt = system_prompt or DEFAULT_PLANNER_PROMPT
 
     if multi_agent and sub_agents:
-        planner_prompt += "\nSub-agents: " + json.dumps(sub_agents)
+        planner_prompt += "\nConfigured sub-agents: " + json.dumps(sub_agents)
+    elif multi_agent:
+        planner_prompt += (
+            "\nMulti-agent mode is on: for complex work you may create a specialist "
+            "via agents.definitions.create, then continue with domain tools. "
+            "Skip agent creation for simple single-step requests."
+        )
 
     plan_msg = await model.ainvoke(
         [
@@ -82,7 +139,7 @@ async def run_supervisor_graph(
             HumanMessage(
                 content=(
                     f"User request: {message}\n\n"
-                    f"Available tools:\n{json.dumps(tools, indent=2)[:12000]}"
+                    f"Available tools:\n{json.dumps(compact_tools(tools), indent=2)[:14000]}"
                 )
             ),
         ]
@@ -99,11 +156,9 @@ async def run_supervisor_graph(
 
     pending_action_id: str | None = None
     tool_results: list[Any] = []
-
-    try:
-        parsed = json.loads(str(plan_msg.content))
-        tool_calls = parsed.get("tool_calls", [])
-    except json.JSONDecodeError:
+    parsed = parse_llm_json(str(plan_msg.content))
+    tool_calls = parsed.get("tool_calls") or []
+    if not isinstance(tool_calls, list):
         tool_calls = []
 
     executor_name = "executor"
@@ -117,14 +172,36 @@ async def run_supervisor_graph(
             }
         )
 
-    for call in tool_calls[:8]:
+    # Prefer creating/listing agents or schedules before domain tools when both appear.
+    priority = {
+        "agents.definitions.create": 0,
+        "agents.definitions.list": 1,
+        "agents.schedules.create": 2,
+        "agents.schedules.list": 3,
+    }
+
+    def sort_key(call: dict[str, Any]) -> tuple[int, int]:
+        tid = str(call.get("toolId") or call.get("tool_id") or "")
+        return (priority.get(tid, 50), 0)
+
+    ordered_calls = sorted(
+        [c for c in tool_calls if isinstance(c, dict)],
+        key=sort_key,
+    )
+
+    for call in ordered_calls[:12]:
         tool_id = call.get("toolId") or call.get("tool_id")
         if not tool_id:
             continue
         input_data = call.get("input") or {}
-        result = await client.execute(tool_id, input_data, run_id)
+        if not isinstance(input_data, dict):
+            input_data = {}
+        try:
+            result = await client.execute(str(tool_id), input_data, run_id)
+        except Exception as exc:  # noqa: BLE001 — surface tool failure to the user summary
+            result = {"status": "error", "error": str(exc)}
         tool_results.append({"toolId": tool_id, "result": result})
-        if result.get("status") == "pending_confirmation":
+        if isinstance(result, dict) and result.get("status") == "pending_confirmation":
             pending_action_id = result.get("pendingActionId")
         steps.append(
             {
@@ -138,10 +215,20 @@ async def run_supervisor_graph(
 
     summary_msg = await model.ainvoke(
         [
-            SystemMessage(content="Summarize results for the user clearly and concisely."),
+            SystemMessage(
+                content=(
+                    "Summarize for the user in plain language. Mention what you did "
+                    "(created client/agent/schedule/task, etc.). If a tool needs approval, "
+                    "tell them to tap Approve. If something failed, say so clearly."
+                )
+            ),
             HumanMessage(
                 content=json.dumps(
-                    {"request": message, "tool_results": tool_results},
+                    {
+                        "request": message,
+                        "planner_summary": parsed.get("summary"),
+                        "tool_results": tool_results,
+                    },
                     default=str,
                 )[:12000]
             ),

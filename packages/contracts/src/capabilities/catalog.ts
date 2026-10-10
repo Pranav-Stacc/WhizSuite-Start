@@ -301,10 +301,11 @@ export const CAPABILITY_CATALOG: readonly CapabilityDefinition[] = [
   t('org.theme.update', 'tenancy', 'Update theme', 'Update org theme', [Permissions.ORG_BRANDING_MANAGE], CapabilityRiskTiers.WRITE_MEDIUM, orgThemeUpdateInput),
   t('billing.plans.list', 'billing', 'List plans', 'List billing plans', [Permissions.ORG_BILLING_MANAGE], CapabilityRiskTiers.READ, billingPlansListInput),
   t('billing.subscription.get', 'billing', 'Get subscription', 'Get org subscription', [Permissions.ORG_BILLING_MANAGE], CapabilityRiskTiers.READ, billingSubscriptionGetInput),
-  t('agents.definitions.list', 'agent', 'List agent definitions', 'List custom agents', [Permissions.AI_AGENTS_MANAGE], CapabilityRiskTiers.READ, agentDefinitionsListInput),
-  t('agents.definitions.create', 'agent', 'Create agent definition', 'Create custom agent', [Permissions.AI_AGENTS_MANAGE], CapabilityRiskTiers.WRITE_HIGH, agentDefinitionCreateInput, true),
-  t('agents.schedules.list', 'agent', 'List agent schedules', 'List agent schedules', [Permissions.AI_AGENTS_MANAGE], CapabilityRiskTiers.READ, agentSchedulesListInput),
-  t('agents.schedules.create', 'agent', 'Create agent schedule', 'Create agent schedule', [Permissions.AI_AGENTS_MANAGE], CapabilityRiskTiers.WRITE_HIGH, agentScheduleCreateInput, true),
+  // Chat-first: anyone who can chat may list/create agents and schedules from the conversation.
+  t('agents.definitions.list', 'agent', 'List agent definitions', 'List custom agents', [Permissions.AI_CHAT], CapabilityRiskTiers.READ, agentDefinitionsListInput),
+  t('agents.definitions.create', 'agent', 'Create agent definition', 'Create a reusable custom agent (only when needed for ongoing specialist work)', [Permissions.AI_CHAT], CapabilityRiskTiers.WRITE_MEDIUM, agentDefinitionCreateInput),
+  t('agents.schedules.list', 'agent', 'List agent schedules', 'List agent schedules', [Permissions.AI_CHAT], CapabilityRiskTiers.READ, agentSchedulesListInput),
+  t('agents.schedules.create', 'agent', 'Create agent schedule', 'Create a recurring/scheduled agent run from chat (cron + prompt)', [Permissions.AI_CHAT], CapabilityRiskTiers.WRITE_MEDIUM, agentScheduleCreateInput),
 ];
 
 export const CAPABILITY_BY_ID = new Map(
