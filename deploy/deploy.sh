@@ -14,6 +14,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 } > .image-tag
 COMPOSE=(docker compose --env-file .env --env-file .image-tag -f docker-compose.prod.yml)
 
+# Free space before pull so CI deploys do not fail with "no space left on device".
+docker image prune -af --filter "until=24h" > /dev/null || true
+docker builder prune -af > /dev/null || true
+
 "${COMPOSE[@]}" pull api agent
 "${COMPOSE[@]}" up -d postgres redis mailpit
 "${COMPOSE[@]}" run --rm migrate
