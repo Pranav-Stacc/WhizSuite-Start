@@ -10,6 +10,7 @@ import { MarketingFooter } from '@/features/marketing/components/marketing-foote
 import { MarketingHeader } from '@/features/marketing/components/marketing-header';
 import { MarketingShell } from '@/features/marketing/components/marketing-shell';
 import { ProductFrame } from '@/features/marketing/components/product-frame';
+import { Logo } from '@/shared/ui/logo';
 
 export const metadata: Metadata = {
   title: t('app.name'),
@@ -54,7 +55,9 @@ export default async function LandingPage() {
         {/* Hero: brand + one line + CTA + product plane */}
         <section className="relative mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-10 sm:gap-12 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-end lg:gap-16 lg:pb-28 lg:pt-20">
           <div className="marketing-rise max-w-xl">
-            <p className="wordmark mb-6 text-[12px] tracking-[0.32em] text-foreground sm:mb-8 sm:text-[13px]">{t('landing.brand')}</p>
+            <div className="mb-6 sm:mb-8">
+              <Logo />
+            </div>
             <h1 className="display text-balance text-[2rem] leading-tight text-foreground sm:text-5xl lg:text-[3.35rem]">
               {t('landing.title')}
             </h1>

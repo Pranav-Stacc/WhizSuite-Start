@@ -136,7 +136,7 @@ jobs:
             --query '[StandardOutputContent, StandardErrorContent]' --output text
           test "$status" = "Success"
 
-  # iOS only when mobile code changed AND pubspec version bumped. No backend deploy.
+  # iOS only when pubspec version/build number changes — not on every mobile code push.
   # Web is not deployed here — Amplify auto-builds on push.
   deploy-ios:
     needs: [changes]
@@ -144,7 +144,7 @@ jobs:
       github.event_name != 'pull_request'
       && github.ref == 'refs/heads/main'
       && (
-        (needs.changes.outputs.mobile == 'true' && needs.changes.outputs.mobile_version == 'true')
+        needs.changes.outputs.mobile_version == 'true'
         || (github.event_name == 'workflow_dispatch' && inputs.force_ios)
       )
     uses: ./.github/workflows/publish-ios-app-store.yml

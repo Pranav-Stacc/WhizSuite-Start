@@ -90,27 +90,32 @@ class SkeletonList extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return Shimmer(
-      child: ListView.separated(
-        physics: const NeverScrollableScrollPhysics(),
+      child: Padding(
         padding: EdgeInsets.all(tokens.lg),
-        itemCount: itemCount,
-        separatorBuilder: (_, _) => SizedBox(height: tokens.lg),
-        itemBuilder: (context, index) => Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (leading) ...[
-              SkeletonBox(width: 40, height: 40, radius: tokens.radius + 4),
-              SizedBox(width: tokens.md),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            for (var index = 0; index < itemCount; index++) ...[
+              if (index > 0) SizedBox(height: tokens.lg),
+              Row(
                 children: [
-                  FractionallySizedBox(widthFactor: index.isEven ? 0.7 : 0.5, child: const SkeletonBox()),
-                  SizedBox(height: tokens.sm),
-                  const FractionallySizedBox(widthFactor: 0.9, child: SkeletonBox(height: 10)),
+                  if (leading) ...[
+                    SkeletonBox(width: 40, height: 40, radius: tokens.radius + 4),
+                    SizedBox(width: tokens.md),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        FractionallySizedBox(widthFactor: index.isEven ? 0.7 : 0.5, child: const SkeletonBox()),
+                        SizedBox(height: tokens.sm),
+                        const FractionallySizedBox(widthFactor: 0.9, child: SkeletonBox(height: 10)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
+            ],
           ],
         ),
       ),

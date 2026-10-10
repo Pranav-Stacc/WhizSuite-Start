@@ -1,4 +1,5 @@
 import { t } from '@/shared/i18n/t';
+import { LogoMark } from '@/shared/ui/logo';
 
 const METRICS = [
   { label: 'landing.frame.metric.1.label', value: 'landing.frame.metric.1.value' },
@@ -20,7 +21,7 @@ export function ProductFrame() {
     <div className="marketing-frame relative overflow-hidden border border-border-strong bg-surface" aria-hidden>
       <div className="flex items-center justify-between border-b border-border-soft px-3 py-2.5 sm:px-4 sm:py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="wordmark truncate text-[10px] tracking-[0.28em]">{t('app.name')}</span>
+          <LogoMark size={22} />
           <span className="hidden h-3 w-px bg-border-strong sm:block" />
           <span className="eyebrow hidden sm:inline">{t('landing.frame.workspace')}</span>
         </div>
