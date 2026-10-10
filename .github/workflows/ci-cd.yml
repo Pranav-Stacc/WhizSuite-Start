@@ -43,7 +43,6 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'package.json'
               - 'turbo.json'
-              - '.github/workflows/ci-cd.yml'
             mobile:
               - 'apps/mobile/**'
               - '.github/workflows/publish-ios-app-store.yml'
