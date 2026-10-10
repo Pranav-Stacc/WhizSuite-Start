@@ -13,7 +13,7 @@ export async function beginMetaConnect(input: {
     orgPath(session.orgId, 'integrations/meta/connect'),
     {
       method: 'POST',
-      body: JSON.stringify(input),
+      body: input,
     },
   );
 }
