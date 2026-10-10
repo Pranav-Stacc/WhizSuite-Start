@@ -522,6 +522,10 @@ export class MetaClient {
           caption: input.caption,
         },
       });
+      await this.waitForIgContainerReady({
+        creationId,
+        pageAccessToken: input.pageAccessToken,
+      });
       return this.publishIgContainer({
         igUserId: input.igUserId,
         pageAccessToken: input.pageAccessToken,
@@ -539,6 +543,10 @@ export class MetaClient {
           is_carousel_item: 'true',
         },
       });
+      await this.waitForIgContainerReady({
+        creationId: childId,
+        pageAccessToken: input.pageAccessToken,
+      });
       childIds.push(childId);
     }
     const creationId = await this.createIgMediaContainer({
@@ -549,6 +557,10 @@ export class MetaClient {
         children: childIds.join(','),
         caption: input.caption,
       },
+    });
+    await this.waitForIgContainerReady({
+      creationId,
+      pageAccessToken: input.pageAccessToken,
     });
     return this.publishIgContainer({
       igUserId: input.igUserId,
@@ -645,20 +657,37 @@ export class MetaClient {
       creation_id: input.creationId,
     });
     const url = `${GRAPH_HOST}/${this.graphVersion()}/${input.igUserId}/media_publish`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-    const text = await response.text();
-    if (!response.ok) {
+    const maxAttempts = 6;
+    let lastError = '';
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString(),
+      });
+      const text = await response.text();
+      if (response.ok) {
+        const json = JSON.parse(text) as { id?: string };
+        if (!json.id) throw new Error('Instagram publish returned no media id');
+        const permalink = await this.fetchIgPermalink(
+          json.id,
+          input.pageAccessToken,
+        );
+        return { platformPostId: json.id, permalink };
+      }
+      lastError = text;
+      // Media still processing (9007 / 2207027) — wait and retry.
+      if (isIgMediaNotReadyError(text) && attempt < maxAttempts - 1) {
+        this.logger.warn(
+          `Meta IG media_publish not ready (attempt ${attempt + 1}/${maxAttempts}): ${text.slice(0, 180)}`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        continue;
+      }
       this.logger.warn(`Meta IG media_publish failed: ${text}`);
       throw new Error(`Instagram publish failed: ${text.slice(0, 300)}`);
     }
-    const json = JSON.parse(text) as { id?: string };
-    if (!json.id) throw new Error('Instagram publish returned no media id');
-    const permalink = await this.fetchIgPermalink(json.id, input.pageAccessToken);
-    return { platformPostId: json.id, permalink };
+    throw new Error(`Instagram publish failed: ${lastError.slice(0, 300)}`);
   }
 
   private async fetchIgPermalink(
@@ -689,4 +718,13 @@ export class MetaClient {
       );
     }
   }
+}
+
+function isIgMediaNotReadyError(body: string): boolean {
+  return (
+    body.includes('"code":9007') ||
+    body.includes('"error_subcode":2207027') ||
+    body.includes('Media ID is not available') ||
+    body.includes('not ready to be published')
+  );
 }

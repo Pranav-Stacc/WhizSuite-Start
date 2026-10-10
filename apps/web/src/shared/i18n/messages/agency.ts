@@ -304,7 +304,7 @@ export const agencyMessages = {
   'notifications.event.changesRequested': 'Client requested changes',
   'notifications.event.approvalRequested': 'Your approval is needed',
   'notifications.event.socialPostPublished': 'Your post was published',
-  'notifications.event.socialPostFailed': 'Publish failed',
+  'notifications.event.socialPostFailed': 'Publish failed — open the post and try again',
   'notifications.guide.inbox.title': 'Your inbox',
   'notifications.guide.inbox.body': 'Click a notification to jump straight to the relevant page. Unread items are highlighted.',
   'notifications.guide.prefs.title': 'Control the noise',

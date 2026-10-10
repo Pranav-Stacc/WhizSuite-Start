@@ -244,23 +244,33 @@ export class PublishWorkerService implements OnModuleInit, OnModuleDestroy {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       this.logger.error(`Publish job ${job.id} failed: ${message}`);
-      await this.prisma.publishJob.update({
-        where: { id: job.id },
-        data: { status: 'FAILED', lastError: message.slice(0, 1000) },
-      });
-      await this.prisma.contentVariant.update({
-        where: { id: job.variantId },
-        data: { publishStatus: 'FAILED' },
-      });
-      await this.prisma.publishAttempt.create({
-        data: {
-          organizationId: job.organizationId,
-          jobId: job.id,
-          status: 'FAILED',
-          errorMessage: message.slice(0, 1000),
-        },
-      });
       const content = job.variant?.contentItem;
+      await this.prisma.$transaction(async (tx) => {
+        await tx.publishJob.update({
+          where: { id: job.id },
+          data: { status: 'FAILED', lastError: message.slice(0, 1000) },
+        });
+        await tx.contentVariant.update({
+          where: { id: job.variantId },
+          data: { publishStatus: 'FAILED' },
+        });
+        await tx.publishAttempt.create({
+          data: {
+            organizationId: job.organizationId,
+            jobId: job.id,
+            status: 'FAILED',
+            errorMessage: message.slice(0, 1000),
+          },
+        });
+        // Immediate "Publish now" marks content PUBLISHED before Meta finishes —
+        // roll back so the user can retry from Approvals/content.
+        if (content?.id && content.status === 'PUBLISHED') {
+          await tx.contentItem.update({
+            where: { id: content.id },
+            data: { status: 'APPROVED' },
+          });
+        }
+      });
       await this.outbox.write({
         type: DomainEventTypes.SOCIAL_POST_FAILED,
         version: 1,

@@ -70,7 +70,7 @@ export const NOTIFICATION_TEMPLATES: Readonly<
   },
   [NotificationTypeKeys.SOCIAL_POST_FAILED]: {
     subject: 'Publish failed',
-    body: '"{title}" failed to publish. Check Integrations and try again.',
+    body: '"{title}" failed to publish to Instagram. Open the post and try Publish now again.',
     actionLabel: 'View content',
   },
 };
