@@ -8,10 +8,13 @@ IMAGE_TAG="${1:?usage: deploy.sh <image-tag>}"
 HEALTH_RETRIES="${HEALTH_RETRIES:-30}"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
+# Ensure writable even if a prior root SSM left a root-owned file.
+rm -f .image-tag
 {
   echo "API_IMAGE_TAG=$IMAGE_TAG"
   echo "AGENT_IMAGE_TAG=$IMAGE_TAG"
 } > .image-tag
+chmod 644 .image-tag
 COMPOSE=(docker compose --env-file .env --env-file .image-tag -f docker-compose.prod.yml)
 
 # Free space before pull so CI deploys do not fail with "no space left on device".
