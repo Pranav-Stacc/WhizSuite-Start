@@ -143,12 +143,68 @@ jobs:
           BRANCH: ${{ vars.AMPLIFY_BRANCH }}
           SHA: ${{ github.sha }}
         run: |
-          job=$(aws amplify start-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-type RELEASE \
-            --commit-id "$SHA" --query jobSummary.jobId --output text)
-          echo "Amplify job $job"
-          for _ in $(seq 1 120); do
-            status=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$job" --query job.summary.status --output text)
-            case "$status" in PENDING|PROVISIONING|RUNNING) sleep 15 ;; *) break ;; esac
+          set -euo pipefail
+
+          wait_for_job() {
+            local job_id=$1
+            echo "Waiting for Amplify job $job_id"
+            for _ in $(seq 1 120); do
+              status=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$job_id" \
+                --query job.summary.status --output text)
+              case "$status" in PENDING|PROVISIONING|RUNNING) sleep 15 ;; *) break ;; esac
+            done
+            echo "Amplify job status: $status"
+            test "$status" = "SUCCEED"
+          }
+
+          find_job_for_commit() {
+            aws amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-items 10 \
+              --query "jobSummaries[?commitId=='$SHA'].jobId | [0]" --output text
+          }
+
+          find_active_job() {
+            aws amplify list-jobs --app-id "$APP_ID" --branch-name "$BRANCH" --max-items 5 \
+              --query "jobSummaries[?status=='PENDING' || status=='PROVISIONING' || status=='RUNNING'].jobId | [0]" \
+              --output text
+          }
+
+          # Amplify may auto-build on push; reuse an in-flight job for this commit.
+          existing=$(find_job_for_commit)
+          if [[ -n "$existing" && "$existing" != "None" ]]; then
+            echo "Reusing Amplify job $existing for commit ${SHA:0:7}"
+            wait_for_job "$existing"
+            exit 0
+          fi
+
+          active=$(find_active_job)
+          if [[ -n "$active" && "$active" != "None" ]]; then
+            echo "Waiting for active Amplify job $active before starting ${SHA:0:7}"
+            for _ in $(seq 1 120); do
+              status=$(aws amplify get-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-id "$active" \
+                --query job.summary.status --output text)
+              case "$status" in PENDING|PROVISIONING|RUNNING) sleep 15 ;; *) break ;; esac
+            done
+          fi
+
+          for attempt in $(seq 1 6); do
+            if job=$(aws amplify start-job --app-id "$APP_ID" --branch-name "$BRANCH" --job-type RELEASE \
+              --commit-id "$SHA" --query jobSummary.jobId --output text 2>/tmp/amplify_start.err); then
+              echo "Started Amplify job $job"
+              wait_for_job "$job"
+              exit 0
+            fi
+            if grep -q LimitExceededException /tmp/amplify_start.err; then
+              echo "Amplify busy (attempt $attempt); checking for job for ${SHA:0:7}"
+              sleep 20
+              existing=$(find_job_for_commit)
+              if [[ -n "$existing" && "$existing" != "None" ]]; then
+                wait_for_job "$existing"
+                exit 0
+              fi
+              continue
+            fi
+            cat /tmp/amplify_start.err >&2
+            exit 1
           done
-          echo "Amplify job status: $status"
-          test "$status" = "SUCCEED"
+          echo "Could not start or find Amplify job for ${SHA:0:7}" >&2
+          exit 1
