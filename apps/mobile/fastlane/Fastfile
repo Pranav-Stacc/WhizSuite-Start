@@ -46,14 +46,33 @@ platform :ios do
     setup_ci if ENV["CI"]
     sync_signing(readonly: ENV["MATCH_READONLY"] != "false")
 
+    app_id = ENV.fetch("APPLE_APP_IDENTIFIER", "com.whizsuite.app")
+    profile_name = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][app_id]
+
+    update_code_signing_settings(
+      path: "ios/Runner.xcodeproj",
+      use_automatic_signing: false,
+      team_id: ENV.fetch("APPLE_TEAM_ID"),
+      targets: ["Runner"],
+      code_sign_identity: "Apple Distribution",
+      profile_name: profile_name,
+      build_configurations: ["Release", "Profile"]
+    )
+
     build_app(
       workspace: "ios/Runner.xcworkspace",
       scheme: "Runner",
+      configuration: "Release",
       export_method: "app-store",
       output_directory: "build/ios/ipa",
       output_name: "WhizSuite.ipa",
       clean: true,
-      xcargs: "CODE_SIGN_STYLE=Manual"
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          app_id => profile_name
+        }
+      }
     )
   end
 
