@@ -7,35 +7,30 @@ import { LayoutGrid, Menu as MenuIcon } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { isActivePath, primaryNav } from '@/shared/navigation/nav-config';
-import type { WorkspaceModule } from '@/shared/workspace/modules';
+import { HOME_ITEM, allowedGroups, isActivePath, primaryNav } from '@/shared/navigation/nav-config';
+import { homePathForModule, type WorkspaceModule } from '@/shared/workspace/modules';
 import { Button } from '@/shared/ui/button';
 import { Sheet } from '@/shared/ui/overlays';
-import { AppSidebar } from './app-sidebar';
 
 const OPEN_EVENT = 'open-mobile-menu';
 
 type Badges = Record<string, number>;
 
-/** Hamburger + left sidebar sheet used below the `lg` breakpoint. Also opened by the bottom dock's "More". */
+/** Hamburger + full menu sheet used below the `lg` breakpoint. Also opened by the bottom dock's "More". */
 export function MobileMenu({
   permissions,
   badges,
   module = 'main',
-  orgName,
-  orgSlug,
-  canCrm,
-  canFinance,
 }: {
   permissions: Permission[];
   badges: Badges;
   module?: WorkspaceModule;
-  orgName: string;
-  orgSlug?: string;
-  canCrm: boolean;
-  canFinance: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const groups = allowedGroups(new Set(permissions), module);
+  const homeHref = homePathForModule(module);
+  const HomeIcon = HOME_ITEM.icon;
 
   useEffect(() => {
     const onOpen = () => setOpen(true);
@@ -48,19 +43,40 @@ export function MobileMenu({
       <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t('shell.menu')} onClick={() => setOpen(true)}>
         <MenuIcon />
       </Button>
-      <Sheet open={open} onOpenChange={setOpen} title={orgName} width="max-w-[18rem]" side="left">
-        <AppSidebar
-          permissions={permissions}
-          badges={badges}
-          module={module}
-          orgName={orgName}
-          orgSlug={orgSlug}
-          canCrm={canCrm}
-          canFinance={canFinance}
-          onNavigate={() => setOpen(false)}
-          showBrand={false}
-          className="min-h-[calc(100dvh-5rem)]"
-        />
+      <Sheet open={open} onOpenChange={setOpen} title={t('shell.menu')} width="max-w-sm">
+        <nav className="space-y-6" aria-label={t('shell.menu')}>
+          <Link href={homeHref} onClick={() => setOpen(false)} className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground">
+            <HomeIcon className="size-3.5" />
+            {t(HOME_ITEM.label)}
+          </Link>
+          {groups.map((group) => (
+            <section key={group.id}>
+              <h3 className="eyebrow mb-2 px-1">{t(group.label)}</h3>
+              <ul className="grid grid-cols-2 gap-px border border-border-soft bg-border-soft">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const badge = badges[item.href];
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className={cn(
+                          'flex items-center gap-2.5 bg-surface px-3 py-3 text-[13px] transition-colors',
+                          isActivePath(pathname, item.href) ? 'text-foreground underline underline-offset-4' : 'text-muted hover:text-foreground',
+                        )}
+                      >
+                        <Icon className="size-3.5 shrink-0" />
+                        <span className="truncate">{t(item.label)}</span>
+                        {badge ? <span className="ml-auto text-[11px] tabular-nums text-foreground">{badge}</span> : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </nav>
       </Sheet>
     </>
   );
@@ -89,13 +105,10 @@ export function MobileDock({
               <Link
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative flex flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] transition-colors',
-                  active ? 'text-foreground' : 'text-muted',
-                )}
+                className={cn('relative flex flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] transition-colors', active ? 'text-foreground' : 'text-muted')}
               >
                 <Icon className="size-4" />
-                <span className="max-w-full truncate px-0.5">{t(item.label)}</span>
+                {t(item.label)}
                 {badges[item.href] ? <span className="absolute right-3 top-1.5 size-1.5 rounded-full bg-foreground" /> : null}
               </Link>
             </li>

@@ -57,23 +57,49 @@ jobs:
           BRANCH: ${{ vars.AMPLIFY_BRANCH }}
         run: |
           set -euo pipefail
+          # Apex + www + wildcard (*) — required for test/crm-test/finance-test agency hosts (ADR 0009).
+          subdomain_settings="prefix=,branchName=$BRANCH prefix=www,branchName=$BRANCH prefix=*,branchName=$BRANCH"
+
           existing=$(aws amplify list-domain-associations --app-id "$APP_ID" \
             --query "domainAssociations[?domainName=='whizsuite.com'].domainName" --output text)
           if [[ -n "$existing" ]]; then
-            echo "Domain whizsuite.com already associated"
-            aws amplify get-domain-association --app-id "$APP_ID" --domain-name whizsuite.com
+            echo "Updating whizsuite.com (ensure apex, www, and wildcard subdomains)..."
+            aws amplify update-domain-association \
+              --app-id "$APP_ID" \
+              --domain-name whizsuite.com \
+              --sub-domain-settings $subdomain_settings
           else
             aws amplify create-domain-association \
               --app-id "$APP_ID" \
               --domain-name whizsuite.com \
-              --sub-domain-settings prefix=,branchName="$BRANCH" prefix=www,branchName="$BRANCH"
+              --sub-domain-settings $subdomain_settings
           fi
+
+          echo "Waiting for domain association to finish updating..."
+          for _ in $(seq 1 60); do
+            status=$(aws amplify get-domain-association --app-id "$APP_ID" --domain-name whizsuite.com \
+              --query 'domainAssociation.domainStatus' --output text)
+            update=$(aws amplify get-domain-association --app-id "$APP_ID" --domain-name whizsuite.com \
+              --query 'domainAssociation.updateStatus' --output text)
+            echo "domainStatus=$status updateStatus=${update:-none}"
+            if [[ "$status" == "AVAILABLE" && ( -z "$update" || "$update" == "UPDATE_COMPLETE" || "$update" == "None" ) ]]; then
+              break
+            fi
+            if [[ "$status" == "FAILED" || "$update" == "UPDATE_FAILED" ]]; then
+              aws amplify get-domain-association --app-id "$APP_ID" --domain-name whizsuite.com
+              exit 1
+            fi
+            sleep 15
+          done
 
           # Merge required env vars without wiping others.
           current=$(aws amplify get-app --app-id "$APP_ID" --query 'app.environmentVariables' --output json)
           merged=$(jq -n --argjson cur "${current:-{}}" '
             $cur * {
               API_BASE_URL: "https://api.whizsuite.com/api",
+              APP_ROOT_DOMAIN: "whizsuite.com",
+              NEXT_PUBLIC_APP_ROOT_DOMAIN: "whizsuite.com",
+              SESSION_COOKIE_DOMAIN: ".whizsuite.com",
               SESSION_COOKIE_SECURE: "true",
               NEXT_PUBLIC_APP_NAME: "WhizSuite"
             }')

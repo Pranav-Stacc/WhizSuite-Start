@@ -11,10 +11,10 @@ Traffic is early-stage; cost matters more than horizontal scale.
 
 ## Decision
 
-- **API, agent, PostgreSQL, Redis** run as Docker Compose services on a single EC2 `t3.large`
-  (2 vCPU / 8 GiB) with a 60 GB gp3 root volume (`deploy/docker-compose.prod.yml`), fronted by
-  Caddy for automatic TLS. (Originally `t3.micro` / 20 GB; resized 2026-10-10 after deploy OOM
-  and disk-full failures.)
+- **API, agent, PostgreSQL, Redis** run as Docker Compose services on a single EC2 `t3.medium`
+  (2 vCPU / 4 GiB) with a 60 GB gp3 root volume (`deploy/docker-compose.prod.yml`), fronted by
+  Caddy for automatic TLS. (Originally `t3.micro` / 20 GB; disk expanded and instance upsized
+  2026-10-10 after deploy OOM and disk-full failures.)
 - **API image** is built once in GitHub Actions and pushed to ECR, tagged with the commit SHA.
   The instance never builds code; it only pulls images.
 - **Deploys** use GitHub OIDC to assume a narrowly scoped IAM role (no long-lived AWS keys), then

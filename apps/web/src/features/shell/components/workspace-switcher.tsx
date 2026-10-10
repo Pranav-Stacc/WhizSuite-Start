@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Building2, ChevronDown, Landmark, Users } from 'lucide-react';
 import { publicEnv } from '@/shared/config/public-env';
 import { t } from '@/shared/i18n/t';
-import { cn } from '@/shared/lib/cn';
 import { workspaceHref } from '@/shared/workspace/host';
 import {
   WORKSPACE_MODULE_COOKIE,
@@ -27,18 +26,10 @@ interface WorkspaceSwitcherProps {
   /** Permissions gate — hide CRM/Finance entries the member cannot open. */
   canCrm: boolean;
   canFinance: boolean;
-  /** Header compact control vs full-width sidebar control. */
-  variant?: 'header' | 'sidebar';
 }
 
 /** Jumps between main / CRM / Finance product surfaces (subdomain or local cookie). */
-export function WorkspaceSwitcher({
-  module,
-  orgSlug,
-  canCrm,
-  canFinance,
-  variant = 'header',
-}: WorkspaceSwitcherProps) {
+export function WorkspaceSwitcher({ module, orgSlug, canCrm, canFinance }: WorkspaceSwitcherProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const root = publicEnv.appRootDomain;
@@ -71,19 +62,12 @@ export function WorkspaceSwitcher({
     <Menu.Root>
       <Menu.Trigger
         disabled={pending}
-        className={cn(
-          'inline-flex items-center gap-1.5 outline-none',
-          variant === 'sidebar'
-            ? 'w-full justify-between rounded-md border border-border-soft bg-surface-2 px-2.5 py-2 text-[12px] font-medium uppercase tracking-[0.12em] text-foreground hover:border-border'
-            : 'nav-link hidden sm:inline-flex',
-        )}
+        className="nav-link hidden items-center gap-1.5 outline-none sm:inline-flex"
         aria-label={t('workspace.switch')}
       >
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <CurrentIcon className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{t(current.labelKey)}</span>
-        </span>
-        <ChevronDown className="size-3 shrink-0" aria-hidden />
+        <CurrentIcon className="size-3.5" aria-hidden />
+        <span>{t(current.labelKey)}</span>
+        <ChevronDown className="size-3" aria-hidden />
       </Menu.Trigger>
       <Menu.Content className="w-56 p-1">
         <Menu.Label>{t('workspace.switch')}</Menu.Label>

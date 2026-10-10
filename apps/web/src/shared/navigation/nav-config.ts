@@ -145,6 +145,14 @@ export function primaryNav(granted: ReadonlySet<Permission>, module: WorkspaceMo
   });
 }
 
+/** Groups and items not pinned in the top bar — shown under the "More" menu. */
+export function secondaryGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
+  const primary = new Set<string>(MODULE_PRIMARY_HREFS[module]);
+  return allowedGroups(granted, module)
+    .map((group) => ({ ...group, items: group.items.filter((item) => !primary.has(item.href)) }))
+    .filter((group) => group.items.length > 0);
+}
+
 export function allowedGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
   const allowedIds = new Set(MODULE_NAV_GROUPS[module]);
   return NAV_GROUPS.filter((group) => allowedIds.has(group.id))
