@@ -13,6 +13,9 @@ export interface CalendarItemCreateRow {
   clientId?: string;
   projectId?: string;
   metadata?: Record<string, unknown>;
+  syncToGoogle?: boolean;
+  externalEventId?: string | null;
+  externalCalendarId?: string | null;
 }
 
 export interface CalendarItemUpdateRow {
@@ -21,6 +24,9 @@ export interface CalendarItemUpdateRow {
   endsAt?: Date | null;
   allDay?: boolean;
   metadata?: Record<string, unknown>;
+  syncToGoogle?: boolean;
+  externalEventId?: string | null;
+  externalCalendarId?: string | null;
 }
 
 @Injectable()
@@ -67,6 +73,20 @@ export class CalendarRepository {
     return this.prisma.calendarItem.updateMany({
       where: { id, organizationId },
       data: { ...row, metadata: toInputJson(row.metadata) },
+    });
+  }
+
+  findByExternalEventId(organizationId: string, externalEventId: string) {
+    return this.prisma.calendarItem.findFirst({
+      where: { organizationId, externalEventId },
+    });
+  }
+
+  listSyncEligible(organizationId: string, limit: number) {
+    return this.prisma.calendarItem.findMany({
+      where: { organizationId, syncToGoogle: true },
+      orderBy: { startsAt: 'asc' },
+      take: limit,
     });
   }
 }

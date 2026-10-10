@@ -247,8 +247,23 @@ export const createShootFormSchema = z.object({
   projectId: optionalText,
   createFolders: z.coerce.boolean().default(true),
   taskTitles: z.string().optional(),
+  syncToGoogle: z.coerce.boolean().default(false),
 });
 export type CreateShootFormInput = z.infer<typeof createShootFormSchema>;
+
+/** Manual / meeting calendar item from the day panel. */
+export const createCalendarEventFormSchema = z.object({
+  title: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
+  startsAt: z.string().min(1, 'validation.required'),
+  endsAt: optionalDate,
+  allDay: z.coerce.boolean().default(false),
+  clientId: optionalText,
+  sourceType: z.enum(['MANUAL', 'MEETING', 'DEADLINE']).default('MANUAL'),
+  syncToGoogle: z.coerce.boolean().default(false),
+});
+export type CreateCalendarEventFormInput = z.infer<
+  typeof createCalendarEventFormSchema
+>;
 
 export const createMediaFolderFormSchema = z.object({
   name: z.string().trim().min(1, 'validation.required'),
@@ -371,7 +386,7 @@ export const decisionSchema = z.object({
 export type DecisionInput = z.infer<typeof decisionSchema>;
 
 export const WORKFLOW_STAGE_SEPARATOR = ',';
-export const MIN_WORKFLOW_STAGES = 2;
+export const MIN_WORKFLOW_STAGES = 1;
 export const MAX_WORKFLOW_STAGES = 20;
 export const MAX_WORKFLOW_SLA_HOURS = 720;
 export const MAX_WORKFLOW_STAGE_LENGTH = 80;

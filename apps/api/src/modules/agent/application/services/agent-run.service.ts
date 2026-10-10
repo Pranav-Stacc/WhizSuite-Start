@@ -32,8 +32,49 @@ export class AgentRunService {
     sessionId: string,
     input: SendAgentMessageInput,
   ) {
+    const prepared = await this.prepareRun(organizationId, user, sessionId, input);
+    const result = await this.orchestrator.run(prepared.orchestratorRequest);
+    return this.finalizeRun(organizationId, user, prepared, result);
+  }
+
+  /**
+   * Streams progressive agent events to onEvent, then persists the completed run.
+   */
+  async sendMessageStream(
+    organizationId: string,
+    user: AuthenticatedUser,
+    sessionId: string,
+    input: SendAgentMessageInput,
+    onEvent: (event: Record<string, unknown>) => void | Promise<void>,
+  ) {
+    const prepared = await this.prepareRun(organizationId, user, sessionId, input);
+    await onEvent({
+      type: 'status',
+      phase: 'planning',
+      detail: 'Starting run',
+      runId: prepared.run.id,
+    });
+
+    const result = await this.orchestrator.runStream(
+      prepared.orchestratorRequest,
+      onEvent,
+    );
+    return this.finalizeRun(organizationId, user, prepared, result);
+  }
+
+  private async prepareRun(
+    organizationId: string,
+    user: AuthenticatedUser,
+    sessionId: string,
+    input: SendAgentMessageInput,
+  ) {
     const session = await this.repo.findSession(organizationId, sessionId);
     if (!session || session.userId !== user.userId) throw notFound();
+
+    const history = (session.messages ?? [])
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .slice(-12)
+      .map((m) => ({ role: m.role, content: m.content }));
 
     await this.repo.addMessage(organizationId, sessionId, 'user', input.message);
     const title = session.title ?? input.message.slice(0, 80);
@@ -66,21 +107,47 @@ export class AgentRunService {
     });
 
     const runToken = this.sessions.mintRunToken(user, run.id);
-    const result = await this.orchestrator.run({
-      runToken,
+    return {
+      run,
       sessionId,
-      runId: run.id,
-      message: input.message,
-      multiAgent: input.multiAgent ?? true,
-      systemPrompt: definition?.systemPrompt,
-      subAgents: (definition?.subAgents as Array<{ name: string; role: string }>) ?? undefined,
-      toolIds: (definition?.toolIds as string[]) ?? undefined,
-    });
+      orchestratorRequest: {
+        runToken,
+        sessionId,
+        runId: run.id,
+        message: input.message,
+        multiAgent: input.multiAgent ?? true,
+        systemPrompt: definition?.systemPrompt,
+        subAgents:
+          (definition?.subAgents as Array<{ name: string; role: string }>) ?? undefined,
+        toolIds: (definition?.toolIds as string[]) ?? undefined,
+        history,
+      },
+    };
+  }
 
+  private async finalizeRun(
+    organizationId: string,
+    user: AuthenticatedUser,
+    prepared: {
+      run: { id: string };
+      sessionId: string;
+    },
+    result: {
+      response: string;
+      steps: Array<{
+        agentName: string;
+        stepType: string;
+        input?: Record<string, unknown>;
+        output?: Record<string, unknown>;
+        status: string;
+      }>;
+      pendingActionId?: string;
+    },
+  ) {
     for (const step of result.steps) {
       await this.repo.createRunStep({
         organizationId,
-        runId: run.id,
+        runId: prepared.run.id,
         agentName: step.agentName,
         stepType: step.stepType,
         input: step.input,
@@ -90,16 +157,23 @@ export class AgentRunService {
     }
 
     const status = result.pendingActionId ? 'WAITING_CONFIRMATION' : 'COMPLETED';
-    await this.repo.updateRun(run.id, {
+    await this.repo.updateRun(prepared.run.id, {
       status,
       response: result.response,
       completedAt: status === 'COMPLETED' ? new Date() : undefined,
     });
 
-    await this.repo.addMessage(organizationId, sessionId, 'assistant', result.response, {
-      runId: run.id,
-      steps: result.steps.length,
-    });
+    await this.repo.addMessage(
+      organizationId,
+      prepared.sessionId,
+      'assistant',
+      result.response,
+      {
+        runId: prepared.run.id,
+        steps: result.steps.length,
+        format: 'markdown',
+      },
+    );
 
     await this.outbox.write({
       type:
@@ -108,13 +182,14 @@ export class AgentRunService {
           : AgentEventTypes.AGENT_PENDING_ACTION,
       version: 1,
       organizationId,
-      payload: { runId: run.id, pendingActionId: result.pendingActionId },
+      payload: { runId: prepared.run.id, pendingActionId: result.pendingActionId },
       actor: { id: user.userId, type: 'user' },
     });
 
-    const updated = await this.repo.findRun(organizationId, run.id);
+    const updated = await this.repo.findRun(organizationId, prepared.run.id);
+    if (!updated) throw notFound();
     return {
-      run: this.toRunDto(updated ?? run),
+      run: this.toRunDto(updated),
       response: result.response,
       pendingActionId: result.pendingActionId,
     };

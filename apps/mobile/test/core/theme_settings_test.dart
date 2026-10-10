@@ -38,7 +38,7 @@ void main() {
     test('contrastOn matches the web threshold', () {
       expect(toHex(contrastOn(const Color(0xFFFFFFFF))), themeContrastDark);
       expect(toHex(contrastOn(const Color(0xFF111111))), themeContrastLight);
-      expect(contractDefaultThemeSettings.isLight, isTrue);
+      expect(contractDefaultThemeSettings.isLight, isFalse);
     });
   });
 }

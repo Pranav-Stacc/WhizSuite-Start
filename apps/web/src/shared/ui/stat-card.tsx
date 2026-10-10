@@ -1,7 +1,8 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
+import type { WorkspaceModule } from '@/shared/workspace/modules';
+import { ModuleLink } from '@/shared/workspace/module-link';
 import { Card } from './card';
 import { Sparkline } from './charts';
 
@@ -13,6 +14,9 @@ interface StatCardProps {
   hint?: string;
   spark?: number[];
   href?: string;
+  /** Required with href when APP_ROOT_DOMAIN splits CRM/Finance hosts. */
+  workspaceModule?: WorkspaceModule;
+  orgSlug?: string;
   invertDelta?: boolean;
   className?: string;
   compact?: boolean;
@@ -23,7 +27,20 @@ export function StatGrid({ children, className, cols = 4 }: { children: ReactNod
   return <section className={cn('mb-6 grid gap-px overflow-hidden rounded-lg border border-border-soft bg-border-soft [&>*>*]:rounded-none [&>*]:rounded-none [&>*]:border-0 [&_.card-surface]:border-0', colClass, className)}>{children}</section>;
 }
 
-export function StatCard({ label, value, icon, delta, hint, spark, href, invertDelta, className, compact = true }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  icon,
+  delta,
+  hint,
+  spark,
+  href,
+  workspaceModule = 'main',
+  orgSlug,
+  invertDelta,
+  className,
+  compact = true,
+}: StatCardProps) {
   const positive = delta === undefined ? undefined : invertDelta ? delta <= 0 : delta >= 0;
   const body = (
     <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-4' : 'relative h-full overflow-hidden p-6', className)}>
@@ -32,7 +49,7 @@ export function StatCard({ label, value, icon, delta, hint, spark, href, invertD
         {icon ? <span className="shrink-0 text-muted [&_svg]:size-3.5">{icon}</span> : null}
       </div>
       <p className={cn('display mt-3 tabular-nums', compact ? 'text-[26px]' : 'text-[36px]')}>{value}</p>
-      {(delta !== undefined || hint) ? (
+      {delta !== undefined || hint ? (
         <div className="mt-1 flex items-center gap-1.5 text-[11px]">
           {delta !== undefined ? (
             <span className={cn('inline-flex items-center gap-0.5 font-medium', positive ? 'text-success' : 'text-danger')}>
@@ -47,9 +64,9 @@ export function StatCard({ label, value, icon, delta, hint, spark, href, invertD
     </Card>
   );
   return href ? (
-    <Link href={href} className="block h-full">
+    <ModuleLink href={href} currentModule={workspaceModule} orgSlug={orgSlug} className="block h-full">
       {body}
-    </Link>
+    </ModuleLink>
   ) : (
     body
   );

@@ -121,18 +121,21 @@ export class ApprovalsService {
       },
       transition,
     );
-    if (transition.requestStatus === APPROVED) {
+    if (transition.requestStatus) {
       await this.outbox.write({
         type: DomainEventTypes.APPROVAL_COMPLETED,
         version: 1,
         organizationId,
-        payload: { approvalRequestId: requestId },
+        payload: {
+          approvalRequestId: requestId,
+          status: transition.requestStatus,
+          requestedById: before.requestedById,
+          title: `${before.subjectType}`,
+          recipientIds: [before.requestedById],
+        },
         actor: { id: actorId, type: 'user' },
       });
-    } else if (
-      transition.stepStatus === APPROVED &&
-      !transition.requestStatus
-    ) {
+    } else if (transition.stepStatus === APPROVED) {
       const after = await this.get(organizationId, requestId);
       await this.notifyPendingStep(organizationId, actorId, after);
     }

@@ -106,3 +106,54 @@ export const sendAgentMessageSchema = z.object({
 });
 
 export type SendAgentMessageInput = z.infer<typeof sendAgentMessageSchema>;
+
+/** SSE / NDJSON events emitted while an agent run is in progress. */
+export const agentStreamEventSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('status'),
+    phase: z.enum(['planning', 'executing', 'summarizing']),
+    detail: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('plan'),
+    summary: z.string(),
+    toolCount: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal('tool.start'),
+    toolId: z.string(),
+    input: z.record(z.unknown()).optional(),
+  }),
+  z.object({
+    type: z.literal('tool.result'),
+    toolId: z.string(),
+    ok: z.boolean(),
+    result: z.unknown().optional(),
+    error: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('summary.delta'),
+    text: z.string(),
+  }),
+  z.object({
+    type: z.literal('done'),
+    response: z.string(),
+    pendingActionId: z.string().optional(),
+    runId: z.string(),
+    stepCount: z.number().int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal('error'),
+    message: z.string(),
+  }),
+]);
+
+export type AgentStreamEvent = z.infer<typeof agentStreamEventSchema>;
+
+export interface AgentMessagePart {
+  type: 'text' | 'tool_call' | 'tool_result' | 'approval';
+  text?: string;
+  toolId?: string;
+  ok?: boolean;
+  pendingActionId?: string;
+}

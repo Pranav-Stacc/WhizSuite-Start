@@ -36,6 +36,10 @@ abstract final class Permissions {
   static const String contentCreate = 'content.create';
   static const String contentEdit = 'content.edit';
   static const String contentDelete = 'content.delete';
+  static const String calendarView = 'calendar.view';
+  static const String calendarCreate = 'calendar.create';
+  static const String calendarEdit = 'calendar.edit';
+  static const String calendarSync = 'calendar.sync';
   static const String socialSchedule = 'social.schedule';
   static const String socialPublish = 'social.publish';
   static const String approvalsView = 'approvals.view';
@@ -64,7 +68,7 @@ abstract final class Permissions {
   static const String aiManage = 'ai.manage';
   static const String aiAgentsManage = 'ai.agents.manage';
 
-  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, chatView, chatSend, chatCreateRoom, chatManage, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage, aiView, aiChat, aiManage, aiAgentsManage];
+  static const List<String> values = <String>[orgView, orgSettingsManage, orgBillingManage, orgBrandingManage, membersView, membersInvite, membersEdit, membersDeactivate, rolesManage, workspacesView, workspacesCreate, workspacesManage, clientsView, clientsCreate, clientsEdit, clientsDelete, leadsView, leadsCreate, leadsConvert, projectsView, projectsCreate, projectsEdit, projectsDelete, tasksView, tasksCreate, tasksAssign, tasksEdit, tasksDelete, tasksTransition, contentView, contentCreate, contentEdit, contentDelete, calendarView, calendarCreate, calendarEdit, calendarSync, socialSchedule, socialPublish, approvalsView, approvalsCreate, approvalsApprove, feedbackView, feedbackCreate, feedbackResolve, filesView, filesUpload, filesDelete, chatView, chatSend, chatCreateRoom, chatManage, workflowsManage, automationsManage, reportsView, invoicesView, invoicesCreate, timeTrack, auditView, integrationsManage, aiView, aiChat, aiManage, aiAgentsManage];
 }
 
 abstract final class ScopeTypes {
@@ -140,10 +144,13 @@ abstract final class ErrorCodes {
   static const String mediaTooLarge = 'MEDIA_TOO_LARGE';
   static const String mediaUploadIncomplete = 'MEDIA_UPLOAD_INCOMPLETE';
   static const String mediaNotReady = 'MEDIA_NOT_READY';
+  static const String mediaStorageLimitExceeded = 'MEDIA_STORAGE_LIMIT_EXCEEDED';
+  static const String mediaExportFailed = 'MEDIA_EXPORT_FAILED';
+  static const String integrationNotConnected = 'INTEGRATION_NOT_CONNECTED';
   static const String contentVersionConflict = 'CONTENT_VERSION_CONFLICT';
   static const String internalError = 'INTERNAL_ERROR';
 
-  static const List<String> values = <String>[validationFailed, unauthorized, forbidden, notFound, conflict, rateLimited, idempotencyReplay, tenantRequired, tenantMismatch, invalidCredentials, googleAuthDisabled, googleTokenInvalid, accountNotFound, sessionExpired, tokenReuseDetected, invitationExpired, invitationRevoked, seatLimitExceeded, entitlementDenied, workflowGuardFailed, approvalStale, publishFailed, socialAccountDisconnected, mediaTypeNotAllowed, mediaTooLarge, mediaUploadIncomplete, mediaNotReady, contentVersionConflict, internalError];
+  static const List<String> values = <String>[validationFailed, unauthorized, forbidden, notFound, conflict, rateLimited, idempotencyReplay, tenantRequired, tenantMismatch, invalidCredentials, googleAuthDisabled, googleTokenInvalid, accountNotFound, sessionExpired, tokenReuseDetected, invitationExpired, invitationRevoked, seatLimitExceeded, entitlementDenied, workflowGuardFailed, approvalStale, publishFailed, socialAccountDisconnected, mediaTypeNotAllowed, mediaTooLarge, mediaUploadIncomplete, mediaNotReady, mediaStorageLimitExceeded, mediaExportFailed, integrationNotConnected, contentVersionConflict, internalError];
 }
 
 abstract final class NotificationTypeKeys {
@@ -154,11 +161,25 @@ abstract final class NotificationTypeKeys {
   static const String taskOverdue = 'task.overdue';
   static const String contentApproved = 'content.approved';
   static const String contentChangesRequested = 'content.changes_requested';
+  static const String contentRejected = 'content.rejected';
+  static const String contentScheduled = 'content.scheduled';
   static const String approvalRequested = 'approval.requested';
+  static const String approvalCompleted = 'approval.completed';
+  static const String approvalRejected = 'approval.rejected';
+  static const String approvalChangesRequested = 'approval.changes_requested';
+  static const String approvalReminder = 'approval.reminder';
   static const String chatMessage = 'chat.message';
   static const String chatMention = 'chat.mention';
+  static const String socialPostPublished = 'social_post.published';
+  static const String socialPostFailed = 'social_post.failed';
+  static const String socialAccountDisconnected = 'social_account.disconnected';
+  static const String invitationAccepted = 'invitation.accepted';
+  static const String automationNotify = 'automation.notify';
+  static const String feedbackComment = 'feedback.comment';
+  static const String invoiceOverdue = 'invoice.overdue';
+  static const String invoicePaid = 'invoice.paid';
 
-  static const List<String> values = <String>[taskAssigned, taskStateChanged, taskCommented, taskDueSoon, taskOverdue, contentApproved, contentChangesRequested, approvalRequested, chatMessage, chatMention];
+  static const List<String> values = <String>[taskAssigned, taskStateChanged, taskCommented, taskDueSoon, taskOverdue, contentApproved, contentChangesRequested, contentRejected, contentScheduled, approvalRequested, approvalCompleted, approvalRejected, approvalChangesRequested, approvalReminder, chatMessage, chatMention, socialPostPublished, socialPostFailed, socialAccountDisconnected, invitationAccepted, automationNotify, feedbackComment, invoiceOverdue, invoicePaid];
 }
 
 abstract final class NotificationChannels {
@@ -304,15 +325,18 @@ abstract final class ApprovalActions {
 }
 
 abstract final class AutomationTriggers {
+  static const String manual = 'manual';
   static const String contentSubmitted = 'content.submitted';
   static const String contentApproved = 'content.approved';
   static const String contentPublished = 'content.published';
+  static const String taskCreated = 'task.created';
   static const String taskOverdue = 'task.overdue';
   static const String invoiceOverdue = 'invoice.overdue';
   static const String leadWon = 'lead.won';
   static const String chatMessageMentioned = 'chat.message_mentioned';
+  static const String scheduleCron = 'schedule.cron';
 
-  static const List<String> values = <String>[contentSubmitted, contentApproved, contentPublished, taskOverdue, invoiceOverdue, leadWon, chatMessageMentioned];
+  static const List<String> values = <String>[manual, contentSubmitted, contentApproved, contentPublished, taskCreated, taskOverdue, invoiceOverdue, leadWon, chatMessageMentioned, scheduleCron];
 }
 
 abstract final class AutomationActions {
@@ -321,8 +345,10 @@ abstract final class AutomationActions {
   static const String createTask = 'create.task';
   static const String sendEmail = 'send.email';
   static const String postWebhook = 'post.webhook';
+  static const String capabilityExecute = 'capability.execute';
+  static const String agentRun = 'agent.run';
 
-  static const List<String> values = <String>[notifyClient, notifyTeam, createTask, sendEmail, postWebhook];
+  static const List<String> values = <String>[notifyClient, notifyTeam, createTask, sendEmail, postWebhook, capabilityExecute, agentRun];
 }
 
 abstract final class ThemeDensities {
@@ -367,9 +393,9 @@ abstract final class ThemeStatusColors {
   static const List<String> values = <String>[success, warning, danger, info, violet, pink];
 }
 
-const Map<String, Object> defaultTheme = <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'};
+const Map<String, Object> defaultTheme = <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'};
 
-const List<Object> themePresets = <Object>[<String, Object>{'id': 'editorial', 'mode': 'light', 'theme': <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'chalk', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F4F5', 'surface': '#FFFFFF', 'border': '#D4D4D8', 'primary': '#18181B', 'secondary': '#52525B', 'fg': '#18181B', 'muted': '#71717A', 'radius': 4, 'density': 'comfortable'}}, <String, Object>{'id': 'porcelain', 'mode': 'light', 'theme': <String, Object>{'bg': '#F8FAFC', 'surface': '#FFFFFF', 'border': '#D0D7E2', 'primary': '#0F172A', 'secondary': '#334155', 'fg': '#0F172A', 'muted': '#64748B', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'mist', 'mode': 'light', 'theme': <String, Object>{'bg': '#F0F4F8', 'surface': '#FFFFFF', 'border': '#C5D4E0', 'primary': '#1E3A5F', 'secondary': '#3D6B8F', 'fg': '#152536', 'muted': '#5E7388', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'daylight', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F7F5', 'surface': '#FFFFFF', 'border': '#CFE0D6', 'primary': '#0A9F4F', 'secondary': '#0F7A5A', 'fg': '#0B1513', 'muted': '#5D6B67', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sage', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F5F1', 'surface': '#FBFCF9', 'border': '#CDD5C8', 'primary': '#3F5A45', 'secondary': '#6B8570', 'fg': '#1C241E', 'muted': '#6E7A70', 'radius': 8, 'density': 'comfortable'}}, <String, Object>{'id': 'sky', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F8FC', 'surface': '#FFFFFF', 'border': '#C5D9EB', 'primary': '#0369A1', 'secondary': '#0E7490', 'fg': '#0C1929', 'muted': '#5B738A', 'radius': 10, 'density': 'comfortable'}}, <String, Object>{'id': 'linen', 'mode': 'light', 'theme': <String, Object>{'bg': '#F6F3EE', 'surface': '#FFFDF9', 'border': '#DDD5C8', 'primary': '#2C2A26', 'secondary': '#6B6560', 'fg': '#1F1D1A', 'muted': '#7A746C', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'noir', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'mono', 'mode': 'dark', 'theme': <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'aurora', 'mode': 'dark', 'theme': <String, Object>{'bg': '#07050F', 'surface': '#110D1F', 'border': '#2C2150', 'primary': '#A78BFA', 'secondary': '#7DD3FC', 'fg': '#F6F5FF', 'muted': '#9A96B5', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'ocean', 'mode': 'dark', 'theme': <String, Object>{'bg': '#030B12', 'surface': '#0A1823', 'border': '#17344A', 'primary': '#38BDF8', 'secondary': '#22D3EE', 'fg': '#F2F8FC', 'muted': '#8CA3B3', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sunset', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0705', 'surface': '#1A100C', 'border': '#4A2A1A', 'primary': '#FF8A3D', 'secondary': '#FFC247', 'fg': '#FFF7F0', 'muted': '#B09A8A', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'rose', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0509', 'surface': '#1A0C13', 'border': '#4A1A2F', 'primary': '#FF4D8D', 'secondary': '#FF9AC1', 'fg': '#FFF4F8', 'muted': '#B18C9C', 'radius': 14, 'density': 'comfortable'}}];
+const List<Object> themePresets = <Object>[<String, Object>{'id': 'noir', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0E0E0D', 'surface': '#161615', 'border': '#2E2D2A', 'primary': '#F2F0EB', 'secondary': '#B8B5AE', 'fg': '#F2F0EB', 'muted': '#8C8A85', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'editorial', 'mode': 'light', 'theme': <String, Object>{'bg': '#F7F6F3', 'surface': '#FFFFFF', 'border': '#D8D5CE', 'primary': '#111111', 'secondary': '#5C5A55', 'fg': '#111111', 'muted': '#8A877F', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'chalk', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F4F5', 'surface': '#FFFFFF', 'border': '#D4D4D8', 'primary': '#18181B', 'secondary': '#52525B', 'fg': '#18181B', 'muted': '#71717A', 'radius': 4, 'density': 'comfortable'}}, <String, Object>{'id': 'porcelain', 'mode': 'light', 'theme': <String, Object>{'bg': '#F8FAFC', 'surface': '#FFFFFF', 'border': '#D0D7E2', 'primary': '#0F172A', 'secondary': '#334155', 'fg': '#0F172A', 'muted': '#64748B', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'mist', 'mode': 'light', 'theme': <String, Object>{'bg': '#F0F4F8', 'surface': '#FFFFFF', 'border': '#C5D4E0', 'primary': '#1E3A5F', 'secondary': '#3D6B8F', 'fg': '#152536', 'muted': '#5E7388', 'radius': 6, 'density': 'comfortable'}}, <String, Object>{'id': 'daylight', 'mode': 'light', 'theme': <String, Object>{'bg': '#F4F7F5', 'surface': '#FFFFFF', 'border': '#CFE0D6', 'primary': '#0A9F4F', 'secondary': '#0F7A5A', 'fg': '#0B1513', 'muted': '#5D6B67', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sage', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F5F1', 'surface': '#FBFCF9', 'border': '#CDD5C8', 'primary': '#3F5A45', 'secondary': '#6B8570', 'fg': '#1C241E', 'muted': '#6E7A70', 'radius': 8, 'density': 'comfortable'}}, <String, Object>{'id': 'sky', 'mode': 'light', 'theme': <String, Object>{'bg': '#F3F8FC', 'surface': '#FFFFFF', 'border': '#C5D9EB', 'primary': '#0369A1', 'secondary': '#0E7490', 'fg': '#0C1929', 'muted': '#5B738A', 'radius': 10, 'density': 'comfortable'}}, <String, Object>{'id': 'linen', 'mode': 'light', 'theme': <String, Object>{'bg': '#F6F3EE', 'surface': '#FFFDF9', 'border': '#DDD5C8', 'primary': '#2C2A26', 'secondary': '#6B6560', 'fg': '#1F1D1A', 'muted': '#7A746C', 'radius': 2, 'density': 'comfortable'}}, <String, Object>{'id': 'mono', 'mode': 'dark', 'theme': <String, Object>{'bg': '#040109', 'surface': '#0B0B0B', 'border': '#2A2A2A', 'primary': '#FFFFFF', 'secondary': '#D1D1D1', 'fg': '#FFFFFF', 'muted': '#8D9B98', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'aurora', 'mode': 'dark', 'theme': <String, Object>{'bg': '#07050F', 'surface': '#110D1F', 'border': '#2C2150', 'primary': '#A78BFA', 'secondary': '#7DD3FC', 'fg': '#F6F5FF', 'muted': '#9A96B5', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'ocean', 'mode': 'dark', 'theme': <String, Object>{'bg': '#030B12', 'surface': '#0A1823', 'border': '#17344A', 'primary': '#38BDF8', 'secondary': '#22D3EE', 'fg': '#F2F8FC', 'muted': '#8CA3B3', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'sunset', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0705', 'surface': '#1A100C', 'border': '#4A2A1A', 'primary': '#FF8A3D', 'secondary': '#FFC247', 'fg': '#FFF7F0', 'muted': '#B09A8A', 'radius': 14, 'density': 'comfortable'}}, <String, Object>{'id': 'rose', 'mode': 'dark', 'theme': <String, Object>{'bg': '#0D0509', 'surface': '#1A0C13', 'border': '#4A1A2F', 'primary': '#FF4D8D', 'secondary': '#FF9AC1', 'fg': '#FFF4F8', 'muted': '#B18C9C', 'radius': 14, 'density': 'comfortable'}}];
 
 abstract final class LeadStages {
   static const String newValue = 'NEW';
@@ -687,7 +713,7 @@ const int memberRolesMax = 10;
 
 const String workflowStageSeparator = ',';
 
-const int minWorkflowStages = 2;
+const int minWorkflowStages = 1;
 
 const int maxWorkflowStages = 20;
 

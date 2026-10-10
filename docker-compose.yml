@@ -67,6 +67,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-}
     ports:
       - '8000:8000'
     extra_hosts:

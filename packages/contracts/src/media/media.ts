@@ -42,6 +42,8 @@ export const createShootSchema = z.object({
   createFolders: z.boolean().default(true),
   /** Optional checklist tasks created on the project (requires projectId). */
   taskTitles: z.array(z.string().trim().min(1).max(200)).max(20).default([]),
+  /** Opt-in push to the org's connected Google Calendar. */
+  syncToGoogle: z.boolean().default(false),
 });
 export type CreateShootInput = z.infer<typeof createShootSchema>;
 

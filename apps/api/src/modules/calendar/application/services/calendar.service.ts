@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { notFound } from '../../../../shared/errors/problem-details.exception';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
@@ -9,6 +10,7 @@ import type {
   CreateCalendarItemDto,
   UpdateCalendarItemDto,
 } from '../../interface/http/dto/calendar-item.dto';
+import { GoogleCalendarSyncService } from './google-calendar-sync.service';
 
 const ENTITY_TYPE = 'calendarItem';
 
@@ -21,6 +23,7 @@ export class CalendarService {
     private readonly repository: CalendarRepository,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly googleSync: GoogleCalendarSyncService,
   ) {}
 
   list(organizationId: string) {
@@ -43,9 +46,18 @@ export class CalendarService {
     actorId: string,
     input: CreateCalendarItemDto,
   ) {
+    if (input.clientId && !TenantContext.canAccessClient(input.clientId)) {
+      throw notFound('Client not found');
+    }
+
+    const connection = await this.googleSync.getConnection(organizationId);
+    const syncToGoogle =
+      input.syncToGoogle ?? connection.defaultSyncNewEvents ?? false;
+
+    const sourceId = input.sourceId ?? randomUUID();
     const item = await this.repository.create(organizationId, {
       sourceType: input.sourceType,
-      sourceId: input.sourceId,
+      sourceId,
       title: input.title,
       allDay: input.allDay,
       clientId: input.clientId,
@@ -53,6 +65,7 @@ export class CalendarService {
       metadata: input.metadata,
       startsAt: new Date(input.startsAt),
       endsAt: input.endsAt ? new Date(input.endsAt) : undefined,
+      syncToGoogle,
     });
     await this.audit.record({
       organizationId,
@@ -61,8 +74,18 @@ export class CalendarService {
       action: 'calendar/items.create',
       entityType: ENTITY_TYPE,
       entityId: item.id,
-      after: { title: item.title, startsAt: item.startsAt.toISOString() },
+      after: {
+        title: item.title,
+        startsAt: item.startsAt.toISOString(),
+        syncToGoogle,
+      },
     });
+    await this.googleSync.enqueueIfNeeded(
+      organizationId,
+      item.id,
+      syncToGoogle,
+      actorId,
+    );
     return item;
   }
 
@@ -79,6 +102,7 @@ export class CalendarService {
       metadata: input.metadata,
       startsAt: toDate(input.startsAt) ?? undefined,
       endsAt: toDate(input.endsAt),
+      syncToGoogle: input.syncToGoogle,
     });
     await this.audit.record({
       organizationId,
@@ -87,9 +111,20 @@ export class CalendarService {
       action: 'calendar/items.update',
       entityType: ENTITY_TYPE,
       entityId: id,
-      before: { title: before.title, startsAt: before.startsAt.toISOString() },
+      before: {
+        title: before.title,
+        startsAt: before.startsAt.toISOString(),
+        syncToGoogle: before.syncToGoogle,
+      },
       after: { ...input },
     });
-    return this.get(organizationId, id);
+    const updated = await this.get(organizationId, id);
+    await this.googleSync.enqueueIfNeeded(
+      organizationId,
+      id,
+      updated.syncToGoogle,
+      actorId,
+    );
+    return updated;
   }
 }

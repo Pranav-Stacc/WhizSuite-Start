@@ -220,6 +220,29 @@ export const appConfigSchema = z
       .positive()
       .default(1_000),
     NOTIFICATION_LINK_PATH: z.string().default('/notifications'),
+    /** Poll interval for task / approval / invoice reminder scanners. */
+    REMINDER_SCHEDULER_ENABLED: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((v) => v === 'true'),
+    REMINDER_SCHEDULER_POLL_MS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(60_000),
+    REMINDER_SCHEDULER_BATCH: z.coerce.number().int().positive().default(50),
+    /** How far ahead of due date a task is considered "due soon". */
+    TASK_REMINDER_DUE_SOON_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(24),
+    /** Pending approvals older than this (when dueAt is null) get a reminder. */
+    APPROVAL_REMINDER_AFTER_HOURS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(24),
     PUSH_ENABLED: z
       .enum(['true', 'false'])
       .default('false')
@@ -253,6 +276,10 @@ export const appConfigSchema = z
     GOOGLE_DRIVE_CLIENT_ID: z.string().default(''),
     GOOGLE_DRIVE_CLIENT_SECRET: z.string().default(''),
     GOOGLE_DRIVE_REDIRECT_URI: z.string().default(''),
+    /** Google Calendar OAuth. Empty = connect disabled. May reuse Drive client credentials. */
+    GOOGLE_CALENDAR_CLIENT_ID: z.string().default(''),
+    GOOGLE_CALENDAR_CLIENT_SECRET: z.string().default(''),
+    GOOGLE_CALENDAR_REDIRECT_URI: z.string().default(''),
     /** Meta (Facebook Login for Business / Instagram Graph). Empty = connect disabled. */
     META_APP_ID: z.string().default(''),
     META_APP_SECRET: z.string().default(''),
@@ -263,6 +290,7 @@ export const appConfigSchema = z
 
     AGENT_SERVICE_URL: z.string().url().default('http://localhost:8000'),
     AGENT_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
+    CAPABILITIES_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(90),
     AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
     AGENT_PENDING_ACTION_TTL_SECONDS: z.coerce
       .number()

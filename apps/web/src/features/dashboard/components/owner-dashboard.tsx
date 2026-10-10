@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, Gauge, HandCoins, Hourglass, Plus, Receipt, TrendingUp, UserPlus } from 'lucide-react';
+import { Permissions } from '@agency-os/contracts';
 import type { Session } from '@/shared/auth/session';
+import { loadIf } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatMoney, relativeTime } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -19,6 +21,8 @@ import { listLeads, summarizePipeline } from '@/features/leads/services/leads.se
 import { invoicedByMonth, monthLabels } from '@/features/reports/services/reports.service';
 import { listTasks, openHoursByAssignee, overdueTasks } from '@/features/tasks/services/tasks.service';
 import { listMembers } from '@/features/team/services/members.service';
+import type { Member } from '@/features/team/data/members.repository';
+import type { Client } from '@/features/clients/data/clients.repository';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
 
 const REVENUE_MONTHS = 7;
@@ -33,18 +37,18 @@ const GUIDE: GuideItem[] = [
 ];
 
 export async function OwnerDashboard({ session }: { session: Session }) {
-  const [clients, invoices, leads, approvals, tasks, overdue, members, audit, content] = await Promise.all([
-    listClients(),
-    listInvoices(),
-    listLeads(),
-    pendingApprovals(),
-    listTasks(),
-    overdueTasks(),
-    listMembers(),
-    listAudit(),
-    listContent(),
+  const [clients, invoices, leads, approvals, tasks, overdue, members, audit, content, byClient] = await Promise.all([
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.INVOICES_VIEW, listInvoices, []),
+    loadIf(Permissions.LEADS_VIEW, listLeads, []),
+    loadIf(Permissions.APPROVALS_VIEW, pendingApprovals, []),
+    loadIf(Permissions.TASKS_VIEW, listTasks, []),
+    loadIf(Permissions.TASKS_VIEW, overdueTasks, []),
+    loadIf(Permissions.MEMBERS_VIEW, listMembers, [] as Member[]),
+    loadIf(Permissions.AUDIT_VIEW, listAudit, []),
+    loadIf(Permissions.CONTENT_VIEW, listContent, []),
+    loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
   ]);
-  const byClient = await clientsById();
   const receivables = summarize(invoices);
   const pipeline = summarizePipeline(leads);
   const mrr = monthlyRecurring(clients);

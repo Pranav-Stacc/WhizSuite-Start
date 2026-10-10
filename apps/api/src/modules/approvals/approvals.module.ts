@@ -5,6 +5,7 @@ import { ApprovalsService } from './application/services/approvals.service';
 import { ApproverResolutionService } from './application/services/approver-resolution.service';
 import { ApprovalsRepository } from './infrastructure/repositories/approvals.repository';
 import { ApprovalsResourceController } from './interface/http/controllers/approvals-resource.controller';
+import { ApprovalReminderScheduler } from './jobs/approval-reminder.scheduler';
 
 @Module({
   imports: [AccessModule, IdentityModule],
@@ -13,6 +14,7 @@ import { ApprovalsResourceController } from './interface/http/controllers/approv
     ApprovalsService,
     ApproverResolutionService,
     ApprovalsRepository,
+    ApprovalReminderScheduler,
   ],
   exports: [ApprovalsService],
 })

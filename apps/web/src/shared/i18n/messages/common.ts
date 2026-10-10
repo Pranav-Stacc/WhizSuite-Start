@@ -83,7 +83,7 @@ export const common = {
   'validation.color': 'Pick a valid colour',
   'validation.platform': 'Select at least one platform',
   'validation.lines': 'Add at least one line item',
-  'validation.stages': 'List at least two stages, separated by commas',
+  'validation.stages': 'Add at least one stage',
   'validation.url': 'Enter a full link, starting with https://',
   'validation.tooLong': 'This is too long',
   'toast.saved': 'Changes saved',

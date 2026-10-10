@@ -9,10 +9,21 @@ interface PlanShootDialogProps {
   clients: Array<{ id: string; name: string }>;
   projects: Array<{ id: string; name: string; clientId: string }>;
   defaultClientId?: string;
+  defaultStartsAt?: string;
+  googleConnected?: boolean;
+  defaultSyncToGoogle?: boolean;
   trigger: ReactNode;
 }
 
-export function PlanShootDialog({ clients, projects, defaultClientId, trigger }: PlanShootDialogProps) {
+export function PlanShootDialog({
+  clients,
+  projects,
+  defaultClientId,
+  defaultStartsAt,
+  googleConnected = false,
+  defaultSyncToGoogle = false,
+  trigger,
+}: PlanShootDialogProps) {
   const fields: FieldDef[] = [
     { name: 'title', label: t('calendar.shoot.title'), required: true, span: 2 },
     {
@@ -53,6 +64,16 @@ export function PlanShootDialog({ clients, projects, defaultClientId, trigger }:
     },
   ];
 
+  if (googleConnected) {
+    fields.push({
+      name: 'syncToGoogle',
+      label: t('calendar.sync.optIn'),
+      type: 'checkbox',
+      span: 2,
+      hint: t('calendar.sync.optInHint'),
+    });
+  }
+
   return (
     <FormDialog
       schema="shoot"
@@ -64,7 +85,8 @@ export function PlanShootDialog({ clients, projects, defaultClientId, trigger }:
         clientId: defaultClientId ?? clients[0]?.id ?? '',
         createFolders: true,
         allDay: true,
-        startsAt: new Date().toISOString().slice(0, 16),
+        startsAt: defaultStartsAt ?? new Date().toISOString().slice(0, 16),
+        syncToGoogle: defaultSyncToGoogle,
       }}
       action={createShootAction}
       trigger={trigger}

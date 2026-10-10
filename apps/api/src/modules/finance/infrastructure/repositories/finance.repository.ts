@@ -92,6 +92,26 @@ export class FinanceRepository {
     });
   }
 
+  /** Unpaid invoices past due — cross-org reminder scanner. */
+  listOverdueInvoices(before: Date, limit: number) {
+    return this.prisma.invoice.findMany({
+      where: {
+        status: { in: ['SENT', 'OVERDUE'] },
+        dueDate: { lt: before },
+        paidAt: null,
+      },
+      orderBy: { dueDate: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        organizationId: true,
+        number: true,
+        dueDate: true,
+        status: true,
+      },
+    });
+  }
+
   findById(organizationId: string, id: string): Promise<InvoiceRecord | null> {
     return this.prisma.invoice.findFirst({
       where: { id, organizationId },

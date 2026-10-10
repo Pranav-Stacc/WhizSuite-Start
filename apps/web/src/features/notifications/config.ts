@@ -13,6 +13,8 @@ const APPROVALS_HREF = '/approvals';
 const contentHref = (data: NotificationData) => (data.contentId ? `/content/${data.contentId}` : '/content');
 const approvalHref = (data: NotificationData) =>
   data.approvalRequestId ? `${APPROVALS_HREF}?id=${data.approvalRequestId}` : APPROVALS_HREF;
+const invoiceHref = (data: NotificationData) =>
+  data.invoiceId ? `/invoices/${data.invoiceId}` : '/invoices';
 
 /** Presentation for API notification `typeKey`s. */
 export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
@@ -23,7 +25,13 @@ export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
   [NotificationTypeKeys.TASK_OVERDUE]: { kind: 'task', title: 'notifications.event.taskOverdue', href: () => TASKS_HREF },
   [NotificationTypeKeys.CONTENT_APPROVED]: { kind: 'approval', title: 'notifications.event.contentApproved', href: contentHref },
   [NotificationTypeKeys.CONTENT_CHANGES_REQUESTED]: { kind: 'approval', title: 'notifications.event.changesRequested', href: contentHref },
+  [NotificationTypeKeys.CONTENT_REJECTED]: { kind: 'approval', title: 'notifications.event.contentRejected', href: contentHref },
+  [NotificationTypeKeys.CONTENT_SCHEDULED]: { kind: 'system', title: 'notifications.event.contentScheduled', href: contentHref },
   [NotificationTypeKeys.APPROVAL_REQUESTED]: { kind: 'approval', title: 'notifications.event.approvalRequested', href: approvalHref },
+  [NotificationTypeKeys.APPROVAL_COMPLETED]: { kind: 'approval', title: 'notifications.event.approvalCompleted', href: approvalHref },
+  [NotificationTypeKeys.APPROVAL_REJECTED]: { kind: 'approval', title: 'notifications.event.approvalRejected', href: approvalHref },
+  [NotificationTypeKeys.APPROVAL_CHANGES_REQUESTED]: { kind: 'approval', title: 'notifications.event.approvalChangesRequested', href: approvalHref },
+  [NotificationTypeKeys.APPROVAL_REMINDER]: { kind: 'approval', title: 'notifications.event.approvalReminder', href: approvalHref },
   [NotificationTypeKeys.CHAT_MESSAGE]: {
     kind: 'system',
     title: 'notifications.event.chatMessage',
@@ -43,6 +51,36 @@ export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
     kind: 'system',
     title: 'notifications.event.socialPostFailed',
     href: contentHref,
+  },
+  [NotificationTypeKeys.SOCIAL_ACCOUNT_DISCONNECTED]: {
+    kind: 'system',
+    title: 'notifications.event.socialAccountDisconnected',
+    href: () => '/integrations',
+  },
+  [NotificationTypeKeys.INVITATION_ACCEPTED]: {
+    kind: 'system',
+    title: 'notifications.event.invitationAccepted',
+    href: () => '/team',
+  },
+  [NotificationTypeKeys.AUTOMATION_NOTIFY]: {
+    kind: 'system',
+    title: 'notifications.event.automationNotify',
+    href: () => '/automations',
+  },
+  [NotificationTypeKeys.FEEDBACK_COMMENT]: {
+    kind: 'approval',
+    title: 'notifications.event.feedbackComment',
+    href: contentHref,
+  },
+  [NotificationTypeKeys.INVOICE_OVERDUE]: {
+    kind: 'invoice',
+    title: 'notifications.event.invoiceOverdue',
+    href: invoiceHref,
+  },
+  [NotificationTypeKeys.INVOICE_PAID]: {
+    kind: 'invoice',
+    title: 'notifications.event.invoicePaid',
+    href: invoiceHref,
   },
 };
 

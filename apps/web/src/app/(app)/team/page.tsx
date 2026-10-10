@@ -15,6 +15,7 @@ import { InviteDialog } from '@/features/team/components/invite-dialog';
 import { MemberCard } from '@/features/team/components/member-card';
 import type { Member } from '@/features/team/data/members.repository';
 import { listMembers } from '@/features/team/services/members.service';
+import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 import { isOwnerRole } from '@/features/roles/config';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
@@ -53,10 +54,11 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     can(Permissions.MEMBERS_INVITE),
     can(Permissions.MEMBERS_DEACTIVATE),
   ]);
-  const [members, tasks, roles] = await Promise.all([
+  const [members, tasks, roles, scopeResources] = await Promise.all([
     listMembers(),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
+    canManageRoles ? loadScopeResources() : Promise.resolve(undefined),
   ]);
   const assignableRoles = canManageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : undefined;
   const customRoles = canManageRoles ? roles.filter((role) => !role.isSystem).map(toRoleSummary) : [];
@@ -135,7 +137,14 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visible.map((member) => (
             <li key={member.id}>
-              <MemberCard member={member} openHours={hours.get(member.id) ?? 0} isSelf={member.id === session.userId} assignableRoles={assignableRoles} canRemove={canRemove} />
+              <MemberCard
+                member={member}
+                openHours={hours.get(member.id) ?? 0}
+                isSelf={member.id === session.userId}
+                assignableRoles={assignableRoles}
+                scopeResources={scopeResources}
+                canRemove={canRemove}
+              />
             </li>
           ))}
         </ul>

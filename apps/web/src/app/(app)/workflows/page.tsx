@@ -1,4 +1,4 @@
-import { Permissions, RoleKinds } from '@agency-os/contracts';
+import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Plus, Workflow } from 'lucide-react';
 import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
@@ -36,12 +36,9 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
     can(Permissions.ROLES_MANAGE),
   ]);
   const roleSummaries = roles.map(toRoleSummary);
-  const workflowRoles = roleSummaries.filter(
-    (role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem,
-  );
-  const assignableRoles = canManageRoles
-    ? roleSummaries.filter((role) => !isOwnerRole(role))
-    : [];
+  // Any non-owner role can be attached to a stage — no separate "workflow" role type.
+  const workflowRoles = roleSummaries.filter((role) => !isOwnerRole(role));
+  const assignableRoles = canManageRoles ? workflowRoles : [];
   const editWorkflow = param(sp, 'edit') ? workflows.find((w) => w.id === param(sp, 'edit')) : undefined;
   const newButton = (
     <Button variant="primary">

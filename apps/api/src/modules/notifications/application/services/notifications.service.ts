@@ -41,7 +41,37 @@ const NOTIFICATION_TYPE_KEYS: readonly NotificationTypeKey[] =
 const CONTENT_OUTCOME_TYPES: Readonly<Record<string, NotificationTypeKey>> = {
   APPROVED: NotificationTypeKeys.CONTENT_APPROVED,
   CHANGES_REQUESTED: NotificationTypeKeys.CONTENT_CHANGES_REQUESTED,
+  REJECTED: NotificationTypeKeys.CONTENT_REJECTED,
 };
+
+const APPROVAL_OUTCOME_TYPES: Readonly<Record<string, NotificationTypeKey>> = {
+  APPROVED: NotificationTypeKeys.APPROVAL_COMPLETED,
+  REJECTED: NotificationTypeKeys.APPROVAL_REJECTED,
+  CHANGES_REQUESTED: NotificationTypeKeys.APPROVAL_CHANGES_REQUESTED,
+};
+
+const SUBSCRIBED_EVENTS = [
+  DomainEventTypes.TASK_ASSIGNED,
+  DomainEventTypes.TASK_STATE_CHANGED,
+  DomainEventTypes.TASK_COMMENTED,
+  DomainEventTypes.TASK_DUE_SOON,
+  DomainEventTypes.TASK_OVERDUE,
+  DomainEventTypes.CONTENT_STATE_CHANGED,
+  DomainEventTypes.CONTENT_SCHEDULED,
+  DomainEventTypes.APPROVAL_REQUESTED,
+  DomainEventTypes.APPROVAL_COMPLETED,
+  DomainEventTypes.APPROVAL_REMINDER,
+  DomainEventTypes.CHAT_MESSAGE_CREATED,
+  DomainEventTypes.CHAT_MEMBER_MENTIONED,
+  DomainEventTypes.SOCIAL_POST_PUBLISHED,
+  DomainEventTypes.SOCIAL_POST_FAILED,
+  DomainEventTypes.SOCIAL_ACCOUNT_DISCONNECTED,
+  DomainEventTypes.INVITATION_ACCEPTED,
+  DomainEventTypes.AUTOMATION_NOTIFY,
+  DomainEventTypes.FEEDBACK_CREATED,
+  DomainEventTypes.INVOICE_PAID,
+  DomainEventTypes.INVOICE_OVERDUE,
+] as const;
 
 function text(
   payload: Record<string, unknown>,
@@ -61,6 +91,17 @@ function recipientIdsOf(payload: Record<string, unknown>): string[] {
   ];
 }
 
+function baseData(
+  payload: Record<string, unknown>,
+  extra: NotificationData = {},
+): NotificationData {
+  return {
+    title: text(payload, 'title'),
+    reminderKey: text(payload, 'reminderKey'),
+    ...extra,
+  };
+}
+
 /** Maps a domain event to the people who should hear about it. */
 function deliveriesFor(event: EventEnvelope): Delivery[] {
   const { payload } = event;
@@ -72,20 +113,16 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
         {
           recipientId,
           typeKey: NotificationTypeKeys.TASK_ASSIGNED,
-          data: {
-            taskId: text(payload, 'taskId'),
-            title: text(payload, 'title'),
-          },
+          data: baseData(payload, { taskId: text(payload, 'taskId') }),
         },
       ];
     }
     case DomainEventTypes.TASK_STATE_CHANGED: {
-      const data: NotificationData = {
+      const data = baseData(payload, {
         taskId: text(payload, 'taskId'),
-        title: text(payload, 'title'),
         fromStatus: text(payload, 'fromStatus'),
         toStatus: text(payload, 'toStatus'),
-      };
+      });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.TASK_STATE_CHANGED,
@@ -93,10 +130,7 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
       }));
     }
     case DomainEventTypes.TASK_COMMENTED: {
-      const data: NotificationData = {
-        taskId: text(payload, 'taskId'),
-        title: text(payload, 'title'),
-      };
+      const data = baseData(payload, { taskId: text(payload, 'taskId') });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.TASK_COMMENTED,
@@ -104,10 +138,7 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
       }));
     }
     case DomainEventTypes.TASK_DUE_SOON: {
-      const data: NotificationData = {
-        taskId: text(payload, 'taskId'),
-        title: text(payload, 'title'),
-      };
+      const data = baseData(payload, { taskId: text(payload, 'taskId') });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.TASK_DUE_SOON,
@@ -115,10 +146,7 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
       }));
     }
     case DomainEventTypes.TASK_OVERDUE: {
-      const data: NotificationData = {
-        taskId: text(payload, 'taskId'),
-        title: text(payload, 'title'),
-      };
+      const data = baseData(payload, { taskId: text(payload, 'taskId') });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.TASK_OVERDUE,
@@ -133,30 +161,65 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
         {
           recipientId,
           typeKey,
-          data: {
+          data: baseData(payload, {
             contentId: text(payload, 'contentId'),
-            title: text(payload, 'title'),
-          },
+            toStatus: text(payload, 'toStatus'),
+          }),
+        },
+      ];
+    }
+    case DomainEventTypes.CONTENT_SCHEDULED: {
+      const recipientId = text(payload, 'createdById');
+      if (!recipientId) return [];
+      return [
+        {
+          recipientId,
+          typeKey: NotificationTypeKeys.CONTENT_SCHEDULED,
+          data: baseData(payload, { contentId: text(payload, 'contentId') }),
         },
       ];
     }
     case DomainEventTypes.APPROVAL_REQUESTED: {
-      const data: NotificationData = {
+      const data = baseData(payload, {
         approvalRequestId: text(payload, 'approvalRequestId'),
-        title: text(payload, 'title'),
-      };
+      });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.APPROVAL_REQUESTED,
         data,
       }));
     }
+    case DomainEventTypes.APPROVAL_COMPLETED: {
+      const status = text(payload, 'status') ?? 'APPROVED';
+      const typeKey =
+        APPROVAL_OUTCOME_TYPES[status] ??
+        NotificationTypeKeys.APPROVAL_COMPLETED;
+      const data = baseData(payload, {
+        approvalRequestId: text(payload, 'approvalRequestId'),
+        toStatus: status,
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey,
+        data,
+      }));
+    }
+    case DomainEventTypes.APPROVAL_REMINDER: {
+      const data = baseData(payload, {
+        approvalRequestId: text(payload, 'approvalRequestId'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.APPROVAL_REMINDER,
+        data,
+      }));
+    }
     case DomainEventTypes.CHAT_MESSAGE_CREATED: {
-      const data: NotificationData = {
+      const data = baseData(payload, {
         roomId: text(payload, 'roomId'),
         messageId: text(payload, 'messageId'),
-        title: text(payload, 'preview'),
-      };
+        title: text(payload, 'preview') ?? text(payload, 'title'),
+      });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.CHAT_MESSAGE,
@@ -164,11 +227,10 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
       }));
     }
     case DomainEventTypes.CHAT_MEMBER_MENTIONED: {
-      const data: NotificationData = {
+      const data = baseData(payload, {
         roomId: text(payload, 'roomId'),
         messageId: text(payload, 'messageId'),
-        title: text(payload, 'title'),
-      };
+      });
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.CHAT_MENTION,
@@ -182,10 +244,7 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
         {
           recipientId,
           typeKey: NotificationTypeKeys.SOCIAL_POST_PUBLISHED,
-          data: {
-            contentId: text(payload, 'contentId'),
-            title: text(payload, 'title'),
-          },
+          data: baseData(payload, { contentId: text(payload, 'contentId') }),
         },
       ];
     }
@@ -196,12 +255,71 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
         {
           recipientId,
           typeKey: NotificationTypeKeys.SOCIAL_POST_FAILED,
-          data: {
-            contentId: text(payload, 'contentId'),
-            title: text(payload, 'title'),
-          },
+          data: baseData(payload, { contentId: text(payload, 'contentId') }),
         },
       ];
+    }
+    case DomainEventTypes.SOCIAL_ACCOUNT_DISCONNECTED: {
+      const data = baseData(payload, {
+        socialAccountId: text(payload, 'socialAccountId'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.SOCIAL_ACCOUNT_DISCONNECTED,
+        data,
+      }));
+    }
+    case DomainEventTypes.INVITATION_ACCEPTED: {
+      const recipientId = text(payload, 'invitedById');
+      if (!recipientId) return [];
+      return [
+        {
+          recipientId,
+          typeKey: NotificationTypeKeys.INVITATION_ACCEPTED,
+          data: baseData(payload, {
+            invitationId: text(payload, 'invitationId'),
+          }),
+        },
+      ];
+    }
+    case DomainEventTypes.AUTOMATION_NOTIFY: {
+      const data = baseData(payload);
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.AUTOMATION_NOTIFY,
+        data,
+      }));
+    }
+    case DomainEventTypes.FEEDBACK_CREATED: {
+      const data = baseData(payload, {
+        feedbackThreadId: text(payload, 'threadId'),
+        contentId: text(payload, 'contentId'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.FEEDBACK_COMMENT,
+        data,
+      }));
+    }
+    case DomainEventTypes.INVOICE_PAID: {
+      const data = baseData(payload, {
+        invoiceId: text(payload, 'invoiceId'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.INVOICE_PAID,
+        data,
+      }));
+    }
+    case DomainEventTypes.INVOICE_OVERDUE: {
+      const data = baseData(payload, {
+        invoiceId: text(payload, 'invoiceId'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.INVOICE_OVERDUE,
+        data,
+      }));
     }
     default:
       return [];
@@ -236,19 +354,7 @@ export class NotificationsService implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    for (const type of [
-      DomainEventTypes.TASK_ASSIGNED,
-      DomainEventTypes.TASK_STATE_CHANGED,
-      DomainEventTypes.TASK_COMMENTED,
-      DomainEventTypes.TASK_DUE_SOON,
-      DomainEventTypes.TASK_OVERDUE,
-      DomainEventTypes.CONTENT_STATE_CHANGED,
-      DomainEventTypes.APPROVAL_REQUESTED,
-      DomainEventTypes.CHAT_MESSAGE_CREATED,
-      DomainEventTypes.CHAT_MEMBER_MENTIONED,
-      DomainEventTypes.SOCIAL_POST_PUBLISHED,
-      DomainEventTypes.SOCIAL_POST_FAILED,
-    ]) {
+    for (const type of SUBSCRIBED_EVENTS) {
       this.eventBus.subscribe(type, (event) => this.handleDomainEvent(event));
     }
   }
@@ -354,7 +460,16 @@ export class NotificationsService implements OnModuleInit {
     );
     if (deliveries.length === 0) return;
     const { organizationId } = event;
-    if (await this.repository.existsForEvent(organizationId, event.id)) return;
+    const reminderKey = text(event.payload, 'reminderKey');
+    if (reminderKey) {
+      if (
+        await this.repository.existsForReminderKey(organizationId, reminderKey)
+      ) {
+        return;
+      }
+    } else if (await this.repository.existsForEvent(organizationId, event.id)) {
+      return;
+    }
 
     const available = new Set(
       this.adapters.filter((a) => a.isAvailable()).map((a) => a.channel),
@@ -383,7 +498,11 @@ export class NotificationsService implements OnModuleInit {
           typeKey: delivery.typeKey,
           title: delivery.data.title ?? '',
           body: '',
-          data: { ...delivery.data, eventId: event.id },
+          data: {
+            ...delivery.data,
+            eventId: event.id,
+            ...(reminderKey ? { reminderKey } : {}),
+          },
           readAt: settings.inApp ? null : new Date(),
         },
         channels,

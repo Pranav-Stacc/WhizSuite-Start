@@ -19,6 +19,9 @@ final calendarModule = FeatureModule(
     ),
   ],
   routes: [
-    destinationRoute(CalendarRoutes.root, (_) => const CalendarScreen()),
+    destinationRoute(
+      CalendarRoutes.root,
+      (state) => CalendarScreen(initialClientId: state.uri.queryParameters[CalendarRoutes.clientQuery]),
+    ),
   ],
 );

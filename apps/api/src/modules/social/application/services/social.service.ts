@@ -463,6 +463,8 @@ export class SocialService {
         organizationId,
         payload: {
           contentId: content.id,
+          title: content.title,
+          createdById: content.createdById,
           variantIds,
           jobIds,
           scheduledAt: scheduledFor.toISOString(),
@@ -489,11 +491,21 @@ export class SocialService {
       variantId,
       new Date(scheduledAt),
     );
+    const content = await this.repository.findContent(
+      organizationId,
+      variant.contentItemId,
+    );
     await this.outbox.write({
       type: DomainEventTypes.CONTENT_SCHEDULED,
       version: 1,
       organizationId,
-      payload: { variantId, scheduledAt },
+      payload: {
+        variantId,
+        contentId: variant.contentItemId,
+        title: content?.title,
+        createdById: content?.createdById ?? actorId,
+        scheduledAt,
+      },
       actor: { id: actorId, type: 'user' },
     });
     await this.audit.record({

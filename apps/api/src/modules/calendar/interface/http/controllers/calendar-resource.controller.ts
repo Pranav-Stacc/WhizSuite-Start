@@ -21,12 +21,17 @@ import { RequirePermissions } from '../../../../../shared/auth/permissions.decor
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { CalendarFeedService } from '../../../application/services/calendar-feed.service';
 import { CalendarService } from '../../../application/services/calendar.service';
+import { GoogleCalendarSyncService } from '../../../application/services/google-calendar-sync.service';
 import { ShootService } from '../../../application/services/shoot.service';
 import { CalendarFeedQueryDto } from '../dto/calendar-feed.dto';
 import {
   CreateCalendarItemDto,
   UpdateCalendarItemDto,
 } from '../dto/calendar-item.dto';
+import {
+  PullGoogleCalendarDto,
+  UpdateGoogleCalendarSettingsDto,
+} from '../dto/google-calendar.dto';
 import { CreateShootDto } from '../dto/shoot.dto';
 
 @ApiTags('calendar')
@@ -37,7 +42,7 @@ export class CalendarFeedController {
   constructor(private readonly feed: CalendarFeedService) {}
 
   @Get()
-  @RequirePermissions(Permissions.CONTENT_VIEW)
+  @RequirePermissions(Permissions.CALENDAR_VIEW)
   list(
     @Param('organizationId') organizationId: string,
     @Query() query: CalendarFeedQueryDto,
@@ -54,13 +59,13 @@ export class CalendarResourceController {
   constructor(private readonly service: CalendarService) {}
 
   @Get()
-  @RequirePermissions(Permissions.PROJECTS_VIEW)
+  @RequirePermissions(Permissions.CALENDAR_VIEW)
   list(@Param('organizationId') organizationId: string) {
     return this.service.list(requireOrganizationId(organizationId));
   }
 
   @Post()
-  @RequirePermissions(Permissions.PROJECTS_CREATE)
+  @RequirePermissions(Permissions.CALENDAR_CREATE)
   create(
     @Param('organizationId') organizationId: string,
     @Body() body: CreateCalendarItemDto,
@@ -74,7 +79,7 @@ export class CalendarResourceController {
   }
 
   @Patch(':id')
-  @RequirePermissions(Permissions.PROJECTS_EDIT)
+  @RequirePermissions(Permissions.CALENDAR_EDIT)
   update(
     @Param('organizationId') organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -108,6 +113,74 @@ export class CalendarShootsController {
       requireOrganizationId(organizationId),
       user.userId,
       body,
+    );
+  }
+}
+
+@ApiTags('calendar')
+@ApiBearerAuth()
+@Controller('v1/organizations/:organizationId/calendar/google')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+export class GoogleCalendarController {
+  constructor(private readonly sync: GoogleCalendarSyncService) {}
+
+  @Get()
+  @RequirePermissions(Permissions.CALENDAR_VIEW)
+  status(@Param('organizationId') organizationId: string) {
+    return this.sync.getConnection(requireOrganizationId(organizationId));
+  }
+
+  @Post('connect')
+  @RequirePermissions(Permissions.CALENDAR_SYNC)
+  connect(
+    @Param('organizationId') organizationId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.sync.beginConnect(
+      requireOrganizationId(organizationId),
+      user.userId,
+    );
+  }
+
+  @Patch('settings')
+  @RequirePermissions(Permissions.CALENDAR_SYNC)
+  updateSettings(
+    @Param('organizationId') organizationId: string,
+    @Body() body: UpdateGoogleCalendarSettingsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.sync.updateSettings(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Post('pull')
+  @RequirePermissions(Permissions.CALENDAR_SYNC)
+  pull(
+    @Param('organizationId') organizationId: string,
+    @Body() body: PullGoogleCalendarDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.sync.pullFromGoogle(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Post(':connectionId/disconnect')
+  @RequirePermissions(Permissions.CALENDAR_SYNC)
+  disconnect(
+    @Param('organizationId') organizationId: string,
+    @Param('connectionId', ParseUUIDPipe) connectionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.sync.disconnect(
+      requireOrganizationId(organizationId),
+      user.userId,
+      connectionId,
     );
   }
 }

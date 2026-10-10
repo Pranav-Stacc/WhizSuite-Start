@@ -129,6 +129,51 @@ export class WorkRepository {
     });
   }
 
+  /**
+   * Open tasks due between `from` (inclusive) and `to` (exclusive), across orgs.
+   * Used by the reminder scanner (no tenant context).
+   */
+  listOpenTasksDueBetween(from: Date, to: Date, limit: number) {
+    return this.prisma.task.findMany({
+      where: {
+        deletedAt: null,
+        status: { not: 'DONE' },
+        dueDate: { gte: from, lt: to },
+      },
+      orderBy: { dueDate: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        organizationId: true,
+        title: true,
+        dueDate: true,
+        createdById: true,
+        assignees: { select: { membershipId: true } },
+      },
+    });
+  }
+
+  /** Open tasks whose due date is strictly before `before`. */
+  listOpenTasksOverdueBefore(before: Date, limit: number) {
+    return this.prisma.task.findMany({
+      where: {
+        deletedAt: null,
+        status: { not: 'DONE' },
+        dueDate: { lt: before },
+      },
+      orderBy: { dueDate: 'asc' },
+      take: limit,
+      select: {
+        id: true,
+        organizationId: true,
+        title: true,
+        dueDate: true,
+        createdById: true,
+        assignees: { select: { membershipId: true } },
+      },
+    });
+  }
+
   /** Open tasks with a due date in range — for the unified calendar feed. */
   listTasksDueInRange(
     organizationId: string,

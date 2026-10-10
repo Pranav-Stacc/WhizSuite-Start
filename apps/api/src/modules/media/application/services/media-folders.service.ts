@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import {
   DefaultClientFolderTemplate,
+  DefaultContentPlatformFolders,
   DefaultShootFolderNames,
   ErrorCodes,
   type CreateMediaFolderInput,
@@ -191,7 +192,7 @@ export class MediaFoldersService {
     });
   }
 
-  /** Ensures Brand Assets / Shoots / Deliverables / Agency roots for a client. */
+  /** Ensures Brand Assets / Content / Shoots / Deliverables / Agency (+ platform shelves). */
   async ensureClientFolderTree(
     organizationId: string,
     actorId: string,
@@ -200,44 +201,72 @@ export class MediaFoldersService {
     if (!TenantContext.canAccessClient(clientId))
       throw notFound('Client not found');
     const created: MediaFolderDto[] = [];
+    let contentRoot: MediaFolderDto | undefined;
+
     for (const template of DefaultClientFolderTemplate) {
-      const path = joinPath(null, template.name);
-      const existing = await this.repository.findFolderByPath(
-        organizationId,
-        path,
-      );
-      if (existing && existing.clientId === clientId) {
-        created.push(toMediaFolderDto(existing));
-        continue;
-      }
-      // Paths are org-global in schema; scope client by storing clientId and unique path with client prefix.
-      const clientPath = `/clients/${clientId}${path}`;
-      const scoped = await this.repository.findFolderByPath(
-        organizationId,
-        clientPath,
-      );
-      if (scoped) {
-        created.push(toMediaFolderDto(scoped));
-        continue;
-      }
-      const folder = await this.repository.createFolder(organizationId, {
-        name: template.name,
-        path: clientPath,
-        clientId,
-        visibility: template.visibility,
-      });
-      created.push(toMediaFolderDto(folder));
-      await this.audit.record({
+      const folder = await this.ensureFolderAtPath(
         organizationId,
         actorId,
-        actorType: 'user',
-        action: 'media/folders.ensure_client_tree',
-        entityType: ENTITY,
-        entityId: folder.id,
-        after: { clientId, name: folder.name },
-      });
+        clientId,
+        `/clients/${clientId}/${template.name}`,
+        template.name,
+        template.visibility,
+        null,
+      );
+      created.push(folder);
+      if (template.name === 'Content') contentRoot = folder;
     }
+
+    if (contentRoot) {
+      for (const name of DefaultContentPlatformFolders) {
+        const child = await this.ensureFolderAtPath(
+          organizationId,
+          actorId,
+          clientId,
+          `${contentRoot.path}/${name}`,
+          name,
+          'CLIENT_VISIBLE',
+          contentRoot.id,
+        );
+        created.push(child);
+      }
+    }
+
     return created;
+  }
+
+  private async ensureFolderAtPath(
+    organizationId: string,
+    actorId: string,
+    clientId: string,
+    clientPath: string,
+    name: string,
+    visibility: 'INTERNAL' | 'CLIENT_VISIBLE',
+    parentId: string | null,
+  ): Promise<MediaFolderDto> {
+    const scoped = await this.repository.findFolderByPath(
+      organizationId,
+      clientPath,
+    );
+    if (scoped) return toMediaFolderDto(scoped);
+
+    const folder = await this.repository.createFolder(organizationId, {
+      name,
+      path: clientPath,
+      clientId,
+      parentId: parentId ?? undefined,
+      visibility,
+    });
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/folders.ensure_client_tree',
+      entityType: ENTITY,
+      entityId: folder.id,
+      after: { clientId, name: folder.name, parentId },
+    });
+    return toMediaFolderDto(folder);
   }
 
   /** Creates Shoots/{title}/Raw|Selects|Finals|Deliverables under the client Shoots root. */

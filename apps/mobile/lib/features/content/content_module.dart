@@ -15,7 +15,7 @@ final contentModule = FeatureModule(
       selectedIcon: Icons.auto_awesome_mosaic,
       label: (l10n) => l10n.navContent,
       anyOf: const [Permissions.contentView],
-      audiences: staffOnly,
+      audiences: everyAudience,
       group: NavGroup.content,
       primary: true,
     ),
@@ -23,7 +23,10 @@ final contentModule = FeatureModule(
   routes: [
     destinationRoute(
       ContentRoutes.root,
-      (_) => const ContentScreen(),
+      (state) => ContentScreen(
+            initialClientId: state.uri.queryParameters[ContentRoutes.clientQuery],
+            initialTab: state.uri.queryParameters[ContentRoutes.tabQuery],
+          ),
       routes: [
         childRoute(
           ContentRoutes.composeSegment,

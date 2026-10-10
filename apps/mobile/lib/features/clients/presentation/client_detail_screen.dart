@@ -27,6 +27,7 @@ import '../../messages/messages_routes.dart';
 import '../../projects/projects_routes.dart';
 import '../application/clients_controller.dart';
 import '../domain/client.dart';
+import 'agreements_tab.dart';
 import 'client_forms.dart';
 import 'client_status.dart';
 
@@ -40,9 +41,11 @@ class ClientDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final client = ref.watch(clientProvider(clientId));
     final loaded = client.value;
+    final canAgreements = ref.watch(accessPolicyProvider.select((p) => p.can(Permissions.invoicesView)));
+    final tabCount = canAgreements ? 5 : 4;
 
     return DefaultTabController(
-      length: 4,
+      length: tabCount,
       child: PageScaffold(
         title: loaded?.name ?? l10n.clientsTitle,
         actions: [
@@ -67,6 +70,7 @@ class ClientDetailScreen extends ConsumerWidget {
             Tab(text: l10n.clientTabManage),
             Tab(text: l10n.clientTabBrand),
             Tab(text: l10n.clientTabProjects),
+            if (canAgreements) Tab(text: l10n.clientTabAgreements),
           ],
         ),
         body: AsyncValueView<Client>(
@@ -80,6 +84,7 @@ class ClientDetailScreen extends ConsumerWidget {
                 _ManageTab(client: client),
                 _BrandTab(client: client, onRefresh: refresh),
                 _ProjectsTab(clientId: client.id),
+                if (canAgreements) AgreementsTab(client: client),
               ],
             );
           },
@@ -312,7 +317,15 @@ class _ManageTab extends ConsumerWidget {
           icon: Icons.auto_awesome_mosaic_outlined,
           title: l10n.clientManageContent,
           body: l10n.clientManageContentBody,
-          route: ContentRoutes.root,
+          route: ContentRoutes.home(clientId: client.id),
+        ),
+      if (policy.can(Permissions.contentView))
+        (
+          permission: Permissions.contentView,
+          icon: Icons.grid_view_rounded,
+          title: l10n.clientManageGrid,
+          body: l10n.clientManageGridBody,
+          route: ContentRoutes.home(clientId: client.id, tab: ContentRoutes.plannerTab),
         ),
       if (policy.can(Permissions.contentCreate))
         (
@@ -328,7 +341,7 @@ class _ManageTab extends ConsumerWidget {
           icon: Icons.calendar_month_outlined,
           title: l10n.clientManageCalendar,
           body: l10n.clientManageCalendarBody,
-          route: CalendarRoutes.root,
+          route: CalendarRoutes.withClient(client.id),
         ),
       if (policy.can(Permissions.chatView))
         (

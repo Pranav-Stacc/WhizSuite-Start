@@ -69,6 +69,24 @@ export async function proxy(request: NextRequest) {
         rootDomain: root,
         path: `${pathname}${request.nextUrl.search}`,
       });
+      // Preflight + RSC flight fetches cannot follow cross-origin redirects (CORS).
+      // Document navigations still hard-redirect; soft navigations must use ModuleLink.
+      if (request.method === 'OPTIONS') {
+        return new NextResponse(null, { status: 204 });
+      }
+      const isRsc =
+        request.headers.get('RSC') === '1' ||
+        request.headers.get('Next-Router-Prefetch') === '1' ||
+        request.nextUrl.searchParams.has('_rsc');
+      if (isRsc) {
+        return new NextResponse(null, {
+          status: 204,
+          headers: {
+            'x-module-hop': target,
+            'cache-control': 'no-store',
+          },
+        });
+      }
       return NextResponse.redirect(target);
     }
   }

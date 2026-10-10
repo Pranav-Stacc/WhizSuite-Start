@@ -438,6 +438,7 @@ export class CapabilityHandlersService {
           clientId: input.clientId as string | undefined,
           projectId: input.projectId as string | undefined,
           allDay: input.allDay as boolean | undefined,
+          syncToGoogle: input.syncToGoogle as boolean | undefined,
         });
       case 'calendar.update':
         return this.calendar.update(
@@ -449,6 +450,7 @@ export class CapabilityHandlersService {
             startsAt: input.startsAt as string | undefined,
             endsAt: input.endsAt as string | undefined,
             allDay: input.allDay as boolean | undefined,
+            syncToGoogle: input.syncToGoogle as boolean | undefined,
           },
         );
       case 'calendar.shoots.create':
@@ -461,6 +463,7 @@ export class CapabilityHandlersService {
           allDay: (input.allDay as boolean | undefined) ?? true,
           createFolders: true,
           taskTitles: [],
+          syncToGoogle: false,
         });
 
       case 'chat.rooms.list':

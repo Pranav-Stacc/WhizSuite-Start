@@ -3,7 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/contracts/contracts.g.dart';
 import '../../access/application/access_controller.dart';
 import '../../auth/application/session_controller.dart';
+import '../../media/application/media_controller.dart';
+import '../../media/domain/media_asset.dart';
 import '../../profile/data/profile_repository.dart';
+import '../../reports/application/reports_controller.dart';
+import '../../reports/domain/metric_series.dart';
+import '../../reports/domain/report.dart';
 import '../data/portal_repository.dart';
 import '../domain/portal_models.dart';
 import '../domain/portal_summary.dart';
@@ -38,6 +43,42 @@ final portalRoomsProvider = FutureProvider.autoDispose<List<PortalRoom>>(
   (ref) => ref.watch(portalRepositoryProvider).rooms(),
 );
 
+/// Client media for the signed-in portal member (scoped by session clientId).
+final portalFilesProvider = FutureProvider.autoDispose<List<MediaAsset>>((ref) async {
+  final clientId = ref.watch(portalClientIdProvider);
+  if (clientId == null || clientId.isEmpty) return const [];
+  if (!ref.watch(accessPolicyProvider).can(Permissions.filesView)) return const [];
+  final assets = await ref.watch(mediaAssetsProvider.future);
+  return [
+    for (final asset in assets)
+      if (asset.clientId == clientId) asset,
+  ];
+});
+
+/// Shared reports visible to the portal client.
+final portalReportsProvider = FutureProvider.autoDispose<List<Report>>((ref) async {
+  final clientId = ref.watch(portalClientIdProvider);
+  if (clientId == null || clientId.isEmpty) return const [];
+  if (!ref.watch(accessPolicyProvider).can(Permissions.reportsView)) return const [];
+  final reports = await ref.watch(reportsProvider.future);
+  return [
+    for (final report in reports)
+      if (report.clientId == clientId) report,
+  ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+});
+
+/// 30-day analytics snapshot for the portal KPI strip (soft-fails to empty).
+final portalAnalyticsProvider = FutureProvider.autoDispose<List<MetricSeries>>((ref) async {
+  final clientId = ref.watch(portalClientIdProvider);
+  if (clientId == null || clientId.isEmpty) return const [];
+  if (!ref.watch(accessPolicyProvider).can(Permissions.reportsView)) return const [];
+  try {
+    return await ref.watch(analyticsProvider((days: analyticsDefaultRange, clientId: clientId)).future);
+  } catch (_) {
+    return const [];
+  }
+});
+
 final portalSummaryProvider = FutureProvider.autoDispose<PortalSummary>((ref) async {
   final policy = ref.watch(accessPolicyProvider);
   final content =
@@ -63,6 +104,8 @@ final List<({String permission, FutureProvider<Object?> source})> portalSources 
   (permission: Permissions.invoicesView, source: portalInvoicesProvider),
   (permission: Permissions.projectsView, source: portalProjectsProvider),
   (permission: Permissions.chatView, source: portalRoomsProvider),
+  (permission: Permissions.filesView, source: portalFilesProvider),
+  (permission: Permissions.reportsView, source: portalReportsProvider),
 ];
 
 /// Permissions that unlock at least one portal KPI tile.
@@ -71,6 +114,8 @@ const List<String> portalKpiPermissions = [
   Permissions.invoicesView,
   Permissions.chatView,
   Permissions.projectsView,
+  Permissions.filesView,
+  Permissions.reportsView,
 ];
 
 Future<void> refreshPortal(WidgetRef ref) async {

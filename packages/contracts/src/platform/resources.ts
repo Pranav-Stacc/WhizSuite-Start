@@ -32,6 +32,9 @@ export type CalendarFeedItem = {
   status?: string | null;
   href?: string | null;
   metadata?: Record<string, unknown> | null;
+  /** Opt-in Google Calendar sync for stored items. */
+  syncToGoogle?: boolean;
+  externalEventId?: string | null;
 };
 
 /** Default subfolders created under a shoot / client media root. */
@@ -40,9 +43,21 @@ export const DefaultShootFolderNames = ['Raw', 'Selects', 'Finals', 'Deliverable
 /** Default client library roots (agency-internal vs client-visible). */
 export const DefaultClientFolderTemplate = [
   { name: 'Brand Assets', visibility: 'CLIENT_VISIBLE' as const },
+  { name: 'Content', visibility: 'CLIENT_VISIBLE' as const },
   { name: 'Shoots', visibility: 'INTERNAL' as const },
   { name: 'Deliverables', visibility: 'CLIENT_VISIBLE' as const },
   { name: 'Agency', visibility: 'INTERNAL' as const },
+] as const;
+
+/** Platform shelves created under the Content root for smarter client libraries. */
+export const DefaultContentPlatformFolders = [
+  'Instagram',
+  'Facebook',
+  'LinkedIn',
+  'TikTok',
+  'YouTube',
+  'X',
+  'Other',
 ] as const;
 
 export const CustomFieldEntityTypes = ['client', 'project', 'task', 'content', 'lead'] as const;

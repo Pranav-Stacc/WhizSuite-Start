@@ -298,6 +298,66 @@ abstract class AppLocalizations {
   /// **'You have been signed out.'**
   String get authSignedOut;
 
+  /// No description provided for @authInviteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join {organization}'**
+  String authInviteTitle(String organization);
+
+  /// No description provided for @authInviteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You were invited as {email}.'**
+  String authInviteSubtitle(String email);
+
+  /// No description provided for @authInviteSubtitleExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept as {email}.'**
+  String authInviteSubtitleExisting(String email);
+
+  /// No description provided for @authInvitePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password'**
+  String get authInvitePassword;
+
+  /// No description provided for @authInviteSetPasswordHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a password (12+ characters) to join.'**
+  String get authInviteSetPasswordHint;
+
+  /// No description provided for @authInviteSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept invitation'**
+  String get authInviteSubmit;
+
+  /// No description provided for @authInviteInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This invitation link is invalid, already used or expired. Ask the sender for a new one.'**
+  String get authInviteInvalid;
+
+  /// No description provided for @authInviteInvalidTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation unavailable'**
+  String get authInviteInvalidTitle;
+
+  /// No description provided for @authInviteWrongPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'That password does not match the existing account for this email.'**
+  String get authInviteWrongPassword;
+
+  /// No description provided for @authInviteAlreadyMember.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is already a member of the workspace. Sign in instead.'**
+  String get authInviteAlreadyMember;
+
   /// No description provided for @validationRequired.
   ///
   /// In en, this message translates to:
@@ -699,6 +759,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Created'**
   String get createdToast;
+
+  /// No description provided for @quickCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get quickCreateTitle;
+
+  /// No description provided for @quickCreateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start something new without leaving your flow.'**
+  String get quickCreateSubtitle;
+
+  /// No description provided for @quickCreateEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You don't have permission to create anything yet.'**
+  String get quickCreateEmpty;
+
+  /// No description provided for @quickCreateTask.
+  ///
+  /// In en, this message translates to:
+  /// **'New task'**
+  String get quickCreateTask;
+
+  /// No description provided for @quickCreateContent.
+  ///
+  /// In en, this message translates to:
+  /// **'New post'**
+  String get quickCreateContent;
+
+  /// No description provided for @quickCreateProject.
+  ///
+  /// In en, this message translates to:
+  /// **'New project'**
+  String get quickCreateProject;
+
+  /// No description provided for @quickCreateClient.
+  ///
+  /// In en, this message translates to:
+  /// **'New client'**
+  String get quickCreateClient;
+
+  /// No description provided for @quickCreateLead.
+  ///
+  /// In en, this message translates to:
+  /// **'New lead'**
+  String get quickCreateLead;
+
+  /// No description provided for @quickCreateInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'New invoice'**
+  String get quickCreateInvoice;
+
+  /// No description provided for @quickCreateShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get quickCreateShoot;
 
   /// No description provided for @deletedToast.
   ///
@@ -2398,6 +2518,108 @@ abstract class AppLocalizations {
   /// **'New event'**
   String get calendarNew;
 
+  /// No description provided for @calendarCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get calendarCreate;
+
+  /// No description provided for @calendarNewEventHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting, deadline or manual block'**
+  String get calendarNewEventHint;
+
+  /// No description provided for @calendarPlanShoot.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get calendarPlanShoot;
+
+  /// No description provided for @calendarPlanShootHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot day with folders and tasks'**
+  String get calendarPlanShootHint;
+
+  /// No description provided for @calendarShootHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan a shoot'**
+  String get calendarShootHeading;
+
+  /// No description provided for @calendarShootDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a shoot day, optionally create media folders and checklist tasks.'**
+  String get calendarShootDesc;
+
+  /// No description provided for @calendarShootSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan shoot'**
+  String get calendarShootSubmit;
+
+  /// No description provided for @calendarShootTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot title'**
+  String get calendarShootTitle;
+
+  /// No description provided for @calendarShootTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Spring campaign on-location'**
+  String get calendarShootTitleHint;
+
+  /// No description provided for @calendarShootClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Client'**
+  String get calendarShootClient;
+
+  /// No description provided for @calendarShootProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Project'**
+  String get calendarShootProject;
+
+  /// No description provided for @calendarShootStarts.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts'**
+  String get calendarShootStarts;
+
+  /// No description provided for @calendarShootEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends'**
+  String get calendarShootEnds;
+
+  /// No description provided for @calendarShootCreateFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Create media folders'**
+  String get calendarShootCreateFolders;
+
+  /// No description provided for @calendarShootCreateFoldersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Raw / Selects / Finals / Deliverables under Shoots'**
+  String get calendarShootCreateFoldersHint;
+
+  /// No description provided for @calendarShootTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist tasks'**
+  String get calendarShootTasks;
+
+  /// No description provided for @calendarShootTasksHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One task per line (needs a project)'**
+  String get calendarShootTasksHint;
+
   /// No description provided for @calendarEdit.
   ///
   /// In en, this message translates to:
@@ -2781,6 +3003,117 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New post'**
   String get clientManageCompose;
+
+  /// No description provided for @clientManageAgreements.
+  String get clientManageAgreements;
+
+  /// No description provided for @clientManageAgreementsBody.
+  String get clientManageAgreementsBody;
+
+  /// No description provided for @clientManageGrid.
+  String get clientManageGrid;
+
+  /// No description provided for @clientManageGridBody.
+  String get clientManageGridBody;
+
+  /// No description provided for @clientTabAgreements.
+  String get clientTabAgreements;
+
+  /// No description provided for @agreementsEmptyTitle.
+  String get agreementsEmptyTitle;
+
+  /// No description provided for @agreementsEmptyBody.
+  String get agreementsEmptyBody;
+
+  /// No description provided for @agreementsNew.
+  String get agreementsNew;
+
+  /// No description provided for @agreementsNewHint.
+  String get agreementsNewHint;
+
+  /// No description provided for @agreementsTitleLabel.
+  String get agreementsTitleLabel;
+
+  /// No description provided for @agreementsTypeLabel.
+  String get agreementsTypeLabel;
+
+  /// No description provided for @agreementsTypeNda.
+  String get agreementsTypeNda;
+
+  /// No description provided for @agreementsTypeMsa.
+  String get agreementsTypeMsa;
+
+  /// No description provided for @agreementsTypeSow.
+  String get agreementsTypeSow;
+
+  /// No description provided for @agreementsTypeOther.
+  String get agreementsTypeOther;
+
+  /// No description provided for @agreementsStart.
+  String get agreementsStart;
+
+  /// No description provided for @agreementsEnd.
+  String get agreementsEnd;
+
+  /// No description provided for @agreementsStatTotal.
+  String get agreementsStatTotal;
+
+  /// No description provided for @agreementsStatSigned.
+  String get agreementsStatSigned;
+
+  /// No description provided for @agreementsStatDraft.
+  String get agreementsStatDraft;
+
+  /// No description provided for @agreementsDownload.
+  String get agreementsDownload;
+
+  /// No description provided for @agreementsDownloadStarted.
+  String get agreementsDownloadStarted;
+
+  /// No description provided for @agreementsUploadPdf.
+  String get agreementsUploadPdf;
+
+  /// No description provided for @agreementsPdfUploaded.
+  String get agreementsPdfUploaded;
+
+  /// No description provided for @agreementsSign.
+  String get agreementsSign;
+
+  /// No description provided for @agreementsSignTitle.
+  String get agreementsSignTitle;
+
+  /// No description provided for @agreementsSignHint.
+  String get agreementsSignHint;
+
+  /// No description provided for @agreementsSignerName.
+  String get agreementsSignerName;
+
+  /// No description provided for @agreementsMarkSigned.
+  String get agreementsMarkSigned;
+
+  /// No description provided for @agreementsSignedToast.
+  String get agreementsSignedToast;
+
+  /// No description provided for @agreementsCreatedToast.
+  String get agreementsCreatedToast;
+
+  /// No description provided for @agreementsStatusDraft.
+  String get agreementsStatusDraft;
+
+  /// No description provided for @agreementsStatusSent.
+  String get agreementsStatusSent;
+
+  /// No description provided for @agreementsStatusSigned.
+  String get agreementsStatusSigned;
+
+  /// No description provided for @agreementsStatusActive.
+  String get agreementsStatusActive;
+
+  /// No description provided for @agreementsStatusExpired.
+  String get agreementsStatusExpired;
+
+  /// No description provided for @agreementsStatusVoid.
+  String get agreementsStatusVoid;
 
   /// No description provided for @clientProjectsEmpty.
   ///
@@ -6559,6 +6892,18 @@ abstract class AppLocalizations {
   /// **'View projects'**
   String get portalQuickProjects;
 
+  /// No description provided for @portalQuickFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Open files'**
+  String get portalQuickFiles;
+
+  /// No description provided for @portalQuickReports.
+  ///
+  /// In en, this message translates to:
+  /// **'View reports'**
+  String get portalQuickReports;
+
   /// No description provided for @portalKpiAria.
   ///
   /// In en, this message translates to:
@@ -6708,6 +7053,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Browse content'**
   String get portalContentCta;
+
+  /// No description provided for @portalKpiFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared files'**
+  String get portalKpiFiles;
+
+  /// No description provided for @portalKpiFilesCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}'**
+  String portalKpiFilesCaption(int count);
+
+  /// No description provided for @portalKpiReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach (30 days)'**
+  String get portalKpiReports;
+
+  /// No description provided for @portalKpiReportsCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Across your connected channels'**
+  String get portalKpiReportsCaption;
+
+  /// No description provided for @portalFilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get portalFilesTitle;
+
+  /// No description provided for @portalFilesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No files have been shared with you yet.'**
+  String get portalFilesEmpty;
+
+  /// No description provided for @portalFilesCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse files'**
+  String get portalFilesCta;
+
+  /// No description provided for @portalReportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get portalReportsTitle;
+
+  /// No description provided for @portalReportsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports are ready yet.'**
+  String get portalReportsEmpty;
+
+  /// No description provided for @portalReportsCta.
+  ///
+  /// In en, this message translates to:
+  /// **'View reports'**
+  String get portalReportsCta;
 
   /// No description provided for @portalContentStatus.
   ///

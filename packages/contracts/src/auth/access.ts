@@ -53,6 +53,9 @@ const STAFF_PERMISSIONS: readonly Permission[] = [
   Permissions.CONTENT_VIEW,
   Permissions.CONTENT_CREATE,
   Permissions.CONTENT_EDIT,
+  Permissions.CALENDAR_VIEW,
+  Permissions.CALENDAR_CREATE,
+  Permissions.CALENDAR_EDIT,
   Permissions.APPROVALS_VIEW,
   Permissions.APPROVALS_CREATE,
   Permissions.FEEDBACK_VIEW,
@@ -74,6 +77,7 @@ const MANAGER_EXCLUDED = new Set<Permission>([
   Permissions.MEMBERS_DEACTIVATE,
 ]);
 
+/** Portal clients — view/approve content in their brand; no staff calendar/sync. */
 const CLIENT_PERMISSIONS: readonly Permission[] = [
   Permissions.ORG_VIEW,
   Permissions.CLIENTS_VIEW,

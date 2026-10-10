@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions } from '@agency-os/contracts';
 import {
@@ -17,6 +17,12 @@ import { CreateTeamDto } from '../dto/team.dto';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class TeamsController {
   constructor(private readonly tenancy: TenancyService) {}
+
+  @Get()
+  @RequirePermissions(Permissions.ORG_VIEW)
+  list(@Param('organizationId') organizationId: string) {
+    return this.tenancy.listTeams(organizationId);
+  }
 
   @Post()
   @RequirePermissions(Permissions.ORG_SETTINGS_MANAGE)

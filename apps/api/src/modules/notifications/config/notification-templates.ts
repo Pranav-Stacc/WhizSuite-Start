@@ -48,9 +48,39 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: 'Changes were requested on "{title}".',
     actionLabel: 'View content',
   },
+  [NotificationTypeKeys.CONTENT_REJECTED]: {
+    subject: 'Content rejected',
+    body: '"{title}" was rejected.',
+    actionLabel: 'View content',
+  },
+  [NotificationTypeKeys.CONTENT_SCHEDULED]: {
+    subject: 'Content scheduled',
+    body: '"{title}" is scheduled to publish.',
+    actionLabel: 'View content',
+  },
   [NotificationTypeKeys.APPROVAL_REQUESTED]: {
     subject: 'Approval requested',
     body: 'Your approval is needed on "{title}".',
+    actionLabel: 'Review',
+  },
+  [NotificationTypeKeys.APPROVAL_COMPLETED]: {
+    subject: 'Approval completed',
+    body: '"{title}" was approved.',
+    actionLabel: 'View approval',
+  },
+  [NotificationTypeKeys.APPROVAL_REJECTED]: {
+    subject: 'Approval rejected',
+    body: '"{title}" was rejected.',
+    actionLabel: 'View approval',
+  },
+  [NotificationTypeKeys.APPROVAL_CHANGES_REQUESTED]: {
+    subject: 'Changes requested on approval',
+    body: 'Changes were requested on "{title}".',
+    actionLabel: 'View approval',
+  },
+  [NotificationTypeKeys.APPROVAL_REMINDER]: {
+    subject: 'Approval reminder',
+    body: 'Reminder: your approval is still needed on "{title}".',
     actionLabel: 'Review',
   },
   [NotificationTypeKeys.CHAT_MESSAGE]: {
@@ -72,6 +102,36 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     subject: 'Publish failed',
     body: '"{title}" failed to publish to Instagram. Open the post and try Publish now again.',
     actionLabel: 'View content',
+  },
+  [NotificationTypeKeys.SOCIAL_ACCOUNT_DISCONNECTED]: {
+    subject: 'Social account disconnected',
+    body: '"{title}" was disconnected. Reconnect it under Integrations to resume publishing.',
+    actionLabel: 'Open integrations',
+  },
+  [NotificationTypeKeys.INVITATION_ACCEPTED]: {
+    subject: 'Invitation accepted',
+    body: '{title} accepted your invitation.',
+    actionLabel: 'View members',
+  },
+  [NotificationTypeKeys.AUTOMATION_NOTIFY]: {
+    subject: 'Automation notification',
+    body: '{title}',
+    actionLabel: 'Open app',
+  },
+  [NotificationTypeKeys.FEEDBACK_COMMENT]: {
+    subject: 'New feedback',
+    body: 'New feedback on "{title}".',
+    actionLabel: 'View feedback',
+  },
+  [NotificationTypeKeys.INVOICE_OVERDUE]: {
+    subject: 'Invoice overdue',
+    body: 'Invoice "{title}" is overdue.',
+    actionLabel: 'View invoice',
+  },
+  [NotificationTypeKeys.INVOICE_PAID]: {
+    subject: 'Invoice paid',
+    body: 'Invoice "{title}" was marked paid.',
+    actionLabel: 'View invoice',
   },
 };
 

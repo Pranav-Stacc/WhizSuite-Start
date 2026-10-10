@@ -44,7 +44,7 @@ export async function AppShell({ session, children }: { session: Session; childr
       </a>
       <header className="glass sticky top-0 z-40 border-b border-border-soft print:hidden">
         <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-8 lg:gap-8 lg:px-12">
-          <MobileMenu permissions={permissions} badges={badges} module={workspace.module} />
+          <MobileMenu permissions={permissions} badges={badges} module={workspace.module} orgSlug={session.orgSlug} />
           <Link href={home} className="min-w-0 max-w-56 outline-none" aria-label={session.orgName}>
             <Logo name={session.orgName} />
           </Link>
@@ -60,7 +60,7 @@ export async function AppShell({ session, children }: { session: Session; childr
             </Badge>
           ) : null}
           <div className="flex-1" />
-          <TopNav permissions={permissions} badges={badges} module={workspace.module} />
+          <TopNav permissions={permissions} badges={badges} module={workspace.module} orgSlug={session.orgSlug} />
           <div className="flex items-center gap-0.5">
             <SearchTrigger compact />
             <QuickCreate permissions={permissions} />
@@ -77,7 +77,7 @@ export async function AppShell({ session, children }: { session: Session; childr
         <ModuleTabs permissions={permissions} badges={badges} module={workspace.module} />
         {children}
       </main>
-      <MobileDock permissions={permissions} badges={badges} module={workspace.module} />
+      <MobileDock permissions={permissions} badges={badges} module={workspace.module} orgSlug={session.orgSlug} />
       <CommandPalette permissions={permissions} module={workspace.module} />
     </div>
   );

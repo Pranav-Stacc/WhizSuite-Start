@@ -22,7 +22,10 @@ reminders, and MCP exposure for external tools. The existing `ai` module is stub
    permissions, and `DataScopeInterceptor` on every tool execution. High-risk writes
    require human confirmation (`AgentPendingAction`).
 4. **Shared execution** — automation actions and agent tools use the same
-   `CapabilityExecutorService`. Automations enqueue via BullMQ; agents stream via Python.
+   `CapabilityExecutorService`. Automations enqueue via BullMQ; interactive agents
+   stream via Python SSE (`/v1/run/stream`) → Nest proxy → Next `/api/agent/stream`
+   with markdown summaries, tool-step events, conversation history, and Redis-cached
+   capability catalogs between runs.
 5. **MCP** — JSON-RPC endpoint on Nest exposes the same filtered tool catalog.
 
 ## Consequences

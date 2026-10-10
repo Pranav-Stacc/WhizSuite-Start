@@ -17,7 +17,7 @@ import { EnsureFoldersButton, NewFolderDialog } from '@/features/media/component
 import { FolderTree, buildFolderTree, folderAncestors } from '@/features/media/components/folder-tree';
 import { UploadDropzone } from '@/features/media/components/upload-dropzone';
 import { deleteFolderAction } from '@/features/media/actions/folder.actions';
-import { listFolders } from '@/features/media/services/folders.service';
+import { ensureClientFolders, listFolders } from '@/features/media/services/folders.service';
 import { listAssets } from '@/features/media/services/media.service';
 
 export const metadata = { title: t('clients.workspace.assets') };
@@ -39,7 +39,23 @@ export default async function ClientAssetsPage({
   const link = (overrides: Record<string, string | undefined>) => withQuery(base, sp, overrides);
   const folderHref = (id: string | undefined) => link({ folder: id });
 
-  const [allAssets, folders] = await Promise.all([listAssets(), listFolders(client.id)]);
+  const granted = await getPermissions();
+  const canUpload = isLiveMode && granted.has(Permissions.FILES_UPLOAD);
+  const canDelete = granted.has(Permissions.FILES_DELETE);
+  // Demo always "can" seed the tree; live only when upload is allowed.
+  const canEnsure = granted.has(Permissions.FILES_UPLOAD);
+
+  const [allAssets, initialFolders] = await Promise.all([listAssets(), listFolders(client.id)]);
+  let folders = initialFolders;
+  // Auto-seed the client library so staff never land on an empty tree.
+  if (folders.length === 0 && canEnsure) {
+    try {
+      folders = await ensureClientFolders(client.id);
+    } catch {
+      folders = initialFolders;
+    }
+  }
+
   const clientAssets = allAssets
     .filter((a) => a.clientId === client.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -54,19 +70,15 @@ export default async function ClientAssetsPage({
     : clientAssets.filter((a) => !a.folderId || !folders.some((f) => f.id === a.folderId));
   const childCount = (id: string) => folders.filter((f) => f.parentId === id).length;
   const fileCount = (id: string) => clientAssets.filter((a) => a.folderId === id).length;
-
-  const granted = await getPermissions();
-  const canUpload = isLiveMode && granted.has(Permissions.FILES_UPLOAD);
-  const canDelete = granted.has(Permissions.FILES_DELETE);
   const parentRedirect = current?.parentId ? folderHref(current.parentId) : folderHref(undefined);
 
   return (
     <section>
       <SectionHeading number={clientSectionNumber('assets')} title={t('clients.workspace.assets')}>
         <span className="eyebrow">{t('assets.count', { count: folderId ? assets.length : clientAssets.length })}</span>
-        {canUpload || (folderId && canDelete) ? (
+        {canUpload || canEnsure || (folderId && canDelete) ? (
           <div className="flex flex-wrap items-center gap-2">
-            {canUpload && folders.length === 0 ? <EnsureFoldersButton clientId={client.id} /> : null}
+            {canEnsure && folders.length === 0 ? <EnsureFoldersButton clientId={client.id} /> : null}
             {canUpload ? (
               <NewFolderDialog
                 clientId={client.id}
@@ -93,11 +105,18 @@ export default async function ClientAssetsPage({
         ) : null}
       </SectionHeading>
 
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="card-surface h-fit p-3">
           <p className="eyebrow mb-2 px-1">{t('clients.assets.tree.title')}</p>
-          <FolderTree roots={tree} activeId={folderId} hrefFor={folderHref} />
-          {canUpload && folders.length > 0 ? (
+          {tree.length === 0 ? (
+            <div className="space-y-3 px-1 py-2">
+              <p className="text-xs text-muted">{t('clients.assets.tree.empty')}</p>
+              {canEnsure ? <EnsureFoldersButton clientId={client.id} /> : null}
+            </div>
+          ) : (
+            <FolderTree roots={tree} activeId={folderId} hrefFor={folderHref} />
+          )}
+          {canEnsure && folders.length > 0 ? (
             <div className="mt-3 border-t border-border-soft px-1 pt-3">
               <EnsureFoldersButton clientId={client.id} />
             </div>

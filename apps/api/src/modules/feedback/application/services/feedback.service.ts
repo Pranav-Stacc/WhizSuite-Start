@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  DomainEventTypes,
   ErrorCodes,
   FeedbackSubjectTypes,
   type FeedbackCommentDto,
@@ -11,6 +12,7 @@ import {
   notFound,
   problem,
 } from '../../../../shared/errors/problem-details.exception';
+import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { SocialService } from '../../../social/application/services/social.service';
 import { FeedbackRepository } from '../../infrastructure/repositories/feedback.repository';
@@ -30,6 +32,7 @@ export interface FeedbackSubjectRef {
 export class FeedbackService {
   constructor(
     private readonly repository: FeedbackRepository,
+    private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
     private readonly social: SocialService,
@@ -74,6 +77,7 @@ export class FeedbackService {
       ...input,
       createdById: actorId,
     });
+    await this.emitFeedbackCreated(organizationId, actorId, item);
     await this.audit.record({
       organizationId,
       actorId,
@@ -152,6 +156,11 @@ export class FeedbackService {
       body,
     );
     if (createdThread) {
+      await this.emitFeedbackCreated(organizationId, actorId, {
+        id: createdThread.id,
+        subjectType: subject.subjectType,
+        subjectId: subject.subjectId,
+      });
       await this.audit.record({
         organizationId,
         actorId,
@@ -177,5 +186,41 @@ export class FeedbackService {
       after: { ...dto, ...subject },
     });
     return dto;
+  }
+
+  private async emitFeedbackCreated(
+    organizationId: string,
+    actorId: string,
+    thread: { id: string; subjectType: string; subjectId: string },
+  ): Promise<void> {
+    const recipientIds: string[] = [];
+    let title = thread.subjectType;
+    let contentId: string | undefined;
+    if (thread.subjectType === FeedbackSubjectTypes.CONTENT) {
+      try {
+        const content = await this.social.getContent(
+          organizationId,
+          thread.subjectId,
+        );
+        contentId = content.id;
+        title = content.title;
+        if (content.createdById) recipientIds.push(content.createdById);
+      } catch {
+        /* subject may be inaccessible; skip notify */
+      }
+    }
+    if (recipientIds.length === 0) return;
+    await this.outbox.write({
+      type: DomainEventTypes.FEEDBACK_CREATED,
+      version: 1,
+      organizationId,
+      payload: {
+        threadId: thread.id,
+        contentId,
+        title,
+        recipientIds,
+      },
+      actor: { id: actorId, type: 'user' },
+    });
   }
 }

@@ -45,6 +45,7 @@ export async function sendAgentMessage(
         multiAgent: options.multiAgent ?? true,
         agentDefinitionId: options.agentDefinitionId,
       },
+      timeoutMs: 180_000,
     },
   );
 }

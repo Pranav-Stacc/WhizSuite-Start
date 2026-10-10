@@ -29,6 +29,8 @@ export interface ApiRequest {
   token?: string;
   organizationId?: string;
   retries?: number;
+  /** Override default API timeout (ms). Use for long agent runs. */
+  timeoutMs?: number;
 }
 
 const RETRY_DELAY_MS = 200;
@@ -67,7 +69,7 @@ export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promi
           ...(organizationId ? { 'x-organization-id': organizationId } : {}),
         },
         body: request.body === undefined ? undefined : JSON.stringify(request.body),
-        signal: AbortSignal.timeout(env.API_TIMEOUT_MS),
+        signal: AbortSignal.timeout(request.timeoutMs ?? env.API_TIMEOUT_MS),
         ...(method === 'GET' && request.tags
           ? { next: { tags: request.tags, revalidate: request.revalidate ?? 30 } }
           : { cache: 'no-store' as const }),

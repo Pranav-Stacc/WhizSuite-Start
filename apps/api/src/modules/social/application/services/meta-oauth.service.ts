@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  DomainEventTypes,
   ErrorCodes,
   META_PROVIDER_KEY,
   type Platform,
@@ -12,7 +13,9 @@ import {
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
+import { OutboxService } from '../../../../shared/events/outbox.service';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import { MembersService } from '../../../identity/application/services/members.service';
 import { IntegrationsRepository } from '../../../integrations/infrastructure/repositories/integrations.repository';
 import { MetaClient } from '../../../integrations/providers/meta.client';
 import { SocialRepository } from '../../infrastructure/repositories/social.repository';
@@ -31,6 +34,8 @@ export class MetaOauthService {
     private readonly meta: MetaClient,
     private readonly integrations: IntegrationsRepository,
     private readonly social: SocialRepository,
+    private readonly members: MembersService,
+    private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
@@ -282,6 +287,23 @@ export class MetaOauthService {
         });
       }
     }
+
+    const staff = await this.members.list(input.organizationId);
+    const recipientIds = staff
+      .filter((m) => m.membershipType !== 'CLIENT')
+      .map((m) => m.id);
+    await this.outbox.write({
+      type: DomainEventTypes.SOCIAL_ACCOUNT_DISCONNECTED,
+      version: 1,
+      organizationId: input.organizationId,
+      payload: {
+        socialAccountId: account.id,
+        platform: account.platform,
+        title: account.displayName,
+        recipientIds,
+      },
+      actor: { id: input.actorId, type: 'user' },
+    });
 
     await this.audit.record({
       organizationId: input.organizationId,

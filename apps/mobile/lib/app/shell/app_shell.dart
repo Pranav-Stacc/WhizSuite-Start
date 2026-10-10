@@ -22,6 +22,7 @@ import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
 import 'app_sidebar.dart';
 import 'creative_bottom_nav.dart';
+import 'quick_create_sheet.dart';
 import 'search_action.dart';
 
 /// Signed-in frame: permission-filtered navigation, offline banner, notification delivery,
@@ -40,7 +41,7 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
-  static const _shellActions = [SearchAction(), NotificationBell()];
+  static const _shellActions = [QuickCreateAction(), SearchAction(), NotificationBell()];
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   late final AppLifecycleListener _lifecycle;

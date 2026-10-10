@@ -8,14 +8,13 @@ import {
   ASSIGNABLE_SCOPE_TYPE_KEYS,
   AssignableScopeTypes,
   RoleKinds,
-  type RoleKind,
   type ScopeType,
 } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
-import { Field, Input, Select, Textarea } from '@/shared/ui/field';
+import { Field, Input, Textarea } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
 import { createRoleAction, updateRoleAction } from '../actions/role.actions';
 import type { AgencyRole } from '../data/roles.repository';
@@ -33,7 +32,6 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(role?.name ?? '');
   const [description, setDescription] = useState(role?.description ?? '');
-  const [kind, setKind] = useState<RoleKind>(role?.kind ?? RoleKinds.ACCESS);
   const [scopes, setScopes] = useState<Set<ScopeType>>(
     () => new Set(role?.defaultScopeTypes?.length ? role.defaultScopeTypes : [AssignableScopeTypes.ORGANIZATION]),
   );
@@ -83,7 +81,6 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
   const reset = () => {
     setName(role?.name ?? '');
     setDescription(role?.description ?? '');
-    setKind(role?.kind ?? RoleKinds.ACCESS);
     setScopes(new Set(role?.defaultScopeTypes?.length ? role.defaultScopeTypes : [AssignableScopeTypes.ORGANIZATION]));
     setSelected(new Set(role?.permissionKeys ?? []));
   };
@@ -93,7 +90,7 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
       const input = {
         name,
         description,
-        kind,
+        kind: RoleKinds.ACCESS,
         permissionKeys: [...selected],
         defaultScopeTypes: [...scopes],
       };
@@ -111,11 +108,7 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
     setOpen(true);
   };
 
-  const accessNeedsPermissions = kind === RoleKinds.ACCESS;
-  const canSubmit =
-    name.trim().length >= 2 &&
-    scopes.size > 0 &&
-    (!accessNeedsPermissions || selected.size > 0);
+  const canSubmit = name.trim().length >= 2 && scopes.size > 0 && selected.size > 0;
 
   return (
     <>
@@ -139,17 +132,6 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
           </Field>
           <Field label={t('roles.field.description')} htmlFor="role-desc">
             <Textarea id="role-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
-          </Field>
-          <Field label={t('roles.kind')} htmlFor="role-kind" hint={t('roles.kind.hint')}>
-            <Select
-              id="role-kind"
-              value={kind}
-              onChange={(e) => setKind(e.target.value as RoleKind)}
-              disabled={editing}
-            >
-              <option value={RoleKinds.ACCESS}>{t('roles.kind.access')}</option>
-              <option value={RoleKinds.WORKFLOW}>{t('roles.kind.workflow')}</option>
-            </Select>
           </Field>
           <div>
             <p className="mb-1 text-sm font-medium">{t('roles.scopes')}</p>
@@ -176,11 +158,6 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
             </ul>
             <p className="mt-2 text-xs text-muted">{t('roles.scopes.selected', { count: scopes.size })}</p>
           </div>
-          {kind === RoleKinds.WORKFLOW ? (
-            <p className="rounded-xl border border-border-soft bg-surface-2 px-3 py-2 text-xs text-muted">
-              {t('roles.permissions.workflowHint')}
-            </p>
-          ) : null}
           <div>
             <p className="mb-2 text-sm font-medium">{t('roles.permissions')}</p>
             <div className="max-h-[40vh] space-y-3 overflow-y-auto rounded-xl border border-border-soft p-3">

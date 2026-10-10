@@ -159,6 +159,7 @@ export const calendarCreateInput = z.object({
   clientId: optionalUuid,
   projectId: optionalUuid,
   allDay: z.boolean().optional(),
+  syncToGoogle: z.boolean().optional(),
 });
 export const calendarUpdateInput = z.object({
   itemId: uuid,
@@ -166,6 +167,7 @@ export const calendarUpdateInput = z.object({
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   allDay: z.boolean().optional(),
+  syncToGoogle: z.boolean().optional(),
 });
 export const calendarShootCreateInput = z.object({
   title: z.string().min(1).max(300),

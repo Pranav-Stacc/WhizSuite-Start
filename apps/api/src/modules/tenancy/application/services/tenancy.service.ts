@@ -132,6 +132,10 @@ export class TenancyService {
     return this.repo.listDepartments(organizationId);
   }
 
+  async listTeams(organizationId: string) {
+    return this.repo.listTeams(organizationId);
+  }
+
   async createTeam(
     organizationId: string,
     actorId: string,

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Clock, Mail, UserMinus } from 'lucide-react';
 import { UserRoles, type AccessRoleSummary } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
@@ -11,6 +12,7 @@ import { changeMemberRoleAction, removeMemberAction } from '../actions/member.ac
 import { ASSIGNABLE_ROLES, NEAR_CAPACITY_THRESHOLD, OVERLOAD_THRESHOLD } from '../config';
 import type { Member, MemberRole } from '../data/members.repository';
 import { AssignRolesDialog } from './assign-roles-dialog';
+import type { ScopeResourceOptions } from './scope-resource-fields';
 
 const ROLE_TONE: Record<MemberRole, BadgeTone> = {
   [UserRoles.OWNER]: 'primary',
@@ -30,6 +32,7 @@ interface MemberCardProps {
   isSelf: boolean;
   /** Roles the viewer may grant; present only when they hold the role-management permission. */
   assignableRoles?: AccessRoleSummary[];
+  scopeResources?: ScopeResourceOptions;
   canRemove: boolean;
 }
 
@@ -39,21 +42,26 @@ function workloadTone(ratio: number): 'primary' | 'warning' | 'danger' {
   return 'primary';
 }
 
-export function MemberCard({ member, openHours, isSelf, assignableRoles, canRemove }: MemberCardProps) {
+export function MemberCard({ member, openHours, isSelf, assignableRoles, scopeResources, canRemove }: MemberCardProps) {
   const invited = member.status === 'INVITED';
   const ratio = member.capacityHours > 0 ? openHours / member.capacityHours : 0;
   const protectedMember = member.role === UserRoles.OWNER || isSelf;
   const roleLabel = t(`shell.role.${member.role}`);
   const canManageRoles = assignableRoles !== undefined && !protectedMember && !invited;
   const showRemove = canRemove && !protectedMember;
+  const profileHref = `/team/${member.id}`;
 
   return (
     <article className="card-surface flex h-full flex-col gap-4 p-5">
       <header className="flex items-start gap-3">
-        <Avatar name={member.name} size="md" />
+        <Link href={profileHref} className="shrink-0" aria-label={t('team.detail.title')}>
+          <Avatar name={member.name} size="md" />
+        </Link>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold">
-            {member.name}
+            <Link href={profileHref} className="hover:underline">
+              {member.name}
+            </Link>
             {isSelf ? <span className="ml-2 text-xs font-normal text-muted">{t('team.you')}</span> : null}
           </h3>
           <p className="truncate text-xs text-muted">{member.title || t('team.noTitle')}</p>
@@ -114,7 +122,7 @@ export function MemberCard({ member, openHours, isSelf, assignableRoles, canRemo
                   options={ASSIGNABLE_ROLES.map((role) => ({ value: role, label: t(`shell.role.${role}`), color: ROLE_COLOR[role] }))}
                   action={changeMemberRoleAction.bind(null, member.id)}
                 />
-                <AssignRolesDialog member={member} assignable={assignableRoles} />
+                {scopeResources ? <AssignRolesDialog member={member} assignable={assignableRoles} resources={scopeResources} /> : null}
               </>
             ) : null}
             {showRemove ? (

@@ -6,10 +6,12 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Permissions, sendAgentMessageSchema } from '@agency-os/contracts';
+import type { Response } from 'express';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -84,6 +86,45 @@ export class AgentController {
       sessionId,
       input,
     );
+  }
+
+  @Post('sessions/:sessionId/messages/stream')
+  @RequirePermissions(Permissions.AI_CHAT)
+  async streamMessage(
+    @Param('organizationId') organizationId: string,
+    @Param('sessionId', ParseUUIDPipe) sessionId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: unknown,
+    @Res() res: Response,
+  ) {
+    const input = sendAgentMessageSchema.parse(body);
+    const orgId = requireOrganizationId(organizationId);
+
+    res.status(200);
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    const write = (event: Record<string, unknown>) => {
+      res.write(`data: ${JSON.stringify(event)}
+
+`);
+    };
+
+    try {
+      await this.runs.sendMessageStream(orgId, user, sessionId, input, write);
+    } catch (error) {
+      write({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Agent stream failed',
+      });
+    } finally {
+      res.end();
+    }
   }
 
   @Get('runs')

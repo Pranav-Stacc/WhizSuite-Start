@@ -6,7 +6,6 @@ import {
   CheckSquare,
   CreditCard,
   FolderKanban,
-  Image as ImageIcon,
   LayoutDashboard,
   MessageSquare,
   type LucideIcon,
@@ -67,7 +66,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/tasks', label: 'nav.tasks', desc: 'nav.tasks.desc', icon: CheckSquare, permission: Permissions.TASKS_VIEW },
       { href: '/projects', label: 'nav.projects', desc: 'nav.projects.desc', icon: Briefcase, permission: Permissions.PROJECTS_VIEW },
-      { href: '/calendar', label: 'nav.calendar', desc: 'nav.calendar.desc', icon: CalendarDays, permission: Permissions.CONTENT_VIEW },
+      { href: '/calendar', label: 'nav.calendar', desc: 'nav.calendar.desc', icon: CalendarDays, permission: Permissions.CALENDAR_VIEW },
       { href: '/chat', label: 'nav.chat', desc: 'nav.chat.desc', icon: MessageSquare, permission: Permissions.CHAT_VIEW },
       { href: '/time', label: 'nav.time', desc: 'nav.time.desc', icon: Timer, permission: Permissions.TIME_TRACK },
     ],
@@ -80,7 +79,6 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/content', label: 'nav.content', desc: 'nav.content.desc', icon: SquarePen, permission: Permissions.CONTENT_VIEW },
       { href: '/approvals', label: 'nav.approvals', desc: 'nav.approvals.desc', icon: ShieldCheck, permission: Permissions.APPROVALS_VIEW },
-      { href: '/media', label: 'nav.media', desc: 'nav.media.desc', icon: ImageIcon, permission: Permissions.FILES_VIEW },
     ],
   },
   {

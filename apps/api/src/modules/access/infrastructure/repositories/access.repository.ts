@@ -277,7 +277,21 @@ export class AccessRepository {
         continue;
       }
       for (const scope of assignment.scopes) {
-        if (scope.scopeType === 'ORGANIZATION' || !scope.resourceId) {
+        // Unit scopes (department/team) pick a resource for assignee pools; they do not
+        // narrow client lists on their own. Only CLIENT/PROJECT/CONTENT ids restrict data.
+        if (
+          scope.scopeType === 'ORGANIZATION' ||
+          scope.scopeType === 'WORKSPACE' ||
+          scope.scopeType === 'SELF' ||
+          scope.scopeType === 'DEPARTMENT' ||
+          scope.scopeType === 'TEAM'
+        ) {
+          if (scope.scopeType === 'ORGANIZATION' || scope.scopeType === 'WORKSPACE' || scope.scopeType === 'SELF' || !scope.resourceId) {
+            orgWide = true;
+          }
+          continue;
+        }
+        if (!scope.resourceId) {
           orgWide = true;
           continue;
         }
@@ -287,7 +301,7 @@ export class AccessRepository {
       }
     }
 
-    if (orgWide) {
+    if (orgWide || (clientIds.size === 0 && projectIds.size === 0 && contentIds.size === 0)) {
       return { orgWide: true, clientIds: [], projectIds: [], contentIds: [] };
     }
 

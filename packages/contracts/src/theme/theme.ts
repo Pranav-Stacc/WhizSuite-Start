@@ -42,8 +42,21 @@ export type ThemeSettings = z.infer<typeof themeSchema>;
 export const ThemeColorKeys = ['primary', 'secondary', 'bg', 'surface', 'border', 'fg', 'muted'] as const;
 export type ThemeColorKey = (typeof ThemeColorKeys)[number];
 
-/** Editorial monochrome: off-white paper, ink text, hairline rules, square corners. */
+/** Dark monochrome — default for new sessions and orgs (quiet ink workspace). */
 export const DEFAULT_THEME: ThemeSettings = {
+  bg: '#0E0E0D',
+  surface: '#161615',
+  border: '#2E2D2A',
+  primary: '#F2F0EB',
+  secondary: '#B8B5AE',
+  fg: '#F2F0EB',
+  muted: '#8C8A85',
+  radius: 2,
+  density: 'comfortable',
+};
+
+/** Editorial monochrome: off-white paper, ink text, hairline rules, square corners. */
+const EDITORIAL_THEME: ThemeSettings = {
   bg: '#F7F6F3',
   surface: '#FFFFFF',
   border: '#D8D5CE',
@@ -55,17 +68,7 @@ export const DEFAULT_THEME: ThemeSettings = {
   density: 'comfortable',
 };
 
-const NOIR_THEME: ThemeSettings = {
-  bg: '#0E0E0D',
-  surface: '#161615',
-  border: '#2E2D2A',
-  primary: '#F2F0EB',
-  secondary: '#B8B5AE',
-  fg: '#F2F0EB',
-  muted: '#8C8A85',
-  radius: 2,
-  density: 'comfortable',
-};
+const NOIR_THEME: ThemeSettings = DEFAULT_THEME;
 
 /** The original dark, rounded look — kept as a preset. */
 const MONO_THEME: ThemeSettings = {
@@ -88,7 +91,8 @@ export interface ThemePreset {
 }
 
 export const THEME_PRESETS: ThemePreset[] = [
-  { id: 'editorial', mode: 'light', theme: DEFAULT_THEME },
+  { id: 'noir', mode: 'dark', theme: NOIR_THEME },
+  { id: 'editorial', mode: 'light', theme: EDITORIAL_THEME },
   {
     id: 'chalk',
     mode: 'light',
@@ -194,7 +198,6 @@ export const THEME_PRESETS: ThemePreset[] = [
       density: 'comfortable',
     },
   },
-  { id: 'noir', mode: 'dark', theme: NOIR_THEME },
   { id: 'mono', mode: 'dark', theme: MONO_THEME },
   {
     id: 'aurora',

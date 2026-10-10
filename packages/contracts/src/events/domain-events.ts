@@ -30,8 +30,10 @@ export const DomainEventTypes = {
   CONTENT_SCHEDULED: 'content.scheduled.v1',
   SOCIAL_POST_PUBLISHED: 'social_post.published.v1',
   SOCIAL_POST_FAILED: 'social_post.failed.v1',
+  SOCIAL_ACCOUNT_DISCONNECTED: 'social_account.disconnected.v1',
   APPROVAL_REQUESTED: 'approval.requested.v1',
   APPROVAL_COMPLETED: 'approval.completed.v1',
+  APPROVAL_REMINDER: 'approval.reminder.v1',
   FEEDBACK_CREATED: 'feedback.thread_created.v1',
   FILE_UPLOADED: 'file.uploaded.v1',
   CHAT_MESSAGE_CREATED: 'chat.message_created.v1',
@@ -40,7 +42,9 @@ export const DomainEventTypes = {
   CHAT_MEMBER_MENTIONED: 'chat.member_mentioned.v1',
   NOTIFICATION_CREATED: 'notification.created.v1',
   AUTOMATION_RUN_STARTED: 'automation.run_started.v1',
+  AUTOMATION_NOTIFY: 'automation.notify.v1',
   INVOICE_PAID: 'invoice.paid.v1',
+  INVOICE_OVERDUE: 'invoice.overdue.v1',
   AUDIT_RECORDED: 'audit.recorded.v1',
 } as const;
 

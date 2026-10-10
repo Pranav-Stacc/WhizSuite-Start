@@ -137,6 +137,8 @@ export class CalendarFeedService {
         clientId: row.clientId,
         projectId: row.projectId,
         href: null,
+        syncToGoogle: row.syncToGoogle,
+        externalEventId: row.externalEventId,
         metadata:
           row.metadata && typeof row.metadata === 'object'
             ? (row.metadata as Record<string, unknown>)

@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { isActivePath, primaryNav, secondaryGroups } from '@/shared/navigation/nav-config';
 import type { WorkspaceModule } from '@/shared/workspace/modules';
+import { ModuleLink } from '@/shared/workspace/module-link';
 import { Menu } from '@/shared/ui/overlays';
 
 /** Flat editorial navigation scoped to the active product surface (main / CRM / Finance). */
@@ -14,10 +14,12 @@ export function TopNav({
   permissions,
   badges,
   module = 'main',
+  orgSlug,
 }: {
   permissions: Permission[];
   badges: Record<string, number>;
   module?: WorkspaceModule;
+  orgSlug?: string;
 }) {
   const pathname = usePathname();
   const granted = new Set(permissions);
@@ -31,10 +33,17 @@ export function TopNav({
       {primary.map((item) => {
         const badge = badges[item.href];
         return (
-          <Link key={item.href} href={item.href} aria-current={isActivePath(pathname, item.href) ? 'page' : undefined} className="nav-link relative">
+          <ModuleLink
+            key={item.href}
+            href={item.href}
+            currentModule={module}
+            orgSlug={orgSlug}
+            aria-current={isActivePath(pathname, item.href) ? 'page' : undefined}
+            className="nav-link relative"
+          >
             {t(item.label)}
             {badge ? <sup className="ml-0.5 text-[9px] tabular-nums text-foreground">{badge}</sup> : null}
-          </Link>
+          </ModuleLink>
         );
       })}
       {secondary.length > 0 ? (
@@ -51,10 +60,16 @@ export function TopNav({
                   <Menu.Label className="px-2">{t(group.label)}</Menu.Label>
                   {group.items.map((item) => (
                     <Menu.Item key={item.href} asChild>
-                      <Link href={item.href} aria-current={isActivePath(pathname, item.href) ? 'page' : undefined} className="aria-[current=page]:underline">
+                      <ModuleLink
+                        href={item.href}
+                        currentModule={module}
+                        orgSlug={orgSlug}
+                        aria-current={isActivePath(pathname, item.href) ? 'page' : undefined}
+                        className="aria-[current=page]:underline"
+                      >
                         {t(item.label)}
                         {badges[item.href] ? <span className="ml-auto text-[11px] tabular-nums text-muted">{badges[item.href]}</span> : null}
-                      </Link>
+                      </ModuleLink>
                     </Menu.Item>
                   ))}
                 </div>

@@ -103,6 +103,13 @@ class CalendarActions {
     return item;
   }
 
+  Future<CalendarItem> createShoot(CreateShootInput input) async {
+    final item = await _repo.createShoot(input);
+    _ref.invalidate(calendarItemsProvider);
+    _ref.invalidate(calendarFeedProvider);
+    return item;
+  }
+
   Future<void> update(CalendarItem item, CalendarItemInput input) async {
     await _repo.update(item, input);
     _ref.invalidate(calendarItemsProvider);

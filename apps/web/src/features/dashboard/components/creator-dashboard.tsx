@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Clock, KanbanSquare, MessageSquare, PencilLine, Plus } from 'lucide-react';
+import { Permissions } from '@agency-os/contracts';
 import type { Session } from '@/shared/auth/session';
+import { loadIf } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatNumber, relativeTime } from '@/shared/lib/format';
 import { Badge } from '@/shared/ui/badge';
@@ -10,12 +12,14 @@ import { PlatformStack } from '@/shared/ui/platform';
 import { StatCard } from '@/shared/ui/stat-card';
 import { StatusBadge } from '@/shared/ui/status';
 import type { GuideItem } from '@/shared/ui/page-guide';
+import type { Client } from '@/features/clients/data/clients.repository';
 import { clientsById } from '@/features/clients/services/clients.service';
 import { allEvents, listContent } from '@/features/content/services/content.service';
 import { TimerCard } from '@/features/time/components/timer-card';
 import { activeTimerFor, listEntries, minutesThisWeek } from '@/features/time/services/time.service';
 import { isOverdue, listTasks } from '@/features/tasks/services/tasks.service';
 import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
 
@@ -29,13 +33,13 @@ const GUIDE: GuideItem[] = [
 
 export async function CreatorDashboard({ session }: { session: Session }) {
   const [tasks, content, events, entries, timer, byClient, byMember] = await Promise.all([
-    listTasks(),
-    listContent(),
-    allEvents(),
-    listEntries(),
-    activeTimerFor(session.userId),
-    clientsById(),
-    membersById(),
+    loadIf(Permissions.TASKS_VIEW, listTasks, []),
+    loadIf(Permissions.CONTENT_VIEW, listContent, []),
+    loadIf(Permissions.FEEDBACK_VIEW, allEvents, []),
+    loadIf(Permissions.TIME_TRACK, listEntries, []),
+    loadIf(Permissions.TIME_TRACK, () => activeTimerFor(session.userId), undefined),
+    loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
   ]);
   const me = byMember.get(session.userId);
   const mine = tasks.filter((x) => x.assigneeIds.includes(session.userId) && x.status !== 'DONE');
@@ -80,7 +84,15 @@ export async function CreatorDashboard({ session }: { session: Session }) {
           tasks={mine.map((x) => ({ id: x.id, title: x.title }))}
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-          <StatCard label={t('dashboard.kpi.hours')} value={t('common.hours', { hours: formatNumber(Math.round(weekHours * 10) / 10) })} icon={<Clock />} hint={t('dashboard.kpi.hours.hint', { capacity })} href="/time" />
+          <StatCard
+            label={t('dashboard.kpi.hours')}
+            value={t('common.hours', { hours: formatNumber(Math.round(weekHours * 10) / 10) })}
+            icon={<Clock />}
+            hint={t('dashboard.kpi.hours.hint', { capacity })}
+            href="/time"
+            workspaceModule="main"
+            orgSlug={session.orgSlug}
+          />
           <div className="card-surface flex items-center justify-between gap-4 p-5">
             <div>
               <p className="text-[13px] font-medium text-muted">{t('dashboard.myTasks.title')}</p>

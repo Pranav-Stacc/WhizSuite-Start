@@ -72,6 +72,24 @@ class AuthRepository {
   Future<Json> previewPortalAccess(String token) =>
       _api.getUnauthenticated<Json>('v1/portal-access/preview', query: {'token': token});
 
+  /// Staff/team invitation preview (public; no session required).
+  Future<Json> previewInvitation(String token) =>
+      _api.getUnauthenticated<Json>('v1/invitations/preview', query: {'token': token});
+
+  /// Accepts a staff invitation and stores the returned session tokens.
+  Future<AuthTokens> acceptInvitation({
+    required String token,
+    required String password,
+    String? firstName,
+    String? lastName,
+  }) =>
+      _authenticate('v1/invitations/redeem', {
+        'token': token,
+        'password': password,
+        if (firstName != null && firstName.isNotEmpty) 'firstName': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'lastName': lastName,
+      });
+
   Future<void> claimPortalAccess({required String password}) =>
       _api.post<Json>('v1/portal-access/claim', body: {'password': password});
 

@@ -558,18 +558,7 @@ export class InvitationsService {
   }
 
   private async join(invitation: InvitationRecord, userId: string) {
-    if (
-      await this.repository.hasActiveMembership(
-        invitation.organizationId,
-        userId,
-      )
-    ) {
-      throw invalid(
-        'Already a member of this organisation',
-        409,
-        ErrorCodes.CONFLICT,
-      );
-    }
+    // Same email may already be a client or staff member — merge roles/scopes instead of rejecting.
     const membershipType = invitation.membershipType as InvitableMembershipType;
     const chosenRoleIds = await this.roleAssignment.existingAssignableRoleIds(
       invitation.organizationId,
@@ -595,7 +584,12 @@ export class InvitationsService {
       type: DomainEventTypes.INVITATION_ACCEPTED,
       version: 1,
       organizationId: invitation.organizationId,
-      payload: { invitationId: invitation.id, membershipId: membership.id },
+      payload: {
+        invitationId: invitation.id,
+        membershipId: membership.id,
+        invitedById: invitation.invitedById,
+        title: invitation.email,
+      },
       actor: { id: userId, type: 'user' },
     });
 

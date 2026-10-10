@@ -5,6 +5,7 @@ import {
   CONTRACT_LIST_LIMIT_DEFAULT,
   ContractStatuses,
   ContractTypes,
+  DomainEventTypes,
   ErrorCodes,
   InvoiceStatuses,
   canTransitionInvoice,
@@ -29,10 +30,12 @@ import {
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
+import { OutboxService } from '../../../../shared/events/outbox.service';
 import { StorageService } from '../../../../shared/storage/storage.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { ClientsService } from '../../../clients/application/services/clients.service';
+import { MembersService } from '../../../identity/application/services/members.service';
 import {
   FinanceRepository,
   type InvoiceAmounts,
@@ -53,6 +56,8 @@ export class FinanceService {
   constructor(
     private readonly repository: FinanceRepository,
     private readonly clients: ClientsService,
+    private readonly members: MembersService,
+    private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly config: ConfigService<AppConfig, true>,
@@ -357,6 +362,23 @@ export class FinanceService {
     const dto = toInvoiceDto(
       await this.repository.update(organizationId, id, change, payment),
     );
+    if (change.status === 'PAID') {
+      const members = await this.members.list(organizationId);
+      const recipientIds = members
+        .filter((m) => m.membershipType !== 'CLIENT')
+        .map((m) => m.id);
+      await this.outbox.write({
+        type: DomainEventTypes.INVOICE_PAID,
+        version: 1,
+        organizationId,
+        payload: {
+          invoiceId: dto.id,
+          title: dto.number,
+          recipientIds,
+        },
+        actor: { id: actorId, type: 'user' },
+      });
+    }
     await this.audit.record({
       organizationId,
       actorId,

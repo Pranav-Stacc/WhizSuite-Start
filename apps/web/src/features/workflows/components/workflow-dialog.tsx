@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import {
   ApprovalStepRules,
   MIN_WORKFLOW_STAGES,
-  RoleKinds,
   type AccessRoleSummary,
   type ApprovalStepRule,
 } from '@agency-os/contracts';
@@ -24,7 +23,7 @@ import type { Workflow, WorkflowStage } from '../data/workflows.repository';
 
 interface WorkflowDialogProps {
   workflow?: Workflow;
-  /** Roles available as stage assignee pools (workflow + custom access roles). */
+  /** Roles available as stage assignee pools (any access role except owner). */
   workflowRoles: AccessRoleSummary[];
   /** Active team members that can be named as individual approvers. */
   members?: Member[];
@@ -86,14 +85,11 @@ export function WorkflowDialog({
   const [slaHours, setSlaHours] = useState(String(workflow?.slaHours ?? 48));
   const [requiresClientApproval, setRequiresClientApproval] = useState(workflow?.requiresClientApproval ?? true);
   const [stages, setStages] = useState<DraftStage[]>(() =>
-    workflow ? toDraft(workflow.stages) : [emptyStage(), emptyStage()],
+    workflow ? toDraft(workflow.stages) : [emptyStage()],
   );
   const [pending, startTransition] = useTransition();
 
-  const roleOptions = useMemo(
-    () => workflowRoles.filter((role) => role.kind === RoleKinds.WORKFLOW || !role.isSystem),
-    [workflowRoles],
-  );
+  const roleOptions = workflowRoles;
   const people = useMemo(
     () => members.filter((member) => member.status === 'ACTIVE'),
     [members],
@@ -107,7 +103,14 @@ export function WorkflowDialog({
     setName(workflow?.name ?? '');
     setSlaHours(String(workflow?.slaHours ?? 48));
     setRequiresClientApproval(workflow?.requiresClientApproval ?? true);
-    setStages(workflow ? toDraft(workflow.stages) : [emptyStage(), emptyStage()]);
+    setStages(workflow ? toDraft(workflow.stages) : [emptyStage()]);
+  };
+
+  const removeStage = (index: number) => {
+    setStages((prev) => {
+      if (prev.length <= MIN_WORKFLOW_STAGES) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const updateStage = (index: number, patch: Partial<DraftStage>) => {
@@ -184,7 +187,7 @@ export function WorkflowDialog({
             <p className="mb-2 text-xs text-muted">{t('workflows.field.stages.hint')}</p>
             <ul className="space-y-3">
               {stages.map((stage, index) => (
-                <li key={index} className="space-y-3 rounded-xl border border-border-soft p-3">
+                <li key={`stage-${index}-${stage.name}`} className="space-y-3 rounded-xl border border-border-soft p-3">
                   <div className="flex items-start gap-2">
                     <Field label={t('workflows.stages.name')} htmlFor={`wf-stage-${index}`} className="min-w-0 flex-1">
                       <Input
@@ -200,10 +203,15 @@ export function WorkflowDialog({
                         variant="ghost"
                         size="sm"
                         disabled={stages.length <= MIN_WORKFLOW_STAGES}
-                        onClick={() => setStages((prev) => prev.filter((_, i) => i !== index))}
+                        onClick={() => removeStage(index)}
                         aria-label={t('workflows.stages.remove')}
+                        title={
+                          stages.length <= MIN_WORKFLOW_STAGES
+                            ? t('workflows.stages.remove.blocked')
+                            : t('workflows.stages.remove')
+                        }
                       >
-                        <Trash2 className="size-4" />
+                        <Trash2 className="size-4 text-danger" />
                       </Button>
                     </div>
                   </div>
@@ -268,7 +276,7 @@ export function WorkflowDialog({
                               />
                               <span className="min-w-0 flex-1 truncate">
                                 {role.name}
-                                {role.kind === RoleKinds.WORKFLOW ? ` · ${t('roles.kind.workflow')}` : ''}
+                                {role.isSystem ? ` · ${t('roles.system')}` : ''}
                               </span>
                             </label>
                           </li>

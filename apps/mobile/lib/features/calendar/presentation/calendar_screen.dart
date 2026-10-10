@@ -23,11 +23,14 @@ import 'calendar_entry_sheet.dart';
 import 'calendar_form.dart';
 import 'calendar_source.dart';
 import 'month_grid.dart';
+import 'plan_shoot_sheet.dart';
 
 enum _CalendarMode { month, upcoming }
 
 class CalendarScreen extends ConsumerStatefulWidget {
-  const CalendarScreen({super.key});
+  const CalendarScreen({super.key, this.initialClientId});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
@@ -40,12 +43,62 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _month = monthOf(DateTime.now());
   late DateTime _selected = dayOf(DateTime.now());
   _CalendarMode _mode = _CalendarMode.month;
-  CalendarFilter _filter = const CalendarFilter();
+  late CalendarFilter _filter = CalendarFilter(
+    clientId: widget.initialClientId != null && widget.initialClientId!.isNotEmpty
+        ? widget.initialClientId
+        : null,
+  );
 
-  Future<void> _create() async {
+  Future<void> _createEvent() async {
     final l10n = AppLocalizations.of(context);
     final created = await showCalendarItemForm(context, ref, day: _selected);
     if (created && mounted) showToast(context, l10n.createdToast);
+  }
+
+  Future<void> _planShoot() async {
+    final l10n = AppLocalizations.of(context);
+    final created = await showPlanShootSheet(
+      context,
+      ref,
+      day: _selected,
+      clientId: _filter.clientId,
+    );
+    if (created && mounted) showToast(context, l10n.createdToast);
+  }
+
+  Future<void> _pickCreateAction() async {
+    final l10n = AppLocalizations.of(context);
+    final choice = await showModalBottomSheet<_CreateChoice>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event_outlined),
+              title: Text(l10n.calendarNew),
+              subtitle: Text(l10n.calendarNewEventHint),
+              onTap: () => Navigator.pop(context, _CreateChoice.event),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: Text(l10n.calendarPlanShoot),
+              subtitle: Text(l10n.calendarPlanShootHint),
+              onTap: () => Navigator.pop(context, _CreateChoice.shoot),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    switch (choice) {
+      case _CreateChoice.event:
+        await _createEvent();
+      case _CreateChoice.shoot:
+        await _planShoot();
+    }
   }
 
   Future<void> _refresh() async {
@@ -79,7 +132,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final feed = ref.watch(calendarFeedProvider);
     final createButton = PermissionGate(
       anyOf: const [Permissions.projectsCreate],
-      child: CreateFab(label: l10n.calendarNew, onPressed: _create),
+      child: CreateFab(label: l10n.calendarCreate, onPressed: _pickCreateAction),
     );
 
     return PageScaffold(
@@ -101,12 +154,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           onShiftMonth: _shiftMonth,
           onToday: _goToday,
           onOpen: (entry) => showCalendarEntrySheet(context, entry),
-          onCreate: _create,
+          onCreate: _pickCreateAction,
         ),
       ),
     );
   }
 }
+
+enum _CreateChoice { event, shoot }
 
 class _CalendarBody extends ConsumerWidget {
   const _CalendarBody({

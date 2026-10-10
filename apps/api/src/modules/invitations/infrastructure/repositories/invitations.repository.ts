@@ -58,6 +58,24 @@ export function scopeOf(
   return typeof clientId === 'string' ? { clientId } : {};
 }
 
+/** Staff types outrank CLIENT so dual client+member access keeps agency capabilities. */
+const MEMBERSHIP_RANK: Record<string, number> = {
+  OWNER: 4,
+  ADMIN: 3,
+  MEMBER: 2,
+  CLIENT: 1,
+};
+
+function preferMembershipType(
+  current: string | undefined,
+  incoming: string,
+): string {
+  if (!current) return incoming;
+  return (MEMBERSHIP_RANK[incoming] ?? 0) >= (MEMBERSHIP_RANK[current] ?? 0)
+    ? incoming
+    : current;
+}
+
 @Injectable()
 export class InvitationsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -165,6 +183,11 @@ export class InvitationsRepository {
     return this.prisma.$transaction((tx) => this.upsertMembershipRoles(tx, input));
   }
 
+  /**
+   * Creates or updates membership for an email-linked user.
+   * When the same person is invited as client and as staff, roles/scopes merge so
+   * they keep both portal and agency access instead of replacing one with the other.
+   */
   private async upsertMembershipRoles(
     tx: Prisma.TransactionClient,
     input: {
@@ -183,6 +206,20 @@ export class InvitationsRepository {
     const expiresAt =
       input.expiresAt === undefined ? undefined : input.expiresAt;
 
+    const existing = await tx.organizationMembership.findUnique({
+      where: {
+        organizationId_userId: { organizationId, userId: input.userId },
+      },
+      include: {
+        roleAssignments: { include: { scopes: true } },
+      },
+    });
+
+    const nextType = preferMembershipType(
+      existing?.type,
+      input.membershipType,
+    );
+
     const membership = await tx.organizationMembership.upsert({
       where: {
         organizationId_userId: { organizationId, userId: input.userId },
@@ -190,21 +227,52 @@ export class InvitationsRepository {
       create: {
         organizationId,
         userId: input.userId,
-        type: input.membershipType,
+        type: nextType,
         status: MEMBERSHIP_ACTIVE,
         ...(expiresAt !== undefined ? { expiresAt } : {}),
       },
       update: {
-        type: input.membershipType,
+        type: nextType,
         status: MEMBERSHIP_ACTIVE,
-        ...(expiresAt !== undefined ? { expiresAt } : {}),
+        // Staff memberships are indefinite; only portal temp links set expiry.
+        ...(expiresAt !== undefined
+          ? { expiresAt: nextType === 'CLIENT' ? expiresAt : null }
+          : nextType !== 'CLIENT'
+            ? { expiresAt: null }
+            : {}),
       },
     });
-    await tx.roleAssignment.deleteMany({
-      where: { organizationId, membershipId: membership.id },
-    });
+
+    const existingRoleIds = new Set(
+      (existing?.roleAssignments ?? []).map((row) => row.roleId),
+    );
 
     for (const roleId of input.roleIds) {
+      if (existingRoleIds.has(roleId)) {
+        // Keep prior assignment; if this invite adds a client scope, attach it.
+        if (input.clientId) {
+          const assignment = existing?.roleAssignments.find(
+            (row) => row.roleId === roleId,
+          );
+          if (
+            assignment &&
+            !assignment.scopes.some(
+              (s) =>
+                s.scopeType === 'CLIENT' && s.resourceId === input.clientId,
+            )
+          ) {
+            await tx.roleAssignmentScope.create({
+              data: {
+                organizationId,
+                roleAssignmentId: assignment.id,
+                scopeType: 'CLIENT',
+                resourceId: input.clientId,
+              },
+            });
+          }
+        }
+        continue;
+      }
       await tx.roleAssignment.create({
         data: {
           organizationId,

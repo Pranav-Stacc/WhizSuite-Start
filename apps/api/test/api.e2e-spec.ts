@@ -104,10 +104,20 @@ describe('Agency OS API (e2e)', () => {
 
   it('GET /api/v1/access/capabilities', async () => {
     if (skipIfNoDb()) return;
-    await request(app.getHttpServer())
+    const res = await request(app.getHttpServer())
       .get('/api/v1/access/capabilities')
       .set(auth())
       .expect(200);
+    expect(Array.isArray(res.body.permissions)).toBe(true);
+    expect(res.body.permissions).toEqual(
+      expect.arrayContaining([
+        'content.view',
+        'calendar.view',
+        'calendar.create',
+        'calendar.edit',
+        'calendar.sync',
+      ]),
+    );
   });
 
   it('GET /api/v1/organizations/current', async () => {
@@ -500,16 +510,51 @@ describe('Agency OS API (e2e)', () => {
       .send({ name: 'Updated Template' })
       .expect(200);
 
-    await request(app.getHttpServer())
+    const calendarItem = await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/calendar/items`)
       .set(auth())
       .send({
-        sourceType: 'CONTENT',
-        sourceId: contentId,
+        sourceType: 'MANUAL',
         title: 'Publish day',
         startsAt: new Date().toISOString(),
+        clientId,
+        syncToGoogle: false,
       })
       .expect(201);
+    expect(calendarItem.body.syncToGoogle).toBe(false);
+
+    const feed = await request(app.getHttpServer())
+      .get(`/api/v1/organizations/${organizationId}/calendar/feed`)
+      .query({
+        from: new Date(Date.now() - 86_400_000).toISOString(),
+        to: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .set(auth())
+      .expect(200);
+    expect(Array.isArray(feed.body)).toBe(true);
+    expect(
+      feed.body.some(
+        (row: { title?: string }) => row.title === 'Publish day',
+      ),
+    ).toBe(true);
+
+    const gcal = await request(app.getHttpServer())
+      .get(`/api/v1/organizations/${organizationId}/calendar/google`)
+      .set(auth())
+      .expect(200);
+    expect(gcal.body).toMatchObject({
+      externalCalendarId: 'primary',
+      defaultSyncNewEvents: false,
+    });
+    expect(['DISABLED', 'AVAILABLE', 'CONNECTED', 'DISCONNECTED', 'PENDING', 'ERROR']).toContain(
+      gcal.body.status,
+    );
+
+    await request(app.getHttpServer())
+      .patch(`/api/v1/organizations/${organizationId}/calendar/items/${calendarItem.body.id}`)
+      .set(auth())
+      .send({ syncToGoogle: true })
+      .expect(200);
 
     await request(app.getHttpServer())
       .post(`/api/v1/organizations/${organizationId}/activity`)

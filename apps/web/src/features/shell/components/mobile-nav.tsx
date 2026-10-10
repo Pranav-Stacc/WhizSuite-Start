@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LayoutGrid, Menu as MenuIcon } from 'lucide-react';
@@ -9,6 +8,7 @@ import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { HOME_ITEM, allowedGroups, isActivePath, primaryNav } from '@/shared/navigation/nav-config';
 import { homePathForModule, type WorkspaceModule } from '@/shared/workspace/modules';
+import { ModuleLink } from '@/shared/workspace/module-link';
 import { Button } from '@/shared/ui/button';
 import { Sheet } from '@/shared/ui/overlays';
 
@@ -21,10 +21,12 @@ export function MobileMenu({
   permissions,
   badges,
   module = 'main',
+  orgSlug,
 }: {
   permissions: Permission[];
   badges: Badges;
   module?: WorkspaceModule;
+  orgSlug?: string;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -45,10 +47,16 @@ export function MobileMenu({
       </Button>
       <Sheet open={open} onOpenChange={setOpen} title={t('shell.menu')} width="max-w-sm">
         <nav className="space-y-6" aria-label={t('shell.menu')}>
-          <Link href={homeHref} onClick={() => setOpen(false)} className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground">
+          <ModuleLink
+            href={homeHref}
+            currentModule={module}
+            orgSlug={orgSlug}
+            onClick={() => setOpen(false)}
+            className="nav-link flex items-center gap-3 border-b border-border-soft pb-3 !text-foreground"
+          >
             <HomeIcon className="size-3.5" />
             {t(HOME_ITEM.label)}
-          </Link>
+          </ModuleLink>
           {groups.map((group) => (
             <section key={group.id}>
               <h3 className="eyebrow mb-2 px-1">{t(group.label)}</h3>
@@ -58,8 +66,10 @@ export function MobileMenu({
                   const badge = badges[item.href];
                   return (
                     <li key={item.href}>
-                      <Link
+                      <ModuleLink
                         href={item.href}
+                        currentModule={module}
+                        orgSlug={orgSlug}
                         onClick={() => setOpen(false)}
                         className={cn(
                           'flex items-center gap-2.5 bg-surface px-3 py-3 text-[13px] transition-colors',
@@ -69,7 +79,7 @@ export function MobileMenu({
                         <Icon className="size-3.5 shrink-0" />
                         <span className="truncate">{t(item.label)}</span>
                         {badge ? <span className="ml-auto text-[11px] tabular-nums text-foreground">{badge}</span> : null}
-                      </Link>
+                      </ModuleLink>
                     </li>
                   );
                 })}
@@ -87,10 +97,12 @@ export function MobileDock({
   permissions,
   badges,
   module = 'main',
+  orgSlug,
 }: {
   permissions: Permission[];
   badges: Badges;
   module?: WorkspaceModule;
+  orgSlug?: string;
 }) {
   const pathname = usePathname();
   const dock = primaryNav(new Set(permissions), module).slice(0, 4);
@@ -102,15 +114,20 @@ export function MobileDock({
           const active = isActivePath(pathname, item.href);
           return (
             <li key={item.href} className="flex-1">
-              <Link
+              <ModuleLink
                 href={item.href}
+                currentModule={module}
+                orgSlug={orgSlug}
                 aria-current={active ? 'page' : undefined}
-                className={cn('relative flex flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] transition-colors', active ? 'text-foreground' : 'text-muted')}
+                className={cn(
+                  'relative flex flex-col items-center gap-1 py-2 text-[9.5px] font-medium uppercase tracking-[0.12em] transition-colors',
+                  active ? 'text-foreground' : 'text-muted',
+                )}
               >
                 <Icon className="size-4" />
                 {t(item.label)}
                 {badges[item.href] ? <span className="absolute right-3 top-1.5 size-1.5 rounded-full bg-foreground" /> : null}
-              </Link>
+              </ModuleLink>
             </li>
           );
         })}

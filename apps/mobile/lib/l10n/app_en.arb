@@ -41,6 +41,37 @@
   "authHeroEyebrow": "WhizSuite",
   "authHeroTitle": "Every client, post and invoice in one calm cockpit.",
   "authSignedOut": "You have been signed out.",
+  "authInviteTitle": "Join {organization}",
+  "@authInviteTitle": {
+    "placeholders": {
+      "organization": {
+        "type": "String"
+      }
+    }
+  },
+  "authInviteSubtitle": "You were invited as {email}.",
+  "@authInviteSubtitle": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authInviteSubtitleExisting": "Accept as {email}.",
+  "@authInviteSubtitleExisting": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvitePassword": "Your password",
+  "authInviteSetPasswordHint": "Choose a password (12+ characters) to join.",
+  "authInviteSubmit": "Accept invitation",
+  "authInviteInvalid": "This invitation link is invalid, already used or expired. Ask the sender for a new one.",
+  "authInviteInvalidTitle": "Invitation unavailable",
+  "authInviteWrongPassword": "That password does not match the existing account for this email.",
+  "authInviteAlreadyMember": "This account is already a member of the workspace. Sign in instead.",
   "validationRequired": "Required",
   "validationEmail": "Enter a valid email address",
   "validationMinLength": "Use at least {min} characters",
@@ -136,6 +167,16 @@
   "details": "Details",
   "savedToast": "Saved",
   "createdToast": "Created",
+  "quickCreateTitle": "Create",
+  "quickCreateSubtitle": "Start something new without leaving your flow.",
+  "quickCreateEmpty": "You don't have permission to create anything yet.",
+  "quickCreateTask": "New task",
+  "quickCreateContent": "New post",
+  "quickCreateProject": "New project",
+  "quickCreateClient": "New client",
+  "quickCreateLead": "New lead",
+  "quickCreateInvoice": "New invoice",
+  "quickCreateShoot": "Plan shoot",
   "deletedToast": "Deleted",
   "deleteConfirmTitle": "Delete {name}?",
   "@deleteConfirmTitle": {
@@ -906,6 +947,23 @@
     }
   },
   "calendarNew": "New event",
+  "calendarCreate": "Create",
+  "calendarNewEventHint": "Meeting, deadline or manual block",
+  "calendarPlanShoot": "Plan shoot",
+  "calendarPlanShootHint": "Shoot day with folders and tasks",
+  "calendarShootHeading": "Plan a shoot",
+  "calendarShootDesc": "Schedule a shoot day, optionally create media folders and checklist tasks.",
+  "calendarShootSubmit": "Plan shoot",
+  "calendarShootTitle": "Shoot title",
+  "calendarShootTitleHint": "e.g. Spring campaign on-location",
+  "calendarShootClient": "Client",
+  "calendarShootProject": "Project",
+  "calendarShootStarts": "Starts",
+  "calendarShootEnds": "Ends",
+  "calendarShootCreateFolders": "Create media folders",
+  "calendarShootCreateFoldersHint": "Raw / Selects / Finals / Deliverables under Shoots",
+  "calendarShootTasks": "Checklist tasks",
+  "calendarShootTasksHint": "One task per line (needs a project)",
   "calendarEdit": "Edit event",
   "calendarTitleLabel": "Title",
   "calendarTitleHint": "e.g. Campaign kickoff call",
@@ -1005,6 +1063,43 @@
   "clientManageIntegrations": "Integrations",
   "clientManageIntegrationsBody": "Connected accounts",
   "clientManageCompose": "New post",
+  "clientManageAgreements": "Agreements",
+  "clientManageAgreementsBody": "Contracts, NDAs and signatures",
+  "clientManageGrid": "Content grid",
+  "clientManageGridBody": "Instagram-style feed planner",
+  "clientTabAgreements": "Agreements",
+  "agreementsEmptyTitle": "No agreements yet",
+  "agreementsEmptyBody": "Create an NDA, MSA or SOW and upload the signed PDF when ready.",
+  "agreementsNew": "New agreement",
+  "agreementsNewHint": "Start a draft contract for this client. You can upload a PDF and collect a signature next.",
+  "agreementsTitleLabel": "Title",
+  "agreementsTypeLabel": "Type",
+  "agreementsTypeNda": "NDA",
+  "agreementsTypeMsa": "MSA",
+  "agreementsTypeSow": "SOW",
+  "agreementsTypeOther": "Other",
+  "agreementsStart": "Start date",
+  "agreementsEnd": "End date",
+  "agreementsStatTotal": "Total",
+  "agreementsStatSigned": "Signed",
+  "agreementsStatDraft": "Drafts",
+  "agreementsDownload": "Download",
+  "agreementsDownloadStarted": "Opening agreement…",
+  "agreementsUploadPdf": "Upload PDF",
+  "agreementsPdfUploaded": "PDF uploaded",
+  "agreementsSign": "Sign",
+  "agreementsSignTitle": "Sign agreement",
+  "agreementsSignHint": "Type your full legal name to sign. A snapshot of the PDF is locked at signing time.",
+  "agreementsSignerName": "Full name",
+  "agreementsMarkSigned": "Mark signed",
+  "agreementsSignedToast": "Agreement signed",
+  "agreementsCreatedToast": "Agreement created",
+  "agreementsStatusDraft": "Draft",
+  "agreementsStatusSent": "Sent",
+  "agreementsStatusSigned": "Signed",
+  "agreementsStatusActive": "Active",
+  "agreementsStatusExpired": "Expired",
+  "agreementsStatusVoid": "Void",
   "clientProjectsEmpty": "No projects for this client yet.",
   "clientBrandColours": "Colours",
   "clientBrandEdit": "Edit brand kit",
@@ -2707,6 +2802,8 @@
   "portalQuickInvoices": "Open invoices",
   "portalQuickMessage": "Message agency",
   "portalQuickProjects": "View projects",
+  "portalQuickFiles": "Open files",
+  "portalQuickReports": "View reports",
   "portalKpiAria": "Portal summary",
   "portalKpiRetry": "Couldn't load · tap to retry",
   "portalKpiApprovals": "Awaiting your review",
@@ -2760,6 +2857,23 @@
   "portalContentTitle": "Recent content",
   "portalContentEmpty": "No published or scheduled posts to show yet.",
   "portalContentCta": "Browse content",
+  "portalKpiFiles": "Shared files",
+  "portalKpiFilesCaption": "{count, plural, =0{Nothing shared yet} =1{1 file} other{{count} files}}",
+  "@portalKpiFilesCaption": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "portalKpiReports": "Reach (30 days)",
+  "portalKpiReportsCaption": "Across your connected channels",
+  "portalFilesTitle": "Files",
+  "portalFilesEmpty": "No files have been shared with you yet.",
+  "portalFilesCta": "Browse files",
+  "portalReportsTitle": "Reports",
+  "portalReportsEmpty": "No reports are ready yet.",
+  "portalReportsCta": "View reports",
   "portalContentStatus": "{status, select, DRAFT{Draft} IN_REVIEW{In review} CHANGES_REQUESTED{Changes requested} APPROVED{Approved} SCHEDULED{Scheduled} PUBLISHED{Published} other{{status}}}",
   "@portalContentStatus": {
     "placeholders": {
@@ -3435,7 +3549,7 @@
     }
   },
   "taskNoProjects": "No projects yet — you can still create an inbox task.",
-  "navTeam": "Team",
+  "navTeam": "Agency",
   "teamTabMembers": "Members",
   "teamTabInvitations": "Invitations",
   "teamSearch": "Search people, emails or roles",
@@ -3919,7 +4033,7 @@
       }
     }
   },
-  "workflowStagesTooFew": "Add at least {min} stages",
+  "workflowStagesTooFew": "Add at least {min} stage(s)",
   "@workflowStagesTooFew": {
     "placeholders": {
       "min": {

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CalendarDays, CheckCircle2, Clock, ImageIcon, Pencil, Plus, Wallet } from 'lucide-react';
 import { can, getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { getSession } from '@/shared/auth/session';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatDate, formatMoney, formatNumber } from '@/shared/lib/format';
@@ -46,6 +47,7 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const project = await getProject(id);
   if (!project) notFound();
+  const session = await getSession();
 
   const [allClients, tasks, entries, content, members, assets] = await Promise.all([
     loadIf(Permissions.CLIENTS_VIEW, listClients, []),
@@ -122,7 +124,14 @@ export default async function ProjectDetailPage({ params, searchParams }: PagePr
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={t('projects.stat.progress')} value={<span>{progress}%</span>} icon={<CheckCircle2 />} hint={t('projects.progress', { done: doneCount, total: projectTasks.length })} />
-        <StatCard label={t('projects.stat.logged')} value={t('common.hours', { hours: formatNumber(Math.round(loggedHours * 10) / 10) })} icon={<Clock />} href="/time" />
+        <StatCard
+          label={t('projects.stat.logged')}
+          value={t('common.hours', { hours: formatNumber(Math.round(loggedHours * 10) / 10) })}
+          icon={<Clock />}
+          href="/time"
+          workspaceModule="main"
+          orgSlug={session?.orgSlug}
+        />
         <StatCard label={t('projects.stat.budget')} value={<span>{formatMoney(project.budgetMinor, undefined, true)}</span>} icon={<Wallet />} />
         <StatCard
           label={t('projects.timeline')}

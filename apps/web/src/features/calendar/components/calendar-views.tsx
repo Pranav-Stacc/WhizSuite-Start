@@ -82,7 +82,7 @@ function ItemChip({ item }: { item: CalendarItem }) {
     <Link
       href={item.href}
       title={`${kindLabel(item.kind)}: ${item.title}${item.platforms?.length ? ` · ${item.platforms.join(', ')}` : ''}`}
-      className="flex items-center gap-1.5 truncate border-l-2 bg-surface px-1.5 py-1 text-[11px] leading-tight transition-colors hover:bg-surface-2"
+      className="relative z-10 flex items-center gap-1.5 truncate border-l-2 bg-surface px-1.5 py-1 text-[11px] leading-tight transition-colors hover:bg-surface-2"
       style={{ borderLeftColor: item.clientColor || 'var(--border)' }}
     >
       {thumb ? (
@@ -103,9 +103,12 @@ interface MonthGridProps {
   month: number;
   itemsByDay: Map<string, CalendarItem[]>;
   weekdayLabels: string[];
+  /** When set, day cells open this href (e.g. `?day=YYYY-MM-DD`). */
+  dayHref?: (dateKey: string) => string;
+  selectedDay?: string;
 }
 
-export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridProps) {
+export function MonthGrid({ days, month, itemsByDay, weekdayLabels, dayHref, selectedDay }: MonthGridProps) {
   const todayKey = toDateKey(new Date());
   return (
     <div className="overflow-x-auto border border-border bg-surface">
@@ -122,10 +125,27 @@ export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridP
             const key = toDateKey(day);
             const items = itemsByDay.get(key) ?? [];
             const inMonth = day.getMonth() === month;
-            return (
-              <div key={key} className={cn('min-h-36 border-b border-r border-border-soft p-2 [&:nth-child(7n)]:border-r-0', !inMonth && 'bg-background/60')}>
+            const selected = selectedDay === key;
+            const cellClass = cn(
+              'relative min-h-36 border-b border-r border-border-soft p-2 transition-colors [&:nth-child(7n)]:border-r-0',
+              !inMonth && 'bg-background/60',
+              dayHref && 'hover:bg-surface-2/80',
+              selected && 'ring-1 ring-inset ring-foreground/40',
+            );
+
+            const body = (
+              <>
                 <div className="mb-1.5 flex items-baseline justify-between gap-1">
-                  <p className={cn('inline-block px-0.5 text-[12px] tabular-nums', key === todayKey ? 'border-b border-foreground text-foreground' : inMonth ? 'text-foreground' : 'text-muted/50')}>
+                  <p
+                    className={cn(
+                      'inline-block px-0.5 text-[12px] tabular-nums',
+                      key === todayKey
+                        ? 'border-b border-foreground text-foreground'
+                        : inMonth
+                          ? 'text-foreground'
+                          : 'text-muted/50',
+                    )}
+                  >
                     {day.getDate()}
                   </p>
                   {items.length > 1 ? (
@@ -141,7 +161,25 @@ export function MonthGrid({ days, month, itemsByDay, weekdayLabels }: MonthGridP
                     </li>
                   ))}
                 </ul>
-                {items.length > MAX_CHIPS_PER_DAY ? <p className="mt-1 px-1 text-[11px] text-muted">{t('calendar.more', { count: items.length - MAX_CHIPS_PER_DAY })}</p> : null}
+                {items.length > MAX_CHIPS_PER_DAY ? (
+                  <p className="mt-1 px-1 text-[11px] text-muted">{t('calendar.more', { count: items.length - MAX_CHIPS_PER_DAY })}</p>
+                ) : null}
+              </>
+            );
+
+            return (
+              <div key={key} className={cellClass}>
+                {dayHref ? (
+                  <Link
+                    href={dayHref(key)}
+                    className="absolute inset-0 z-0"
+                    aria-label={t('calendar.day.open', {
+                      date: formatDate(key, { weekday: 'long', day: 'numeric', month: 'long' }),
+                    })}
+                    aria-current={selected ? 'date' : undefined}
+                  />
+                ) : null}
+                <div className="relative z-10">{body}</div>
               </div>
             );
           })}

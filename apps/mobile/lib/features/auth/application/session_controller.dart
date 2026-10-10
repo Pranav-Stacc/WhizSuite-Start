@@ -62,6 +62,21 @@ class SessionController extends AsyncNotifier<Session?> {
             ),
       );
 
+  Future<void> acceptInvitation({
+    required String token,
+    required String password,
+    String? firstName,
+    String? lastName,
+  }) =>
+      _authenticate(
+        () => ref.read(authRepositoryProvider).acceptInvitation(
+              token: token,
+              password: password,
+              firstName: firstName,
+              lastName: lastName,
+            ),
+      );
+
   Future<void> signOut() async {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);

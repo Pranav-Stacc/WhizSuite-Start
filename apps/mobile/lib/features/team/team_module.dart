@@ -9,12 +9,13 @@ final teamModule = FeatureModule(
   destinations: [
     AppDestination(
       path: TeamRoutes.root,
-      icon: Icons.groups_outlined,
-      selectedIcon: Icons.groups,
+      icon: Icons.apartment_outlined,
+      selectedIcon: Icons.apartment,
       label: (l10n) => l10n.navTeam,
       anyOf: const [Permissions.membersView],
       audiences: staffOnly,
       group: NavGroup.agency,
+      primary: true,
     ),
   ],
   routes: [destinationRoute(TeamRoutes.root, (_) => const TeamScreen())],

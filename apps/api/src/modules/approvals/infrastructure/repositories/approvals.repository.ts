@@ -51,6 +51,27 @@ export class ApprovalsRepository {
     });
   }
 
+  /**
+   * Pending approvals that need a reminder: past dueAt, or created before `staleBefore`
+   * when dueAt is null. Cross-org — used by the reminder scanner.
+   */
+  listPendingNeedingReminder(staleBefore: Date, limit: number) {
+    return this.prisma.approvalRequest.findMany({
+      where: {
+        status: 'PENDING',
+        OR: [
+          { dueAt: { lte: new Date() } },
+          { dueAt: null, createdAt: { lte: staleBefore } },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+      include: {
+        steps: { orderBy: { order: 'asc' } },
+      },
+    });
+  }
+
   /** Pending requests whose due (or created) date falls in range — calendar feed. */
   listPendingInRange(
     organizationId: string,

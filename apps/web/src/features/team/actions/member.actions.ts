@@ -6,8 +6,11 @@ import {
   createPortalAccessLinkSchema,
   inviteMemberSchema,
   invitePortalUserSchema,
+  RoleKinds,
+  isPermission,
   type AccessRoleSummary,
   type MembershipType,
+  type Permission,
   Permissions,
 } from '@agency-os/contracts';
 import { authorize } from '@/shared/auth/permissions';
@@ -27,12 +30,23 @@ import {
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
 import { demoSystemRole, isOwnerRole } from '@/features/roles/config';
+import { rolesRepository } from '@/features/roles/data/roles.repository';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
-import { ASSIGNABLE_ROLES, DEFAULT_WEEKLY_CAPACITY_HOURS, ROLE_FOR_MEMBERSHIP } from '../config';
+import {
+  ASSIGNABLE_ROLES,
+  DEFAULT_WEEKLY_CAPACITY_HOURS,
+  PERSONAL_ACCESS_PREFIX,
+  ROLE_FOR_MEMBERSHIP,
+} from '../config';
 import { membersRepository, type MemberRole } from '../data/members.repository';
 import { listMembers, membersById } from '../services/members.service';
 
 const CLIENT_MEMBERSHIP: MembershipType = 'CLIENT';
+
+function personalRoleName(memberName: string): string {
+  const trimmed = memberName.trim() || 'member';
+  return `${PERSONAL_ACCESS_PREFIX}${trimmed}`.slice(0, 60);
+}
 
 
 function membershipFor(role: MemberRole): MembershipType | undefined {
@@ -60,7 +74,13 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult<For
     const customRoles = await resolveAssignableRoles(roleIds);
     if (!customRoles) return fail(t('team.roles.invalid'), { roleIds: 'team.roles.invalid' });
     const normalized = email.toLowerCase();
-    if ((await listMembers()).some((m) => m.email.toLowerCase() === normalized)) return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
+    // Same email may already be a portal client — staff invite merges access on accept.
+    if (
+      membershipType !== CLIENT_MEMBERSHIP &&
+      (await listMembers()).some((m) => m.email.toLowerCase() === normalized)
+    ) {
+      return fail(t('team.invite.duplicate'), { email: 'team.invite.duplicate' });
+    }
 
     let memberId: string;
     let shareLink: string | undefined;
@@ -213,5 +233,78 @@ export async function removeMemberAction(id: string): Promise<ActionResult> {
     });
     await refreshData('team', 'tasks');
     return succeed(undefined, invited ? t('team.invite.revoked') : t('team.removed'));
+  });
+}
+
+/**
+ * Creates/updates a personal extras role for the member and assigns it alongside their other roles.
+ * Locked (role-granted) permissions are left alone; only the extras set is rewritten.
+ */
+export async function syncMemberExtraPermissionsAction(
+  id: string,
+  raw: { memberName: string; roleIds: string[]; permissionKeys: string[] },
+): Promise<ActionResult> {
+  return guarded(async () => {
+    const session = await authorize(Permissions.ROLES_MANAGE);
+    const before = (await membersById()).get(id);
+    if (!before || before.status === 'INVITED') return fail(t('toast.failed'));
+    if (before.role === UserRoles.OWNER || before.id === session.userId) return fail(t('team.role.protected'));
+
+    const permissionKeys = [...new Set(raw.permissionKeys)].filter(isPermission) as Permission[];
+    const name = personalRoleName(raw.memberName);
+    const allRoles = await listRoles();
+    let personal = allRoles.find((role) => !role.isSystem && role.name === name);
+
+    if (permissionKeys.length === 0) {
+      const keepIds = raw.roleIds.filter((roleId) => roleId !== personal?.id);
+      const roles = await resolveAssignableRoles(keepIds);
+      if (!roles) return fail(t('team.roles.invalid'));
+      if (isLiveMode) await assignMemberRoles(id, roles.map((role) => role.id));
+      else await membersRepository.update(id, { roles });
+      if (personal && personal.memberCount <= 1) {
+        try {
+          await rolesRepository.remove(personal.id);
+        } catch {
+          /* role may still be referenced elsewhere */
+        }
+      }
+    } else if (personal) {
+      await rolesRepository.update(personal.id, {
+        permissionKeys,
+        kind: RoleKinds.ACCESS,
+        defaultScopeTypes: personal.defaultScopeTypes,
+      });
+      const keepIds = [...new Set([...raw.roleIds.filter((roleId) => roleId !== personal!.id), personal.id])];
+      const roles = await resolveAssignableRoles(keepIds);
+      if (!roles) return fail(t('team.roles.invalid'));
+      if (isLiveMode) await assignMemberRoles(id, roles.map((role) => role.id));
+      else await membersRepository.update(id, { roles });
+    } else {
+      personal = await rolesRepository.create({
+        name,
+        description: t('team.detail.extras.roleDesc', { name: raw.memberName }),
+        isSystem: false,
+        kind: RoleKinds.ACCESS,
+        defaultScopeTypes: ['ORGANIZATION'],
+        permissionKeys,
+        memberCount: 1,
+      });
+      const keepIds = [...new Set([...raw.roleIds, personal.id])];
+      const roles = await resolveAssignableRoles(keepIds);
+      if (!roles) return fail(t('team.roles.invalid'));
+      if (isLiveMode) await assignMemberRoles(id, roles.map((role) => role.id));
+      else await membersRepository.update(id, { roles });
+    }
+
+    await recordAudit({
+      action: 'member.extras_updated',
+      entityType: 'member',
+      entityId: id,
+      entityLabel: before.name,
+      summary: 'Updated individual extra permissions',
+      diff: { permissions: { to: permissionKeys.join(', ') } },
+    });
+    await refreshData('team', 'roles');
+    return succeed(undefined, t('team.detail.extras.saved'));
   });
 }

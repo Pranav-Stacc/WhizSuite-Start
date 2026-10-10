@@ -7,6 +7,7 @@ import { AuditService } from '../../../audit/application/services/audit.service'
 import { MediaFoldersService } from '../../../media/application/services/media-folders.service';
 import { WorkService } from '../../../work/application/services/work.service';
 import { CalendarRepository } from '../../infrastructure/repositories/calendar.repository';
+import { GoogleCalendarSyncService } from './google-calendar-sync.service';
 
 @Injectable()
 export class ShootService {
@@ -15,6 +16,7 @@ export class ShootService {
     private readonly folders: MediaFoldersService,
     private readonly work: WorkService,
     private readonly audit: AuditService,
+    private readonly googleSync: GoogleCalendarSyncService,
   ) {}
 
   /**
@@ -28,6 +30,7 @@ export class ShootService {
     }
 
     const id = randomUUID();
+    const syncToGoogle = input.syncToGoogle === true;
     const item = await this.calendar.create(organizationId, {
       id,
       sourceType: 'SHOOT',
@@ -39,6 +42,7 @@ export class ShootService {
       clientId: input.clientId,
       projectId: input.projectId,
       metadata: { kind: 'shoot' },
+      syncToGoogle,
     });
 
     const folders =
@@ -77,8 +81,16 @@ export class ShootService {
         projectId: input.projectId ?? null,
         folderCount: folders.length,
         taskCount: tasks.length,
+        syncToGoogle,
       },
     });
+
+    await this.googleSync.enqueueIfNeeded(
+      organizationId,
+      item.id,
+      syncToGoogle,
+      actorId,
+    );
 
     return {
       event: item,

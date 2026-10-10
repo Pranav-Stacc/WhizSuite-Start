@@ -13,8 +13,11 @@ import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { Agenda, MonthGrid } from '@/features/calendar/components/calendar-views';
+import { DayPanel } from '@/features/calendar/components/day-panel';
+import { GoogleCalendarPanel } from '@/features/calendar/components/google-calendar-panel';
 import { PlanShootDialog } from '@/features/calendar/components/plan-shoot-dialog';
 import { groupByDay, listCalendarItems, monthGrid, type CalendarItem } from '@/features/calendar/services/calendar.service';
+import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
 import { monthKey, monthTitle, parseMonth, shiftMonth, weekdayLabels } from '@/features/calendar/utils/month';
 import { listClients } from '@/features/clients/services/clients.service';
 import { listProjects } from '@/features/projects/services/projects.service';
@@ -23,6 +26,7 @@ export const metadata: Metadata = { title: t('calendar.title') };
 
 const BASE = '/calendar';
 const MS_PER_DAY = 86_400_000;
+const DAY_PARAM = /^\d{4}-\d{2}-\d{2}$/;
 
 const GUIDE: GuideItem[] = [
   { title: t('calendar.guide.click.title'), body: t('calendar.guide.click.body') },
@@ -31,25 +35,31 @@ const GUIDE: GuideItem[] = [
 ];
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  await requirePermission(Permissions.CONTENT_VIEW);
+  await requirePermission(Permissions.CALENDAR_VIEW);
   const sp = await searchParams;
   const { year, month } = parseMonth(param(sp, 'm'));
   const view = param(sp, 'view') === 'agenda' ? 'agenda' : 'month';
   const clientId = param(sp, 'client');
   const platform = Platforms.find((p) => p === param(sp, 'platform')) as Platform | undefined;
+  const dayParam = param(sp, 'day');
+  const selectedDay = dayParam && DAY_PARAM.test(dayParam) ? dayParam : undefined;
+  const gcalToast = param(sp, 'gcal');
 
   const granted = await getPermissions();
   const canPlanShoot = granted.has(Permissions.PROJECTS_CREATE) && isLiveMode;
+  const canCreate = granted.has(Permissions.CALENDAR_CREATE) && isLiveMode;
+  const canSync = granted.has(Permissions.CALENDAR_SYNC) && isLiveMode;
   const days = monthGrid(year, month);
   const gridStart = days[0];
   const gridEnd = new Date(days[days.length - 1].getTime() + MS_PER_DAY);
   const rangeFrom = gridStart.toISOString();
   const rangeTo = gridEnd.toISOString();
 
-  const [allItems, clients, projects] = await Promise.all([
+  const [allItems, clients, projects, googleConnection] = await Promise.all([
     listCalendarItems({ from: rangeFrom, to: rangeTo, clientId }),
     listClients(),
-    canPlanShoot ? listProjects() : Promise.resolve([]),
+    canPlanShoot || canCreate ? listProjects() : Promise.resolve([]),
+    getGoogleCalendarConnection(),
   ]);
 
   const inRange = (item: CalendarItem): boolean => {
@@ -69,6 +79,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const next = shiftMonth({ year, month }, 1);
   const now = new Date();
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, overrides);
+  const googleConnected = googleConnection.status === 'CONNECTED';
+  const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
+  const projectOptions = projects.map((p) => ({ id: p.id, name: p.name, clientId: p.clientId }));
 
   return (
     <div>
@@ -87,9 +100,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             />
             {canPlanShoot ? (
               <PlanShootDialog
-                clients={clients.map((c) => ({ id: c.id, name: c.name }))}
-                projects={projects.map((p) => ({ id: p.id, name: p.name, clientId: p.clientId }))}
+                clients={clientOptions}
+                projects={projectOptions}
                 defaultClientId={clientId}
+                googleConnected={googleConnected}
+                defaultSyncToGoogle={googleConnection.defaultSyncNewEvents}
                 trigger={
                   <Button variant="secondary">
                     <Plus />
@@ -108,20 +123,30 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         }
       />
 
+      <div className="mb-4">
+        <GoogleCalendarPanel
+          connection={googleConnection}
+          canManage={canSync}
+          rangeFrom={rangeFrom}
+          rangeTo={rangeTo}
+          toastStatus={gcalToast}
+        />
+      </div>
+
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1" role="group" aria-label={t('calendar.title')}>
           <Button variant="secondary" size="icon-sm" asChild>
-            <Link href={link({ m: monthKey(prev.year, prev.month) })} aria-label={t('calendar.prev')}>
+            <Link href={link({ m: monthKey(prev.year, prev.month), day: undefined })} aria-label={t('calendar.prev')}>
               <ChevronLeft />
             </Link>
           </Button>
           <Button variant="secondary" size="icon-sm" asChild>
-            <Link href={link({ m: monthKey(next.year, next.month) })} aria-label={t('calendar.next')}>
+            <Link href={link({ m: monthKey(next.year, next.month), day: undefined })} aria-label={t('calendar.next')}>
               <ChevronRight />
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild>
-            <Link href={link({ m: monthKey(now.getFullYear(), now.getMonth()) })}>{t('calendar.today')}</Link>
+            <Link href={link({ m: monthKey(now.getFullYear(), now.getMonth()), day: undefined })}>{t('calendar.today')}</Link>
           </Button>
         </div>
         <h2 className="text-lg font-semibold tracking-tight">{monthTitle({ year, month })}</h2>
@@ -167,7 +192,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       {view === 'month' ? (
         <>
           {items.length === 0 ? <p className="mb-3 text-[13px] text-muted">{t('calendar.month.empty')}</p> : null}
-          <MonthGrid days={days} month={month} itemsByDay={itemsByDay} weekdayLabels={weekdayLabels()} />
+          <MonthGrid
+            days={days}
+            month={month}
+            itemsByDay={itemsByDay}
+            weekdayLabels={weekdayLabels()}
+            selectedDay={selectedDay}
+            dayHref={(key) => link({ day: key })}
+          />
         </>
       ) : items.length === 0 ? (
         <div className="card-surface">
@@ -176,6 +208,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       ) : (
         <Agenda itemsByDay={itemsByDay} />
       )}
+
+      {selectedDay ? (
+        <DayPanel
+          day={selectedDay}
+          items={itemsByDay.get(selectedDay) ?? []}
+          closeHref={link({ day: undefined })}
+          clientId={clientId}
+          canCreate={canCreate}
+          canPlanShoot={canPlanShoot}
+          googleConnected={googleConnected}
+          defaultSyncToGoogle={googleConnection.defaultSyncNewEvents}
+          clients={clientOptions}
+          projects={projectOptions}
+        />
+      ) : null}
     </div>
   );
 }

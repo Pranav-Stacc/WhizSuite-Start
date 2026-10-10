@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/application/session_controller.dart';
+import '../../features/auth/presentation/invite_accept_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/portal_access_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
@@ -49,6 +50,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.portalAccess,
         builder: (_, state) => PortalAccessScreen(token: state.uri.queryParameters['token']),
+      ),
+      GoRoute(
+        path: AppRoutes.invite,
+        builder: (_, state) => InviteAcceptScreen(token: state.uri.queryParameters['token']),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(location: state.uri.path, child: child),

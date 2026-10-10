@@ -19,9 +19,14 @@ import '../../dashboard/presentation/widgets/overview_layout.dart';
 import '../../dashboard/presentation/widgets/overview_section.dart';
 import '../../dashboard/presentation/widgets/status_display.dart';
 import '../../invoices/invoices_routes.dart';
+import '../../media/domain/media_asset.dart';
+import '../../media/media_routes.dart';
 import '../../messages/messages_routes.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../projects/projects_routes.dart';
+import '../../reports/domain/metric_series.dart';
+import '../../reports/domain/report.dart';
+import '../../reports/reports_routes.dart';
 import '../application/portal_providers.dart';
 import '../domain/portal_models.dart';
 import '../domain/portal_summary.dart';
@@ -46,6 +51,8 @@ class PortalHome extends ConsumerWidget {
       if (policy.can(Permissions.chatView)) const _MessagesSection(),
       if (policy.can(Permissions.projectsView)) const _ProjectsSection(),
       if (policy.can(Permissions.contentView)) const _ContentSection(),
+      if (policy.can(Permissions.filesView)) const _FilesSection(),
+      if (policy.can(Permissions.reportsView)) const _ReportsSection(),
     ];
     final hasKpis = portalKpiPermissions.any(policy.can);
     final bare = !hasKpis && sections.isEmpty;
@@ -155,6 +162,18 @@ final List<_PortalAction> _portalActions = [
     label: (l10n) => l10n.portalQuickProjects,
     route: ProjectsRoutes.root,
   ),
+  (
+    permission: Permissions.filesView,
+    icon: Icons.folder_open_outlined,
+    label: (l10n) => l10n.portalQuickFiles,
+    route: MediaRoutes.root,
+  ),
+  (
+    permission: Permissions.reportsView,
+    icon: Icons.insights_outlined,
+    label: (l10n) => l10n.portalQuickReports,
+    route: ReportsRoutes.root,
+  ),
 ];
 
 class _PortalQuickActions extends ConsumerWidget {
@@ -251,6 +270,36 @@ class _PortalKpis extends ConsumerWidget {
               caption: l10n.portalKpiProjectsCaption(data.activeProjects),
               tone: StatusTone.neutral,
             ),
+          ),
+        if (policy.can(Permissions.filesView))
+          AsyncMetricTile<List<MediaAsset>>(
+            label: l10n.portalKpiFiles,
+            icon: Icons.folder_open_outlined,
+            value: ref.watch(portalFilesProvider),
+            onRetry: () => ref.invalidate(portalFilesProvider),
+            onTap: () => context.go(MediaRoutes.root),
+            present: (files) => (
+              value: context.formats.number(files.length),
+              caption: l10n.portalKpiFilesCaption(files.length),
+              tone: StatusTone.neutral,
+            ),
+          ),
+        if (policy.can(Permissions.reportsView))
+          AsyncMetricTile<List<MetricSeries>>(
+            label: l10n.portalKpiReports,
+            icon: Icons.insights_outlined,
+            value: ref.watch(portalAnalyticsProvider),
+            onRetry: () => ref.invalidate(portalAnalyticsProvider),
+            onTap: () => context.go(ReportsRoutes.root),
+            present: (series) {
+              final reach = series.where((s) => s.key == 'reach').firstOrNull;
+              final total = reach?.total ?? 0;
+              return (
+                value: context.formats.number(total, compact: true),
+                caption: l10n.portalKpiReportsCaption,
+                tone: StatusTone.info,
+              );
+            },
           ),
       ],
     );
@@ -475,6 +524,109 @@ class _ProjectRow extends StatelessWidget {
       trailing: StatusBadge(label: status, tone: projectStatusTone(project.status), dense: true),
       semanticLabel: '${project.name}, $status',
       onTap: () => context.push(ProjectsRoutes.detail(project.id)),
+    );
+  }
+}
+
+class _FilesSection extends ConsumerWidget {
+  const _FilesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return OverviewSection<List<MediaAsset>>(
+      title: l10n.portalFilesTitle,
+      trailing: ViewAllButton(onPressed: () => context.go(MediaRoutes.root), label: l10n.portalFilesCta),
+      value: ref.watch(portalFilesProvider),
+      onRetry: () => ref.invalidate(portalFilesProvider),
+      builder: (context, files) {
+        final rows = files.take(portalListLimit).toList();
+        return rows.isEmpty
+            ? SectionEmpty(
+                message: l10n.portalFilesEmpty,
+                icon: Icons.folder_open_outlined,
+                action: TextButton(onPressed: () => context.go(MediaRoutes.root), child: Text(l10n.portalFilesCta)),
+              )
+            : OverviewList(
+                children: [
+                  for (final asset in rows) _FileRow(asset: asset),
+                ],
+              );
+      },
+    );
+  }
+}
+
+class _ReportsSection extends ConsumerWidget {
+  const _ReportsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return OverviewSection<List<Report>>(
+      title: l10n.portalReportsTitle,
+      trailing: ViewAllButton(onPressed: () => context.go(ReportsRoutes.root), label: l10n.portalReportsCta),
+      value: ref.watch(portalReportsProvider),
+      onRetry: () => ref.invalidate(portalReportsProvider),
+      builder: (context, reports) {
+        final rows = reports.take(portalListLimit).toList();
+        return rows.isEmpty
+            ? SectionEmpty(
+                message: l10n.portalReportsEmpty,
+                icon: Icons.insights_outlined,
+                action: TextButton(onPressed: () => context.go(ReportsRoutes.root), child: Text(l10n.portalReportsCta)),
+              )
+            : OverviewList(
+                children: [
+                  for (final report in rows) _ReportRow(report: report),
+                ],
+              );
+      },
+    );
+  }
+}
+
+class _FileRow extends StatelessWidget {
+  const _FileRow({required this.asset});
+
+  final MediaAsset asset;
+
+  @override
+  Widget build(BuildContext context) {
+    final formats = context.formats;
+    final subtitle = formats.relative(asset.createdAt);
+    return OverviewRow(
+      leading: RowMark(
+        icon: asset.isImage
+            ? Icons.image_outlined
+            : asset.isVideo
+                ? Icons.videocam_outlined
+                : Icons.insert_drive_file_outlined,
+      ),
+      title: asset.name,
+      subtitle: subtitle,
+      semanticLabel: '${asset.name}, $subtitle',
+      onTap: () => context.push(MediaRoutes.detail(asset.id)),
+    );
+  }
+}
+
+class _ReportRow extends StatelessWidget {
+  const _ReportRow({required this.report});
+
+  final Report report;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final status = l10n.reportStatus(report.status);
+    return OverviewRow(
+      leading: const RowMark(icon: Icons.insights_outlined),
+      title: report.title,
+      subtitle: status,
+      trailing: StatusBadge(label: status, tone: StatusTone.neutral, dense: true),
+      semanticLabel: '${report.title}, $status',
+      onTap: () => context.push(ReportsRoutes.detail(report.id)),
     );
   }
 }

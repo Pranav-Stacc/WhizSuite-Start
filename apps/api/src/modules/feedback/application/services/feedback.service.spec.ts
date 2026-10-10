@@ -2,6 +2,7 @@ import type { ConfigService } from '@nestjs/config';
 import { ErrorCodes, FeedbackSubjectTypes } from '@agency-os/contracts';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { ProblemDetailsException } from '../../../../shared/errors/problem-details.exception';
+import type { OutboxService } from '../../../../shared/events/outbox.service';
 import type { AuditService } from '../../../audit/application/services/audit.service';
 import type { SocialService } from '../../../social/application/services/social.service';
 import type { FeedbackRepository } from '../../infrastructure/repositories/feedback.repository';
@@ -36,16 +37,24 @@ function setup() {
     listLatestSubjectComments: jest.fn().mockResolvedValue([]),
     addSubjectComment: jest.fn(),
   };
+  const outbox = { write: jest.fn().mockResolvedValue(undefined) };
   const audit = { record: jest.fn() };
   const config = { get: (key: keyof AppConfig) => configValues[key] };
-  const social = { getContent: jest.fn() };
+  const social = {
+    getContent: jest.fn().mockResolvedValue({
+      id: SUBJECT_ID,
+      title: 'Post',
+      createdById: '00000000-0000-4000-8000-000000000099',
+    }),
+  };
   const service = new FeedbackService(
     repository as unknown as FeedbackRepository,
+    outbox as unknown as OutboxService,
     audit as unknown as AuditService,
     config as unknown as ConfigService<AppConfig, true>,
     social as unknown as SocialService,
   );
-  return { service, repository, audit, social };
+  return { service, repository, audit, social, outbox };
 }
 
 describe('FeedbackService subject comments', () => {

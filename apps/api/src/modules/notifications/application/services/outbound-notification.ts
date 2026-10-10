@@ -20,15 +20,27 @@ export interface StoredNotification {
   createdAt: Date;
 }
 
+function pick(value: unknown): string | undefined {
+  return typeof value === 'string' && value ? value : undefined;
+}
+
 function notificationData(raw: unknown): NotificationData {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-  const { taskId, contentId, title } = raw as Record<string, unknown>;
-  const pick = (value: unknown) =>
-    typeof value === 'string' ? value : undefined;
+  const row = raw as Record<string, unknown>;
   return {
-    taskId: pick(taskId),
-    contentId: pick(contentId),
-    title: pick(title),
+    taskId: pick(row.taskId),
+    contentId: pick(row.contentId),
+    approvalRequestId: pick(row.approvalRequestId),
+    roomId: pick(row.roomId),
+    messageId: pick(row.messageId),
+    invoiceId: pick(row.invoiceId),
+    socialAccountId: pick(row.socialAccountId),
+    invitationId: pick(row.invitationId),
+    feedbackThreadId: pick(row.feedbackThreadId),
+    title: pick(row.title),
+    fromStatus: pick(row.fromStatus),
+    toStatus: pick(row.toStatus),
+    reminderKey: pick(row.reminderKey),
   };
 }
 

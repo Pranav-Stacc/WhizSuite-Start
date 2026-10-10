@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IdentityModule } from '../identity/identity.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { MediaModule } from '../media/media.module';
 import { MetaOauthService } from './application/services/meta-oauth.service';
@@ -10,7 +11,7 @@ import { SocialResourceController } from './interface/http/controllers/social-re
 import { PublishWorkerService } from './jobs/publish-worker.service';
 
 @Module({
-  imports: [MediaModule, IntegrationsModule],
+  imports: [MediaModule, IntegrationsModule, IdentityModule],
   controllers: [
     SocialResourceController,
     MetaConnectController,

@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     default_model: str = "gemini-2.5-flash"
     llm_provider: str = "gemini"
     request_timeout_seconds: int = 120
+    jwt_access_secret: str = ""
 
 
 settings = Settings()

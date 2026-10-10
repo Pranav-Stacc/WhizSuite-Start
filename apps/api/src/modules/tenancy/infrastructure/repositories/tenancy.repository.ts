@@ -79,6 +79,14 @@ export class TenancyRepository {
     });
   }
 
+  listTeams(organizationId: string) {
+    return this.prisma.team.findMany({
+      where: { organizationId },
+      orderBy: { name: 'asc' },
+      include: { _count: { select: { members: true } } },
+    });
+  }
+
   createTeam(
     organizationId: string,
     input: { name: string; description?: string; workspaceId?: string },

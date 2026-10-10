@@ -97,6 +97,18 @@ async function main() {
         actions: ['import', 'export', 'list'],
       },
     },
+    {
+      key: 'google_calendar',
+      name: 'Google Calendar',
+      category: 'calendar',
+      manifest: {
+        scopes: [
+          'https://www.googleapis.com/auth/calendar.events',
+          'https://www.googleapis.com/auth/calendar.readonly',
+        ],
+        actions: ['sync', 'pull'],
+      },
+    },
   ];
   for (const provider of integrationProviders) {
     await prisma.integrationProvider.upsert({

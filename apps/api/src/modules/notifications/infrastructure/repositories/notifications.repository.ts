@@ -169,6 +169,20 @@ export class NotificationsRepository {
     return count > 0;
   }
 
+  /** Reminder scanners emit a stable key so the same due window is not re-notified. */
+  async existsForReminderKey(
+    organizationId: string,
+    reminderKey: string,
+  ): Promise<boolean> {
+    const count = await this.prisma.notification.count({
+      where: {
+        organizationId,
+        data: { path: ['reminderKey'], equals: reminderKey },
+      },
+    });
+    return count > 0;
+  }
+
   /** Tokens are device-global: registering moves an existing token to the current user/org. */
   upsertDevice(row: DeviceUpsertRow) {
     const fields = { ...row, lastSeenAt: new Date() };

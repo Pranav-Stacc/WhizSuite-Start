@@ -7,39 +7,51 @@ import { toast } from 'sonner';
 import {
   ASSIGNABLE_SCOPE_TYPE_KEYS,
   AssignableScopeTypes,
-  RoleKinds,
   type AccessRoleSummary,
   type AssignableScopeType,
 } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
-import { Field, Select } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
 import { assignMemberRolesAction } from '../actions/member.actions';
 import type { Member } from '../data/members.repository';
+import {
+  ScopeResourceFields,
+  scopeNeedsResource,
+  type ScopeResourceOptions,
+} from './scope-resource-fields';
+
+const EMPTY_RESOURCES: ScopeResourceOptions = {
+  departments: [],
+  teams: [],
+  clients: [],
+  projects: [],
+};
 
 interface AssignRolesDialogProps {
   member: Pick<Member, 'id' | 'name' | 'roles'>;
   /** Every role that may be granted from the team screen (the owner role is excluded). */
   assignable: AccessRoleSummary[];
+  resources?: ScopeResourceOptions;
   /** Optional custom open control (e.g. from a workflow stage editor). */
   trigger?: ReactNode;
 }
 
-export function AssignRolesDialog({ member, assignable, trigger }: AssignRolesDialogProps) {
+export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOURCES, trigger }: AssignRolesDialogProps) {
   const assignableIds = useMemo(() => new Set(assignable.map((role) => role.id)), [assignable]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(member.roles.map((role) => role.id).filter((id) => assignableIds.has(id))),
   );
   const [scopeType, setScopeType] = useState<AssignableScopeType>(AssignableScopeTypes.ORGANIZATION);
+  const [resourceId, setResourceId] = useState('');
   const [pending, startTransition] = useTransition();
 
   const reset = () => {
     setSelected(new Set(member.roles.map((role) => role.id).filter((id) => assignableIds.has(id))));
     setScopeType(AssignableScopeTypes.ORGANIZATION);
+    setResourceId('');
   };
 
   const toggle = (roleId: string) => {
@@ -51,11 +63,19 @@ export function AssignRolesDialog({ member, assignable, trigger }: AssignRolesDi
     });
   };
 
+  const needsResource = scopeNeedsResource(scopeType);
+  const canSubmit = selected.size > 0 && (!needsResource || Boolean(resourceId));
+
   const submit = () => {
     startTransition(async () => {
       const result = await assignMemberRolesAction(member.id, {
         roleIds: [...selected],
-        scopes: [{ scopeType }],
+        scopes: [
+          {
+            scopeType,
+            resourceId: needsResource ? resourceId : null,
+          },
+        ],
       });
       if (result.ok) {
         toast.success(result.message);
@@ -107,7 +127,6 @@ export function AssignRolesDialog({ member, assignable, trigger }: AssignRolesDi
                     <span className="min-w-0 flex-1 truncate">
                       {role.name}
                       {role.isSystem ? ` · ${t('roles.system')}` : ''}
-                      {role.kind === RoleKinds.WORKFLOW ? ` · ${t('roles.kind.workflow')}` : ''}
                     </span>
                   </label>
                 </li>
@@ -115,20 +134,15 @@ export function AssignRolesDialog({ member, assignable, trigger }: AssignRolesDi
             </ul>
             <p className="mt-1 text-xs text-muted">{t('team.roles.hint')}</p>
           </div>
-          <Field label={t('team.roles.scopeType')} htmlFor="assign-scope" hint={t('team.roles.scopes.hint')}>
-            <Select
-              id="assign-scope"
-              value={scopeType}
-              onChange={(e) => setScopeType(e.target.value as AssignableScopeType)}
-            >
-              {ASSIGNABLE_SCOPE_TYPE_KEYS.map((scope) => (
-                <option key={scope} value={scope}>
-                  {humanizeKey(scope)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Button variant="primary" className="w-full" disabled={pending || selected.size === 0} onClick={submit}>
+          <ScopeResourceFields
+            scopeType={scopeType}
+            resourceId={resourceId}
+            onScopeTypeChange={setScopeType}
+            onResourceIdChange={setResourceId}
+            resources={resources}
+            scopeOptions={ASSIGNABLE_SCOPE_TYPE_KEYS}
+          />
+          <Button variant="primary" className="w-full" disabled={pending || !canSubmit} onClick={submit}>
             {pending ? <Loader2 className="animate-spin" /> : null}
             {t('team.roles.save')}
           </Button>

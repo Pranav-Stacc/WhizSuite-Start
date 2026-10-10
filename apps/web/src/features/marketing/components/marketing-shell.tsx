@@ -26,13 +26,18 @@ interface MarketingShellProps {
   className?: string;
 }
 
-/** Public pages always render in product Noir — no theme wash, no primary glow orbs. */
+/**
+ * Public auth + marketing always render in product Noir.
+ * Inline vars beat the root org-theme cookie so staff and client login look identical
+ * to the original product chrome (no agency colour wash on /login or /portal-access).
+ */
 export function MarketingShell({ children, className }: MarketingShellProps) {
   return (
     <div
       className={cn('marketing-shell relative min-h-dvh bg-background text-foreground', className)}
       style={MARKETING_THEME}
       data-marketing="noir"
+      data-theme-lock="product"
     >
       {children}
     </div>

@@ -51,4 +51,9 @@ export class CreateShootDto implements CreateShootInput {
   @IsArray()
   @IsString({ each: true })
   taskTitles: string[] = [];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  syncToGoogle: boolean = false;
 }

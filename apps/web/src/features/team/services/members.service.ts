@@ -67,6 +67,10 @@ export async function membersById(): Promise<Map<string, Member>> {
   return new Map((await listMembers()).map((m) => [m.id, m]));
 }
 
+export async function getMember(id: string): Promise<Member | undefined> {
+  return (await membersById()).get(id);
+}
+
 export async function memberName(id: string | undefined): Promise<string | undefined> {
   return id ? (await memberDirectory()).get(id)?.name : undefined;
 }

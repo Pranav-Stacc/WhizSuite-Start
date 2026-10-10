@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { DomainEventTypes } from '@agency-os/contracts';
 import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
+import { OutboxService } from '../../../../shared/events/outbox.service';
 import { CapabilityExecutorService } from '../../../capabilities/application/services/capability-executor.service';
+import { MembersService } from '../../../identity/application/services/members.service';
 import { WorkService } from '../../../work/application/services/work.service';
 import {
   AutomationRepository,
@@ -17,6 +20,8 @@ export class AutomationExecutionService {
     private readonly repository: AutomationRepository,
     private readonly capabilities: CapabilityExecutorService,
     private readonly work: WorkService,
+    private readonly members: MembersService,
+    private readonly outbox: OutboxService,
   ) {}
 
   async executeRun(
@@ -78,11 +83,37 @@ export class AutomationExecutionService {
         });
         return;
       case 'notify.team':
-      case 'notify.client':
-        this.logger.log(
-          `Automation notify (${type}): ${(payload.title as string) ?? 'notification'}`,
-        );
+      case 'notify.client': {
+        const title =
+          (typeof payload.title === 'string' && payload.title) ||
+          'Automation notification';
+        const body =
+          typeof payload.body === 'string' ? payload.body : undefined;
+        const members = await this.members.list(organizationId);
+        const recipientIds = members
+          .filter((m) =>
+            type === 'notify.client'
+              ? m.membershipType === 'CLIENT'
+              : m.membershipType !== 'CLIENT',
+          )
+          .map((m) => m.id);
+        if (recipientIds.length === 0) {
+          this.logger.warn(`Automation ${type}: no recipients`);
+          return;
+        }
+        await this.outbox.write({
+          type: DomainEventTypes.AUTOMATION_NOTIFY,
+          version: 1,
+          organizationId,
+          payload: {
+            title: body ? `${title}: ${body}` : title,
+            recipientIds,
+            runId,
+          },
+          actor: { id: actor.userId, type: 'user' },
+        });
         return;
+      }
       case ACTION_CAPABILITY:
       case 'capability.execute': {
         const toolId = payload.toolId as string;

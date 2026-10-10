@@ -21,7 +21,10 @@ import 'content_labels.dart';
 import 'content_planner.dart';
 
 class ContentScreen extends ConsumerStatefulWidget {
-  const ContentScreen({super.key});
+  const ContentScreen({super.key, this.initialClientId, this.initialTab});
+
+  final String? initialClientId;
+  final String? initialTab;
 
   @override
   ConsumerState<ContentScreen> createState() => _ContentScreenState();
@@ -30,30 +33,45 @@ class ContentScreen extends ConsumerStatefulWidget {
 class _ContentScreenState extends ConsumerState<ContentScreen> {
   static const _tabCount = 2;
 
+  int get _initialIndex =>
+      widget.initialTab == ContentRoutes.plannerTab ? 1 : 0;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final clientId = widget.initialClientId;
     return DefaultTabController(
       length: _tabCount,
+      initialIndex: _initialIndex,
       child: PageScaffold(
         title: l10n.contentTitle,
         floatingActionButton: PermissionGate(
           anyOf: const [Permissions.contentCreate],
-          child: CreateFab(label: l10n.contentNew, onPressed: () => context.push(ContentRoutes.compose())),
+          child: CreateFab(
+            label: l10n.contentNew,
+            onPressed: () => context.push(ContentRoutes.compose(clientId: clientId)),
+          ),
         ),
         bottom: TabBar(
           isScrollable: true,
           tabAlignment: TabAlignment.start,
           tabs: [Tab(text: l10n.contentTabLibrary), Tab(text: l10n.contentTabPlanner)],
         ),
-        body: const TabBarView(children: [_ContentLibrary(), ContentPlanner()]),
+        body: TabBarView(
+          children: [
+            _ContentLibrary(initialClientId: clientId),
+            ContentPlanner(initialClientId: clientId),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _ContentLibrary extends ConsumerStatefulWidget {
-  const _ContentLibrary();
+  const _ContentLibrary({this.initialClientId});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<_ContentLibrary> createState() => _ContentLibraryState();
@@ -61,7 +79,9 @@ class _ContentLibrary extends ConsumerStatefulWidget {
 
 class _ContentLibraryState extends ConsumerState<_ContentLibrary> with AutomaticKeepAliveClientMixin {
   String? _status;
-  String? _clientId;
+  late String? _clientId = widget.initialClientId != null && widget.initialClientId!.isNotEmpty
+      ? widget.initialClientId
+      : null;
   String? _type;
   String? _platform;
   bool _mine = false;

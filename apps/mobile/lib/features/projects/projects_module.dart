@@ -14,7 +14,7 @@ final projectsModule = FeatureModule(
       selectedIcon: Icons.folder,
       label: (l10n) => l10n.navProjects,
       anyOf: const [Permissions.projectsView],
-      audiences: staffOnly,
+      audiences: everyAudience,
       group: NavGroup.work,
     ),
   ],

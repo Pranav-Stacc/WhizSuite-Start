@@ -131,7 +131,7 @@ class ThemePreset {
   bool get isLight => mode == 'light';
 }
 
-/// Shared-contract editorial light theme (web cookie default).
+/// Shared-contract default theme (dark noir monochrome — matches web cookie default).
 final ThemeSettings contractDefaultThemeSettings = ThemeSettings.tryParse(defaultTheme)!;
 
 final List<ThemePreset> themePresetList = [
@@ -143,11 +143,9 @@ final List<ThemePreset> themePresetList = [
     ),
 ];
 
-/// Mobile boot default when nothing is persisted — dark mono, compact for phones.
-final ThemeSettings defaultThemeSettings = themePresetList
-    .firstWhere((preset) => preset.id == 'mono')
-    .settings
-    .copyWith(density: ThemeDensity.compact);
+/// Mobile boot default when nothing is persisted — dark noir, compact for phones.
+final ThemeSettings defaultThemeSettings =
+    contractDefaultThemeSettings.copyWith(density: ThemeDensity.compact);
 
 Color? parseHexColor(Object? value) {
   if (value is! String || !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) return null;

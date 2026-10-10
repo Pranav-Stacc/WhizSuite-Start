@@ -27,9 +27,25 @@ sessions should update live. The realtime gateway accepted anonymous sockets fro
   joins `org:{orgId}` and `org:{orgId}:user:{userId}`; CORS comes from `CORS_ORIGINS` via a
   configured Socket.IO adapter. Other modules publish only through `RealtimeService`.
 
+## Reminder scanners (added 2026-10-10)
+
+Time-based reminders are not pure domain reactions — nothing emits `task.due_soon` until a scanner
+looks at due dates. Each owning domain runs a lightweight poller (same pattern as the publish worker
+and agent scheduler) when `REMINDER_SCHEDULER_ENABLED=true`:
+
+- **Work** — open tasks in the due-soon window / past due → `task.due_soon.v1` / `task.overdue.v1`
+- **Approvals** — pending requests past `dueAt` (or older than `APPROVAL_REMINDER_AFTER_HOURS`) →
+  `approval.reminder.v1`
+- **Finance** — unpaid `SENT`/`OVERDUE` invoices past due → `invoice.overdue.v1`
+
+Scanners write the outbox with a stable `reminderKey` (e.g. `task.overdue:{id}:{YYYY-MM-DD}`). The
+notifications consumer dedupes on that key so the same window is not re-notified.
+
 ## Consequences
 
 - BullMQ requires Redis ≥ 5.
 - Realtime emits are per process; running several API instances will need the Socket.IO Redis adapter.
 - When in-app is disabled for a type, the row is stored already read so other channels still have a
   delivery record.
+- Reminder pollers are process-local; run a single API replica for scanners or accept duplicate
+  outbox writes (idempotent via `reminderKey`).

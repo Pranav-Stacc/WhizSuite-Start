@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { CalendarClock, CheckSquare, Hourglass, MessageSquare, Plus, Users } from 'lucide-react';
+import { Permissions } from '@agency-os/contracts';
 import type { Session } from '@/shared/auth/session';
+import { loadIf } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatDateTime, relativeTime } from '@/shared/lib/format';
 import { Avatar, LogoTile } from '@/shared/ui/avatar';
@@ -11,10 +13,12 @@ import { PlatformStack } from '@/shared/ui/platform';
 import { StatCard } from '@/shared/ui/stat-card';
 import { StatusBadge } from '@/shared/ui/status';
 import type { GuideItem } from '@/shared/ui/page-guide';
+import type { Client } from '@/features/clients/data/clients.repository';
 import { clientsById, listClients } from '@/features/clients/services/clients.service';
 import { listContent, pendingApprovals } from '@/features/content/services/content.service';
 import { unreadChatCount } from '@/features/chat/services/chat.service';
 import { overdueTasks } from '@/features/tasks/services/tasks.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
 import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
 
@@ -30,13 +34,13 @@ const WEEK_MS = UPCOMING_DAYS * 24 * 60 * 60 * 1000;
 
 export async function ManagerDashboard({ session }: { session: Session }) {
   const [clients, approvals, overdue, chatUnread, content, byClient, byMember] = await Promise.all([
-    listClients(),
-    pendingApprovals(),
-    overdueTasks(),
-    unreadChatCount(),
-    listContent(),
-    clientsById(),
-    membersById(),
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.APPROVALS_VIEW, pendingApprovals, []),
+    loadIf(Permissions.TASKS_VIEW, overdueTasks, []),
+    loadIf(Permissions.CHAT_VIEW, unreadChatCount, 0),
+    loadIf(Permissions.CONTENT_VIEW, listContent, []),
+    loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
   ]);
   const active = clients.filter((c) => c.status === 'ACTIVE');
   const onboarding = clients.filter((c) => c.status === 'ONBOARDING').length;

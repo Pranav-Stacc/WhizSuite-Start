@@ -39,6 +39,9 @@ export type CalendarItem = {
   status?: string;
   platforms?: Platform[];
   thumb?: { url?: string; mimeType: string };
+  syncToGoogle?: boolean;
+  /** Stored calendar_items id when federated as `stored:uuid`. */
+  storedId?: string;
 };
 
 const FALLBACK_COLOR = '#8D9B98';
@@ -59,14 +62,15 @@ const SOURCE_TO_KIND: Record<CalendarSourceType, CalendarKind> = {
 const KIND_HREF: Record<CalendarKind, (item: CalendarFeedItem) => string> = {
   content: (item) => item.href ?? `/content/${item.sourceId}`,
   task: (item) => item.href ?? `/tasks?edit=${item.sourceId}`,
-  shoot: () => '/calendar',
+  shoot: (item) =>
+    item.clientId ? `/media?client=${item.clientId}` : '/calendar',
   approval: (item) => item.href ?? `/approvals?id=${item.sourceId}`,
   campaign: (item) => item.href ?? '/content',
   invoice: (item) => item.href ?? `/invoices?id=${item.sourceId}`,
   milestone: (item) => item.href ?? (item.projectId ? `/projects/${item.projectId}` : '/projects'),
-  meeting: () => '/calendar',
-  deadline: () => '/calendar',
-  manual: () => '/calendar',
+  meeting: (item) => `/calendar?day=${item.startsAt.slice(0, 10)}`,
+  deadline: (item) => `/calendar?day=${item.startsAt.slice(0, 10)}`,
+  manual: (item) => `/calendar?day=${item.startsAt.slice(0, 10)}`,
 };
 
 /** Calendar entry for a scheduled post (demo / offline path). */
@@ -98,6 +102,7 @@ function fromFeedItem(
   const platforms = Array.isArray(item.metadata?.platforms)
     ? (item.metadata.platforms as Platform[])
     : undefined;
+  const storedId = item.id.startsWith('stored:') ? item.id.slice('stored:'.length) : undefined;
   return {
     kind,
     id: item.sourceId || item.id,
@@ -108,6 +113,8 @@ function fromFeedItem(
     clientColor: colorOf(item.clientId ?? ''),
     status: item.status ?? undefined,
     platforms,
+    syncToGoogle: item.syncToGoogle,
+    storedId,
   };
 }
 

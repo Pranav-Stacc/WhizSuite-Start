@@ -27,7 +27,9 @@ import 'content_media.dart';
 /// Instagram-profile mock-up of one client's planned feed. Long-press and drag tiles to re-plan
 /// the grid; screen-reader users get "move earlier / later" actions on each tile.
 class ContentPlanner extends ConsumerStatefulWidget {
-  const ContentPlanner({super.key});
+  const ContentPlanner({super.key, this.initialClientId});
+
+  final String? initialClientId;
 
   @override
   ConsumerState<ContentPlanner> createState() => _ContentPlannerState();
@@ -39,7 +41,9 @@ class _ContentPlannerState extends ConsumerState<ContentPlanner> with AutomaticK
   static const _phoneMaxWidth = 440.0;
   static const _dragAlpha = 0.35;
 
-  String? _clientId;
+  late String? _clientId = widget.initialClientId != null && widget.initialClientId!.isNotEmpty
+      ? widget.initialClientId
+      : null;
 
   /// Optimistic order shown while a reorder is saving; null means "use server order".
   List<Content>? _pending;

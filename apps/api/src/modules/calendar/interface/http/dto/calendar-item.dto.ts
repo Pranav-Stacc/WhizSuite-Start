@@ -22,9 +22,10 @@ export class CreateCalendarItemDto {
   @IsIn(CalendarSourceTypes)
   sourceType!: CalendarSourceType;
 
-  @ApiProperty({ format: 'uuid' })
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
   @IsUUID()
-  sourceId!: string;
+  sourceId?: string;
 
   @ApiProperty()
   @IsString()
@@ -60,6 +61,11 @@ export class CreateCalendarItemDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({ required: false, description: 'Opt-in Google Calendar sync for this event' })
+  @IsOptional()
+  @IsBoolean()
+  syncToGoogle?: boolean;
 }
 
 export class UpdateCalendarItemDto {
@@ -90,4 +96,9 @@ export class UpdateCalendarItemDto {
   @IsOptional()
   @IsObject()
   metadata?: Record<string, unknown>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  syncToGoogle?: boolean;
 }

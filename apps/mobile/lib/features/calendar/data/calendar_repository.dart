@@ -12,6 +12,7 @@ class CalendarRepository {
 
   String get _base => _api.org('calendar/items');
   String get _feed => _api.org('calendar/feed');
+  String get _shoots => _api.org('calendar/shoots');
 
   Future<List<CalendarItem>> list() async =>
       jsonList(await _api.get<Object?>(_base)).map(CalendarItem.fromJson).toList();
@@ -40,6 +41,47 @@ class CalendarRepository {
         for (final json in jsonList(await _api.get<Object?>(_api.org('content'))))
           if (json.date('scheduledAt') != null) ScheduledContent.fromJson(json),
       ];
+
+  /// Plans a shoot day (`POST calendar/shoots`, needs `projects.create`).
+  Future<CalendarItem> createShoot(CreateShootInput input) async =>
+      CalendarItem.fromJson(jsonObject(await _api.post<Object?>(_shoots, body: input.toJson())));
+}
+
+/// Body for `POST …/calendar/shoots` (matches createShootSchema).
+class CreateShootInput {
+  const CreateShootInput({
+    required this.title,
+    required this.startsAt,
+    required this.clientId,
+    this.endsAt,
+    this.allDay = true,
+    this.projectId,
+    this.createFolders = true,
+    this.taskTitles = const [],
+    this.syncToGoogle = false,
+  });
+
+  final String title;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+  final bool allDay;
+  final String clientId;
+  final String? projectId;
+  final bool createFolders;
+  final List<String> taskTitles;
+  final bool syncToGoogle;
+
+  Json toJson() => {
+        'title': title,
+        'startsAt': startsAt.toUtc().toIso8601String(),
+        if (endsAt != null) 'endsAt': endsAt!.toUtc().toIso8601String(),
+        'allDay': allDay,
+        'clientId': clientId,
+        if (projectId != null && projectId!.isNotEmpty) 'projectId': projectId,
+        'createFolders': createFolders,
+        'taskTitles': taskTitles,
+        'syncToGoogle': syncToGoogle,
+      };
 }
 
 final calendarRepositoryProvider = Provider<CalendarRepository>(

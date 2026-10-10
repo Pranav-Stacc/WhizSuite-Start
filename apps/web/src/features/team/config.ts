@@ -17,3 +17,6 @@ export const DEFAULT_WEEKLY_CAPACITY_HOURS = 40;
 /** Open work above this share of weekly capacity is flagged as overloaded. */
 export const OVERLOAD_THRESHOLD = 1;
 export const NEAR_CAPACITY_THRESHOLD = 0.8;
+
+/** Prefix for per-member extra-permission roles created from the member profile. */
+export const PERSONAL_ACCESS_PREFIX = 'Extra · ';

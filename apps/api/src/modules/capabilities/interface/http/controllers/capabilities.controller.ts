@@ -28,8 +28,12 @@ export class CapabilitiesController {
     @Param('organizationId') organizationId: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    requireOrganizationId(organizationId);
-    return this.registry.listForUser(user.permissions ?? []);
+    const orgId = requireOrganizationId(organizationId);
+    return this.registry.listForUserCached(
+      orgId,
+      user.userId,
+      user.permissions ?? [],
+    );
   }
 
   @Post('execute')

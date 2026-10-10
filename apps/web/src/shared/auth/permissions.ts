@@ -36,7 +36,23 @@ export async function can(...required: Permission[]): Promise<boolean> {
 
 /** Loads supporting data from another domain only when the member may read it, so a narrower role degrades instead of failing. */
 export async function loadIf<T>(permission: Permission, load: () => Promise<T>, fallback: T): Promise<T> {
-  return (await can(permission)) ? load() : fallback;
+  if (!(await can(permission))) return fallback;
+  try {
+    return await load();
+  } catch {
+    return fallback;
+  }
+}
+
+/** Soft-loads data when any of the permissions is granted; never throws into the page. */
+export async function loadIfAny<T>(permissions: Permission[], load: () => Promise<T>, fallback: T): Promise<T> {
+  const granted = await getPermissions();
+  if (!permissions.some((permission) => granted.has(permission))) return fallback;
+  try {
+    return await load();
+  } catch {
+    return fallback;
+  }
 }
 
 /** Page guard: sends the member to their home page when any required permission is missing. */

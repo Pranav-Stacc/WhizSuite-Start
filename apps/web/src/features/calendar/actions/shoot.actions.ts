@@ -44,6 +44,7 @@ export async function createShootAction(raw: unknown): Promise<ActionResult<Form
         projectId: parsed.data.projectId || undefined,
         createFolders: parsed.data.createFolders,
         taskTitles,
+        syncToGoogle: parsed.data.syncToGoogle,
       },
     });
 
