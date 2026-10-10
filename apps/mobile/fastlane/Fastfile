@@ -15,17 +15,23 @@ end
 
 def sync_signing(readonly:)
   api_key = app_store_api_key
-  match(
+  # On CI, setup_ci already created a temporary keychain — do not pass a
+  # custom MATCH_KEYCHAIN_* name or Match looks for a keychain that does not exist.
+  args = {
     type: "appstore",
     readonly: readonly,
     api_key: api_key,
     app_identifier: ENV.fetch("APPLE_APP_IDENTIFIER", "com.whizsuite.app"),
     team_id: ENV.fetch("APPLE_TEAM_ID"),
     git_url: ENV.fetch("MATCH_GIT_URL"),
-    keychain_name: ENV["MATCH_KEYCHAIN_NAME"],
-    keychain_password: ENV["MATCH_KEYCHAIN_PASSWORD"],
+    git_branch: ENV.fetch("MATCH_GIT_BRANCH", "main"),
     generate_apple_certs: true
-  )
+  }
+  unless ENV["CI"]
+    args[:keychain_name] = ENV["MATCH_KEYCHAIN_NAME"] if ENV["MATCH_KEYCHAIN_NAME"]
+    args[:keychain_password] = ENV["MATCH_KEYCHAIN_PASSWORD"] if ENV["MATCH_KEYCHAIN_PASSWORD"]
+  end
+  match(args)
 end
 
 platform :ios do
