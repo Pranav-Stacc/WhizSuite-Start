@@ -25,21 +25,25 @@ export default async function AgentPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   let sessionId = param(sp, 'session');
 
-  let sessions = await listAgentSessions(orgId);
+  let sessions = await listAgentSessions(orgId).catch(() => []);
   if (sessions.length === 0) {
-    const created = await createAgentSession(orgId);
-    sessions = [created];
-    sessionId = created.id;
+    try {
+      const created = await createAgentSession(orgId);
+      sessions = [created];
+      sessionId = created.id;
+    } catch {
+      sessions = [];
+    }
   }
   if (!sessionId) sessionId = sessions[0]?.id;
 
   const canManageAgents = await can(Permissions.AI_AGENTS_MANAGE);
 
   const [detail, runs, pending, tools, definitions, schedules] = await Promise.all([
-    sessionId ? getAgentSession(orgId, sessionId) : null,
-    listAgentRuns(orgId),
-    listAgentPending(orgId),
-    listCapabilities(orgId),
+    sessionId ? getAgentSession(orgId, sessionId).catch(() => null) : null,
+    listAgentRuns(orgId).catch(() => []),
+    listAgentPending(orgId).catch(() => []),
+    listCapabilities(orgId).catch(() => []),
     canManageAgents ? listAgentDefinitions(orgId) : Promise.resolve([]),
     canManageAgents ? listAgentSchedules(orgId) : Promise.resolve([]),
   ]);

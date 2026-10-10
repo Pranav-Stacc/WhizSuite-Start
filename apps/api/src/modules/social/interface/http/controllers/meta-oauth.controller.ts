@@ -1,6 +1,9 @@
 import { Controller, Get, Query, Res } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import {
+  ProblemDetailsException,
+} from '../../../../../shared/errors/problem-details.exception';
 import { MetaOauthService } from '../../../application/services/meta-oauth.service';
 
 /**
@@ -30,7 +33,12 @@ export class MetaOauthController {
       await this.metaOauth.completeConnect({ code, state });
       return res.redirect(this.metaOauth.webSuccessRedirect());
     } catch (err) {
-      const detail = err instanceof Error ? err.message : 'failed';
+      const detail =
+        err instanceof ProblemDetailsException
+          ? (err.problem.detail ?? err.problem.title)
+          : err instanceof Error
+            ? err.message
+            : 'failed';
       return res.redirect(this.metaOauth.webFailureRedirect(detail));
     }
   }

@@ -41,7 +41,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
   const filter = parseFilter(param(sp, 'f'));
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
   const metaStatus = param(sp, 'meta');
-
+  const metaReason = param(sp, 'reason');
 
   const [clients, integrations] = await Promise.all([listClients(), listIntegrations()]);
   const connected = integrations.filter((i) => i.connected);
@@ -59,7 +59,7 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <MetaConnectToast status={metaStatus} />
+      <MetaConnectToast status={metaStatus} reason={metaReason} />
       <PageHeader title={t('integrations.title')} description={t('integrations.description')} eyebrow={<Plug className="inline size-3.5" />} actions={<PageGuide items={GUIDE} />} />
 
 

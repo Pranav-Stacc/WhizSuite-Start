@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { Permissions } from '@agency-os/contracts';
+import { DEFAULT_MEMBERSHIP_ROLES, Permissions } from '@agency-os/contracts';
 
 const prisma = new PrismaClient();
 
@@ -107,6 +107,36 @@ async function main() {
   }
 
   console.log('Seeded permissions catalog, starter plan, and integration providers');
+
+  // Keep system roles current when contracts add permissions (e.g. ai.*).
+  const permissionByKey = new Map(
+    (await prisma.permission.findMany()).map((p) => [p.key, p.id]),
+  );
+  for (const template of Object.values(DEFAULT_MEMBERSHIP_ROLES)) {
+    const roles = await prisma.role.findMany({
+      where: { name: template.name, isSystem: true },
+      select: {
+        id: true,
+        permissions: { select: { permission: { select: { key: true } } } },
+      },
+    });
+    for (const role of roles) {
+      const held = new Set(role.permissions.map((row) => row.permission.key));
+      const missing = template.permissions
+        .filter((key) => !held.has(key))
+        .map((key) => permissionByKey.get(key))
+        .filter((id): id is string => Boolean(id));
+      if (missing.length === 0) continue;
+      await prisma.rolePermission.createMany({
+        data: missing.map((permissionId) => ({
+          roleId: role.id,
+          permissionId,
+          effect: 'ALLOW',
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
 
   // Demo org for local dev (optional — skip if exists)
   const demoSlug = 'demo-agency';

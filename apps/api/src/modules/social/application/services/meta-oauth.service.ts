@@ -105,7 +105,7 @@ export class MetaOauthService {
   }): Promise<{ organizationId: string; clientId: string }> {
     const parsed = parseState(input.state);
     const tokens = await this.meta.exchangeCode(input.code);
-    const pages = await this.meta.listLinkedAccounts(tokens.userAccessToken);
+    const pages = await this.meta.listLinkedAccounts(tokens);
 
     const withInstagram = pages.filter((p) => p.instagramBusinessAccountId);
     const selected =
@@ -115,7 +115,9 @@ export class MetaOauthService {
 
     if (!selected) {
       throw unprocessable(
-        'No Facebook Page found. The Meta user must administer a Page (and an Instagram Business account for Instagram connect).',
+        tokens.tokenKind === 'system_user'
+          ? 'No Page/Instagram assets were granted. In Meta Login, select a Business portfolio that owns a Facebook Page linked to an Instagram professional account.'
+          : 'No Facebook Page found. The Meta user must administer a Page (and an Instagram Business account for Instagram connect).',
       );
     }
 
@@ -138,7 +140,11 @@ export class MetaOauthService {
       ).id;
 
     const encryptedData = JSON.stringify({
-      userAccessToken: tokens.userAccessToken,
+      accessToken: tokens.accessToken,
+      tokenKind: tokens.tokenKind,
+      clientBusinessId: tokens.clientBusinessId,
+      // Keep legacy key for older readers.
+      userAccessToken: tokens.accessToken,
       pageAccessToken: selected.pageAccessToken,
       pageId: selected.pageId,
       instagramBusinessAccountId: selected.instagramBusinessAccountId,

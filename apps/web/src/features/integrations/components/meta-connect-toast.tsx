@@ -8,8 +8,10 @@ import { t } from '@/shared/i18n/t';
 /** Surfaces Meta OAuth callback result from `?meta=connected|error` once. */
 export function MetaConnectToast({
   status,
+  reason,
 }: {
   status: string | undefined;
+  reason?: string | undefined;
 }) {
   const router = useRouter();
   useEffect(() => {
@@ -17,9 +19,9 @@ export function MetaConnectToast({
     if (status === 'connected') {
       toast.success(t('integrations.meta.connectedToast'));
     } else {
-      toast.error(t('integrations.meta.errorToast'));
+      toast.error(reason?.trim() || t('integrations.meta.errorToast'));
     }
     router.replace('/integrations', { scroll: false });
-  }, [status, router]);
+  }, [status, reason, router]);
   return null;
 }
