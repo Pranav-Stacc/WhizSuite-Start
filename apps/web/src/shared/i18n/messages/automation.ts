@@ -151,7 +151,7 @@ export const automationMessages = {
   'integrations.oauthRequired': 'Channels are connected through the platform’s sign-in flow, which is not enabled for this workspace yet.',
   'integrations.meta.liveOnly': 'Meta Instagram / Facebook connect only works when the app is in live API mode.',
   'integrations.meta.redirecting': 'Opening Meta to authorize…',
-  'integrations.meta.connectFailed': 'Could not start Meta connect. Check META_APP_ID / META_APP_SECRET / META_REDIRECT_URI on the API.',
+  'integrations.meta.connectFailed': 'Could not start Meta connect. Check META_APP_ID / META_APP_SECRET / META_REDIRECT_URI / META_LOGIN_CONFIG_ID on the API.',
   'integrations.meta.useOauthButton': 'Use Connect to authorize with Meta (Facebook Login).',
   'integrations.meta.connectedToast': 'Instagram / Facebook connected. You can record your App Review screencast now.',
   'integrations.meta.errorToast': 'Meta connect failed. Try again or check that the Facebook user manages a Page with an Instagram Business account.',

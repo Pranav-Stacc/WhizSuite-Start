@@ -45,7 +45,7 @@ export class MetaOauthService {
         503,
         'Service Unavailable',
         ErrorCodes.INTEGRATION_NOT_CONNECTED,
-        'Meta OAuth is not configured (META_APP_ID / META_APP_SECRET / META_REDIRECT_URI)',
+        'Meta OAuth is not configured (META_APP_ID / META_APP_SECRET / META_REDIRECT_URI / META_LOGIN_CONFIG_ID)',
       );
     }
 

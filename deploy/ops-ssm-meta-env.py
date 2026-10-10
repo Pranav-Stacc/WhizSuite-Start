@@ -28,10 +28,11 @@ upsert() {
 upsert META_APP_ID '__META_APP_ID__'
 upsert META_APP_SECRET '__META_APP_SECRET__'
 upsert META_REDIRECT_URI '__META_REDIRECT_URI__'
+upsert META_LOGIN_CONFIG_ID '__META_LOGIN_CONFIG_ID__'
 upsert META_GRAPH_API_VERSION '__META_GRAPH_API_VERSION__'
 upsert WEB_APP_URL 'https://whizsuite.com'
 echo Updated Meta env:
-grep -E '^(META_APP_ID|META_REDIRECT_URI|META_GRAPH_API_VERSION|WEB_APP_URL)=' .env
+grep -E '^(META_APP_ID|META_REDIRECT_URI|META_LOGIN_CONFIG_ID|META_GRAPH_API_VERSION|WEB_APP_URL)=' .env
 grep -E '^META_APP_SECRET=' .env | sed 's/=.*/=***redacted***/'
 COMPOSE=(docker compose --env-file .env --env-file .image-tag -f docker-compose.prod.yml)
 "${COMPOSE[@]}" up -d api
@@ -48,15 +49,20 @@ def main() -> int:
         "META_REDIRECT_URI",
         "https://api.whizsuite.praanav.in/api/platforms/callback",
     )
+    config_id = os.environ.get("META_LOGIN_CONFIG_ID", "")
     version = os.environ.get("META_GRAPH_API_VERSION", "v21.0")
     if not secret:
         print("META_APP_SECRET env required")
+        return 1
+    if not config_id:
+        print("META_LOGIN_CONFIG_ID env required (Facebook Login for Business configuration)")
         return 1
 
     remote = (
         REMOTE_TEMPLATE.replace("__META_APP_ID__", app_id)
         .replace("__META_APP_SECRET__", secret)
         .replace("__META_REDIRECT_URI__", redirect)
+        .replace("__META_LOGIN_CONFIG_ID__", config_id)
         .replace("__META_GRAPH_API_VERSION__", version)
     )
     payload = {

@@ -257,6 +257,8 @@ export const appConfigSchema = z
     META_APP_ID: z.string().default(''),
     META_APP_SECRET: z.string().default(''),
     META_REDIRECT_URI: z.string().default(''),
+    /** Facebook Login for Business configuration ID (required for Business-type apps). */
+    META_LOGIN_CONFIG_ID: z.string().default(''),
     META_GRAPH_API_VERSION: z.string().default('v21.0'),
 
     AGENT_SERVICE_URL: z.string().url().default('http://localhost:8000'),

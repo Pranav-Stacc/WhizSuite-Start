@@ -30,7 +30,8 @@ export class MetaClient {
     return Boolean(
       this.config.get('META_APP_ID', { infer: true }) &&
         this.config.get('META_APP_SECRET', { infer: true }) &&
-        this.config.get('META_REDIRECT_URI', { infer: true }),
+        this.config.get('META_REDIRECT_URI', { infer: true }) &&
+        this.config.get('META_LOGIN_CONFIG_ID', { infer: true }),
     );
   }
 
@@ -39,13 +40,19 @@ export class MetaClient {
   }
 
   buildAuthorizeUrl(state: string): string {
+    const configId = this.config.get('META_LOGIN_CONFIG_ID', { infer: true });
     const params = new URLSearchParams({
       client_id: this.config.get('META_APP_ID', { infer: true }),
       redirect_uri: this.config.get('META_REDIRECT_URI', { infer: true }),
       state,
       response_type: 'code',
-      scope: META_OAUTH_SCOPES.join(','),
     });
+    // Business-type apps require Facebook Login for Business config_id (not scope).
+    if (configId) {
+      params.set('config_id', configId);
+    } else {
+      params.set('scope', META_OAUTH_SCOPES.join(','));
+    }
     return `${DIALOG_HOST}/${this.graphVersion()}/dialog/oauth?${params.toString()}`;
   }
 
