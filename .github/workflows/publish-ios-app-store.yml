@@ -70,7 +70,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: apps/mobile/pubspec.yaml
           cache: true
 
       - name: Create GoogleService-Info.plist
