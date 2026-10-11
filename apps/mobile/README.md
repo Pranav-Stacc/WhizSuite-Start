@@ -9,8 +9,8 @@ Flutter app for agency staff and client portal users.
 ## Release signing (Android)
 
 1. Copy `android/key.properties.example` → `android/key.properties` and fill passwords.
-2. Place `upload-keystore.jks` next to `key.properties` (or set an absolute `storeFile` path).
-3. Build: `flutter build appbundle --release`
+2. Place **`upload-keystore.jks` next to `key.properties`** under `android/` (not `android/app/`). See `docs/play-store.md` for SHA-1 and Play upload-key notes.
+3. Build: `flutter build appbundle --release --dart-define-from-file=config/production.json`
 
 `key.properties` and `*.jks` are gitignored — never commit them.
 

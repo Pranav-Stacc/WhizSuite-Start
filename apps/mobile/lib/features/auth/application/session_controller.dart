@@ -85,7 +85,12 @@ class SessionController extends AsyncNotifier<Session?> {
   /// Errors are rethrown to the calling form; the session state stays signed out.
   Future<void> _authenticate(Future<AuthTokens> Function() call) async {
     final tokens = await call();
-    state = AsyncData(Session.fromClaims(tokens.claims));
+    final session = Session.fromClaims(tokens.claims);
+    if (session == null) {
+      await ref.read(tokenStoreProvider).clear();
+      throw const ApiException(kind: ApiFailureKind.unauthorized);
+    }
+    state = AsyncData(session);
     await _hydrateOrgTheme();
   }
 

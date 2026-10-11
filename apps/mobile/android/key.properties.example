@@ -1,4 +1,5 @@
 storePassword=CHANGE_ME
 keyPassword=CHANGE_ME
 keyAlias=upload
+# Path is relative to android/ (see app/build.gradle.kts rootProject.file).
 storeFile=upload-keystore.jks
