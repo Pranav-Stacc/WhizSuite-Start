@@ -67,9 +67,33 @@ aws sesv2 send-email \
   --profile whizsuite
 ```
 
-GitHub Actions: workflow **Ops AWS** → action **ses-status**, optional input **test_email_to** (verified address only in sandbox).
+## 6. Production server (EC2 via AWS CLI + SSM)
 
-## 6. What sends email
+One-time SMTP IAM user (prints credentials locally — do not commit):
+
+```bash
+python deploy/ops-ses-provision.py
+```
+
+Push creds to `/opt/whizsuite/deploy/.env` and restart API (+ migrate):
+
+```bash
+# PowerShell
+$env:SMTP_USER = "<from provision output>"
+$env:SMTP_PASS = "<from provision output>"
+$env:RUN_MIGRATE = "1"
+python deploy/ops-ses-env.py
+```
+
+Test send from your machine:
+
+```bash
+python deploy/ops-ses-test.py you@example.com
+```
+
+Instance: `i-01b06d5c681c0907f` (`whizsuite-api`), profile **`whizsuite`**, region **`ap-south-1`**.
+
+## 7. What sends email
 
 | Flow | Trigger |
 |------|---------|
@@ -82,7 +106,7 @@ GitHub Actions: workflow **Ops AWS** → action **ses-status**, optional input *
 
 Branded HTML templates: `apps/api/src/shared/notifications/email-brand-template.ts`.
 
-## 7. Run migration
+## 8. Run migration
 
 ```bash
 cd apps/api
@@ -92,7 +116,7 @@ pnpm prisma generate
 
 Adds `identity.auth_email_tokens` for reset/verify tokens.
 
-## 8. Production checklist
+## 9. Production checklist
 
 - [ ] SES out of sandbox (or verified recipient list)
 - [ ] DKIM + MAIL FROM aligned on `whizsuite.com`
