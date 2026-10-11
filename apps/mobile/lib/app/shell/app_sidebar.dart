@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_tokens.dart';
 import '../../features/auth/domain/session.dart';
 import '../../l10n/app_localizations.dart';
 import '../navigation/app_routes.dart';
 import '../navigation/destinations.dart';
+import '../session/sign_out.dart';
 import 'nav_menu_grid.dart';
 
 /// Mega-menu drawer / rail: sectioned 2-column tiles matching the web mobile menu.
-class AppSidebar extends StatelessWidget {
+class AppSidebar extends ConsumerWidget {
   const AppSidebar({
     required this.session,
     required this.groups,
@@ -29,7 +31,7 @@ class AppSidebar extends StatelessWidget {
   bool _active(String path) => location == path || location.startsWith('$path/');
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
@@ -37,9 +39,13 @@ class AppSidebar extends StatelessWidget {
 
     final body = ColoredBox(
       color: bg,
-      child: ListView(
-        padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.md, tokens.xxl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.md, tokens.md),
+              children: [
           Padding(
             padding: EdgeInsets.fromLTRB(tokens.xs, tokens.md, tokens.xs, tokens.lg),
             child: Column(
@@ -89,21 +95,43 @@ class AppSidebar extends StatelessWidget {
               location: location,
               onNavigate: onNavigate,
             ),
-          NavMenuSection(
-            label: l10n.navNotifications,
-            items: [
-              NavMenuItem(
-                icon: Icons.notifications_outlined,
-                selectedIcon: Icons.notifications,
+              NavMenuSection(
                 label: l10n.navNotifications,
-                selected: _active(AppRoutes.notifications),
-                onTap: () => onNavigate(AppRoutes.notifications),
+                items: [
+                  NavMenuItem(
+                    icon: Icons.notifications_outlined,
+                    selectedIcon: Icons.notifications,
+                    label: l10n.navNotifications,
+                    selected: _active(AppRoutes.notifications),
+                    onTap: () => onNavigate(AppRoutes.notifications),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+        Container(
+          padding: EdgeInsets.fromLTRB(tokens.md, tokens.sm, tokens.md, tokens.md),
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: tokens.border.withValues(alpha: 0.6))),
+          ),
+          child: OutlinedButton.icon(
+            onPressed: () => confirmSignOut(context, ref),
+            icon: const Icon(Icons.logout, size: 18),
+            label: Text(l10n.settingsSignOut),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(42),
+              foregroundColor: tokens.fg,
+              side: BorderSide(color: tokens.border),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(tokens.radius),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
     if (permanent) {
       return Material(

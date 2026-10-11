@@ -25,9 +25,9 @@ final _home = AppDestination(
 
 final _more = AppDestination(
   path: AppRoutes.more,
-  icon: Icons.bolt_outlined,
-  selectedIcon: Icons.bolt_rounded,
-  label: (l10n) => l10n.navPulse,
+  icon: Icons.grid_view_outlined,
+  selectedIcon: Icons.grid_view_rounded,
+  label: (l10n) => l10n.navMore,
   anyOf: const [],
   audiences: everyAudience,
   primary: true,

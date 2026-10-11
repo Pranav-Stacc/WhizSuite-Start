@@ -1,7 +1,7 @@
 name: agency_os
 description: WhizSuite mobile app for agency staff and client portal users.
 publish_to: 'none'
-version: 1.0.0+3
+version: 1.0.1+4
 
 environment:
   sdk: ^3.11.5
