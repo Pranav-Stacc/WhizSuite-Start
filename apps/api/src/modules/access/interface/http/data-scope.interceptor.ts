@@ -20,9 +20,11 @@ export class DataScopeInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<unknown>> {
-    const request = context
-      .switchToHttp()
-      .getRequest<{ user?: AuthenticatedUser }>();
+    const request = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUser;
+      originalUrl?: string;
+      url?: string;
+    }>();
     const user = request.user;
     if (
       user?.organizationId &&
@@ -32,6 +34,7 @@ export class DataScopeInterceptor implements NestInterceptor {
       const scope = await this.access.resolveDataScope(
         user.organizationId,
         user.membershipId,
+        request.originalUrl ?? request.url,
       );
       if (!scope.orgWide) {
         const hasClientIds = scope.clientIds.length > 0;

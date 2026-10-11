@@ -1,5 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import { DEFAULT_MEMBERSHIP_ROLES, Permissions } from '@agency-os/contracts';
+import {
+  DEFAULT_MEMBERSHIP_ROLES,
+  DEFAULT_ROLE_TEMPLATES,
+  OWNER_MEMBERSHIP_ROLE,
+  Permissions,
+} from '@agency-os/contracts';
 
 const prisma = new PrismaClient();
 
@@ -124,7 +129,7 @@ async function main() {
   const permissionByKey = new Map(
     (await prisma.permission.findMany()).map((p) => [p.key, p.id]),
   );
-  for (const template of Object.values(DEFAULT_MEMBERSHIP_ROLES)) {
+  for (const template of [OWNER_MEMBERSHIP_ROLE]) {
     const roles = await prisma.role.findMany({
       where: { name: template.name, isSystem: true },
       select: {

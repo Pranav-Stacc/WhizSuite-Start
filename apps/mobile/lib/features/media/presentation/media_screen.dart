@@ -130,6 +130,7 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
       floatingActionButton: PermissionGate(
         anyOf: const [Permissions.filesUpload],
         child: FloatingActionButton.extended(
+          heroTag: null,
           onPressed: _upload,
           icon: const Icon(Icons.upload_outlined),
           label: Text(l10n.mediaUpload),

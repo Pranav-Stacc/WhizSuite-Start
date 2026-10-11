@@ -59,6 +59,7 @@ export class MediaService {
       this.config.get('MEDIA_LIST_LIMIT', { infer: true }),
       TenantContext.clientScope(),
       query,
+      TenantContext.projectScope(),
     );
     const previewable = assets
       .filter((a) => a.status === 'READY' && isPreviewable(a.mimeType))

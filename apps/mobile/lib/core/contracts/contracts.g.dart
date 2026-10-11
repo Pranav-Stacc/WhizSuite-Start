@@ -100,6 +100,41 @@ abstract final class AssignableScopeTypes {
   static const List<String> values = <String>[organization, workspace, department, team, client, project, task, content, self];
 }
 
+const Map<String, List<String>> permissionModuleScopes = <String, List<String>>{
+  'org': <String>['ORGANIZATION', 'WORKSPACE'],
+  'roles': <String>['ORGANIZATION'],
+  'audit': <String>['ORGANIZATION', 'DEPARTMENT', 'TEAM'],
+  'automations': <String>['ORGANIZATION', 'WORKSPACE', 'CLIENT', 'PROJECT'],
+  'integrations': <String>['ORGANIZATION', 'WORKSPACE', 'CLIENT'],
+  'workflows': <String>['ORGANIZATION', 'WORKSPACE', 'CLIENT', 'PROJECT'],
+  'content': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'CONTENT', 'SELF'],
+  'social': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'CONTENT'],
+  'approvals': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'CONTENT'],
+  'feedback': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'CONTENT', 'SELF'],
+  'projects': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'DEPARTMENT', 'TEAM'],
+  'tasks': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'TASK', 'TEAM', 'SELF'],
+  'files': <String>['ORGANIZATION', 'WORKSPACE', 'CLIENT', 'PROJECT'],
+  'clients': <String>['ORGANIZATION', 'CLIENT', 'DEPARTMENT', 'TEAM'],
+  'leads': <String>['ORGANIZATION', 'CLIENT', 'TEAM', 'SELF'],
+  'workspaces': <String>['ORGANIZATION', 'WORKSPACE'],
+  'calendar': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'SELF'],
+  'chat': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'TEAM', 'SELF'],
+  'invoices': <String>['ORGANIZATION', 'CLIENT'],
+  'reports': <String>['ORGANIZATION', 'CLIENT'],
+  'members': <String>['ORGANIZATION', 'DEPARTMENT', 'TEAM'],
+  'time': <String>['ORGANIZATION', 'CLIENT', 'PROJECT', 'SELF'],
+  'ai': <String>['ORGANIZATION', 'SELF'],
+};
+
+abstract final class MEMBERSHIP_DEFAULT_ROLE_NAME {
+  static const String owner = 'Owner';
+  static const String admin = 'Admin';
+  static const String member = 'Member';
+  static const String client = 'Client';
+
+  static const List<String> values = <String>[owner, admin, member, client];
+}
+
 abstract final class RoleKinds {
   static const String access = 'ACCESS';
   static const String workflow = 'WORKFLOW';
@@ -211,8 +246,9 @@ abstract final class NotificationTypeKeys {
   static const String feedbackComment = 'feedback.comment';
   static const String invoiceOverdue = 'invoice.overdue';
   static const String invoicePaid = 'invoice.paid';
+  static const String calendarReminder = 'calendar.reminder';
 
-  static const List<String> values = <String>[taskAssigned, taskStateChanged, taskCommented, taskDueSoon, taskOverdue, contentApproved, contentChangesRequested, contentRejected, contentScheduled, approvalRequested, approvalCompleted, approvalRejected, approvalChangesRequested, approvalReminder, chatMessage, chatMention, socialPostPublished, socialPostFailed, socialAccountDisconnected, invitationAccepted, automationNotify, feedbackComment, invoiceOverdue, invoicePaid];
+  static const List<String> values = <String>[taskAssigned, taskStateChanged, taskCommented, taskDueSoon, taskOverdue, contentApproved, contentChangesRequested, contentRejected, contentScheduled, approvalRequested, approvalCompleted, approvalRejected, approvalChangesRequested, approvalReminder, chatMessage, chatMention, socialPostPublished, socialPostFailed, socialAccountDisconnected, invitationAccepted, automationNotify, feedbackComment, invoiceOverdue, invoicePaid, calendarReminder];
 }
 
 abstract final class NotificationChannels {

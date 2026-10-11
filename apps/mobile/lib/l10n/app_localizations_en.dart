@@ -5298,6 +5298,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String roleModuleScopeTitle(String module) {
+    return 'Where $module applies';
+  }
+
+  @override
+  String get roleModuleScopeHint =>
+      'Select one or more scope types. Pick the exact client, project, or other record when you assign this role on Team.';
+
+  @override
+  String get teamDataScopeTitle => 'Data scope';
+
+  @override
+  String get teamDataScopeHint =>
+      'Turn on the scopes this person should get. Select one or more clients, projects, teams, or departments when required.';
+
+  @override
+  String get teamDataScopeResourceRequired =>
+      'Pick at least one record for each scoped type that needs it.';
+
+  @override
   String rolePermissionLabel(String group, String action) {
     return '$group · $action';
   }

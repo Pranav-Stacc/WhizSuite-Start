@@ -27,7 +27,7 @@ export function scopeNeedsResource(scopeType: AssignableScopeType): boolean {
   return NEEDS_RESOURCE.has(scopeType);
 }
 
-function optionsFor(scopeType: AssignableScopeType, resources: ScopeResourceOptions): ScopeResourceOption[] {
+export function optionsForScope(scopeType: AssignableScopeType, resources: ScopeResourceOptions): ScopeResourceOption[] {
   switch (scopeType) {
     case AssignableScopeTypes.DEPARTMENT:
       return resources.departments;
@@ -42,7 +42,7 @@ function optionsFor(scopeType: AssignableScopeType, resources: ScopeResourceOpti
   }
 }
 
-function resourceLabel(scopeType: AssignableScopeType): string {
+export function scopeResourceLabel(scopeType: AssignableScopeType): string {
   switch (scopeType) {
     case AssignableScopeTypes.DEPARTMENT:
       return t('team.roles.resource.department');
@@ -75,7 +75,7 @@ export function ScopeResourceFields({
   scopeOptions,
 }: ScopeResourceFieldsProps) {
   const needsResource = scopeNeedsResource(scopeType);
-  const choices = optionsFor(scopeType, resources);
+  const choices = optionsForScope(scopeType, resources);
 
   return (
     <div className="space-y-3">
@@ -96,7 +96,7 @@ export function ScopeResourceFields({
         </Select>
       </Field>
       {needsResource ? (
-        <Field label={resourceLabel(scopeType)} htmlFor="assign-resource" hint={t('team.roles.resource.hint')}>
+        <Field label={scopeResourceLabel(scopeType)} htmlFor="assign-resource" hint={t('team.roles.resource.hint')}>
           <Select
             id="assign-resource"
             value={resourceId}

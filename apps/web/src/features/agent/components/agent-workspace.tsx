@@ -76,7 +76,6 @@ export function AgentWorkspace({
   definitions,
   sessionId,
   embedded = false,
-  sessionHref = (id: string) => `/agent?session=${id}`,
 }: {
   sessions: AgentSessionDto[];
   selectedSession: AgentSessionDto | null;
@@ -89,9 +88,8 @@ export function AgentWorkspace({
   canManageAgents: boolean;
   /** When true, styled to sit inside Chat (no outer page chrome). */
   embedded?: boolean;
-  /** Build session switcher href (defaults to /agent?session=). */
-  sessionHref?: (sessionId: string) => string;
 }) {
+  const sessionHref = (id: string) => `/chat?whiz=1&session=${encodeURIComponent(id)}`;
   const router = useRouter();
   const [draft, setDraft] = useState('');
   const [agentDefinitionId, setAgentDefinitionId] = useState('');

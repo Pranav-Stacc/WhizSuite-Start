@@ -188,6 +188,21 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
     );
   }
 
+  /// [SliverFillRemaining] must not host a nested scroll view (see [StatusMessage.scrollable]).
+  Widget _embeddedEmpty(Widget empty) {
+    if (empty is EmptyState) {
+      return EmptyState(
+        icon: empty.icon,
+        title: empty.title,
+        body: empty.body,
+        action: empty.action,
+        animate: empty.animate,
+        scrollable: false,
+      );
+    }
+    return empty;
+  }
+
   Widget? _chromeSliverChild() {
     if (!_hasChrome) return null;
     return Column(
@@ -232,9 +247,12 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
       onRefresh: widget.onRefresh,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = widget.minTileWidth == null
-              ? 1
-              : gridColumns(constraints.maxWidth - tokens.lg * 2, minTileWidth: widget.minTileWidth!);
+          final gridMode = widget.minTileWidth != null;
+          final columns = gridMode
+              ? gridColumns(constraints.maxWidth - tokens.lg * 2, minTileWidth: widget.minTileWidth!)
+              : 1;
+          // Grid tiles (e.g. media) use [Expanded] and need a fixed main axis extent — never [SliverList].
+          final useGrid = gridMode || columns > 1;
           final slivers = <Widget>[
             if (chrome != null)
               SliverPadding(
@@ -244,7 +262,7 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
             if (items.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(child: widget.empty),
+                child: Center(child: _embeddedEmpty(widget.empty)),
               )
             else if (visible.isEmpty)
               SliverFillRemaining(
@@ -255,10 +273,11 @@ class _ResourceListState<T> extends State<ResourceList<T>> {
                     title: l10n.searchNoMatches,
                     body: l10n.searchNoMatchesBody,
                     animate: false,
+                    scrollable: false,
                   ),
                 ),
               )
-            else if (columns == 1)
+            else if (!useGrid)
               SliverPadding(
                 padding: padding.copyWith(top: tokens.sm, bottom: tokens.xxl * 2),
                 sliver: SliverList.separated(

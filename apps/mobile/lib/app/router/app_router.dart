@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/presentation/invite_accept_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -18,6 +19,7 @@ import '../shell/app_shell.dart';
 import '../shell/home_screen.dart';
 import '../shell/more_screen.dart';
 import '../shell/splash_screen.dart';
+import 'oauth_deep_link.dart';
 
 GoRoute _page(String path, Widget screen, {List<RouteBase> routes = const []}) => GoRoute(
       path: path,
@@ -79,6 +81,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutes.splash,
     refreshListenable: refresh,
     redirect: (context, state) {
+      final config = ref.read(appConfigProvider);
+      final oauthTarget = redirectMetaOAuthDeepLink(state, scheme: config.deepLinkScheme);
+      if (oauthTarget != null) return oauthTarget;
+
       final session = ref.read(sessionProvider);
       final location = state.matchedLocation;
       if (session.isLoading && !session.hasValue) return location == AppRoutes.splash ? null : AppRoutes.splash;
@@ -88,6 +94,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!signedIn) return isPublic ? null : AppRoutes.login;
       if (isPublic || location == AppRoutes.splash) return AppRoutes.home;
       return null;
+    },
+    onException: (context, state, router) {
+      final config = ref.read(appConfigProvider);
+      final oauthTarget = redirectMetaOAuthDeepLink(state, scheme: config.deepLinkScheme);
+      if (oauthTarget != null) {
+        router.go(oauthTarget);
+        return;
+      }
     },
     routes: [
       GoRoute(path: AppRoutes.splash, builder: (_, _) => const SplashScreen()),

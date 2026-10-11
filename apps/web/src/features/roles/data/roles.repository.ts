@@ -4,12 +4,13 @@ import {
   RoleKinds,
   ScopeTypes,
   type MembershipType,
+  type PermissionScopeInput,
   type RoleKind,
   type ScopeType,
 } from '@agency-os/contracts';
 import { rolesLive } from '@/shared/api/live/bindings';
 import { createRepository, type Entity } from '@/shared/data/repository';
-import { DEMO_SYSTEM_ROLE_IDS } from '../config';
+import { DEMO_ROLE_IDS } from '../config';
 
 export interface AgencyRole extends Entity {
   name: string;
@@ -18,6 +19,7 @@ export interface AgencyRole extends Entity {
   kind: RoleKind;
   defaultScopeTypes: ScopeType[];
   permissionKeys: string[];
+  permissionScopes: PermissionScopeInput[];
   memberCount: number;
 }
 
@@ -29,13 +31,14 @@ export const rolesRepository = createRepository<AgencyRole>(
     DEMO_SYSTEM_TYPES.map((type) => {
       const template = DEFAULT_MEMBERSHIP_ROLES[type];
       return {
-        id: DEMO_SYSTEM_ROLE_IDS[type],
+        id: DEMO_ROLE_IDS[type],
         name: template.name,
         description: '',
-        isSystem: true,
+        isSystem: type === 'OWNER',
         kind: template.kind ?? RoleKinds.ACCESS,
         defaultScopeTypes: [...(template.defaultScopeTypes ?? [ScopeTypes.ORGANIZATION])],
         permissionKeys: [...template.permissions],
+        permissionScopes: [],
         memberCount: 0,
       };
     }),

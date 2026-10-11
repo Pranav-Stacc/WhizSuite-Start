@@ -17,6 +17,8 @@ const EXPORTS = [
   'Permissions',
   'ScopeTypes',
   'AssignableScopeTypes',
+  'PERMISSION_MODULE_SCOPES',
+  'MEMBERSHIP_DEFAULT_ROLE_NAME',
   'RoleKinds',
   'PermissionEffects',
   'MembershipTypes',

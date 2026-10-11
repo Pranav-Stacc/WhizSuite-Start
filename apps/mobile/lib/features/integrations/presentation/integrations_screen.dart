@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_value_view.dart';
-import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/surfaces.dart';
@@ -12,6 +11,7 @@ import '../../directory/application/directory_providers.dart';
 import '../application/integrations_controller.dart';
 import '../domain/platform_channel.dart';
 import 'channel_row.dart';
+import 'integration_oauth.dart';
 
 class IntegrationsScreen extends ConsumerStatefulWidget {
   const IntegrationsScreen({
@@ -37,12 +37,8 @@ class _IntegrationsScreenState extends ConsumerState<IntegrationsScreen> {
   void _showOAuthToast() {
     final meta = widget.oauthResult;
     if (meta == null) return;
-    final l10n = AppLocalizations.of(context);
-    if (meta == 'connected') {
-      showToast(context, l10n.integrationMetaConnected);
-    } else if (meta == 'error') {
-      showToast(context, l10n.integrationMetaFailed);
-    }
+    showIntegrationOAuthQueryFeedback(context, meta: meta, clientId: widget.initialClientId);
+    ref.invalidate(platformChannelsProvider(widget.initialClientId));
   }
 
   @override

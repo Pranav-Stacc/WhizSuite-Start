@@ -61,15 +61,27 @@ export class MediaRepository {
     limit: number,
     allowedClientIds?: string[],
     query: ListMediaAssetsQuery = {},
+    allowedProjectIds?: string[],
   ): Promise<MediaAssetRecord[]> {
     return this.prisma.mediaAsset.findMany({
       where: {
         organizationId,
         deletedAt: null,
         ...(allowedClientIds ? { clientId: { in: allowedClientIds } } : {}),
+        ...(allowedProjectIds && !query.projectId
+          ? { projectId: { in: allowedProjectIds } }
+          : {}),
         ...(query.clientId ? { clientId: query.clientId } : {}),
         ...(query.folderId ? { folderId: query.folderId } : {}),
-        ...(query.projectId ? { projectId: query.projectId } : {}),
+        ...(query.projectId
+          ? {
+              projectId:
+                allowedProjectIds &&
+                !allowedProjectIds.includes(query.projectId)
+                  ? { in: [] as string[] }
+                  : query.projectId,
+            }
+          : {}),
         ...(query.calendarItemId
           ? { calendarItemId: query.calendarItemId }
           : {}),

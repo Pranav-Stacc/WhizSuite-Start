@@ -1,5 +1,5 @@
 import 'server-only';
-import { type ApiContentType, ArticleCategories, AutomationActions, AutomationTriggers, ContentStatuses, type ContentType, ContentTypes, LeadStages, MediaAssetStatuses, type NotificationData, type Platform, Platforms } from '@agency-os/contracts';
+import { type ApiContentType, ArticleCategories, AutomationActions, AutomationTriggers, AssignableScopeTypes, ContentStatuses, type ContentType, ContentTypes, isAssignableScopeType, isPermission, LeadStages, MediaAssetStatuses, type NotificationData, type Platform, Platforms, readPermissionScopeTypes } from '@agency-os/contracts';
 import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
@@ -581,6 +581,14 @@ export function roleFromApi(raw: Raw): AgencyRole {
     .filter(Boolean);
   const assignments = Array.isArray(raw.assignments) ? raw.assignments : [];
   const summary = roleSummaryFromApi(raw);
+  const permissionScopes = permissions.flatMap((row) => {
+    const perm = (row.permission ?? row) as Raw;
+    const key = str(perm, 'key');
+    if (!isPermission(key)) return [];
+    const stored = readPermissionScopeTypes(row.conditions);
+    const scopeTypes = (stored ?? summary.defaultScopeTypes).filter(isAssignableScopeType);
+    return [{ key, scopeTypes: scopeTypes.length > 0 ? scopeTypes : [AssignableScopeTypes.ORGANIZATION] }];
+  });
   return {
     id: summary.id,
     name: summary.name,
@@ -589,6 +597,7 @@ export function roleFromApi(raw: Raw): AgencyRole {
     kind: summary.kind,
     defaultScopeTypes: summary.defaultScopeTypes,
     permissionKeys: keys,
+    permissionScopes,
     memberCount: assignments.length,
   };
 }
@@ -600,6 +609,9 @@ export function roleToApi(input: Partial<AgencyRole>): Raw {
     kind: input.kind,
     permissionKeys: input.permissionKeys,
     defaultScopeTypes: input.defaultScopeTypes,
+    ...(input.permissionScopes && input.permissionScopes.length > 0
+      ? { permissionScopes: input.permissionScopes }
+      : {}),
   };
 }
 

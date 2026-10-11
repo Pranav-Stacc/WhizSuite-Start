@@ -13,6 +13,7 @@ class StatusMessage extends StatelessWidget {
     this.body,
     this.action,
     this.animate = true,
+    this.scrollable = true,
     super.key,
   });
 
@@ -23,6 +24,9 @@ class StatusMessage extends StatelessWidget {
 
   /// Disabled inside sliver fill regions where [FadeSlideIn] can trip layout.
   final bool animate;
+
+  /// When false, omits the outer [SingleChildScrollView] — required inside [SliverFillRemaining].
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +56,15 @@ class StatusMessage extends StatelessWidget {
         ],
       ),
     );
+    final padded = Padding(
+      padding: EdgeInsets.all(tokens.xl),
+      child: animate ? FadeSlideIn(child: content) : content,
+    );
+    if (!scrollable) return Center(child: padded);
     return Center(
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(tokens.xl),
-        child: animate ? FadeSlideIn(child: content) : content,
+        padding: EdgeInsets.zero,
+        child: padded,
       ),
     );
   }
@@ -68,6 +77,7 @@ class EmptyState extends StatelessWidget {
     this.icon = Icons.inbox_outlined,
     this.action,
     this.animate = true,
+    this.scrollable = true,
     super.key,
   });
 
@@ -76,10 +86,17 @@ class EmptyState extends StatelessWidget {
   final IconData icon;
   final Widget? action;
   final bool animate;
+  final bool scrollable;
 
   @override
-  Widget build(BuildContext context) =>
-      StatusMessage(icon: icon, title: title, body: body, action: action, animate: animate);
+  Widget build(BuildContext context) => StatusMessage(
+        icon: icon,
+        title: title,
+        body: body,
+        action: action,
+        animate: animate,
+        scrollable: scrollable,
+      );
 }
 
 class ErrorState extends StatelessWidget {

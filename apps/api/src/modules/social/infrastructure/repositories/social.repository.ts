@@ -47,6 +47,8 @@ export interface ContentListFilter {
   status?: string;
   from?: Date;
   to?: Date;
+  /** Staff SELF scope — only items this user created. */
+  createdById?: string;
 }
 
 export interface ContentInsertData {
@@ -122,6 +124,7 @@ export class SocialRepository {
           ? { AND: [{ clientId: { in: filter.allowedClientIds } }] }
           : {}),
         ...(scopeOr ? { AND: [scopeOr] } : {}),
+        ...(filter.createdById ? { createdById: filter.createdById } : {}),
         ...(filter.status ? { status: filter.status } : {}),
         ...(scheduledAt ? { scheduledAt } : {}),
       },

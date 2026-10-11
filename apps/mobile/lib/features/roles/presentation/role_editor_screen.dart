@@ -19,6 +19,7 @@ import '../application/roles_controller.dart';
 import '../domain/permission_catalog.dart';
 import '../domain/role.dart';
 import '../roles_routes.dart';
+import '../domain/permission_module_scopes.dart';
 import 'permission_labels.dart';
 import 'permission_matrix.dart';
 import 'role_card.dart';
@@ -80,6 +81,7 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
   late String _initialName;
   late String _initialDescription;
   late Set<String> _initialSelected;
+  late Map<String, Set<String>> _moduleScopes;
   final _expanded = <String>{};
   String _query = '';
   bool _saving = false;
@@ -104,6 +106,14 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     _initialDescription = role?.description ?? '';
     _initialSelected = (role?.permissionKeys ?? const <String>{}).intersection(catalog);
     _selected = {...(template?.permissionKeys ?? _initialSelected).intersection(catalog)};
+    _moduleScopes = {
+      for (final entry in (role?.moduleScopes ?? const {}).entries)
+        entry.key: Set<String>.from(entry.value),
+    };
+    for (final key in _selected) {
+      final module = moduleKeyForPermission(key);
+      _moduleScopes.putIfAbsent(module, () => {ScopeTypes.organization});
+    }
     _name = TextEditingController(text: role?.name ?? '');
     _description = TextEditingController(text: role?.description ?? template?.description ?? '');
     _name.addListener(_onEdited);
@@ -129,11 +139,20 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
 
   void _onEdited() => setState(() {});
 
-  void _toggle(String key, bool granted) => setState(() => granted ? _selected.add(key) : _selected.remove(key));
+  void _toggle(String key, bool granted) => setState(() {
+        if (granted) {
+          _selected.add(key);
+          final module = moduleKeyForPermission(key);
+          _moduleScopes.putIfAbsent(module, () => {ScopeTypes.organization});
+        } else {
+          _selected.remove(key);
+        }
+      });
 
   void _toggleGroup(PermissionGroup group, bool grant) => setState(() {
         if (grant) {
           _selected.addAll(group.keys);
+          _moduleScopes.putIfAbsent(group.key, () => {ScopeTypes.organization});
         } else {
           _selected.removeAll(group.keys);
         }
@@ -143,12 +162,18 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final l10n = AppLocalizations.of(context);
     final existing = _role;
+    final permissionScopes = buildPermissionScopes(_selected, _moduleScopes);
+    final scopeUnion = permissionScopes
+        .expand((row) => (row['scopeTypes'] as List<Object>).cast<String>())
+        .toSet()
+        .toList();
     final input = RoleInput(
       name: _name.text.trim(),
       description: _description.text.trim(),
       permissionKeys: _selected,
       kind: existing?.kind ?? RoleKinds.access,
-      defaultScopeTypes: existing?.defaultScopeTypes ?? const [ScopeTypes.organization],
+      defaultScopeTypes: scopeUnion.isNotEmpty ? scopeUnion : const [ScopeTypes.organization],
+      permissionScopes: permissionScopes,
     );
     final actions = ref.read(rolesActionsProvider);
     final role = _role;
@@ -290,7 +315,7 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
           padding: EdgeInsets.symmetric(vertical: tokens.xl),
           child: Text(l10n.rolePermissionsNoMatch, textAlign: TextAlign.center, style: TextStyle(color: tokens.muted)),
         ),
-      for (final group in visible)
+      for (final group in visible) ...[
         PermissionGroupCard(
           group: group,
           selected: _selected,
@@ -300,6 +325,14 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
           onToggle: _toggle,
           onToggleGroup: (grant) => _toggleGroup(group, grant),
         ),
+        if (!_readOnly && group.permissions.any((p) => _selected.contains(p.key)))
+          _ModuleScopeRow(
+            groupLabel: permissionGroupLabel(l10n, group.key),
+            moduleKey: group.key,
+            scopes: _moduleScopes[group.key] ?? {ScopeTypes.organization},
+            onChanged: (next) => setState(() => _moduleScopes[group.key] = next),
+          ),
+      ],
     ];
 
     return PopScope(
@@ -355,6 +388,63 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
                 ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModuleScopeRow extends StatelessWidget {
+  const _ModuleScopeRow({
+    required this.groupLabel,
+    required this.moduleKey,
+    required this.scopes,
+    required this.onChanged,
+  });
+
+  final String groupLabel;
+  final String moduleKey;
+  final Set<String> scopes;
+  final ValueChanged<Set<String>> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    final sample = '$moduleKey.view';
+    final allowed = allowedScopesForPermission(sample);
+    return Padding(
+      padding: EdgeInsets.only(left: tokens.sm, right: tokens.sm, bottom: tokens.md),
+      child: SurfaceCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.roleModuleScopeTitle(groupLabel), style: text.titleSmall),
+            SizedBox(height: tokens.xs),
+            Text(l10n.roleModuleScopeHint, style: text.bodySmall?.copyWith(color: tokens.muted)),
+            SizedBox(height: tokens.sm),
+            Wrap(
+              spacing: tokens.xs,
+              runSpacing: tokens.xs,
+              children: [
+                for (final scope in allowed)
+                  FilterChip(
+                    label: Text(scopeTypeLabel(scope)),
+                    selected: scopes.contains(scope),
+                    onSelected: (on) {
+                      final next = Set<String>.from(scopes);
+                      if (on) {
+                        next.add(scope);
+                      } else if (next.length > 1) {
+                        next.remove(scope);
+                      }
+                      onChanged(next);
+                    },
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );

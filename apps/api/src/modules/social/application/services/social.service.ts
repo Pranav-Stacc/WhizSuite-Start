@@ -69,6 +69,9 @@ export class SocialService {
         allowedClientIds: TenantContext.clientScope(),
         allowedProjectIds: TenantContext.projectScope(),
         allowedContentIds: TenantContext.contentScope(),
+        createdById: TenantContext.selfOnly()
+          ? TenantContext.get()?.userId
+          : undefined,
         status: query.status,
         from: query.from ? new Date(query.from) : undefined,
         to: query.to ? new Date(query.to) : undefined,

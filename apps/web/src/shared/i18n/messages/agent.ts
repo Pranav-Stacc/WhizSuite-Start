@@ -1,6 +1,6 @@
 export const agentMessages = {
   'nav.agent': 'Whiz AI',
-  'nav.agent.desc': 'Open Whiz inside Chat — same tools and sessions',
+  'nav.agent.desc': 'Agency AI in Chat',
   'agent.title': 'Agency AI',
   'agent.description':
     'Just chat — the AI plans and runs agency work for you within your permissions.',

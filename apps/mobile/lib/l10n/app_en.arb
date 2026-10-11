@@ -3214,6 +3214,18 @@
       }
     }
   },
+  "roleModuleScopeTitle": "Where {module} applies",
+  "@roleModuleScopeTitle": {
+    "placeholders": {
+      "module": {
+        "type": "String"
+      }
+    }
+  },
+  "roleModuleScopeHint": "Select one or more scope types. Pick the exact client, project, or other record when you assign this role on Team.",
+  "teamDataScopeTitle": "Data scope",
+  "teamDataScopeHint": "Turn on the scopes this person should get. Select one or more clients, projects, teams, or departments when required.",
+  "teamDataScopeResourceRequired": "Pick at least one record for each scoped type that needs it.",
   "rolePermissionLabel": "{group} · {action}",
   "@rolePermissionLabel": {
     "placeholders": {

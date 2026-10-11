@@ -17,7 +17,7 @@ const ORG_SCOPES = [ScopeTypes.ORGANIZATION] as const;
 const ROLE_MANAGER = {
   id: 'role-manager',
   name: DEFAULT_MEMBERSHIP_ROLES.ADMIN.name,
-  isSystem: true,
+  isSystem: false,
   kind: RoleKinds.ACCESS,
   defaultScopeTypes: [...ORG_SCOPES],
 };

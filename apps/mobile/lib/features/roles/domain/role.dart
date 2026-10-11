@@ -1,6 +1,7 @@
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
+import 'permission_module_scopes.dart';
 
 /// Name of the provisioned system role that backs the OWNER membership; never assignable.
 /// Mirrors `DEFAULT_MEMBERSHIP_ROLES.OWNER.name` in `packages/contracts`.
@@ -49,6 +50,7 @@ class Role {
     this.isSystem = false,
     this.kind = RoleKinds.access,
     this.defaultScopeTypes = const [ScopeTypes.organization],
+    this.moduleScopes = const {},
     this.memberCount = 0,
   });
 
@@ -63,6 +65,7 @@ class Role {
         permissionKeys: {
           for (final row in json.objects('permissions')) ?(row.object('permission') ?? row).strOrNull('key'),
         },
+        moduleScopes: _moduleScopesFromPermissions(json),
         memberCount: json.integerOrNull('memberCount') ?? json.objects('assignments').length,
       );
 
@@ -73,6 +76,8 @@ class Role {
   final String kind;
   final List<String> defaultScopeTypes;
   final Set<String> permissionKeys;
+  /// Union of per-permission scope types, grouped by module prefix.
+  final Map<String, Set<String>> moduleScopes;
   final int memberCount;
 
   RoleSummary get summary => RoleSummary(
@@ -87,8 +92,23 @@ class Role {
 
   bool get isWorkflow => kind == RoleKinds.workflow;
 
-  /// System roles back membership types and are read-only in the API.
+  /// Only the Owner system role is read-only in the API.
   bool get isEditable => !isSystem;
+}
+
+Map<String, Set<String>> _moduleScopesFromPermissions(Json json) {
+  final map = <String, Set<String>>{};
+  for (final row in json.objects('permissions')) {
+    final perm = row.object('permission') ?? row;
+    final key = perm.strOrNull('key');
+    if (key == null) continue;
+    final module = moduleKeyForPermission(key);
+    final conditions = row.object('conditions');
+    final types = conditions?.strings('scopeTypes') ?? const [];
+    if (types.isEmpty) continue;
+    map.putIfAbsent(module, () => {}).addAll(types);
+  }
+  return map;
 }
 
 /// Fields the role editor submits.
@@ -99,6 +119,7 @@ class RoleInput {
     required this.permissionKeys,
     this.kind = RoleKinds.access,
     this.defaultScopeTypes = const [ScopeTypes.organization],
+    this.permissionScopes = const [],
   });
 
   final String name;
@@ -106,6 +127,7 @@ class RoleInput {
   final Set<String> permissionKeys;
   final String kind;
   final List<String> defaultScopeTypes;
+  final List<Map<String, Object>> permissionScopes;
 
   Json toJson() => {
         'name': name,
@@ -113,5 +135,6 @@ class RoleInput {
         'kind': kind,
         'permissionKeys': (permissionKeys.toList()..sort()),
         'defaultScopeTypes': defaultScopeTypes,
+        if (permissionScopes.isNotEmpty) 'permissionScopes': permissionScopes,
       };
 }

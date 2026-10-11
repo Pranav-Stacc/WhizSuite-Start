@@ -6,6 +6,7 @@ import {
   CheckSquare,
   CreditCard,
   FolderKanban,
+  Images,
   LayoutDashboard,
   MessageSquare,
   type LucideIcon,
@@ -23,7 +24,6 @@ import {
   UsersRound,
   Workflow,
   Zap,
-  Sparkles,
 } from 'lucide-react';
 import { Permissions, type Permission } from '@agency-os/contracts';
 import type { MessageKey } from '@/shared/i18n/t';
@@ -78,6 +78,7 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: SquarePen,
     items: [
       { href: '/content', label: 'nav.content', desc: 'nav.content.desc', icon: SquarePen, permission: Permissions.CONTENT_VIEW },
+      { href: '/media', label: 'nav.media', desc: 'nav.media.desc', icon: Images, permission: Permissions.FILES_VIEW },
       { href: '/approvals', label: 'nav.approvals', desc: 'nav.approvals.desc', icon: ShieldCheck, permission: Permissions.APPROVALS_VIEW },
     ],
   },
@@ -97,13 +98,6 @@ export const NAV_GROUPS: NavGroup[] = [
     desc: 'nav.group.automate.desc',
     icon: Zap,
     items: [
-      {
-        href: '/chat?whiz=1',
-        label: 'nav.agent',
-        desc: 'nav.agent.desc',
-        icon: Sparkles,
-        permission: Permissions.AI_CHAT,
-      },
       { href: '/automations', label: 'nav.automations', desc: 'nav.automations.desc', icon: Zap, permission: Permissions.AUTOMATIONS_MANAGE },
       { href: '/workflows', label: 'nav.workflows', desc: 'nav.workflows.desc', icon: Workflow, permission: Permissions.WORKFLOWS_MANAGE },
       { href: '/integrations', label: 'nav.integrations', desc: 'nav.integrations.desc', icon: Plug, permission: Permissions.INTEGRATIONS_MANAGE },

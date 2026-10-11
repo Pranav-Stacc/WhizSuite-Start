@@ -14,6 +14,41 @@ type ScopeRow = {
   resourceId: string | null;
 };
 
+export interface PermissionScopeRule {
+  key: string;
+  /** `null` keeps legacy behaviour: every assignment scope applies to this permission. */
+  scopeTypes: readonly string[] | null;
+}
+
+/**
+ * Assignment scopes that actually grant the given permissions.
+ * A content grant limited to CLIENT ignores an ORGANIZATION scope on the same assignment.
+ * When `prefixes` is set, only permissions in those modules are considered.
+ */
+export function scopesApplicableToPermissions(
+  scopes: readonly ScopeRow[],
+  permissions: readonly PermissionScopeRule[],
+  prefixes?: readonly string[],
+): ScopeRow[] {
+  const relevant = prefixes
+    ? permissions.filter((permission) =>
+        prefixes.some(
+          (prefix) =>
+            permission.key === prefix ||
+            permission.key.startsWith(`${prefix}.`),
+        ),
+      )
+    : [...permissions];
+  if (relevant.length === 0) return [];
+  if (relevant.some((permission) => permission.scopeTypes === null)) {
+    return [...scopes];
+  }
+  const allowed = new Set(
+    relevant.flatMap((permission) => permission.scopeTypes ?? []),
+  );
+  return scopes.filter((scope) => allowed.has(scope.scopeType));
+}
+
 async function membershipIdsInDepartment(
   prisma: PrismaService,
   organizationId: string,

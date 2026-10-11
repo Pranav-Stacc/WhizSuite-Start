@@ -238,7 +238,9 @@ export class MetaOauthService {
   successRedirect(stateRaw: string): string {
     const parsed = safeParseState(stateRaw);
     if (parsed?.returnTo === 'mobile') {
-      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', { infer: true });
+      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', {
+        infer: true,
+      });
       const client = parsed.clientId
         ? `&client=${encodeURIComponent(parsed.clientId)}`
         : '';
@@ -253,7 +255,9 @@ export class MetaOauthService {
       ? `&reason=${encodeURIComponent(reason.slice(0, 80))}`
       : '';
     if (parsed?.returnTo === 'mobile') {
-      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', { infer: true });
+      const scheme = this.config.get('MOBILE_DEEP_LINK_SCHEME', {
+        infer: true,
+      });
       const client = parsed.clientId
         ? `&client=${encodeURIComponent(parsed.clientId)}`
         : '';
@@ -358,7 +362,9 @@ export class MetaOauthService {
   }
 }
 
-function safeParseState(state: string): (OAuthState & { connectionId?: string }) | null {
+function safeParseState(
+  state: string,
+): (OAuthState & { connectionId?: string }) | null {
   try {
     return parseState(state);
   } catch {

@@ -287,6 +287,7 @@ export async function syncMemberExtraPermissionsAction(
         kind: RoleKinds.ACCESS,
         defaultScopeTypes: ['ORGANIZATION'],
         permissionKeys,
+        permissionScopes: [],
         memberCount: 1,
       });
       const keepIds = [...new Set([...raw.roleIds, personal.id])];

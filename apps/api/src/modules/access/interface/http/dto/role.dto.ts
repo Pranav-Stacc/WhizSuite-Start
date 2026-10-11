@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -8,6 +9,7 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import {
   ALL_PERMISSIONS,
@@ -24,6 +26,19 @@ import {
 } from '@agency-os/contracts';
 
 const ROLE_NAME_MIN_LENGTH = 2;
+
+export class PermissionScopeDto {
+  @ApiProperty({ enum: ALL_PERMISSIONS })
+  @IsIn(ALL_PERMISSIONS)
+  key!: Permission;
+
+  @ApiProperty({ type: [String], enum: ASSIGNABLE_SCOPE_TYPE_KEYS })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(ASSIGNABLE_SCOPE_TYPE_KEYS.length)
+  @IsIn(ASSIGNABLE_SCOPE_TYPE_KEYS, { each: true })
+  scopeTypes!: AssignableScopeType[];
+}
 
 export class CreateRoleDto {
   @ApiProperty()
@@ -67,6 +82,14 @@ export class CreateRoleDto {
   defaultScopeTypes: AssignableScopeType[] = [
     AssignableScopeTypes.ORGANIZATION,
   ];
+
+  @ApiPropertyOptional({ type: [PermissionScopeDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(ALL_PERMISSIONS.length)
+  @ValidateNested({ each: true })
+  @Type(() => PermissionScopeDto)
+  permissionScopes?: PermissionScopeDto[];
 }
 
 export class UpdateRoleDto {
@@ -109,4 +132,12 @@ export class UpdateRoleDto {
   @ArrayMaxSize(ROLE_SCOPES_MAX)
   @IsIn(ASSIGNABLE_SCOPE_TYPE_KEYS, { each: true })
   defaultScopeTypes?: AssignableScopeType[];
+
+  @ApiPropertyOptional({ type: [PermissionScopeDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(ALL_PERMISSIONS.length)
+  @ValidateNested({ each: true })
+  @Type(() => PermissionScopeDto)
+  permissionScopes?: PermissionScopeDto[];
 }

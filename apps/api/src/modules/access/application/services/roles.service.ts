@@ -66,6 +66,7 @@ export class RolesService {
         kind: input.kind,
         permissionKeys: input.permissionKeys,
         defaultScopeTypes: input.defaultScopeTypes,
+        permissionScopes: input.permissionScopes,
       },
     });
     return role;
@@ -87,6 +88,9 @@ export class RolesService {
         raw.permissionKeys ?? before.permissions.map((p) => p.permission.key),
       defaultScopeTypes:
         raw.defaultScopeTypes ?? asScopeTypes(before.defaultScopeTypes),
+      ...(raw.permissionScopes
+        ? { permissionScopes: raw.permissionScopes }
+        : {}),
     });
     const patch: Partial<RoleInput> = {};
     if (raw.name !== undefined) patch.name = raw.name;
@@ -97,6 +101,9 @@ export class RolesService {
     }
     if (raw.defaultScopeTypes !== undefined) {
       patch.defaultScopeTypes = raw.defaultScopeTypes;
+    }
+    if (raw.permissionScopes !== undefined) {
+      patch.permissionScopes = raw.permissionScopes;
     }
     const role = await this.repository.updateRole(
       organizationId,

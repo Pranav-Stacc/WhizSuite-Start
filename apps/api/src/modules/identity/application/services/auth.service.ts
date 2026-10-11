@@ -11,6 +11,7 @@ import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { IdentityRepository } from '../../infrastructure/repositories/identity.repository';
 import { GoogleIdTokenVerifier } from '../../infrastructure/auth/google-id-token.verifier';
 import { AuditService } from '../../../audit/application/services/audit.service';
+import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
 
 export interface RegisterInput {
   email: string;
@@ -51,6 +52,7 @@ export class AuthService {
     private readonly outbox: OutboxService,
     private readonly audit: AuditService,
     private readonly googleTokens: GoogleIdTokenVerifier,
+    private readonly defaultRoles: DefaultRolesService,
   ) {}
 
   async register(input: RegisterInput) {
@@ -81,6 +83,8 @@ export class AuthService {
       organizationName: input.organizationName,
       organizationSlug: input.organizationSlug.toLowerCase(),
     });
+
+    await this.defaultRoles.provisionDefaultRoleTemplates(result.organization.id);
 
     await this.outbox.write({
       type: DomainEventTypes.ORGANIZATION_CREATED,
@@ -224,6 +228,8 @@ export class AuthService {
       provider,
       providerUserId: identity.providerUserId,
     });
+
+    await this.defaultRoles.provisionDefaultRoleTemplates(result.organization.id);
 
     await this.outbox.write({
       type: DomainEventTypes.ORGANIZATION_CREATED,

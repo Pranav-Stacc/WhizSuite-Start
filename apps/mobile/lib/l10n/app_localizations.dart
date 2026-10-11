@@ -7613,6 +7613,36 @@ abstract class AppLocalizations {
   /// **'{action, select, k_view{View} k_create{Create} k_edit{Edit} k_delete{Delete} k_invite{Invite} k_deactivate{Deactivate} k_manage{Manage} k_settings_manage{Manage settings} k_billing_manage{Manage billing} k_branding_manage{Manage branding} k_convert{Convert} k_assign{Assign} k_transition{Change status} k_schedule{Schedule} k_publish{Publish} k_approve{Approve} k_resolve{Resolve} k_upload{Upload} k_reply{Reply} k_track{Track} other{{fallback}}}'**
   String rolePermissionAction(String action, String fallback);
 
+  /// No description provided for @roleModuleScopeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Where {module} applies'**
+  String roleModuleScopeTitle(String module);
+
+  /// No description provided for @roleModuleScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one or more scope types. Pick the exact client, project, or other record when you assign this role on Team.'**
+  String get roleModuleScopeHint;
+
+  /// No description provided for @teamDataScopeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data scope'**
+  String get teamDataScopeTitle;
+
+  /// No description provided for @teamDataScopeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the scopes this person should get. Select one or more clients, projects, teams, or departments when required.'**
+  String get teamDataScopeHint;
+
+  /// No description provided for @teamDataScopeResourceRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one record for each scoped type that needs it.'**
+  String get teamDataScopeResourceRequired;
+
   /// No description provided for @rolePermissionLabel.
   ///
   /// In en, this message translates to:

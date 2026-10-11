@@ -48,9 +48,27 @@ Future<IntegrationOAuthResult?> launchMetaOAuth(
   }
 }
 
+/// Avoids duplicate toasts when both [FlutterWebAuth2] and a platform deep link fire.
+final class IntegrationOAuthFeedback {
+  IntegrationOAuthFeedback._();
+
+  static String? _lastKey;
+
+  static bool markIfNew({required String meta, String? clientId}) {
+    final key = '$meta|${clientId ?? ''}';
+    if (_lastKey == key) return false;
+    _lastKey = key;
+    return true;
+  }
+}
+
 /// Shows success/error toasts after OAuth and returns whether it succeeded.
 bool handleIntegrationOAuthResult(BuildContext context, IntegrationOAuthResult? result) {
   if (result == null) return false;
+  final meta = result.success ? 'connected' : 'error';
+  if (!IntegrationOAuthFeedback.markIfNew(meta: meta, clientId: result.clientId)) {
+    return result.success;
+  }
   final l10n = AppLocalizations.of(context);
   if (result.success) {
     showToast(context, l10n.integrationMetaConnected);
@@ -62,6 +80,17 @@ bool handleIntegrationOAuthResult(BuildContext context, IntegrationOAuthResult? 
     reason == null || reason.isEmpty ? l10n.integrationMetaFailed : l10n.integrationMetaFailedReason(reason),
   );
   return false;
+}
+
+/// Toast for OAuth query params on [IntegrationsScreen] (cold start / deep link only).
+void showIntegrationOAuthQueryFeedback(BuildContext context, {required String meta, String? clientId}) {
+  if (!IntegrationOAuthFeedback.markIfNew(meta: meta, clientId: clientId)) return;
+  final l10n = AppLocalizations.of(context);
+  if (meta == 'connected') {
+    showToast(context, l10n.integrationMetaConnected);
+  } else if (meta == 'error') {
+    showToast(context, l10n.integrationMetaFailed);
+  }
 }
 
 String oauthCallbackScheme(AppConfig config) => config.deepLinkScheme;

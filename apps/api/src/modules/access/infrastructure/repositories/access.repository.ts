@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import {
   AssignableScopeTypes,
+  DEFAULT_ROLE_TEMPLATES,
   PermissionEffects,
   RoleKinds,
   ScopeTypes,
+  allowedScopesForPermission,
+  isAssignableScopeType,
   isPermission,
+  readPermissionScopeTypes,
   type AccessRoleSummary,
   type AssignableScopeType,
   type MemberPermissionOverride,
@@ -21,8 +25,10 @@ import {
   applyPermissionOverrides,
   type PermissionInputs,
 } from '../../application/utils/effective-permissions';
+import { permissionPrefixForPath } from '../../application/utils/permission-prefix';
 import {
   resolveDataScopeFromAssignments,
+  scopesApplicableToPermissions,
   type ResolvedDataScope,
 } from '../../application/utils/resolve-data-scope';
 import {
@@ -82,6 +88,15 @@ export function toOverrides(
       ? [{ key: permission.key, effect: asPermissionEffect(effect) }]
       : [],
   );
+}
+
+function permissionConditions(
+  key: string,
+  input: Pick<RoleInput, 'permissionScopes' | 'defaultScopeTypes'>,
+): Prisma.InputJsonValue {
+  const row = input.permissionScopes?.find((scope) => scope.key === key);
+  const scopeTypes = row?.scopeTypes ?? input.defaultScopeTypes;
+  return { scopeTypes };
 }
 
 function defaultAssignmentScopes(
@@ -217,20 +232,23 @@ export class AccessRepository {
 
     for (const assignment of assignments) {
       for (const rp of assignment.role.permissions) {
-        if (assignment.scopes.length === 0) {
+        const rule = {
+          key: permissionKey,
+          scopeTypes: readPermissionScopeTypes(rp.conditions),
+        };
+        const applicable =
+          assignment.scopes.length === 0
+            ? scopesApplicableToPermissions(
+                [{ scopeType: 'ORGANIZATION', resourceId: null }],
+                [rule],
+              )
+            : scopesApplicableToPermissions(assignment.scopes, [rule]);
+        for (const scope of applicable) {
           grants.push({
             effect: rp.effect,
-            scopeType: 'ORGANIZATION',
-            resourceId: null,
+            scopeType: scope.scopeType,
+            resourceId: scope.resourceId,
           });
-        } else {
-          for (const scope of assignment.scopes) {
-            grants.push({
-              effect: rp.effect,
-              scopeType: scope.scopeType,
-              resourceId: scope.resourceId,
-            });
-          }
         }
       }
     }
@@ -361,16 +379,48 @@ export class AccessRepository {
   async resolveDataScope(
     organizationId: string,
     membershipId: string,
+    url?: string,
   ): Promise<ResolvedDataScope> {
+    const prefix = url ? permissionPrefixForPath(url) : undefined;
     const assignments = await this.prisma.roleAssignment.findMany({
       where: { organizationId, membershipId },
-      include: { scopes: true },
+      include: {
+        scopes: true,
+        role: {
+          include: {
+            permissions: { include: { permission: true } },
+          },
+        },
+      },
     });
+    const compiled = assignments
+      .map((assignment) => ({
+        scopes: scopesApplicableToPermissions(
+          assignment.scopes,
+          assignment.role.permissions.map((row) => ({
+            key: row.permission.key,
+            scopeTypes: readPermissionScopeTypes(row.conditions),
+          })),
+          prefix ? [prefix] : undefined,
+        ),
+      }))
+      .filter((assignment) => assignment.scopes.length > 0);
+
+    if (assignments.length > 0 && compiled.length === 0) {
+      return {
+        orgWide: false,
+        selfOnly: false,
+        clientIds: [],
+        projectIds: [],
+        contentIds: [],
+      };
+    }
+
     return resolveDataScopeFromAssignments(
       this.prisma,
       organizationId,
       membershipId,
-      assignments,
+      compiled,
     );
   }
 
@@ -541,6 +591,7 @@ export class AccessRepository {
           create: permissions.map((p) => ({
             permissionId: p.id,
             effect: 'ALLOW',
+            conditions: permissionConditions(p.key, input),
           })),
         },
       },
@@ -571,6 +622,12 @@ export class AccessRepository {
             roleId,
             permissionId: p.id,
             effect: 'ALLOW',
+            conditions: permissionConditions(p.key, {
+              permissionScopes: input.permissionScopes,
+              defaultScopeTypes: input.defaultScopeTypes ?? [
+                AssignableScopeTypes.ORGANIZATION,
+              ],
+            }),
           })),
         });
       }
@@ -593,6 +650,52 @@ export class AccessRepository {
         permissions: { include: { permission: true } },
         assignments: { select: { id: true } },
       },
+    });
+  }
+
+  /** Creates editable default roles (Admin, Member, Client portal) for a new organisation. */
+  async ensureDefaultRoleTemplates(organizationId: string) {
+    for (const template of DEFAULT_ROLE_TEMPLATES) {
+      const existing = await this.prisma.role.findFirst({
+        where: { organizationId, name: template.name, isSystem: false },
+        select: { id: true },
+      });
+      if (existing) continue;
+      const defaultScopeTypes: AssignableScopeType[] = (
+        template.defaultScopeTypes ?? [AssignableScopeTypes.ORGANIZATION]
+      ).filter((scope): scope is AssignableScopeType => isAssignableScopeType(scope));
+      await this.createRole(organizationId, {
+        name: template.name,
+        description: undefined,
+        kind: template.kind ?? RoleKinds.ACCESS,
+        permissionKeys: [...template.permissions],
+        defaultScopeTypes,
+        permissionScopes: template.permissions.map((key) => {
+          const allowed = allowedScopesForPermission(key);
+          const assignableAllowed = allowed.filter((scope): scope is AssignableScopeType =>
+            isAssignableScopeType(scope),
+          );
+          const scopeTypes = defaultScopeTypes.filter((scope) =>
+            assignableAllowed.includes(scope),
+          );
+          return {
+            key,
+            scopeTypes:
+              scopeTypes.length > 0
+                ? scopeTypes
+                : assignableAllowed.includes(AssignableScopeTypes.ORGANIZATION)
+                  ? [AssignableScopeTypes.ORGANIZATION]
+                  : assignableAllowed,
+          };
+        }),
+      });
+    }
+  }
+
+  async findRoleByName(organizationId: string, name: string) {
+    return this.prisma.role.findFirst({
+      where: { organizationId, name, isSystem: false },
+      select: { id: true },
     });
   }
 

@@ -122,8 +122,8 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         rooms={rooms}
         selected={selected}
         messages={page.items}
-        membersById={names}
-        roomTitles={roomTitles}
+        membersById={Object.fromEntries(names)}
+        roomTitles={Object.fromEntries(roomTitles)}
         viewerId={session.userId}
         mentionCandidates={mentionCandidates}
         showWhiz={canUseWhiz}

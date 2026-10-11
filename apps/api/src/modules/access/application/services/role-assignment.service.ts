@@ -1,20 +1,22 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import {
-  DEFAULT_MEMBERSHIP_ROLES,
+  MEMBERSHIP_DEFAULT_ROLE_NAME,
   ErrorCodes,
   type AccessRoleSummary,
   type RoleAssignmentScopeInput,
   type ScopeType,
 } from '@agency-os/contracts';
+import { OWNER_MEMBERSHIP_TYPE } from '../../config/default-roles';
 import { problem } from '../../../../shared/errors/problem-details.exception';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { AccessRepository } from '../../infrastructure/repositories/access.repository';
 import { AuthorizationService } from './authorization.service';
 
 const MEMBERSHIP_ENTITY_TYPE = 'membership';
+const OWNER_ROLE_NAME = MEMBERSHIP_DEFAULT_ROLE_NAME[OWNER_MEMBERSHIP_TYPE];
 
 function isOwnerRole(role: AccessRoleSummary): boolean {
-  return role.isSystem && role.name === DEFAULT_MEMBERSHIP_ROLES.OWNER.name;
+  return role.isSystem && role.name === OWNER_ROLE_NAME;
 }
 
 /** Public entry point other modules use to read and change which roles a member holds. */

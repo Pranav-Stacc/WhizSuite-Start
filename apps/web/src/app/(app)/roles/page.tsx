@@ -1,4 +1,4 @@
-import { Permissions, RoleKinds } from '@agency-os/contracts';
+import { Permissions, RoleKinds, moduleKeyForPermission } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Lock, Shield, Trash2, Users } from 'lucide-react';
 import { requirePermission } from '@/shared/auth/permissions';
@@ -11,8 +11,26 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { deleteRoleAction } from '@/features/roles/actions/role.actions';
 import { RoleDialog } from '@/features/roles/components/role-dialog';
-import { listRoles } from '@/features/roles/services/roles.service';
+import type { AgencyRole } from '@/features/roles/data/roles.repository';
 import { listPermissionCatalog } from '@/features/roles/services/permissions.service';
+import { listRoles } from '@/features/roles/services/roles.service';
+
+const MODULES_SHOWN = 6;
+
+function moduleGrants(role: AgencyRole): { module: string; scopes: string[] }[] {
+  const rows =
+    role.permissionScopes.length > 0
+      ? role.permissionScopes
+      : role.permissionKeys.map((key) => ({ key, scopeTypes: role.defaultScopeTypes }));
+  const map = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const module = moduleKeyForPermission(row.key);
+    const scopes = map.get(module) ?? new Set<string>();
+    for (const scope of row.scopeTypes) scopes.add(scope);
+    map.set(module, scopes);
+  }
+  return [...map.entries()].map(([module, scopes]) => ({ module, scopes: [...scopes] }));
+}
 
 export const metadata: Metadata = { title: t('roles.title') };
 
@@ -49,13 +67,27 @@ export default async function RolesPage() {
                 </div>
                 <Badge tone="primary">{t('roles.members', { count: role.memberCount })}</Badge>
               </div>
-              <ul className="mt-2 flex flex-wrap gap-1">
-                {role.defaultScopeTypes.map((scope) => (
-                  <li key={scope} className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted">
-                    {humanizeKey(scope)}
-                  </li>
-                ))}
-              </ul>
+              {role.isSystem ? (
+                <ul className="mt-2 flex flex-wrap gap-1">
+                  {role.defaultScopeTypes.map((scope) => (
+                    <li key={scope} className="rounded-md bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted">
+                      {humanizeKey(scope)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="mt-2 space-y-1">
+                  {moduleGrants(role)
+                    .slice(0, MODULES_SHOWN)
+                    .map((grant) => (
+                      <li key={grant.module} className="text-[11px] text-muted">
+                        <span className="font-medium text-foreground">{humanizeKey(grant.module)}</span>
+                        {' · '}
+                        {grant.scopes.map((scope) => humanizeKey(scope)).join(', ')}
+                      </li>
+                    ))}
+                </ul>
+              )}
               <p className="mt-3 text-xs text-muted">{t('roles.permissionCount', { count: role.permissionKeys.length })}</p>
               <ul className="mt-2 flex flex-wrap gap-1">
                 {role.permissionKeys.slice(0, PERMISSIONS_SHOWN).map((key) => (

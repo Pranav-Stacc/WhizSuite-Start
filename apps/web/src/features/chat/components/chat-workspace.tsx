@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type {
@@ -20,8 +22,8 @@ import { MasterDetailLayout } from '@/shared/ui/master-detail';
 import { ChatRoomThread } from './chat-room-thread';
 import type { MentionCandidate } from './send-message-form';
 
-function roomTitle(room: ChatRoomDto, titles: Map<string, string>): string {
-  return titles.get(room.id) ?? room.name ?? (room.type === 'DM' ? t('chat.dm') : t('chat.untitled'));
+function roomTitle(room: ChatRoomDto, titles: Record<string, string>): string {
+  return titles[room.id] ?? room.name ?? (room.type === 'DM' ? t('chat.dm') : t('chat.untitled'));
 }
 
 function RoomTypeIcon({ type }: { type: ChatRoomDto['type'] }) {
@@ -59,8 +61,8 @@ export function ChatWorkspace({
   rooms: ChatRoomDto[];
   selected: ChatRoomDto | null;
   messages: ChatMessageDto[];
-  membersById: Map<string, string>;
-  roomTitles?: Map<string, string>;
+  membersById: Record<string, string>;
+  roomTitles?: Record<string, string>;
   viewerId: string;
   mentionCandidates?: MentionCandidate[];
   headerActions?: ReactNode;
@@ -71,7 +73,7 @@ export function ChatWorkspace({
   showWhiz?: boolean;
   whiz?: WhizAgentProps | null;
 }) {
-  const titles = roomTitles ?? new Map<string, string>();
+  const titles = roomTitles ?? {};
   const showDetail = whizActive || selected != null;
   const backHref = whizActive ? '/chat' : selected ? '/chat' : undefined;
 
@@ -183,7 +185,6 @@ export function ChatWorkspace({
             schedules={whiz.schedules}
             sessionId={whiz.sessionId}
             canManageAgents={whiz.canManageAgents}
-            sessionHref={(id) => `/chat?whiz=1&session=${id}`}
           />
         ) : selected ? (
           <>
@@ -204,7 +205,7 @@ export function ChatWorkspace({
               roomId={selected.id}
               messages={messages}
               viewerId={viewerId}
-              membersById={Object.fromEntries(membersById)}
+              membersById={membersById}
               mentionCandidates={mentionCandidates}
               canPost={selected.viewerCanPost}
             />

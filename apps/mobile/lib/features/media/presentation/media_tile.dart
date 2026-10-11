@@ -34,7 +34,7 @@ class MediaTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Semantics(
-      selected: selected,
+      selected: selected == true,
       child: SurfaceCard(
         padding: EdgeInsets.zero,
         onTap: onTap,

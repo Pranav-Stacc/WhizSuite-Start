@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DEFAULT_MEMBERSHIP_ROLES } from '@agency-os/contracts';
+import { OWNER_MEMBERSHIP_ROLE } from '@agency-os/contracts';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 
 const MEMBERSHIP_ACTIVE = 'ACTIVE';
@@ -405,12 +405,12 @@ export class IdentityRepository {
       });
 
       const perms = await tx.permission.findMany({
-        where: { key: { in: [...DEFAULT_MEMBERSHIP_ROLES.OWNER.permissions] } },
+        where: { key: { in: [...OWNER_MEMBERSHIP_ROLE.permissions] } },
       });
       const ownerRole = await tx.role.create({
         data: {
           organizationId: organization.id,
-          name: DEFAULT_MEMBERSHIP_ROLES.OWNER.name,
+          name: OWNER_MEMBERSHIP_ROLE.name,
           isSystem: true,
           permissions: {
             create: perms.map((p) => ({

@@ -114,6 +114,10 @@ class CreateFab extends StatelessWidget {
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) =>
-      FloatingActionButton.extended(onPressed: onPressed, icon: Icon(icon), label: Text(label));
+  Widget build(BuildContext context) => FloatingActionButton.extended(
+        heroTag: null,
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(label),
+      );
 }

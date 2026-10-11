@@ -57,7 +57,7 @@ export const MODULE_NAV_GROUPS: Record<WorkspaceModule, readonly string[]> = {
 export const MODULE_PRIMARY_HREFS: Record<WorkspaceModule, readonly string[]> = {
   // Tasks stay in the Work group / More menu — not the phone bottom dock.
   // Agency (/team) replaces Assets (/media) on the primary bar; media stays under Content → More.
-  main: ['/dashboard', '/clients', '/content', '/calendar', '/chat', '/chat?whiz=1', '/team'],
+  main: ['/dashboard', '/clients', '/content', '/calendar', '/chat', '/team'],
   crm: ['/leads'],
 };
 

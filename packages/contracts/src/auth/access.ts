@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { MembershipType } from '../domain/statuses.js';
 import { PROFILE_JOB_TITLE_MAX_LENGTH } from './profile.js';
+import { allowedScopesForPermission } from './permission-scopes.js';
 import {
   ASSIGNABLE_SCOPE_TYPE_KEYS,
   AssignableScopeTypes,
@@ -90,32 +91,59 @@ const CLIENT_PERMISSIONS: readonly Permission[] = [
 
 const ORG_SCOPE = [AssignableScopeTypes.ORGANIZATION] as const;
 
-/** The system role each membership type receives unless custom roles are assigned. */
+/** The only built-in system role. Every org gets one Owner role (`isSystem: true`). */
+export const OWNER_MEMBERSHIP_ROLE: DefaultRoleTemplate = {
+  name: 'Owner',
+  permissions: ALL_PERMISSIONS,
+  kind: RoleKinds.ACCESS,
+  defaultScopeTypes: ORG_SCOPE,
+};
+
+/**
+ * Seeded as custom roles (`isSystem: false`) when an organisation is created.
+ * Agencies may edit or duplicate them; new members default to the template for their access level.
+ */
+const ADMIN_DEFAULT_ROLE: DefaultRoleTemplate = {
+  name: 'Admin',
+  permissions: STAFF_PERMISSIONS,
+  kind: RoleKinds.ACCESS,
+  defaultScopeTypes: ORG_SCOPE,
+};
+
+const MEMBER_DEFAULT_ROLE: DefaultRoleTemplate = {
+  name: 'Member',
+  permissions: STAFF_PERMISSIONS,
+  kind: RoleKinds.ACCESS,
+  defaultScopeTypes: ORG_SCOPE,
+};
+
+const CLIENT_DEFAULT_ROLE: DefaultRoleTemplate = {
+  name: 'Client',
+  permissions: CLIENT_PERMISSIONS,
+  kind: RoleKinds.ACCESS,
+  defaultScopeTypes: ORG_SCOPE,
+};
+
+export const DEFAULT_ROLE_TEMPLATES: readonly DefaultRoleTemplate[] = [
+  ADMIN_DEFAULT_ROLE,
+  MEMBER_DEFAULT_ROLE,
+  CLIENT_DEFAULT_ROLE,
+];
+
+/** Default custom role name applied when a membership has no explicit role assignment. */
+export const MEMBERSHIP_DEFAULT_ROLE_NAME: Record<MembershipType, string> = {
+  OWNER: OWNER_MEMBERSHIP_ROLE.name,
+  ADMIN: ADMIN_DEFAULT_ROLE.name,
+  MEMBER: MEMBER_DEFAULT_ROLE.name,
+  CLIENT: CLIENT_DEFAULT_ROLE.name,
+};
+
+/** Permission sets keyed by membership type (demo, tests, and legacy callers). */
 export const DEFAULT_MEMBERSHIP_ROLES: Record<MembershipType, DefaultRoleTemplate> = {
-  OWNER: {
-    name: 'Owner',
-    permissions: ALL_PERMISSIONS,
-    kind: RoleKinds.ACCESS,
-    defaultScopeTypes: ORG_SCOPE,
-  },
-  ADMIN: {
-    name: 'Admin',
-    permissions: STAFF_PERMISSIONS,
-    kind: RoleKinds.ACCESS,
-    defaultScopeTypes: ORG_SCOPE,
-  },
-  MEMBER: {
-    name: 'Member',
-    permissions: STAFF_PERMISSIONS,
-    kind: RoleKinds.ACCESS,
-    defaultScopeTypes: ORG_SCOPE,
-  },
-  CLIENT: {
-    name: 'Client',
-    permissions: CLIENT_PERMISSIONS,
-    kind: RoleKinds.ACCESS,
-    defaultScopeTypes: ORG_SCOPE,
-  },
+  OWNER: OWNER_MEMBERSHIP_ROLE,
+  ADMIN: ADMIN_DEFAULT_ROLE,
+  MEMBER: MEMBER_DEFAULT_ROLE,
+  CLIENT: CLIENT_DEFAULT_ROLE,
 };
 
 export interface AccessRoleSummary {
@@ -139,6 +167,15 @@ export const roleAssignmentScopeSchema = z.object({
 });
 export type RoleAssignmentScopeInput = z.infer<typeof roleAssignmentScopeSchema>;
 
+export const permissionScopeSchema = z.object({
+  key: z.enum(PERMISSION_KEYS),
+  scopeTypes: z
+    .array(z.enum(ASSIGNABLE_SCOPE_TYPE_KEYS))
+    .min(1)
+    .max(ASSIGNABLE_SCOPE_TYPE_KEYS.length),
+});
+export type PermissionScopeInput = z.infer<typeof permissionScopeSchema>;
+
 export const roleInputSchema = z
   .object({
     name: z.string().trim().min(2).max(ROLE_NAME_MAX_LENGTH),
@@ -150,6 +187,8 @@ export const roleInputSchema = z
       .min(1)
       .max(ROLE_SCOPES_MAX)
       .default([AssignableScopeTypes.ORGANIZATION]),
+    /** Per-permission data scopes. When omitted, every grant uses `defaultScopeTypes` at assignment time. */
+    permissionScopes: z.array(permissionScopeSchema).max(PERMISSION_KEYS.length).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.kind === RoleKinds.ACCESS && data.permissionKeys.length < 1) {
@@ -158,6 +197,37 @@ export const roleInputSchema = z
         path: ['permissionKeys'],
         message: 'Access roles require at least one permission',
       });
+    }
+    if (!data.permissionScopes) return;
+    const seen = new Set<string>();
+    for (const [index, row] of data.permissionScopes.entries()) {
+      if (seen.has(row.key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['permissionScopes', index, 'key'],
+          message: 'Duplicate permission scope',
+        });
+      }
+      seen.add(row.key);
+      const allowed = new Set<string>(allowedScopesForPermission(row.key));
+      for (const scope of row.scopeTypes) {
+        if (!allowed.has(scope)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['permissionScopes', index, 'scopeTypes'],
+            message: `${scope} is not a data scope for ${row.key}`,
+          });
+        }
+      }
+    }
+    for (const key of data.permissionKeys) {
+      if (!seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['permissionScopes'],
+          message: `Missing data scope for ${key}`,
+        });
+      }
     }
   });
 export type RoleInput = z.infer<typeof roleInputSchema>;

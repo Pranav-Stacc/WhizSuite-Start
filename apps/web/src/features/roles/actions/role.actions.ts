@@ -25,6 +25,7 @@ export async function createRoleAction(raw: unknown): Promise<ActionResult> {
       kind: parsed.data.kind,
       defaultScopeTypes: [...parsed.data.defaultScopeTypes],
       permissionKeys: parsed.data.permissionKeys,
+      permissionScopes: parsed.data.permissionScopes ? [...parsed.data.permissionScopes] : [],
       memberCount: 0,
     });
     await recordAudit({ action: 'role.created', entityType: 'role', entityId: role.id, entityLabel: role.name, summary: 'Created role' });
@@ -46,6 +47,7 @@ export async function updateRoleAction(id: string, raw: unknown): Promise<Action
       kind: parsed.data.kind ?? before.kind ?? RoleKinds.ACCESS,
       defaultScopeTypes: [...parsed.data.defaultScopeTypes],
       permissionKeys: parsed.data.permissionKeys,
+      permissionScopes: parsed.data.permissionScopes ? [...parsed.data.permissionScopes] : before.permissionScopes,
     });
     await recordAudit({
       action: 'role.updated',
