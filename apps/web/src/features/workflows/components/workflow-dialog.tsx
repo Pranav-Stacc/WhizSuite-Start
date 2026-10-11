@@ -322,7 +322,6 @@ export function WorkflowDialog({
                               <AssignRolesDialog
                                 member={membersById.get(member.id) ?? member}
                                 assignable={assignableRoles}
-                                resources={scopeResources}
                                 trigger={
                                   <Button
                                     type="button"

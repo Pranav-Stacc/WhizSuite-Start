@@ -32,6 +32,7 @@ export function WebPushRegistrar({ enabled }: { enabled: boolean }) {
     });
 
     void (async () => {
+      if (Notification.permission !== 'granted') return;
       try {
         const token = await obtainWebPushToken();
         if (!token || cancelled) return;

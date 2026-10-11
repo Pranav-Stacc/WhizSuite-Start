@@ -68,11 +68,10 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult<For
     await authorize(Permissions.MEMBERS_INVITE);
     const parsed = parseInput(inviteMemberSchema, raw);
     if (!parsed.ok) return parsed.result;
-    const { email, membershipType, note, roleIds } = parsed.data;
-    const role = ROLE_FOR_MEMBERSHIP[membershipType];
-    if (!role) return fail(t('toast.failed'), { membershipType: 'validation.required' });
+    const { email, note, roleIds } = parsed.data;
+    const membershipType: MembershipType = 'MEMBER';
     const customRoles = await resolveAssignableRoles(roleIds);
-    if (!customRoles) return fail(t('team.roles.invalid'), { roleIds: 'team.roles.invalid' });
+    if (!customRoles || customRoles.length === 0) return fail(t('team.roles.invalid'), { roleIds: 'team.roles.required' });
     const normalized = email.toLowerCase();
     // Same email may already be a portal client — staff invite merges access on accept.
     if (
@@ -93,8 +92,8 @@ export async function inviteMemberAction(raw: unknown): Promise<ActionResult<For
         await membersRepository.create({
           name: normalized,
           email: normalized,
-          role,
-          roles: customRoles.length ? customRoles : [demoSystemRole(membershipType)],
+          role: ROLE_FOR_MEMBERSHIP[membershipType] ?? UserRoles.CREATOR,
+          roles: customRoles,
           title: note ?? '',
           capacityHours: DEFAULT_WEEKLY_CAPACITY_HOURS,
           skills: [],
@@ -194,7 +193,7 @@ export async function assignMemberRolesAction(id: string, raw: unknown): Promise
     const roles = await resolveAssignableRoles(parsed.data.roleIds);
     if (!roles) return fail(t('team.roles.invalid'), { roleIds: 'team.roles.invalid' });
     if (isLiveMode) {
-      await assignMemberRoles(id, roles.map((role) => role.id), parsed.data.scopes);
+      await assignMemberRoles(id, roles.map((role) => role.id));
     } else {
       await membersRepository.update(id, { roles });
     }

@@ -215,10 +215,17 @@ export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 
 export const inviteMemberSchema = z.object({
   email: z.string().trim().email('validation.email'),
-  membershipType: z.enum(MembershipTypes).default('MEMBER'),
+  /** Staff invites always use MEMBER at the API layer; kept for portal/client flows and backwards compatibility. */
+  membershipType: z
+    .preprocess(
+      (value) => (value === '' || value === undefined || value === null ? 'MEMBER' : value),
+      z.enum(MembershipTypes),
+    )
+    .optional()
+    .default('MEMBER'),
   note: optionalText,
-  /** Custom roles granted on acceptance instead of the membership type's default role. */
-  roleIds: z.array(z.string().min(1)).max(MEMBER_ROLES_MAX).default([]),
+  /** Roles define access; at least one is required for staff invites. */
+  roleIds: z.array(z.string().min(1)).min(1, 'team.roles.required').max(MEMBER_ROLES_MAX),
 });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
 

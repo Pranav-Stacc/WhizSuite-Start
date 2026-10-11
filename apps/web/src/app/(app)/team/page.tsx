@@ -11,15 +11,13 @@ import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { SearchInput } from '@/shared/ui/search-input';
 import { StatCard } from '@/shared/ui/stat-card';
-import { InviteDialog } from '@/features/team/components/invite-dialog';
+import { InviteMemberDialog } from '@/features/team/components/invite-member-dialog';
 import { MemberCard } from '@/features/team/components/member-card';
 import type { Member } from '@/features/team/data/members.repository';
 import { listMembers } from '@/features/team/services/members.service';
-import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 import { isOwnerRole } from '@/features/roles/config';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
-import { listInviteMembershipOptions } from '@/features/team/services/invite-options.service';
 
 export const metadata: Metadata = { title: t('team.title') };
 
@@ -55,15 +53,12 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     can(Permissions.MEMBERS_INVITE),
     can(Permissions.MEMBERS_DEACTIVATE),
   ]);
-  const [members, tasks, roles, scopeResources, membershipOptions] = await Promise.all([
+  const [members, tasks, roles] = await Promise.all([
     listMembers(),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
-    canManageRoles ? loadScopeResources() : Promise.resolve(undefined),
-    canInvite ? listInviteMembershipOptions() : Promise.resolve([]),
   ]);
   const assignableRoles = canManageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : undefined;
-  const customRoles = canManageRoles ? roles.filter((role) => !role.isSystem).map(toRoleSummary) : [];
   const hours = openHoursByAssignee(tasks);
   const scoped = members.filter((m) => !query || `${m.name} ${m.email} ${m.title} ${m.skills.join(' ')}`.toLowerCase().includes(query));
   const visible = scoped.filter(PREDICATES[filter]);
@@ -92,10 +87,9 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           <>
             <PageGuide items={GUIDE} />
             {canInvite ? (
-              <InviteDialog
+              <InviteMemberDialog
                 defaultOpen={param(sp, 'new') === '1' || param(sp, 'invite') === '1'}
-                membershipOptions={membershipOptions}
-                customRoles={customRoles}
+                assignableRoles={assignableRoles ?? []}
                 trigger={
                   <Button variant="primary" data-tour="setup-invite">
                     <UserPlus />
@@ -145,7 +139,6 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                 openHours={hours.get(member.id) ?? 0}
                 isSelf={member.id === session.userId}
                 assignableRoles={assignableRoles}
-                scopeResources={scopeResources}
                 canRemove={canRemove}
               />
             </li>

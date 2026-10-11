@@ -118,7 +118,9 @@ class MemberOverviewTab extends ConsumerWidget {
                             spacing: tokens.xs,
                             runSpacing: tokens.xs,
                             children: [
-                              StatusBadge(label: membershipTypeLabel(l10n, member.membershipType), tone: membershipTypeTone(member.membershipType)),
+                              if (member.roles.isNotEmpty)
+                                for (final role in member.roles.take(2))
+                                  StatusBadge(label: role.name, tone: StatusTone.info),
                               if (member.employmentType != null)
                                 StatusBadge(label: employmentTypeLabel(l10n, member.employmentType), tone: StatusTone.info),
                               StatusBadge(label: memberStatusLabel(l10n, member.status), tone: memberStatusTone(member.status)),
@@ -167,7 +169,7 @@ class MemberOverviewTab extends ConsumerWidget {
                             if (saved && context.mounted) showToast(context, l10n.savedToast);
                           },
                           icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: Text(l10n.memberEditRolesAndScopes),
+                          label: Text(l10n.teamRolesEdit(member.name)),
                         )
                       : null,
                   child: Column(
@@ -195,40 +197,7 @@ class MemberOverviewTab extends ConsumerWidget {
                 ),
                 if (canManageRoles) ...[
                   SizedBox(height: tokens.lg),
-                  if (canEditRoles)
-                    SectionCard(
-                      title: l10n.teamDataScopeTitle,
-                      trailing: TextButton(
-                        onPressed: () async {
-                          final saved = await showMemberRolesForm(context, ref, member);
-                          if (saved && context.mounted) showToast(context, l10n.savedToast);
-                        },
-                        child: Text(l10n.memberEditRolesAndScopes),
-                      ),
-                      child: Text(
-                        l10n.memberRolesScopesHint,
-                        style: text.bodySmall?.copyWith(color: tokens.muted),
-                      ),
-                    ),
-                  if (canEditRoles) SizedBox(height: tokens.lg),
                   _PermissionsSection(member: member, manageable: manageable),
-                ],
-                if (manageable) ...[
-                  SizedBox(height: tokens.lg),
-                  SectionCard(
-                    title: l10n.teamType,
-                    trailing: canManageRoles
-                        ? TextButton.icon(
-                            onPressed: () async {
-                              final saved = await showMembershipTypeForm(context, ref, member);
-                              if (saved && context.mounted) showToast(context, l10n.savedToast);
-                            },
-                            icon: const Icon(Icons.swap_horiz, size: 18),
-                            label: Text(l10n.teamTypeChange),
-                          )
-                        : null,
-                    child: Text(l10n.teamMembershipTypeHint(member.membershipType), style: text.bodyMedium?.copyWith(color: tokens.secondary)),
-                  ),
                 ],
                 if (protection != null) ...[
                   SizedBox(height: tokens.lg),

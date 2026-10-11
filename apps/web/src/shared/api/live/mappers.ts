@@ -522,6 +522,14 @@ export function memberFromApi(raw: Raw): Member {
   const membershipType = asStatus(raw.membershipType, ['OWNER', 'ADMIN', 'MEMBER', 'CLIENT'] as const, 'MEMBER');
   const mapped = MEMBERSHIP_TO_ROLE[membershipType] as MemberRole;
   const roles = Array.isArray(raw.roles) ? (raw.roles as Raw[]) : [];
+  const designations = Array.isArray(raw.designations) ? (raw.designations as Raw[]) : [];
+  const positions = designations.map((row) => ({
+    designationId: str(row, 'id'),
+    name: str(row, 'name'),
+    departmentId: str(row, 'departmentId'),
+    departmentName: str(row, 'departmentName'),
+    isPrimary: row.isPrimary === true,
+  })).filter((p) => p.designationId);
   return {
     id: str(raw, 'id') || str(raw, 'membershipId'),
     name: str(raw, 'name') || str(raw, 'email'),
@@ -535,6 +543,7 @@ export function memberFromApi(raw: Raw): Member {
     skills: [],
     status: str(raw, 'status') === 'PENDING' ? 'INVITED' : 'ACTIVE',
     joinedAt: iso(raw, 'createdAt'),
+    positions: positions.length > 0 ? positions : undefined,
   };
 }
 
@@ -633,12 +642,23 @@ export function roleToApi(input: Partial<AgencyRole>): Raw {
 
 export function departmentFromApi(raw: Raw): Department {
   const designations = Array.isArray(raw.designations) ? raw.designations : [];
+  const mapped = designations.map((row) => {
+    const d = row as Raw;
+    return {
+      id: str(d, 'id'),
+      name: str(d, 'name'),
+      isHead: d.isHead === true,
+      memberCount: typeof d.memberCount === 'number' ? d.memberCount : 0,
+    };
+  });
+  const headcount = mapped.reduce((sum, d) => sum + d.memberCount, 0);
   return {
     id: str(raw, 'id'),
     name: str(raw, 'name'),
     path: str(raw, 'path'),
     parentId: raw.parentId ? str(raw, 'parentId') : undefined,
-    headcount: designations.length,
+    headcount,
+    designations: mapped,
     createdAt: iso(raw, 'createdAt'),
   };
 }

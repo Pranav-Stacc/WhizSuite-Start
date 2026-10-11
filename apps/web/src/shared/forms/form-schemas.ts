@@ -5,6 +5,11 @@ const createDepartmentFormSchema = z.object({
   name: z.string().min(2),
   parentId: z.string().optional(),
 });
+
+const createDesignationFormSchema = z.object({
+  name: z.string().min(1),
+  isHead: z.coerce.boolean().optional(),
+});
 import {
   assignMemberRolesSchema,
   brandKitSchema,
@@ -62,6 +67,7 @@ export const FORM_SCHEMAS = {
   chatGroup: createChatGroupSchema,
   integration: connectIntegrationSchema,
   department: createDepartmentFormSchema,
+  designation: createDesignationFormSchema,
 } satisfies Record<string, ZodTypeAny>;
 
 export type FormSchemaKey = keyof typeof FORM_SCHEMAS;

@@ -201,6 +201,12 @@
   }
 }
 
+.setup-tour-focus {
+  position: relative;
+  z-index: 85;
+  pointer-events: auto;
+}
+
 @layer components {
   /* Editorial type scale: tiny tracked uppercase for chrome, large light type for titles. */
   .eyebrow {

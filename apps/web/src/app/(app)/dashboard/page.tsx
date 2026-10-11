@@ -7,23 +7,14 @@ import { t } from '@/shared/i18n/t';
 import { CreatorDashboard } from '@/features/dashboard/components/creator-dashboard';
 import { ManagerDashboard } from '@/features/dashboard/components/manager-dashboard';
 import { OwnerDashboard } from '@/features/dashboard/components/owner-dashboard';
-import { getSetupProgress } from '@/features/setup/services/setup-progress.service';
-import { WorkspaceSetup } from '@/features/setup/components/workspace-setup';
-
 export const metadata: Metadata = { title: t('nav.home') };
 
 export default async function DashboardPage() {
   const session = await requireSession();
-  const setup = await getSetupProgress();
 
   const dashboard = await resolveDashboard(session);
 
-  return (
-    <div>
-      {setup && !setup.complete ? <WorkspaceSetup progress={setup} /> : null}
-      {dashboard}
-    </div>
-  );
+  return <div>{dashboard}</div>;
 }
 
 async function resolveDashboard(session: Awaited<ReturnType<typeof requireSession>>) {

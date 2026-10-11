@@ -12,7 +12,10 @@ import { Badge } from '@/shared/ui/badge';
 import { Logo } from '@/shared/ui/logo';
 import { unreadChatCount } from '@/features/chat/services/chat.service';
 import { pendingApprovals } from '@/features/content/services/content.service';
+import { WebPushPermissionPrompt } from '@/features/notifications/components/web-push-permission-prompt';
 import { WebPushRegistrar } from '@/features/notifications/components/web-push-registrar';
+import { WorkspaceSetupJourney } from '@/features/setup/components/workspace-setup-journey';
+import { getSetupProgress } from '@/features/setup/services/setup-progress.service';
 import { listForUser } from '@/features/notifications/services/notifications.service';
 import { isLiveMode } from '@/shared/config/env';
 import { getWorkspaceContext } from '@/shared/workspace/context';
@@ -28,12 +31,13 @@ import { WorkspaceSwitcher } from './workspace-switcher';
 export async function AppShell({ session, children }: { session: Session; children: ReactNode }) {
   const granted = await getPermissions();
   const workspace = await getWorkspaceContext();
-  const [theme, notifications, approvals, chatUnread, access] = await Promise.all([
+  const [theme, notifications, approvals, chatUnread, access, setupProgress] = await Promise.all([
     getTheme(),
     listForUser(session.userId),
     granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals().catch(() => []) : [],
     granted.has(Permissions.CHAT_VIEW) ? unreadChatCount().catch(() => 0) : 0,
     getAccessCapabilities(),
+    getSetupProgress(),
   ]);
   const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
   const badges: Record<string, number> = { '/approvals': approvals.length, '/chat': chatUnread };
@@ -42,7 +46,9 @@ export async function AppShell({ session, children }: { session: Session; childr
 
   return (
     <div className="min-h-dvh">
+      <WebPushPermissionPrompt enabled={isLiveMode} />
       <WebPushRegistrar enabled={isLiveMode} />
+      <WorkspaceSetupJourney progress={setupProgress} />
       <a href="#main" className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 font-medium text-primary-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {t('shell.skip')}
       </a>

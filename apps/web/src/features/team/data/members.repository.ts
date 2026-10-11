@@ -6,6 +6,14 @@ import { demoSystemRole } from '@/features/roles/config';
 
 export type MemberRole = typeof UserRoles.OWNER | typeof UserRoles.MANAGER | typeof UserRoles.CREATOR;
 
+export interface MemberPosition {
+  designationId: string;
+  name: string;
+  departmentId: string;
+  departmentName: string;
+  isPrimary: boolean;
+}
+
 export interface Member extends Entity {
   name: string;
   email: string;
@@ -17,6 +25,7 @@ export interface Member extends Entity {
   skills: string[];
   status: 'ACTIVE' | 'INVITED';
   joinedAt: string;
+  positions?: MemberPosition[];
 }
 
 const OWNER_ROLES = [demoSystemRole('OWNER')];

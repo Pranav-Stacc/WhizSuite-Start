@@ -1,7 +1,7 @@
 import { ContentStatuses, Permissions, Platforms } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { KanbanSquare, List, PencilLine, Plus } from 'lucide-react';
-import { requirePermission } from '@/shared/auth/permissions';
+import { loadIf, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
@@ -15,7 +15,6 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { SearchInput } from '@/shared/ui/search-input';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
-import { clientsById } from '@/features/clients/services/clients.service';
 import { moveContentAction } from '@/features/content/actions/content.actions';
 import { toComposerAssets, toComposerClients } from '@/features/content/components/composer-mappers';
 import { ContentCardContent } from '@/features/content/components/content-card';
@@ -23,7 +22,9 @@ import { ContentComposer } from '@/features/content/components/content-composer'
 import { ContentList } from '@/features/content/components/content-list';
 import { listContent } from '@/features/content/services/content.service';
 import { listAssets } from '@/features/media/services/media.service';
+import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
+import { listClients } from '@/features/clients/services/clients.service';
 
 export const metadata: Metadata = { title: t('content.title') };
 
@@ -46,7 +47,13 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const mine = param(sp, 'f') === 'mine';
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [posts, clients, members, assets] = await Promise.all([listContent(), clientsById(), membersById(), listAssets()]);
+  const [posts, clientRows, members, assets] = await Promise.all([
+    listContent(),
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
+    loadIf(Permissions.FILES_VIEW, listAssets, []),
+  ]);
+  const clients = new Map(clientRows.map((c) => [c.id, c]));
   const scoped = posts.filter(
     (p) =>
       (!clientId || p.clientId === clientId) &&

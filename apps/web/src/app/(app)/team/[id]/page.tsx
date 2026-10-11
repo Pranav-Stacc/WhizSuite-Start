@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Mail, Shield, UserMinus } from 'lucide-react';
-import { memberAccessLabel } from '@/shared/auth/member-labels';
 import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatDate, humanizeKey } from '@/shared/lib/format';
@@ -12,27 +11,18 @@ import { Badge } from '@/shared/ui/badge';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { PageHeader } from '@/shared/ui/page-header';
 import { Progress } from '@/shared/ui/feedback';
-import { StatusMenu } from '@/shared/ui/status-menu';
 import { isOwnerRole } from '@/features/roles/config';
 import { listPermissionCatalog } from '@/features/roles/services/permissions.service';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 import { AssignRolesDialog } from '@/features/team/components/assign-roles-dialog';
 import { MemberExtrasPanel } from '@/features/team/components/member-extras-panel';
-import { ASSIGNABLE_ROLES } from '@/features/team/config';
-import { changeMemberRoleAction, removeMemberAction } from '@/features/team/actions/member.actions';
+import { removeMemberAction } from '@/features/team/actions/member.actions';
 import { PERSONAL_ACCESS_PREFIX } from '@/features/team/config';
 import { getMember } from '@/features/team/services/members.service';
-import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { MemberProfileTabs } from '@/features/team/components/member-profile-tabs';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 
 export const metadata: Metadata = { title: t('team.detail.title') };
-
-const ROLE_COLOR = {
-  [UserRoles.OWNER]: 'var(--color-primary)',
-  [UserRoles.MANAGER]: 'var(--color-info)',
-  [UserRoles.CREATOR]: 'var(--color-muted)',
-} as const;
 
 export default async function TeamMemberPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await requirePermission(Permissions.MEMBERS_VIEW);
@@ -41,12 +31,11 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   if (!member) notFound();
 
   const manageRoles = await can(Permissions.ROLES_MANAGE);
-  const [canRemove, roles, catalog, tasks, scopeResources] = await Promise.all([
+  const [canRemove, roles, catalog, tasks] = await Promise.all([
     can(Permissions.MEMBERS_DEACTIVATE),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
     loadIf(Permissions.ROLES_MANAGE, listPermissionCatalog, []),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
-    manageRoles ? loadScopeResources() : Promise.resolve(undefined),
   ]);
 
   const assignableRoles = manageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : [];
@@ -109,12 +98,12 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
               <dd className="truncate font-medium">{member.email}</dd>
             </div>
             <div className="flex justify-between gap-3">
-              <dt className="text-muted">{t('team.detail.level')}</dt>
+              <dt className="text-muted">{t('team.detail.status')}</dt>
               <dd>
                 {invited ? (
                   <Badge tone="warning">{t('team.status.invited')}</Badge>
                 ) : (
-                  <Badge tone="info">{memberAccessLabel(member)}</Badge>
+                  <Badge tone="info">{t('team.status.active')}</Badge>
                 )}
               </dd>
             </div>
@@ -143,18 +132,6 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
               ))}
             </ul>
           ) : null}
-          {canEditAccess ? (
-            <StatusMenu
-              current={member.role}
-              label={t('team.role.change')}
-              options={ASSIGNABLE_ROLES.map((role) => ({
-                value: role,
-                label: t(`shell.role.${role}`),
-                color: ROLE_COLOR[role],
-              }))}
-              action={changeMemberRoleAction.bind(null, member.id)}
-            />
-          ) : null}
         </div>
 
         <div className="space-y-6">
@@ -164,9 +141,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                 <Shield className="size-4" />
                 {t('team.detail.access')}
               </h2>
-              {canEditAccess && scopeResources ? (
-                <AssignRolesDialog member={member} assignable={assignableRoles} resources={scopeResources} />
-              ) : null}
+              {canEditAccess ? <AssignRolesDialog member={member} assignable={assignableRoles} /> : null}
             </div>
             {member.roles.length === 0 ? (
               <p className="text-sm text-muted">{t('team.detail.permissions.empty')}</p>

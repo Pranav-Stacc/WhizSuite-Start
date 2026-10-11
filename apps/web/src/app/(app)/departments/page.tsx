@@ -1,5 +1,6 @@
 import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Building2, Plus, Users } from 'lucide-react';
 import { requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
@@ -47,10 +48,12 @@ export default async function DepartmentsPage() {
       <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {departments.map((dept) => (
           <li key={dept.id}>
-            <Card className="p-4">
+            <Card className="p-4 transition hover:border-primary/40">
+              <Link href={`/departments/${dept.id}`} className="block">
               <h3 className="font-semibold">{dept.name}</h3>
               <p className="mt-1 text-xs text-muted">{dept.path}</p>
               <p className="mt-3 text-sm text-muted">{t('departments.headcount', { count: dept.headcount })}</p>
+              </Link>
             </Card>
           </li>
         ))}

@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../roles/application/roles_controller.dart';
-import '../domain/scope_assignment.dart';
-import 'scope_picker.dart';
 import '../../../core/formatting/formats.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/network/api_exception.dart';
@@ -16,7 +14,6 @@ import '../../../core/widgets/forms.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/application/access_controller.dart';
-import '../../directory/application/directory_providers.dart';
 import '../application/team_controller.dart';
 import '../domain/invitation.dart';
 import '../domain/member.dart';
@@ -31,17 +28,7 @@ const _hoursPerDay = 24;
 Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member member) async {
   final l10n = AppLocalizations.of(context);
   await ref.read(assignableRolesProvider.future);
-  final roles = ref.read(assignableRolesProvider).value ?? const [];
   var selected = member.roleIds;
-  var activeScopes = resolveActiveScopes(
-    {AssignableScopeTypes.organization},
-    offeredScopesForRoles(roles, selected),
-  );
-  final resourceIds = <String, Set<String>>{};
-  final resourceTargeting = <String, ScopeResourceTargeting>{
-    for (final scope in activeScopes)
-      if (scopeNeedsResource(scope)) scope: ScopeResourceTargeting.specific,
-  };
   if (!context.mounted) return false;
   return showFormSheet(
     context,
@@ -50,37 +37,14 @@ Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member mem
     size: AppDialogSize.large,
     presentation: AppDialogPresentation.bottomSheet,
     fields: (context, setState) {
-      final roles = ref.watch(assignableRolesProvider).value ?? const [];
       return [
         RolePickerField(
           selected: selected,
-          onChanged: (value) => setState(() {
-            selected = value;
-            final currentRoles = ref.read(assignableRolesProvider).value ?? const [];
-            activeScopes = resolveActiveScopes(activeScopes, offeredScopesForRoles(currentRoles, value));
-          }),
-        ),
-        MemberDataScopeField(
-          roles: roles,
-          selectedRoleIds: selected,
-          activeScopes: activeScopes,
-          resourceIds: resourceIds,
-          resourceTargeting: resourceTargeting,
-          onActiveScopesChanged: (value) => setState(() => activeScopes = value),
-          onResourceIdsChanged: (scope, ids) => setState(() => resourceIds[scope] = ids),
-          onResourceTargetingChanged: (scope, mode) => setState(() => resourceTargeting[scope] = mode),
+          onChanged: (value) => setState(() => selected = value),
         ),
       ];
     },
-    onSubmit: () {
-      final currentRoles = ref.read(assignableRolesProvider).value ?? const [];
-      final scopesToApply = resolveActiveScopes(activeScopes, offeredScopesForRoles(currentRoles, selected));
-      return ref.read(teamActionsProvider).assignRoles(
-            member.userId,
-            selected.toList(),
-            scopes: buildAssignmentScopes(scopesToApply, resourceIds, targeting: resourceTargeting),
-          );
-    },
+    onSubmit: () => ref.read(teamActionsProvider).assignRoles(member.userId, selected.toList()),
   );
 }
 
@@ -116,8 +80,6 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
   final l10n = AppLocalizations.of(context);
   final email = TextEditingController();
   final canPickRoles = ref.read(accessPolicyProvider).can(Permissions.rolesManage);
-  var type = MembershipTypes.member;
-  String? clientId;
   int? expiresInHours;
   var roleIds = <String>{};
   InvitationLink? link;
@@ -139,24 +101,13 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
         textInputAction: TextInputAction.next,
         validator: Validators(l10n).email,
       ),
-      OptionField<String>(
-        label: l10n.teamType,
-        value: type,
-        options: invitableMembershipTypes,
-        labelOf: (t) => membershipTypeLabel(l10n, t),
-        onChanged: (value) => setState(() => type = value ?? type),
-      ),
-      Text(l10n.teamMembershipTypeHint(type), style: TextStyle(color: context.tokens.muted)),
-      if (type == MembershipTypes.client)
-        _ClientField(value: clientId, onChanged: (value) => setState(() => clientId = value)),
-      if (canPickRoles) ...[
+      if (canPickRoles)
         RolePickerField(
           selected: roleIds,
-          required: false,
           onChanged: (value) => setState(() => roleIds = value),
-        ),
-        if (roleIds.isEmpty) Text(l10n.teamInviteDefaultRole, style: TextStyle(color: context.tokens.muted)),
-      ],
+        )
+      else
+        Text(l10n.teamInviteDefaultRole, style: TextStyle(color: context.tokens.muted)),
       OptionField<int>(
         label: l10n.teamInviteExpiry,
         value: expiresInHours,
@@ -167,14 +118,13 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
       ),
     ],
     onSubmit: () async {
-      if (type == MembershipTypes.client && clientId == null) {
-        throw ApiException(kind: ApiFailureKind.validation, detail: l10n.teamClientRequired);
+      if (canPickRoles && roleIds.isEmpty) {
+        throw ApiException(kind: ApiFailureKind.validation, detail: l10n.teamRolesRequired);
       }
       link = await ref.read(teamActionsProvider).invite(
             InvitationInput(
               email: email.text.trim(),
-              membershipType: type,
-              clientId: clientId,
+              membershipType: MembershipTypes.member,
               roleIds: roleIds.toList(),
               expiresInHours: expiresInHours,
             ),
@@ -253,35 +203,6 @@ class _InviteLinkSheet extends StatelessWidget {
           label: Text(l10n.teamCopyMessage),
         ),
       ],
-    );
-  }
-}
-
-/// Client picker for portal invitations; the API requires one for CLIENT memberships.
-class _ClientField extends ConsumerWidget {
-  const _ClientField({required this.value, required this.onChanged});
-
-  final String? value;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final clients = ref.watch(clientDirectoryProvider);
-    final entries = clients.value?.entries;
-    if (entries == null) {
-      return clients.hasError
-          ? _Notice(icon: Icons.error_outline, text: l10n.teamClientUnavailable)
-          : const LinearProgressIndicator();
-    }
-    if (entries.isEmpty) return _Notice(icon: Icons.business_outlined, text: l10n.teamClientNone);
-    return OptionField<String>(
-      label: l10n.teamClient,
-      value: value,
-      options: [for (final entry in entries) entry.id],
-      labelOf: (id) => clients.value?.nameOf(id) ?? id,
-      validator: (selected) => selected == null ? l10n.validationRequired : null,
-      onChanged: onChanged,
     );
   }
 }
