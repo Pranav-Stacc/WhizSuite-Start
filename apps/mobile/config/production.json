@@ -3,5 +3,5 @@
   "REALTIME_URL": "https://api.whizsuite.praanav.in",
   "PUSH_ENABLED": "true",
   "DEFAULT_CURRENCY": "INR",
-  "GOOGLE_SIGN_IN_ENABLED": "false"
+  "GOOGLE_SIGN_IN_ENABLED": "true"
 }

@@ -1,0 +1,98 @@
+name: Publish to Google Play
+
+on:
+  workflow_call:
+    inputs:
+      track:
+        required: false
+        type: string
+        default: internal
+  workflow_dispatch:
+    inputs:
+      track:
+        required: true
+        description: Release track
+        type: choice
+        options:
+          - internal
+          - production
+        default: internal
+
+concurrency:
+  group: publish-android-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  android-play:
+    name: Publish to Google Play
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+          working-directory: apps/mobile
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.9"
+          channel: stable
+          cache: true
+
+      - name: Restore Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Download Play service account key
+        id: play_key
+        uses: timheuer/base64-to-file@v1
+        with:
+          fileName: play-store-service-account.json
+          encodedString: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_BASE64 }}
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Build App Bundle
+        run: >
+          flutter build appbundle --release
+          --dart-define-from-file=config/production.json
+
+      - name: Upload to Google Play
+        run: |
+          if [ "${{ inputs.track }}" = "production" ]; then
+            bundle exec fastlane android deploy
+          else
+            bundle exec fastlane android beta
+          fi
+        env:
+          PLAY_STORE_JSON_KEY_FILE: ${{ steps.play_key.outputs.filePath }}

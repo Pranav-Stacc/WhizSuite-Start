@@ -14,6 +14,10 @@ on:
         description: Force iOS App Store publish even if mobile/version unchanged
         type: boolean
         default: false
+      force_android:
+        description: Force Google Play publish even if mobile/version unchanged
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,6 +53,7 @@ jobs:
             mobile:
               - 'apps/mobile/**'
               - '.github/workflows/publish-ios-app-store.yml'
+              - '.github/workflows/publish-android-play.yml'
       - name: Detect pubspec version bump
         id: version
         run: |
@@ -180,4 +185,18 @@ jobs:
     with:
       track: beta
       bootstrap_certs: false
+    secrets: inherit
+
+  deploy-android:
+    needs: [changes]
+    if: >-
+      github.event_name != 'pull_request'
+      && github.ref == 'refs/heads/main'
+      && (
+        needs.changes.outputs.mobile_version_bumped == 'true'
+        || (github.event_name == 'workflow_dispatch' && inputs.force_android)
+      )
+    uses: ./.github/workflows/publish-android-play.yml
+    with:
+      track: internal
     secrets: inherit

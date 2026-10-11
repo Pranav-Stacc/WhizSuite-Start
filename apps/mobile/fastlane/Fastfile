@@ -101,3 +101,39 @@ platform :ios do
     )
   end
 end
+
+platform :android do
+  PACKAGE_NAME = "com.whizsuite.app"
+
+  desc "Upload AAB + listing metadata to Play internal testing"
+  lane :beta do
+    upload_to_play_store(
+      package_name: PACKAGE_NAME,
+      track: "internal",
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_FILE"),
+      metadata_path: "fastlane/metadata/android",
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: true,
+      release_status: "completed"
+    )
+  end
+
+  desc "Upload AAB to Play production"
+  lane :deploy do
+    upload_to_play_store(
+      package_name: PACKAGE_NAME,
+      track: "production",
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      json_key: ENV.fetch("PLAY_STORE_JSON_KEY_FILE"),
+      metadata_path: "fastlane/metadata/android",
+      skip_upload_apk: true,
+      skip_upload_metadata: false,
+      skip_upload_images: false,
+      skip_upload_screenshots: true,
+      release_status: "completed"
+    )
+  end
+end

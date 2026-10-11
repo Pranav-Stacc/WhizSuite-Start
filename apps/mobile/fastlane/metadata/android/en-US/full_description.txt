@@ -1,0 +1,25 @@
+WhizSuite is the mobile command center for modern marketing and creative agencies. Manage clients, content, calendars, tasks, approvals, and your client portal — wherever your team works.
+
+Built for agency owners, account managers, producers, and client-facing portal users.
+
+WHAT YOU CAN DO
+• Clients & CRM — accounts, agreements, and client workspace access
+• Content & campaigns — plan, review, and track deliverables
+• Calendar & shoots — schedules and production dates in one place
+• Team & roles — permissions that match how your agency is organized
+• Approvals — keep sign-off flows moving on the go
+• Messages — conversations tied to client work
+• Invoices & billing visibility — stay aligned with finance (where enabled)
+• Notifications — stay on top of what needs attention
+
+WHY AGENCIES CHOOSE WHIZSUITE
+• One secure workspace per organization (multi-tenant by design)
+• Staff app and client portal experiences in a single product
+• Sign in with email or Google — fast access for distributed teams
+• Designed for agencies in India and worldwide (INR-friendly defaults)
+
+WhizSuite connects to your WhizSuite cloud workspace. You need an active agency account or invitation to sign in.
+
+Privacy: https://whizsuite.com/privacy
+
+Keywords: agency management, marketing agency, creative agency, client portal, CRM, content calendar, team collaboration, project management, social media agency, workflow approvals.
