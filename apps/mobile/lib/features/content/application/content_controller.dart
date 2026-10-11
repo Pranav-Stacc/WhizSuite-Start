@@ -4,6 +4,7 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../access/application/access_controller.dart';
 import '../data/content_repository.dart';
 import '../domain/content.dart';
+import '../domain/content_approval_summary.dart';
 import '../domain/content_workflow.dart';
 
 final contentListProvider = FutureProvider.autoDispose<List<Content>>(
@@ -13,6 +14,16 @@ final contentListProvider = FutureProvider.autoDispose<List<Content>>(
 final contentItemProvider = FutureProvider.autoDispose.family<Content, String>(
   (ref, id) => ref.watch(contentRepositoryProvider).get(id),
 );
+
+final contentApprovalSummaryProvider = FutureProvider.autoDispose.family<ContentApprovalSummary?, String>((ref, id) async {
+  final allowed = ref.watch(accessPolicyProvider.select((policy) => policy.can(Permissions.approvalsView)));
+  if (!allowed) return null;
+  try {
+    return await ref.watch(contentRepositoryProvider).approvalSummary(id);
+  } catch (_) {
+    return null;
+  }
+});
 
 final contentCommentsProvider = FutureProvider.autoDispose.family<List<ContentComment>, String>((ref, id) async {
   final comments = await ref.watch(contentRepositoryProvider).comments(id);

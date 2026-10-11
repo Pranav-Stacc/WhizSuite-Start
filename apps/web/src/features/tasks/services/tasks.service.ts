@@ -1,8 +1,13 @@
 import 'server-only';
+import { isLiveMode } from '@/shared/config/env';
+import { activeWorkspaceClientIds, filterByWorkspaceClients } from '@/shared/workspace/active-scope';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
 import { tasksRepository, type Task } from '../data/tasks.repository';
 
 export async function listTasks(): Promise<Task[]> {
-  return tasksRepository.list();
+  const rows = await tasksRepository.list();
+  if (!isLiveMode || !TENANCY_WORKSPACE_UI_ENABLED) return rows;
+  return filterByWorkspaceClients(rows, await activeWorkspaceClientIds());
 }
 
 export function isOverdue(task: Pick<Task, 'dueDate' | 'status'>, now: number = Date.now()): boolean {

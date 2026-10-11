@@ -22,7 +22,7 @@ import { HEALTH_BASELINE } from '@/features/clients/config';
 import { NOTIFICATION_EVENTS, NOTIFICATIONS_HREF } from '@/features/notifications/config';
 import { MEMBERSHIP_TO_ROLE } from '@/shared/auth/roles';
 import { t } from '@/shared/i18n/t';
-import { defaultWorkspaceId } from './workspace';
+import { getActiveWorkspaceId } from './workspace';
 import { hueFromId, iso, num, str } from './utils';
 
 type Raw = Record<string, unknown>;
@@ -98,7 +98,7 @@ export function clientFromApi(raw: Raw): Client {
 }
 
 export async function clientToApi(input: Partial<Client>): Promise<Raw> {
-  const workspaceId = await defaultWorkspaceId();
+  const workspaceId = await getActiveWorkspaceId();
   if (!workspaceId) throw new Error('No workspace configured for this organization');
   const body: Raw = { workspaceId, displayName: input.name ?? '' };
   if (input.industry) body.industry = input.industry;

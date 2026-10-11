@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
+import '../../../core/formatting/formats.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/surfaces.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/application/access_controller.dart';
 import '../../access/presentation/permission_gate.dart';
+import '../../team/application/team_controller.dart';
+import '../../team/domain/member.dart';
 import '../application/content_controller.dart';
 import '../domain/content.dart';
+import '../domain/content_approval_summary.dart';
 import '../domain/content_workflow.dart';
 import 'content_actions_ui.dart';
 import 'content_labels.dart';
@@ -80,6 +84,10 @@ class ContentWorkflowPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _Pipeline(status: content.status),
+          if (inReview) ...[
+            SizedBox(height: tokens.md),
+            _ApprovalStageBanner(contentId: content.id),
+          ],
           SizedBox(height: tokens.lg),
           Text(l10n.contentWorkflowHint(content.status), style: text.bodyMedium?.copyWith(color: tokens.secondary)),
           if (!published) ...[
@@ -140,6 +148,57 @@ class ContentWorkflowPanel extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+class _ApprovalStageBanner extends ConsumerWidget {
+  const _ApprovalStageBanner({required this.contentId});
+
+  final String contentId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = context.tokens;
+    final text = Theme.of(context).textTheme;
+    final summary = ref.watch(contentApprovalSummaryProvider(contentId)).value;
+    if (summary == null) return const SizedBox.shrink();
+
+    final members = ref.watch(membersProvider).value ?? const [];
+    final names = _approverNames(summary.currentStep, members, l10n);
+    final formats = context.formats;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens.subtle,
+        borderRadius: BorderRadius.circular(tokens.radius),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(tokens.sm + 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.contentApprovalStage(summary.currentStep.order, summary.totalSteps, summary.currentStep.name),
+              style: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            SizedBox(height: tokens.xs),
+            Text(l10n.contentApprovalWaiting(names), style: text.bodySmall?.copyWith(color: tokens.secondary)),
+            if (summary.dueAt != null) ...[
+              SizedBox(height: tokens.xs),
+              Text(l10n.contentApprovalDue(formats.dateTime(summary.dueAt!)), style: text.bodySmall?.copyWith(color: tokens.muted)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _approverNames(ContentApprovalStep step, List<Member> members, AppLocalizations l10n) {
+    if (step.approverUserIds.isEmpty) return l10n.contentApprovalAnyApprover;
+    final byId = {for (final member in members) member.userId: member.name};
+    return step.approverUserIds.map((id) => byId[id] ?? id).join(', ');
   }
 }
 

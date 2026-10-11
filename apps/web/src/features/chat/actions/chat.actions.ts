@@ -21,17 +21,26 @@ export interface ChatMentionPayload {
   endOffset?: number;
 }
 
+export type ChatAttachmentInput = {
+  kind: string;
+  assetId?: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+};
+
 export async function sendChatMessageAction(
   roomId: string,
   body: string,
   mentions: ChatMentionPayload[] = [],
   replyToId?: string,
+  attachments: ChatAttachmentInput[] = [],
 ) {
   await authorize(Permissions.CHAT_SEND);
   const trimmed = body.trim();
-  if (!trimmed) return { ok: false as const, error: 'empty' };
-  const message = await sendMessage(roomId, trimmed, mentions, replyToId);
-  await refreshData('chat');
+  if (!trimmed && attachments.length === 0) return { ok: false as const, error: 'empty' };
+  const message = await sendMessage(roomId, trimmed, mentions, replyToId, attachments);
+  void refreshData('chat');
   return { ok: true as const, message };
 }
 

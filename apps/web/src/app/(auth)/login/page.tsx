@@ -5,7 +5,6 @@ import { DEMO_PASSWORD, homeFor } from '@/shared/auth/roles';
 import { getSession } from '@/shared/auth/session';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
-import { Logo } from '@/shared/ui/logo';
 import { PersonaCards } from '@/features/auth/components/persona-cards';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
@@ -19,13 +18,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const expired = param(query, 'expired') === '1';
 
   return (
-    <div className="space-y-8">
-      <div className="lg:hidden">
-        <Logo />
-      </div>
+    <div className="space-y-7">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t('auth.login.title')}</h1>
-        <p className="mt-2 text-muted">{t('auth.login.subtitle')}</p>
+        <p className="eyebrow">{t('auth.login.meta')}</p>
+        <h1 className="display mt-2 text-3xl text-foreground sm:text-[2rem]">{t('auth.login.title')}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{t('auth.login.subtitle')}</p>
         {expired ? (
           <p role="status" className="mt-4 rounded-lg bg-warning/12 px-3 py-2 text-sm text-warning">
             {t('auth.login.expired')}
@@ -42,8 +39,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-[13px] text-muted">{t('auth.demo.subtitle')}</p>
           </div>
           <PersonaCards />
-          <div className="relative py-2 text-center text-xs text-muted before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-border-soft">
-            <span className="relative bg-surface px-3">{t('auth.login.or')}</span>
+          <div className="relative py-2 text-center text-[11px] font-medium uppercase tracking-[0.16em] text-muted before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-border-soft/80">
+            <span className="auth-divider-label relative px-3">{t('auth.login.or')}</span>
           </div>
         </section>
       )}

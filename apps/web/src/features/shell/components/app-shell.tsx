@@ -25,20 +25,29 @@ import { MobileDock, MobileMenu } from './mobile-nav';
 import { ModuleTabs } from './module-tabs';
 import { NotificationsBell, QuickCreate, UserMenu } from './shell-actions';
 import { TopNav } from './top-nav';
+import { ActiveWorkspaceBanner } from '@/features/workspaces/components/active-workspace-banner';
+import { OrgWorkspaceSwitcher } from '@/features/workspaces/components/org-workspace-switcher';
+import { getActiveWorkspaceId, listTenancyWorkspaces } from '@/shared/api/live/workspace';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
 import { WorkspaceSwitcher } from './workspace-switcher';
 
 /** Staff workspace chrome: product surface (main / CRM) + module tabs. Finance lives on main. */
 export async function AppShell({ session, children }: { session: Session; children: ReactNode }) {
   const granted = await getPermissions();
   const workspace = await getWorkspaceContext();
-  const [theme, notifications, approvals, chatUnread, access, setupProgress] = await Promise.all([
-    getTheme(),
-    listForUser(session.userId),
-    granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals().catch(() => []) : [],
-    granted.has(Permissions.CHAT_VIEW) ? unreadChatCount().catch(() => 0) : 0,
-    getAccessCapabilities(),
-    getSetupProgress(),
-  ]);
+  const tenancyWorkspaceUi =
+    TENANCY_WORKSPACE_UI_ENABLED && granted.has(Permissions.WORKSPACES_VIEW);
+  const [theme, notifications, approvals, chatUnread, access, setupProgress, tenancyWorkspaces, activeWorkspaceId] =
+    await Promise.all([
+      getTheme(),
+      listForUser(session.userId),
+      granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals().catch(() => []) : [],
+      granted.has(Permissions.CHAT_VIEW) ? unreadChatCount().catch(() => 0) : 0,
+      getAccessCapabilities(),
+      getSetupProgress(),
+      tenancyWorkspaceUi ? listTenancyWorkspaces() : Promise.resolve([]),
+      tenancyWorkspaceUi ? getActiveWorkspaceId() : Promise.resolve(''),
+    ]);
   const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
   const badges: Record<string, number> = { '/approvals': approvals.length, '/chat': chatUnread };
   const permissions = [...granted];
@@ -63,6 +72,15 @@ export async function AppShell({ session, children }: { session: Session; childr
             orgSlug={session.orgSlug}
             canCrm={granted.has(Permissions.LEADS_VIEW)}
           />
+          {tenancyWorkspaceUi && tenancyWorkspaces.length > 0 ? (
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <OrgWorkspaceSwitcher
+                workspaces={tenancyWorkspaces}
+                activeId={activeWorkspaceId}
+                canCreate={granted.has(Permissions.WORKSPACES_CREATE)}
+              />
+            </div>
+          ) : null}
           {session.demo ? (
             <Badge tone="warning" title={t('common.demoBanner')} className="hidden md:inline-flex">
               {t('shell.demoBadge')}
@@ -92,6 +110,7 @@ export async function AppShell({ session, children }: { session: Session; childr
       </header>
       <main id="main" className="mx-auto max-w-[1600px] px-4 pb-28 pt-8 sm:px-8 lg:px-12 lg:pb-16 lg:pt-10">
         <ModuleTabs permissions={permissions} badges={badges} module={workspace.module} />
+        {tenancyWorkspaceUi ? <ActiveWorkspaceBanner /> : null}
         {children}
       </main>
       <MobileDock permissions={permissions} badges={badges} module={workspace.module} orgSlug={session.orgSlug} />

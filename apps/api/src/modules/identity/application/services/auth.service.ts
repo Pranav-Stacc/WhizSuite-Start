@@ -12,6 +12,7 @@ import { IdentityRepository } from '../../infrastructure/repositories/identity.r
 import { GoogleIdTokenVerifier } from '../../infrastructure/auth/google-id-token.verifier';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
+import { AuthEmailService } from './auth-email.service';
 
 export interface RegisterInput {
   email: string;
@@ -53,6 +54,7 @@ export class AuthService {
     private readonly audit: AuditService,
     private readonly googleTokens: GoogleIdTokenVerifier,
     private readonly defaultRoles: DefaultRolesService,
+    private readonly authEmail: AuthEmailService,
   ) {}
 
   async register(input: RegisterInput) {
@@ -112,6 +114,13 @@ export class AuthService {
       membershipId: result.membership.id,
       membershipType: result.membership.type,
     });
+
+    void this.authEmail.sendWelcomeAfterRegister({
+      email: result.user.email,
+      firstName: result.user.firstName,
+      organizationName: result.organization.name,
+    });
+    void this.authEmail.sendVerificationEmail(result.user.id);
 
     return {
       user: {

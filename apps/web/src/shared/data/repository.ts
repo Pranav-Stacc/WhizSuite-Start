@@ -24,6 +24,8 @@ export interface LiveBinding<T extends Entity> {
   toApiPatch?: (patch: Partial<T>) => Promise<RawRecord> | RawRecord;
   /** Cache tag suffix (namespaced per organisation). */
   tag: string;
+  /** Optional query params appended to list requests (e.g. workspace filter). */
+  listSearchParams?: () => Promise<Record<string, string | undefined>>;
   /** When true, `remove` issues DELETE against the collection item path. */
   deletable?: boolean;
 }
@@ -70,7 +72,17 @@ export function createRepository<T extends Entity>(
     async list() {
       if (useLive(live)) {
         const org = await orgId();
-        const fetched = await fetchAllPages(live.path(org), [`org:${org}:${live.tag}`]);
+        let path = live.path(org);
+        if (live.listSearchParams) {
+          const params = await live.listSearchParams();
+          const qs = new URLSearchParams();
+          for (const [key, value] of Object.entries(params)) {
+            if (value) qs.set(key, value);
+          }
+          const serialized = qs.toString();
+          if (serialized) path = `${path}?${serialized}`;
+        }
+        const fetched = await fetchAllPages(path, [`org:${org}:${live.tag}`]);
         return fetched.map(live.fromApi);
       }
       return [...rows()];

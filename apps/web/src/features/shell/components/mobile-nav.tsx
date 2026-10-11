@@ -6,7 +6,7 @@ import { LayoutGrid, Menu as MenuIcon } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { HOME_ITEM, allowedGroups, isActivePath, primaryNav } from '@/shared/navigation/nav-config';
+import { HOME_ITEM, allowedGroups, isActivePath, topNavLayout } from '@/shared/navigation/nav-config';
 import { homePathForModule, type WorkspaceModule } from '@/shared/workspace/modules';
 import { ModuleLink } from '@/shared/workspace/module-link';
 import { Button } from '@/shared/ui/button';
@@ -115,7 +115,7 @@ export function MobileDock({
   orgSlug?: string;
 }) {
   const pathname = usePathname();
-  const dock = primaryNav(new Set(permissions), module).slice(0, 4);
+  const dock = topNavLayout(new Set(permissions), module).bar.slice(0, 4);
   return (
     <nav aria-label={t('shell.menu')} className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 lg:hidden print:hidden">
       <ul className="glass mx-auto flex max-w-md items-center justify-around rounded-md border border-border-soft p-1">

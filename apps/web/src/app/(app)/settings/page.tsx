@@ -25,11 +25,14 @@ import { listDataSources, getStorageUsage } from '@/features/media/services/stor
 import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
 import { GoogleCalendarSettings } from '@/features/settings/components/google-calendar-settings';
 import { isLiveMode } from '@/shared/config/env';
+import { getActiveWorkspaceId, listTenancyWorkspaces } from '@/shared/api/live/workspace';
+import { OrgWorkspacesSettings } from '@/features/workspaces/components/org-workspaces-settings';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
 
 export const metadata: Metadata = { title: t('settings.title') };
 
 const BASE = '/settings';
-const TABS = ['profile', 'appearance', 'notifications', 'storage', 'security'] as const;
+const TABS = ['profile', 'appearance', 'notifications', 'storage', 'security', 'workspaces'] as const;
 type SettingsTab = (typeof TABS)[number];
 
 const GUIDE: GuideItem[] = [
@@ -49,7 +52,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const granted = await getPermissions();
   const access = await getAccessCapabilities();
   const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
-  const [profile, notificationPrefs, theme, storageUsage, dataSources, googleCalendar] =
+  const canViewWorkspaces = TENANCY_WORKSPACE_UI_ENABLED && granted.has(Permissions.WORKSPACES_VIEW);
+  const [profile, notificationPrefs, theme, storageUsage, dataSources, googleCalendar, tenancyWorkspaces, activeWorkspaceId] =
     await Promise.all([
       getProfile(session),
       tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
@@ -57,6 +61,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       tab === 'storage' ? getStorageUsage() : Promise.resolve(null),
       tab === 'storage' ? listDataSources() : Promise.resolve([]),
       tab === 'storage' ? getGoogleCalendarConnection() : Promise.resolve(null),
+      tab === 'workspaces' && canViewWorkspaces ? listTenancyWorkspaces() : Promise.resolve([]),
+      tab === 'workspaces' && canViewWorkspaces ? getActiveWorkspaceId() : Promise.resolve(''),
     ]);
   const displayName = profile.name;
   const driveFlash = param(sp, 'drive');
@@ -68,7 +74,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <PageHeader title={t('settings.title')} description={t('settings.description')} eyebrow={<Settings className="inline size-3.5" />} actions={<PageGuide items={GUIDE} />} />
 
       <TabLinks
-        items={TABS.map((value) => ({
+        items={TABS.filter((value) => value !== 'workspaces' || canViewWorkspaces).map((value) => ({
           href: withQuery(BASE, sp, {
             tab: value === 'profile' ? undefined : value,
             drive: undefined,
@@ -162,6 +168,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
             />
           </div>
         </div>
+      ) : null}
+
+      {tab === 'workspaces' && canViewWorkspaces ? (
+        <OrgWorkspacesSettings
+          workspaces={tenancyWorkspaces}
+          activeId={activeWorkspaceId}
+          canCreate={granted.has(Permissions.WORKSPACES_CREATE)}
+        />
       ) : null}
 
       {tab === 'security' ? (

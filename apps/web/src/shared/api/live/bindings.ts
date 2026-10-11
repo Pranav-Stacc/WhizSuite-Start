@@ -50,6 +50,8 @@ import {
   workflowFromApi,
   workflowToApi,
 } from './mappers';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
+import { getActiveWorkspaceId } from './workspace';
 import { orgPath } from './utils';
 
 function binding<T extends { id: string }>(
@@ -69,7 +71,14 @@ function binding<T extends { id: string }>(
   };
 }
 
-export const clientsLive = binding<Client>('clients', 'clients', clientFromApi, clientToApi, { deletable: false });
+export const clientsLive: LiveBinding<Client> = {
+  ...binding<Client>('clients', 'clients', clientFromApi, clientToApi, { deletable: false }),
+  listSearchParams: async () => {
+    if (!TENANCY_WORKSPACE_UI_ENABLED) return {};
+    const workspaceId = await getActiveWorkspaceId();
+    return workspaceId ? { workspaceId } : {};
+  },
+};
 export const projectsLive: LiveBinding<Project> = {
   ...binding<Project>('projects', 'projects', projectFromApi, projectToApi),
   toApiPatch: projectPatchToApi,

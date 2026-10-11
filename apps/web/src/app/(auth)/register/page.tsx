@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { homeFor } from '@/shared/auth/roles';
 import { getSession } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
-import { Logo } from '@/shared/ui/logo';
 import { RegisterForm } from '@/features/auth/components/register-form';
 
 export const metadata: Metadata = { title: t('auth.register.meta') };
@@ -13,13 +12,11 @@ export default async function RegisterPage() {
   const session = await getSession();
   if (session) redirect(homeFor(session.role));
   return (
-    <div className="space-y-8">
-      <div className="lg:hidden">
-        <Logo />
-      </div>
+    <div className="space-y-7">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">{t('auth.register.title')}</h1>
-        <p className="mt-2 text-muted">{t('auth.register.subtitle')}</p>
+        <p className="eyebrow">{t('auth.register.meta')}</p>
+        <h1 className="display mt-2 text-3xl text-foreground sm:text-[2rem]">{t('auth.register.title')}</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{t('auth.register.subtitle')}</p>
       </header>
       <RegisterForm />
       <p className="text-center text-sm text-muted">

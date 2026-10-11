@@ -333,6 +333,30 @@ export async function switchPersonaAction(role: UserRole): Promise<void> {
   redirect(homeFor(role));
 }
 
+export async function forgotPasswordAction(email: string): Promise<ActionResult> {
+  return guarded(async () => {
+    if (!isLiveMode) return succeed(undefined, t('auth.forgot.sent'));
+    try {
+      await apiFetch('v1/auth/forgot-password', { method: 'POST', body: { email } });
+    } catch {
+      return fail(t('auth.forgot.unavailable'));
+    }
+    return succeed(undefined, t('auth.forgot.sent'));
+  });
+}
+
+export async function resetPasswordAction(token: string, password: string): Promise<ActionResult> {
+  return guarded(async () => {
+    if (!isLiveMode) return fail(t('auth.reset.unavailable'));
+    try {
+      await apiFetch('v1/auth/reset-password', { method: 'POST', body: { token, password } });
+    } catch {
+      return fail(t('auth.reset.invalid'));
+    }
+    return succeed(undefined, t('auth.reset.success'));
+  });
+}
+
 export async function signOutAction(): Promise<void> {
   const session = await getSession();
   if (session?.refreshToken) {

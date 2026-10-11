@@ -1,0 +1,18 @@
+{
+  "Simple": {
+    "Subject": {
+      "Data": "WhizSuite SES integration test",
+      "Charset": "UTF-8"
+    },
+    "Body": {
+      "Html": {
+        "Data": "<div style=\"font-family:system-ui,sans-serif\"><h1>WhizSuite</h1><p>This is a transactional test from Amazon SES (ap-south-1) via the <strong>whizsuite</strong> AWS profile.</p><p>If you received this, email integration is working.</p></div>",
+        "Charset": "UTF-8"
+      },
+      "Text": {
+        "Data": "WhizSuite SES test from AWS CLI (ap-south-1).",
+        "Charset": "UTF-8"
+      }
+    }
+  }
+}

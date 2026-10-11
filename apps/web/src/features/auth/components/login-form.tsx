@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,8 +29,7 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   });
 
   return (
-    <div className="space-y-4">
-      <GoogleSignInButton mode="login" />
+    <div className="space-y-5">
       <form
         noValidate
         className="space-y-4"
@@ -39,21 +39,42 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
         }}
       >
         <Field label={t('auth.login.email')} htmlFor="login-email" error={translateError(form.formState.errors.email?.message)}>
-          <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.email.placeholder')} aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
+          <Input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            className="auth-field"
+            placeholder={t('auth.email.placeholder')}
+            aria-invalid={Boolean(form.formState.errors.email)}
+            {...form.register('email')}
+          />
         </Field>
         <Field label={t('auth.login.password')} htmlFor="login-password" error={translateError(form.formState.errors.password?.message)}>
-          <Input id="login-password" type="password" autoComplete="current-password" aria-invalid={Boolean(form.formState.errors.password)} {...form.register('password')} />
+          <Input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            className="auth-field"
+            aria-invalid={Boolean(form.formState.errors.password)}
+            {...form.register('password')}
+          />
         </Field>
+        <p className="text-right text-xs">
+          <Link href="/forgot-password" className="text-muted underline-offset-2 hover:text-foreground hover:underline">
+            {t('auth.forgot.link')}
+          </Link>
+        </p>
         {formError ? (
           <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending || !hydrated}>
+        <Button type="submit" variant="primary" size="lg" className="auth-cta w-full" disabled={pending || !hydrated}>
           {pending ? <Loader2 className="animate-spin" /> : null}
           {t('auth.login.submit')}
         </Button>
       </form>
+      <GoogleSignInButton mode="login" />
     </div>
   );
 }

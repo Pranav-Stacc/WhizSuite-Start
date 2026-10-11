@@ -2560,6 +2560,36 @@ abstract class AppLocalizations {
   /// **'No contacts recorded for this client.'**
   String get clientContactsEmpty;
 
+  /// No description provided for @clientContactAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add contact'**
+  String get clientContactAdd;
+
+  /// No description provided for @clientContactFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First name'**
+  String get clientContactFirstName;
+
+  /// No description provided for @clientContactLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name'**
+  String get clientContactLastName;
+
+  /// No description provided for @clientContactRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get clientContactRole;
+
+  /// No description provided for @clientContactDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this client?'**
+  String clientContactDeleteConfirm(String name);
+
   /// No description provided for @clientDecisionMaker.
   ///
   /// In en, this message translates to:
@@ -3831,6 +3861,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{status, select, DRAFT{Finish the post, then submit it for review.} IN_REVIEW{Waiting for a reviewer to approve or request changes.} CHANGES_REQUESTED{The reviewer asked for changes. Edit the post and resubmit it.} APPROVED{Approved. Schedule it or publish it now.} SCHEDULED{Scheduled to go out at the planned time.} PUBLISHED{Published. This post can no longer be changed.} other{{status}}}'**
   String contentWorkflowHint(String status);
+
+  /// No description provided for @contentApprovalAnyApprover.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with approve permission'**
+  String get contentApprovalAnyApprover;
+
+  /// No description provided for @contentApprovalDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due by {at}'**
+  String contentApprovalDue(String at);
+
+  /// No description provided for @contentApprovalStage.
+  ///
+  /// In en, this message translates to:
+  /// **'Stage {step} of {total}: {name}'**
+  String contentApprovalStage(int step, int total, String name);
+
+  /// No description provided for @contentApprovalWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting on: {who}'**
+  String contentApprovalWaiting(String who);
 
   /// No description provided for @contentWorkflowTitle.
   ///
@@ -9035,6 +9089,60 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @workspaceActiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New clients and projects are created in the active workspace.'**
+  String get workspaceActiveBody;
+
+  /// No description provided for @workspaceActiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active workspace'**
+  String get workspaceActiveTitle;
+
+  /// No description provided for @workspaceCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create workspace'**
+  String get workspaceCreateTitle;
+
+  /// No description provided for @workspaceEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an admin to create a workspace, or create one if you have permission.'**
+  String get workspaceEmptyBody;
+
+  /// No description provided for @workspaceEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No workspaces'**
+  String get workspaceEmptyTitle;
+
+  /// No description provided for @workspaceNameField.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name'**
+  String get workspaceNameField;
+
+  /// No description provided for @workspaceNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Main studio'**
+  String get workspaceNameHint;
+
+  /// No description provided for @workspaceSlugField.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace URL slug'**
+  String get workspaceSlugField;
+
+  /// No description provided for @workspaceSwitched.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to {name}'**
+  String workspaceSwitched(String name);
+
   /// No description provided for @storageClearSelection.
   ///
   /// In en, this message translates to:
@@ -11056,6 +11164,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Who approves'**
   String get workflowStageBasis;
+
+  /// No description provided for @workflowStageTargetCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selection} other{{count} selections}}'**
+  String workflowStageTargetCount(int count);
+
+  /// No description provided for @workflowStageTargets.
+  ///
+  /// In en, this message translates to:
+  /// **'Selections'**
+  String get workflowStageTargets;
 
   /// No description provided for @workflowStageCount.
   ///

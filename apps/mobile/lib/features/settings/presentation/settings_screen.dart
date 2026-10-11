@@ -12,6 +12,8 @@ import '../../../core/widgets/skeleton.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../profile/data/profile_repository.dart';
 import '../../profile/presentation/profile_editor.dart';
+import '../../workspaces/presentation/workspace_settings_section.dart';
+import '../../workspaces/tenancy_ui.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -75,8 +77,10 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
           SizedBox(height: tokens.lg),
+          if (tenancyWorkspaceUiEnabled) const FadeSlideIn(index: 1, child: WorkspaceSettingsSection()),
+          SizedBox(height: tokens.lg),
           FadeSlideIn(
-            index: 1,
+            index: 2,
             child: Card(
               child: Column(
                 children: [
@@ -109,7 +113,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           SizedBox(height: tokens.xl),
           FadeSlideIn(
-            index: 2,
+            index: 3,
             child: OutlinedButton.icon(
               onPressed: () => _confirmSignOut(context, ref),
               icon: const Icon(Icons.logout),

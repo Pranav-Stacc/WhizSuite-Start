@@ -16,11 +16,14 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  FileText,
   List,
   Loader2,
+  Paperclip,
   Plus,
   Send,
   Sparkles,
+  X,
   XCircle,
 } from 'lucide-react';
 import {
@@ -29,6 +32,12 @@ import {
   rejectPendingAction,
 } from '../actions/agent.actions';
 import { AgentMarkdown } from './agent-markdown';
+import {
+  AGENT_ATTACHMENT_ACCEPT,
+  appendAttachmentsToMessage,
+  type AgentAttachmentReady,
+  uploadAgentAttachment,
+} from '../utils/agent-attachment-upload';
 import {
   applyStreamEvent,
   formatStepDetail,
@@ -47,6 +56,23 @@ interface Message {
   role: string;
   content: string;
   createdAt: string;
+}
+
+function processSseBuffer(
+  buffer: string,
+  onEvent: (event: AgentStreamEvent) => void,
+): string {
+  let rest = buffer;
+  let boundary = rest.indexOf('\n\n');
+  while (boundary !== -1) {
+    const complete = rest.slice(0, boundary);
+    rest = rest.slice(boundary + 2);
+    for (const event of parseSseEvents(complete)) {
+      onEvent(event);
+    }
+    boundary = rest.indexOf('\n\n');
+  }
+  return rest;
 }
 
 function parseSseEvents(chunk: string): AgentStreamEvent[] {
@@ -99,7 +125,11 @@ export function AgentWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [isPendingAction, startTransition] = useTransition();
   const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [attachments, setAttachments] = useState<AgentAttachmentReady[]>([]);
+  const [uploadingAttach, setUploadingAttach] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const isStreaming = stream !== null;
 
   useEffect(() => {
@@ -111,8 +141,10 @@ export function AgentWorkspace({
   }, [pendingActions]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, stream?.text, stream?.status]);
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, stream?.text, stream?.status, stream?.steps.length]);
 
   const suggestions = [
     t('agent.empty.suggestions.createClient'),
@@ -132,24 +164,61 @@ export function AgentWorkspace({
       },
     ]);
 
+  const onPickFiles = async (files: FileList | null) => {
+    if (!files?.length || uploadingAttach) return;
+    setUploadingAttach(true);
+    setError(null);
+    try {
+      for (const file of [...files]) {
+        const ready = await uploadAgentAttachment(file);
+        setAttachments((current) => [...current, ready]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('toast.failed'));
+    } finally {
+      setUploadingAttach(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const onSend = async (textOverride?: string) => {
-    if (!sessionId || isStreaming) return;
+    if (!sessionId || isStreaming || uploadingAttach) return;
     const text = (textOverride ?? draft).trim();
-    if (!text) return;
+    const messageBody = appendAttachmentsToMessage(text, attachments);
+    if (!messageBody.trim()) return;
 
     setDraft('');
+    setAttachments([]);
     setError(null);
-    appendMessage('user', text);
+    appendMessage('user', messageBody);
     setStream({ status: t('agent.thinking'), text: '', steps: [] });
 
     let finalText = '';
+    const handleEvent = (event: AgentStreamEvent) => {
+      if (event.type === 'done') {
+        finalText = event.response || finalText;
+        return 'done' as const;
+      }
+      if (event.type === 'error') {
+        throw new Error(event.message);
+      }
+      setStream((prev) => {
+        const next = applyStreamEvent(prev, event);
+        if (event.type === 'summary.delta') {
+          finalText = next.text;
+        }
+        return next;
+      });
+      return 'continue' as const;
+    };
+
     try {
       const res = await fetch('/api/agent/stream', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          message: text,
+          message: messageBody,
           agentDefinitionId: agentDefinitionId || undefined,
         }),
       });
@@ -167,27 +236,18 @@ export function AgentWorkspace({
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const boundary = buffer.lastIndexOf('\n\n');
-        if (boundary === -1) continue;
-        const complete = buffer.slice(0, boundary);
-        buffer = buffer.slice(boundary + 2);
+        buffer = processSseBuffer(buffer, (event) => {
+          const outcome = handleEvent(event);
+          if (outcome === 'done') finished = true;
+        });
+      }
 
-        for (const event of parseSseEvents(complete)) {
-          if (event.type === 'done') {
-            finalText = event.response || finalText;
-            finished = true;
-          } else if (event.type === 'error') {
-            throw new Error(event.message);
-          } else {
-            setStream((prev) => {
-              const next = applyStreamEvent(prev, event);
-              if (event.type === 'summary.delta') {
-                finalText = next.text;
-              }
-              return next;
-            });
-          }
-        }
+      buffer += decoder.decode();
+      if (buffer.trim()) {
+        processSseBuffer(`${buffer}\n\n`, (event) => {
+          const outcome = handleEvent(event);
+          if (outcome === 'done') finished = true;
+        });
       }
 
       if (finalText) appendMessage('assistant', finalText);
@@ -215,11 +275,17 @@ export function AgentWorkspace({
 
       <div
         className={cn(
-          'relative grid lg:grid-cols-[240px_minmax(0,1fr)_260px]',
-          embedded ? 'min-h-0 flex-1' : 'min-h-[min(78vh,46rem)]',
+          embedded
+            ? 'relative flex min-h-0 flex-1 flex-col'
+            : 'relative grid min-h-[min(78vh,46rem)] lg:grid-cols-[240px_minmax(0,1fr)_260px]',
         )}
       >
-        <aside className="hidden border-b border-border-soft/80 p-3 lg:block lg:border-b-0 lg:border-r">
+        <aside
+          className={cn(
+            'hidden border-b border-border-soft/80 p-3 lg:block lg:border-b-0 lg:border-r',
+            embedded && 'lg:hidden',
+          )}
+        >
           <SessionList
             sessions={sessions}
             sessionId={sessionId}
@@ -297,7 +363,8 @@ export function AgentWorkspace({
           </Sheet>
 
           <div
-            className="flex-1 space-y-4 overflow-y-auto px-4 py-5"
+            ref={scrollRef}
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5"
             aria-live="polite"
             aria-busy={isStreaming}
           >
@@ -403,40 +470,109 @@ export function AgentWorkspace({
 
           <footer className="border-t border-border-soft/80 p-4">
             <form
-              className="flex gap-2 rounded-2xl border border-border-soft bg-surface-2/40 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-sky-500/40"
+              className="rounded-2xl border border-border-soft bg-surface-2/40 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus-within:border-sky-500/40"
               onSubmit={(e) => {
                 e.preventDefault();
                 void onSend();
               }}
             >
-              <textarea
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder={t('agent.placeholder')}
-                aria-label={t('agent.placeholder')}
-                rows={2}
-                className="min-h-[3rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted/70"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void onSend();
+              {attachments.length > 0 ? (
+                <ul className="mb-2 flex flex-wrap gap-2 px-1">
+                  {attachments.map((att) => (
+                    <li
+                      key={att.assetId}
+                      className="group relative flex items-center gap-2 rounded-xl border border-border-soft/70 bg-surface/60 px-2 py-1.5"
+                    >
+                      {att.mimeType.startsWith('image/') ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- signed upload preview
+                        <img
+                          src={att.url}
+                          alt=""
+                          className="size-10 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-10 items-center justify-center rounded-lg bg-red-500/10 text-red-300">
+                          <FileText className="size-4" />
+                        </span>
+                      )}
+                      <span className="max-w-[8rem] truncate text-xs text-foreground">{att.name}</span>
+                      <button
+                        type="button"
+                        className="rounded-md p-1 text-muted hover:bg-muted/60 hover:text-foreground"
+                        aria-label={t('agent.attach.remove')}
+                        onClick={() =>
+                          setAttachments((current) => current.filter((a) => a.assetId !== att.assetId))
+                        }
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={AGENT_ATTACHMENT_ACCEPT}
+                  multiple
+                  className="sr-only"
+                  onChange={(e) => void onPickFiles(e.target.files)}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="self-end shrink-0"
+                  disabled={isStreaming || uploadingAttach || !sessionId}
+                  aria-label={t('agent.attach.add')}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {uploadingAttach ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="size-4" />
+                  )}
+                </Button>
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={t('agent.placeholder')}
+                  aria-label={t('agent.placeholder')}
+                  rows={2}
+                  className="min-h-[3rem] flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-muted/70"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void onSend();
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  disabled={
+                    isStreaming ||
+                    uploadingAttach ||
+                    (!draft.trim() && attachments.length === 0) ||
+                    !sessionId
                   }
-                }}
-              />
-              <Button
-                type="submit"
-                disabled={isStreaming || !draft.trim() || !sessionId}
-                variant="primary"
-                className="self-end"
-              >
-                <Send className="size-4" />
-                {t('agent.send')}
-              </Button>
+                  variant="primary"
+                  className="self-end"
+                >
+                  <Send className="size-4" />
+                  {t('agent.send')}
+                </Button>
+              </div>
             </form>
           </footer>
         </section>
 
-        <aside className="hidden border-t border-border-soft/80 p-4 lg:block lg:border-t-0 lg:border-l">
+        <aside
+          className={cn(
+            'hidden border-t border-border-soft/80 p-4 lg:block lg:border-t-0 lg:border-l',
+            embedded && 'lg:hidden',
+          )}
+        >
           <h3 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">
             <Clock className="size-3.5" />
             {t('agent.runs')}
@@ -477,7 +613,7 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
             : 'rounded-tl-md border border-border-soft/70 bg-surface-2/70 text-foreground',
         )}
       >
-        {isUser ? content : <AgentMarkdown content={content} />}
+        <AgentMarkdown content={content} className={isUser ? 'agent-md-on-primary' : undefined} />
       </div>
     </div>
   );

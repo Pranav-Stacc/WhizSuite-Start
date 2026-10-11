@@ -10,7 +10,9 @@ import '../../../core/theme/theme_settings.dart';
 import '../../../core/widgets/async_value_view.dart';
 import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/fade_slide_in.dart';
+import '../../../core/forms/validators.dart';
 import '../../../core/widgets/feedback.dart';
+import '../../../core/widgets/forms.dart';
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/status_badge.dart';
 import '../../../core/widgets/surfaces.dart';
@@ -592,26 +594,78 @@ class _DetailsSection extends StatelessWidget {
 // Contacts section
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ContactsSection extends StatelessWidget {
+class _ContactsSection extends ConsumerWidget {
   const _ContactsSection({required this.client});
 
   final Client client;
 
+  Future<void> _addContact(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final firstName = TextEditingController();
+    final lastName = TextEditingController();
+    final email = TextEditingController();
+    final role = TextEditingController();
+    final validators = Validators(l10n);
+    final actions = ref.read(clientsActionsProvider);
+
+    await showFormSheet(
+      context,
+      title: l10n.clientContactAdd,
+      submitLabel: l10n.create,
+      fields: (context, setState) => [
+        TextFormField(
+          controller: firstName,
+          autofocus: true,
+          decoration: InputDecoration(labelText: l10n.clientContactFirstName),
+          validator: validators.minLength(1),
+        ),
+        TextFormField(
+          controller: lastName,
+          decoration: InputDecoration(labelText: l10n.clientContactLastName),
+        ),
+        TextFormField(
+          controller: email,
+          decoration: InputDecoration(labelText: l10n.teamEmail),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        TextFormField(
+          controller: role,
+          decoration: InputDecoration(labelText: l10n.clientContactRole),
+        ),
+      ],
+      onSubmit: () => actions.addContact(
+        clientId: client.id,
+        firstName: firstName.text.trim(),
+        lastName: lastName.text.trim().isEmpty ? null : lastName.text.trim(),
+        email: email.text.trim().isEmpty ? null : email.text.trim(),
+        role: role.text.trim().isEmpty ? null : role.text.trim(),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final text = Theme.of(context).textTheme;
     final tokens = context.tokens;
 
     return SectionCard(
       title: l10n.clientContacts,
+      trailing: PermissionGate(
+        anyOf: const [Permissions.clientsEdit],
+        child: TextButton.icon(
+          onPressed: () => _addContact(context, ref),
+          icon: const Icon(Icons.person_add_outlined, size: 18),
+          label: Text(l10n.clientContactAdd),
+        ),
+      ),
       child: client.contacts.isEmpty
           ? Text(l10n.clientContactsEmpty, style: text.bodyMedium?.copyWith(color: tokens.muted))
           : Column(
               children: [
                 for (final (i, contact) in client.contacts.indexed) ...[
                   if (i > 0) const Divider(),
-                  _ContactRow(contact: contact),
+                  _ContactRow(clientId: client.id, contact: contact),
                 ],
               ],
             ),
@@ -619,13 +673,14 @@ class _ContactsSection extends StatelessWidget {
   }
 }
 
-class _ContactRow extends StatelessWidget {
-  const _ContactRow({required this.contact});
+class _ContactRow extends ConsumerWidget {
+  const _ContactRow({required this.clientId, required this.contact});
 
+  final String clientId;
   final ClientContact contact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final email = contact.email;
@@ -653,6 +708,23 @@ class _ContactRow extends StatelessWidget {
               icon: const Icon(Icons.call_outlined),
               onPressed: () => launchUrl(Uri(scheme: 'tel', path: phone)),
             ),
+          PermissionGate(
+            anyOf: const [Permissions.clientsEdit],
+            child: IconButton(
+              tooltip: l10n.delete,
+              icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+              onPressed: () async {
+                final confirmed = await confirmAction(
+                  context,
+                  title: l10n.delete,
+                  body: l10n.clientContactDeleteConfirm(contact.name),
+                  confirmLabel: l10n.delete,
+                );
+                if (!confirmed) return;
+                await ref.read(clientsActionsProvider).removeContact(clientId, contact.id);
+              },
+            ),
+          ),
         ],
       ),
     );

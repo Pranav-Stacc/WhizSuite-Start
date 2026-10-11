@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
+import '../../../core/network/api_exception.dart';
 import '../../access/application/access_controller.dart';
 import '../../directory/application/directory_providers.dart';
+import '../../workspaces/application/workspace_providers.dart';
 import '../../tasks/application/tasks_controller.dart';
 import '../data/projects_repository.dart';
 import '../domain/project.dart';
@@ -48,7 +50,21 @@ class ProjectsActions {
   ProjectsRepository get _repo => _ref.read(projectsRepositoryProvider);
 
   Future<Project> create(ProjectInput input) async {
-    final project = await _repo.create(input);
+    final workspaceId = await _ref.read(activeWorkspaceIdProvider.future);
+    if (workspaceId == null) throw const ApiException(kind: ApiFailureKind.forbidden);
+    final project = await _repo.create(
+      ProjectInput(
+        name: input.name,
+        clientId: input.clientId,
+        workspaceId: workspaceId,
+        type: input.type,
+        status: input.status,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        budgetMinor: input.budgetMinor,
+        ownerUserId: input.ownerUserId,
+      ),
+    );
     _invalidate();
     return project;
   }

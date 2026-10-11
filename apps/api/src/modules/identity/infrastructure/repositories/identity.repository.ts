@@ -460,4 +460,40 @@ export class IdentityRepository {
       return { user, organization, workspace, membership };
     });
   }
+
+  createAuthEmailToken(input: {
+    userId: string;
+    type: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }) {
+    return this.prisma.authEmailToken.create({ data: input });
+  }
+
+  findAuthEmailToken(tokenHash: string, type: string) {
+    return this.prisma.authEmailToken.findFirst({
+      where: { tokenHash, type },
+    });
+  }
+
+  markAuthEmailTokenUsed(id: string) {
+    return this.prisma.authEmailToken.update({
+      where: { id },
+      data: { usedAt: new Date() },
+    });
+  }
+
+  invalidateAuthEmailTokens(userId: string, type: string) {
+    return this.prisma.authEmailToken.updateMany({
+      where: { userId, type, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+  }
+
+  updatePasswordHash(userId: string, passwordHash: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+  }
 }

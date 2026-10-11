@@ -46,6 +46,14 @@ export function formatStepDetail(step: LiveToolStep): string | null {
 export function applyStreamEvent(prev: StreamState | null, event: AgentStreamEvent): StreamState {
   const base: StreamState = prev ?? { status: t('agent.thinking'), text: '', steps: [] };
 
+  if (event.type === 'plan') {
+    return {
+      ...base,
+      status: t('agent.phase.planning'),
+      statusDetail: event.summary,
+    };
+  }
+
   if (event.type === 'status') {
     const status =
       event.phase === 'summarizing'

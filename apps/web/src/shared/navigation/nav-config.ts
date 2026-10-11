@@ -151,6 +151,40 @@ export function secondaryGroups(granted: ReadonlySet<Permission>, module: Worksp
     .filter((group) => group.items.length > 0);
 }
 
+/** Max links in the desktop top bar before the rest stay under "More". */
+export const TOP_NAV_MAX_BAR_ITEMS = 7;
+
+/**
+ * Top bar order: module primaries first, then other allowed pages until the cap.
+ * When permissions hide most primaries, pages from "More" move into the bar automatically.
+ */
+export function topNavLayout(
+  granted: ReadonlySet<Permission>,
+  module: WorkspaceModule = 'main',
+): { bar: NavItem[]; more: NavGroup[] } {
+  const primary = primaryNav(granted, module);
+  const secondary = secondaryGroups(granted, module);
+  const secondaryItems = secondary.flatMap((group) => group.items);
+
+  const seen = new Set<string>();
+  const bar: NavItem[] = [];
+  for (const item of [...primary, ...secondaryItems]) {
+    if (seen.has(item.href)) continue;
+    seen.add(item.href);
+    if (bar.length < TOP_NAV_MAX_BAR_ITEMS) bar.push(item);
+  }
+
+  const barHrefs = new Set(bar.map((item) => item.href));
+  const more = secondary
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !barHrefs.has(item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return { bar, more };
+}
+
 export function allowedGroups(granted: ReadonlySet<Permission>, module: WorkspaceModule = 'main'): NavGroup[] {
   const allowedIds = new Set(MODULE_NAV_GROUPS[module]);
   return NAV_GROUPS.filter((group) => allowedIds.has(group.id))

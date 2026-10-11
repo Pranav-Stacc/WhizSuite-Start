@@ -43,6 +43,7 @@ function notificationData(raw: unknown): NotificationData {
     reminderKey: pick(row.reminderKey),
     calendarItemId: pick(row.calendarItemId),
     startsAt: pick(row.startsAt),
+    href: pick(row.href),
   };
 }
 

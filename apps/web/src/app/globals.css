@@ -235,6 +235,37 @@
     text-decoration: underline;
     text-decoration-thickness: 1px;
   }
+  /** Header context menus (product surface, tenancy workspace) — not uppercase nav tabs. */
+  .header-ctx-trigger {
+    display: inline-flex;
+    max-width: 11rem;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-soft);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    padding: 0.25rem 0.5rem;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--fg);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .header-ctx-trigger:hover {
+    border-color: var(--border);
+    background: var(--surface);
+  }
+  .header-ctx-trigger:disabled {
+    opacity: 0.6;
+  }
+  .header-ctx-kicker {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
   .wordmark {
     font-size: 12px;
     font-weight: 500;
@@ -299,6 +330,233 @@
       );
     background-size: auto, 48px 48px;
   }
+  .marketing-shell[data-landing='true'] {
+    background-color: #000;
+    background-image: none;
+  }
+  .marketing-shell[data-landing='true'] .marketing-stage {
+    border-top-color: color-mix(in oklab, var(--fg) 12%, transparent);
+  }
+  .marketing-shell[data-landing='true'] .marketing-footer {
+    background-color: #000;
+  }
+  .marketing-shell[data-landing='true'] header {
+    background-color: color-mix(in oklab, #000 75%, transparent);
+  }
+  .landing-aurora {
+    position: absolute;
+    inset: -20% -10% auto;
+    height: 70%;
+    background:
+      radial-gradient(ellipse 55% 45% at 20% 20%, color-mix(in oklab, var(--fg) 14%, transparent), transparent 55%),
+      radial-gradient(ellipse 50% 40% at 80% 10%, color-mix(in oklab, var(--fg) 8%, transparent), transparent 50%),
+      radial-gradient(ellipse 40% 35% at 50% 60%, color-mix(in oklab, var(--fg) 5%, transparent), transparent 60%);
+    opacity: 0.9;
+    animation: var(--animate-float);
+  }
+  .landing-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--fg) 7%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--fg) 7%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, #000 15%, transparent 72%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, #000 15%, transparent 72%);
+    opacity: 0.35;
+  }
+  .landing-noise {
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .landing-hero-glow {
+    background: radial-gradient(ellipse at center, color-mix(in oklab, var(--fg) 12%, transparent), transparent 68%);
+  }
+  .landing-gradient-text {
+    background: linear-gradient(
+      120deg,
+      var(--fg) 0%,
+      color-mix(in oklab, var(--fg) 72%, var(--muted)) 45%,
+      var(--fg) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .landing-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid color-mix(in oklab, var(--fg) 18%, transparent);
+    background: color-mix(in oklab, var(--fg) 4%, transparent);
+    padding: 0.35rem 0.65rem;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--fg) 88%, var(--muted));
+  }
+  .landing-live-dot {
+    display: inline-block;
+    size: 0.45rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--fg);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--fg) 45%, transparent);
+    animation: var(--animate-pulse-ring);
+  }
+  .landing-card {
+    border: 1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+    background: linear-gradient(165deg, color-mix(in oklab, var(--fg) 5%, #000) 0%, #000 55%);
+    border-radius: var(--radius-lg);
+    transition:
+      border-color 0.2s ease,
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .landing-card:hover {
+    border-color: color-mix(in oklab, var(--fg) 28%, transparent);
+    transform: translateY(-2px);
+  }
+  .landing-card-highlight {
+    border-color: color-mix(in oklab, var(--fg) 35%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in oklab, var(--fg) 12%, transparent);
+  }
+  .landing-icon-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid color-mix(in oklab, var(--fg) 16%, transparent);
+    background: color-mix(in oklab, var(--fg) 6%, transparent);
+    color: var(--fg);
+  }
+  .landing-stat-card {
+    position: relative;
+  }
+  .landing-section-wash {
+    background: radial-gradient(ellipse 70% 50% at 50% 100%, color-mix(in oklab, var(--fg) 6%, transparent), transparent 70%);
+  }
+  .landing-workflow-step {
+    border: 1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+    background: #000;
+    border-radius: var(--radius-md);
+  }
+  .landing-workflow-connector {
+    position: absolute;
+    top: 50%;
+    right: -0.65rem;
+    width: 0.65rem;
+    height: 1px;
+    background: color-mix(in oklab, var(--fg) 35%, transparent);
+  }
+  .landing-agent-orbit {
+    background: radial-gradient(circle, color-mix(in oklab, var(--fg) 18%, transparent), transparent 70%);
+  }
+  .landing-marquee {
+    overflow: hidden;
+    background: #000;
+  }
+  .landing-marquee-track {
+    display: flex;
+    width: max-content;
+    gap: 2.5rem;
+    padding-inline: 1rem;
+    animation: landing-marquee 32s linear infinite;
+  }
+  .landing-marquee-item {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: color-mix(in oklab, var(--muted) 85%, var(--fg));
+  }
+  @keyframes landing-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .landing-marquee-reverse .landing-marquee-track {
+    animation-direction: reverse;
+  }
+  .landing-bento-cell {
+    min-height: 11rem;
+  }
+  .landing-bento-cell.lg\:col-span-2.lg\:row-span-2 {
+    min-height: 100%;
+  }
+  @media (min-width: 1024px) {
+    .landing-bento {
+      min-height: 22rem;
+    }
+  }
+  .landing-manifesto {
+    border-left: 1px solid color-mix(in oklab, var(--fg) 12%, transparent);
+    padding-left: 1.5rem;
+  }
+  @media (min-width: 1024px) {
+    .landing-manifesto {
+      padding-left: 2.5rem;
+    }
+  }
+  .landing-rhythm-row:first-child {
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+  }
+  .landing-rhythm-row:last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+  }
+  .landing-final-panel {
+    background: linear-gradient(145deg, color-mix(in oklab, var(--fg) 7%, #000), #000 50%);
+  }
+  .landing-final-glow {
+    display: none;
+  }
+  .landing-cta-glow {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--fg) 25%, transparent),
+      0 12px 40px -12px color-mix(in oklab, var(--fg) 35%, transparent);
+  }
+
+  /* Auth (login / register) on pitch-black marketing shell */
+  .auth-panel {
+    --auth-panel-bg: #050505;
+    border: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+    border-radius: var(--radius-xl);
+    background: linear-gradient(165deg, color-mix(in oklab, var(--fg) 6%, #000) 0%, var(--auth-panel-bg) 45%, #000 100%);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--fg) 6%, transparent),
+      0 28px 80px -40px color-mix(in oklab, var(--fg) 22%, transparent);
+  }
+  .auth-divider-label {
+    background-color: var(--auth-panel-bg);
+  }
+  .auth-field {
+    border-color: color-mix(in oklab, var(--fg) 14%, transparent) !important;
+    background-color: #0a0a0a !important;
+  }
+  .auth-field:hover {
+    border-color: color-mix(in oklab, var(--fg) 28%, transparent) !important;
+  }
+  .auth-field:focus-visible {
+    border-color: color-mix(in oklab, var(--fg) 55%, transparent) !important;
+  }
+  .auth-cta {
+    box-shadow: 0 12px 36px -16px color-mix(in oklab, var(--fg) 40%, transparent);
+  }
+  .google-sign-in-host iframe {
+    margin-inline: auto;
+    display: block;
+  }
   .marketing-shell .marketing-rule {
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--color-border-strong), transparent);
@@ -346,6 +604,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .landing-marquee-track {
+    animation: none;
+  }
+  .landing-aurora {
+    animation: none;
+  }
+  .landing-live-dot {
+    animation: none;
+  }
   *,
   *::before,
   *::after {
@@ -354,6 +621,19 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Agent user bubbles: inherit contrast text without Tailwind [&_.text-foreground/90] variants. */
+.agent-md-on-primary {
+  color: var(--primary-contrast);
+}
+.agent-md-on-primary :where(p, li, td, th, h3, h4, strong, blockquote) {
+  color: color-mix(in oklab, var(--primary-contrast) 92%, transparent);
+}
+.agent-md-on-primary a {
+  color: #bae6fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 @media print {

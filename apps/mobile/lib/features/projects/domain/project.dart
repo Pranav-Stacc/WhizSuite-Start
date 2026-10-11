@@ -61,6 +61,7 @@ class ProjectInput {
   const ProjectInput({
     required this.name,
     this.clientId,
+    this.workspaceId,
     this.type,
     this.status,
     this.startDate,
@@ -71,6 +72,7 @@ class ProjectInput {
 
   final String name;
   final String? clientId;
+  final String? workspaceId;
   final String? type;
   final String? status;
   final DateTime? startDate;
@@ -83,6 +85,7 @@ class ProjectInput {
     final end = endDate;
     return {
       'clientId': ?clientId,
+      if (workspaceId != null) 'workspaceId': workspaceId,
       'name': name,
       'type': ?type,
       'status': ?status,

@@ -28,10 +28,16 @@ export class EmailChannel implements NotificationChannelAdapter {
   ): Promise<ChannelDeliveryResult> {
     const contact = await this.identity.findContact(notification.recipientId);
     if (!contact) return { status: 'SKIPPED', reason: 'recipient not found' };
-    const actionUrl = new URL(
-      this.config.get('NOTIFICATION_LINK_PATH', { infer: true }),
-      this.config.get('WEB_APP_URL', { infer: true }),
-    ).toString();
+    const webBase = this.config.get('WEB_APP_URL', { infer: true });
+    const href = notification.data.href?.trim();
+    const actionUrl = href
+      ? href.startsWith('http')
+        ? href
+        : new URL(href.startsWith('/') ? href : `/${href}`, webBase).toString()
+      : new URL(
+          this.config.get('NOTIFICATION_LINK_PATH', { infer: true }),
+          webBase,
+        ).toString();
     await this.email.sendNotification({
       to: contact.email,
       subject: notification.subject,

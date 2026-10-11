@@ -1695,6 +1695,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientContactsEmpty => 'No contacts recorded for this client.';
 
   @override
+  String get clientContactAdd => 'Add contact';
+
+  @override
+  String get clientContactFirstName => 'First name';
+
+  @override
+  String get clientContactLastName => 'Last name';
+
+  @override
+  String get clientContactRole => 'Role';
+
+  @override
+  String clientContactDeleteConfirm(String name) {
+    return 'Remove $name from this client?';
+  }
+
+  @override
   String get clientDecisionMaker => 'Decision maker';
 
   @override
@@ -2476,6 +2493,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'other': '$status',
     });
     return '$_temp0';
+  }
+
+  @override
+  String get contentApprovalAnyApprover => 'Anyone with approve permission';
+
+  @override
+  String contentApprovalDue(String at) {
+    return 'Due by $at';
+  }
+
+  @override
+  String contentApprovalStage(int step, int total, String name) {
+    return 'Stage $step of $total: $name';
+  }
+
+  @override
+  String contentApprovalWaiting(String who) {
+    return 'Waiting on: $who';
   }
 
   @override
@@ -6215,6 +6250,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get workspaceActiveBody =>
+      'New clients and projects are created in the active workspace.';
+
+  @override
+  String get workspaceActiveTitle => 'Active workspace';
+
+  @override
+  String get workspaceCreateTitle => 'Create workspace';
+
+  @override
+  String get workspaceEmptyBody =>
+      'Ask an admin to create a workspace, or create one if you have permission.';
+
+  @override
+  String get workspaceEmptyTitle => 'No workspaces';
+
+  @override
+  String get workspaceNameField => 'Workspace name';
+
+  @override
+  String get workspaceNameHint => 'e.g. Main studio';
+
+  @override
+  String get workspaceSlugField => 'Workspace URL slug';
+
+  @override
+  String workspaceSwitched(String name) {
+    return 'Switched to $name';
+  }
+
+  @override
   String get storageClearSelection => 'Clear selection';
 
   @override
@@ -7517,6 +7583,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workflowStageBasis => 'Who approves';
+
+  @override
+  String workflowStageTargetCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selections',
+      one: '1 selection',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get workflowStageTargets => 'Selections';
 
   @override
   String workflowStageCount(int count) {

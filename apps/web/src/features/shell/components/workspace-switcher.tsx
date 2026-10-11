@@ -58,12 +58,17 @@ export function WorkspaceSwitcher({ module, orgSlug, canCrm }: WorkspaceSwitcher
     <Menu.Root>
       <Menu.Trigger
         disabled={pending}
-        className="nav-link hidden items-center gap-1.5 outline-none sm:inline-flex"
+        className="header-ctx-trigger hidden outline-none sm:inline-flex"
         aria-label={t('workspace.switch')}
       >
-        <CurrentIcon className="size-3.5" aria-hidden />
-        <span>{t(current.labelKey)}</span>
-        <ChevronDown className="size-3" aria-hidden />
+        <span className="flex min-w-0 flex-col items-start leading-tight">
+          <span className="header-ctx-kicker">{t('workspace.main.kicker')}</span>
+          <span className="flex items-center gap-1 truncate">
+            <CurrentIcon className="size-3.5 shrink-0" aria-hidden />
+            <span className="truncate">{t(current.labelKey)}</span>
+            <ChevronDown className="size-3 shrink-0" aria-hidden />
+          </span>
+        </span>
       </Menu.Trigger>
       <Menu.Content className="w-56 p-1">
         <Menu.Label>{t('workspace.switch')}</Menu.Label>

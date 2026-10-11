@@ -9,20 +9,22 @@ import { Logo } from '@/shared/ui/logo';
 import { Sheet } from '@/shared/ui/overlays';
 
 const LINKS = [
+  { href: '#studio', label: 'landing.nav.studio' as const },
+  { href: '#craft', label: 'landing.nav.craft' as const },
   { href: '#modules', label: 'landing.nav.modules' as const },
-  { href: '#workflow', label: 'landing.nav.workflow' as const },
+  { href: '#stories', label: 'landing.nav.stories' as const },
   { href: '#portal', label: 'landing.nav.portal' as const },
-  { href: '#security', label: 'landing.nav.security' as const },
+  { href: '#faq', label: 'landing.nav.faq' as const },
 ];
 
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="relative z-10 border-b border-border-soft">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
+    <header className="relative z-10 border-b border-border-soft/80 bg-black">
+      <div className="mx-auto flex w-full max-w-[88rem] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6 lg:px-8 sm:py-4">
         <Link href="/" className="min-w-0 shrink-0">
-          <Logo className="max-w-[10rem] sm:max-w-none" />
+          <Logo name={t('landing.brand')} className="max-w-[12rem] sm:max-w-none [&_span]:text-base sm:[&_span]:text-[1.05rem]" />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex" aria-label={t('landing.nav.label')}>

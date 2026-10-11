@@ -242,6 +242,7 @@ export const agencyMessages = {
   'settings.tab.notifications': 'Notifications',
   'settings.tab.security': 'Security',
   'settings.tab.storage': 'Storage',
+  'settings.tab.workspaces': 'Workspaces',
   'settings.storage.calendar.desc':
     'Connect once per workspace. Control which event types can sync to Google and pull imports from Settings — not from the calendar page.',
   'settings.storage.driveSharingNote':

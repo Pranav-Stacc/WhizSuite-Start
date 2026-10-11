@@ -11,7 +11,10 @@ class ClientsRepository {
 
   String get _base => _api.org('clients');
 
-  Future<List<Client>> list() async => jsonList(await _api.get<Object?>(_base)).map(Client.fromJson).toList();
+  Future<List<Client>> list({String? workspaceId}) async {
+    final path = workspaceId != null ? '$_base?workspaceId=$workspaceId' : _base;
+    return jsonList(await _api.get<Object?>(path)).map(Client.fromJson).toList();
+  }
 
   Future<Client> get(String id) async => Client.fromJson(jsonObject(await _api.get<Object?>('$_base/$id')));
 

@@ -5,9 +5,12 @@ import { Loader2 } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { googleAuthAction } from '../actions/auth.actions';
+import { AuthFormDivider } from './auth-form-divider';
 
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client';
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
+const GIS_MIN_WIDTH = 200;
+const GIS_MAX_WIDTH = 400;
 
 declare global {
   interface Window {
@@ -29,6 +32,7 @@ declare global {
               text?: string;
               shape?: string;
               width?: number;
+              logo_alignment?: string;
             },
           ) => void;
           prompt: () => void;
@@ -64,6 +68,12 @@ function loadGis(): Promise<void> {
   });
 }
 
+function measureButtonWidth(host: HTMLElement): number {
+  const width = Math.floor(host.getBoundingClientRect().width);
+  if (!width) return GIS_MAX_WIDTH;
+  return Math.min(GIS_MAX_WIDTH, Math.max(GIS_MIN_WIDTH, width));
+}
+
 /** Renders Google Identity Services sign-in when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set. */
 export function GoogleSignInButton({
   organizationName,
@@ -74,6 +84,7 @@ export function GoogleSignInButton({
   const [pending, startTransition] = useTransition();
   const [ready, setReady] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
+  const lastWidthRef = useRef(0);
   const hostId = useId();
 
   const onCredential = useCallback(
@@ -99,9 +110,30 @@ export function GoogleSignInButton({
     [mode, organizationName, organizationSlug],
   );
 
+  const paintButton = useCallback(() => {
+    const host = hostRef.current;
+    if (!host || !window.google?.accounts?.id || !CLIENT_ID) return;
+    const width = measureButtonWidth(host);
+    if (width === lastWidthRef.current && host.childElementCount > 0) return;
+    lastWidthRef.current = width;
+    host.innerHTML = '';
+    window.google.accounts.id.renderButton(host, {
+      type: 'standard',
+      theme: 'filled_black',
+      size: 'large',
+      text: mode === 'register' ? 'signup_with' : 'signin_with',
+      shape: 'pill',
+      width,
+      logo_alignment: 'left',
+    });
+    setReady(true);
+  }, [mode]);
+
   useEffect(() => {
     if (!CLIENT_ID) return;
     let cancelled = false;
+    let observer: ResizeObserver | undefined;
+
     void (async () => {
       try {
         await loadGis();
@@ -112,40 +144,39 @@ export function GoogleSignInButton({
           auto_select: false,
           cancel_on_tap_outside: true,
         });
-        hostRef.current.innerHTML = '';
-        window.google.accounts.id.renderButton(hostRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: mode === 'register' ? 'signup_with' : 'signin_with',
-          shape: 'rectangular',
-          width: 320,
+        paintButton();
+        observer = new ResizeObserver(() => {
+          if (!cancelled) paintButton();
         });
-        setReady(true);
+        observer.observe(hostRef.current);
       } catch {
         if (!cancelled) setFormError(t('auth.google.unavailable'));
       }
     })();
+
     return () => {
       cancelled = true;
+      observer?.disconnect();
     };
-  }, [mode, onCredential]);
+  }, [mode, onCredential, paintButton]);
 
   if (!CLIENT_ID) return null;
 
   return (
     <div className="space-y-3">
-      <div className="relative py-1 text-center text-xs text-muted before:absolute before:inset-x-0 before:top-1/2 before:h-px before:bg-border-soft">
-        <span className="relative bg-surface px-3">{t('auth.login.orGoogle')}</span>
-      </div>
-      <div className="flex min-h-11 flex-col items-center justify-center gap-2">
+      <AuthFormDivider />
+      <div className="google-sign-in-host flex min-h-11 w-full flex-col items-stretch justify-center">
         {pending ? (
-          <Button type="button" variant="outline" size="lg" className="w-full max-w-xs" disabled>
+          <Button type="button" variant="outline" size="lg" className="auth-cta w-full" disabled>
             <Loader2 className="animate-spin" />
             {t('auth.google.pending')}
           </Button>
         ) : (
-          <div id={hostId} ref={hostRef} className={ready ? undefined : 'invisible h-11 w-80'} />
+          <div
+            id={hostId}
+            ref={hostRef}
+            className={ready ? 'w-full [&>div]:!w-full [&_iframe]:!w-full' : 'invisible h-11 w-full'}
+          />
         )}
       </div>
       {formError ? (

@@ -18,8 +18,26 @@ model User {
   sessions    Session[]
   mfaFactors  MfaFactor[]
   oauthAccounts OauthAccount[]
+  authEmailTokens AuthEmailToken[]
 
   @@map("users")
+  @@schema("identity")
+}
+
+model AuthEmailToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([tokenHash])
+  @@map("auth_email_tokens")
   @@schema("identity")
 }
 

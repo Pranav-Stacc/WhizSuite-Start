@@ -11,7 +11,12 @@ on:
         options:
           - cors
           - amplify-domain
+          - ses-status
           - both
+      test_email_to:
+        description: Optional SES sandbox test recipient (must be verified in SES)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -108,3 +113,22 @@ jobs:
           echo "DNS records Amplify expects:"
           aws amplify get-domain-association --app-id "$APP_ID" --domain-name whizsuite.com \
             --query 'domainAssociation.{status:domainStatus,subDomains:subDomains,certificate:certificateVerificationDNSRecord}'
+
+      - name: SES identity and sandbox status (ap-south-1)
+        if: inputs.action == 'ses-status'
+        env:
+          TEST_TO: ${{ inputs.test_email_to }}
+        run: |
+          set -euo pipefail
+          aws sesv2 get-account --region "$AWS_REGION" \
+            --query '{production:ProductionAccessEnabled,sending:SendingEnabled,quota:SendQuota,enforcement:EnforcementStatus}' --output table
+          aws sesv2 get-email-identity --email-identity whizsuite.com --region "$AWS_REGION" \
+            --query '{domain:VerificationStatus,dkim:DkimAttributes.Status,verifiedForSending:VerifiedForSendingStatus}' --output table
+          if [[ -n "${TEST_TO:-}" ]]; then
+            echo "Sending test email to ${TEST_TO}..."
+            aws sesv2 send-email \
+              --from-email-address "noreply@whizsuite.com" \
+              --destination "ToAddresses=${TEST_TO}" \
+              --content file://deploy/ses-test-email.json \
+              --region "$AWS_REGION"
+          fi

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import type { Permission } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
-import { isActivePath, primaryNav, secondaryGroups } from '@/shared/navigation/nav-config';
+import { isActivePath, topNavLayout } from '@/shared/navigation/nav-config';
 import type { WorkspaceModule } from '@/shared/workspace/modules';
 import { ModuleLink } from '@/shared/workspace/module-link';
 import { Menu } from '@/shared/ui/overlays';
@@ -23,14 +23,13 @@ export function TopNav({
 }) {
   const pathname = usePathname();
   const granted = new Set(permissions);
-  const primary = primaryNav(granted, module);
-  const secondary = secondaryGroups(granted, module);
+  const { bar, more: secondary } = topNavLayout(granted, module);
   const moreActive = secondary.some((group) => group.items.some((item) => isActivePath(pathname, item.href)));
   const moreBadge = secondary.reduce((acc, group) => acc + group.items.reduce((sum, item) => sum + (badges[item.href] ?? 0), 0), 0);
 
   return (
     <nav aria-label={t('shell.menu')} className="hidden items-center gap-6 lg:flex">
-      {primary.map((item) => {
+      {bar.map((item) => {
         const badge = badges[item.href];
         return (
           <ModuleLink

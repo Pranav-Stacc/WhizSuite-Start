@@ -137,11 +137,13 @@ export class WorkService {
     actorId: string,
     dto: CreateProjectDto,
   ): Promise<ProjectDto> {
-    await this.clients.get(organizationId, dto.clientId);
+    const client = await this.clients.get(organizationId, dto.clientId);
     if (dto.ownerUserId)
       await this.membershipFor(organizationId, dto.ownerUserId);
     assertDateRange(dto.startDate, dto.endDate);
-    const workspaceId = await this.tenancy.defaultWorkspaceId(organizationId);
+    const workspaceId =
+      client.workspaceId ??
+      (await this.tenancy.defaultWorkspaceId(organizationId));
     if (!workspaceId) {
       throw problem(
         HttpStatus.UNPROCESSABLE_ENTITY,

@@ -48,6 +48,7 @@ export function RegisterForm() {
         <Field label={t('auth.register.org')} htmlFor="reg-org-google" error={translateError(errors.organizationName?.message)}>
           <Input
             id="reg-org-google"
+            className="auth-field"
             autoComplete="organization"
             {...orgField}
             onChange={(e) => {
@@ -61,37 +62,37 @@ export function RegisterForm() {
           />
         </Field>
         <Field label={t('auth.register.slug')} htmlFor="reg-slug-google" hint={t('auth.register.slugHint')} error={translateError(errors.organizationSlug?.message)}>
-          <Input id="reg-slug-google" {...form.register('organizationSlug')} />
+          <Input id="reg-slug-google" className="auth-field" {...form.register('organizationSlug')} />
         </Field>
       </div>
-      <GoogleSignInButton
-        mode="register"
-        organizationName={organizationName?.trim() || undefined}
-        organizationSlug={organizationSlug?.trim() || undefined}
-      />
       <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
         <Field label={t('auth.register.firstName')} htmlFor="reg-first" error={translateError(errors.firstName?.message)}>
-          <Input id="reg-first" autoComplete="given-name" {...form.register('firstName')} />
+          <Input id="reg-first" className="auth-field" autoComplete="given-name" {...form.register('firstName')} />
         </Field>
         <Field label={t('auth.register.lastName')} htmlFor="reg-last">
-          <Input id="reg-last" autoComplete="family-name" {...form.register('lastName')} />
+          <Input id="reg-last" className="auth-field" autoComplete="family-name" {...form.register('lastName')} />
         </Field>
         <Field label={t('auth.login.email')} htmlFor="reg-email" className="sm:col-span-2" error={translateError(errors.email?.message)}>
-          <Input id="reg-email" type="email" autoComplete="email" {...form.register('email')} />
+          <Input id="reg-email" type="email" className="auth-field" autoComplete="email" {...form.register('email')} />
         </Field>
         <Field label={t('auth.register.password')} htmlFor="reg-password" className="sm:col-span-2" error={translateError(errors.password?.message)}>
-          <Input id="reg-password" type="password" autoComplete="new-password" {...form.register('password')} />
+          <Input id="reg-password" type="password" className="auth-field" autoComplete="new-password" {...form.register('password')} />
         </Field>
         {formError ? (
           <p role="alert" className="rounded-lg bg-danger/12 px-3 py-2 text-sm text-danger sm:col-span-2">
             {formError}
           </p>
         ) : null}
-        <Button type="submit" variant="primary" size="lg" className="w-full sm:col-span-2" disabled={pending}>
+        <Button type="submit" variant="primary" size="lg" className="auth-cta w-full sm:col-span-2" disabled={pending}>
           {pending ? <Loader2 className="animate-spin" /> : null}
           {t('auth.register.submit')}
         </Button>
       </form>
+      <GoogleSignInButton
+        mode="register"
+        organizationName={organizationName?.trim() || undefined}
+        organizationSlug={organizationSlug?.trim() || undefined}
+      />
     </div>
   );
 }

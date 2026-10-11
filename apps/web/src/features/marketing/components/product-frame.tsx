@@ -18,7 +18,10 @@ const NAV = [
 /** Stylized Agency OS cockpit — the landing visual anchor (matches in-app chrome). */
 export function ProductFrame() {
   return (
-    <div className="marketing-frame relative overflow-hidden border border-border-strong bg-surface" aria-hidden>
+    <div
+      className="marketing-frame relative overflow-hidden border border-border-strong bg-surface shadow-[0_24px_80px_-24px_rgba(255,255,255,0.18)]"
+      aria-hidden
+    >
       <div className="flex items-center justify-between border-b border-border-soft px-3 py-2.5 sm:px-4 sm:py-3">
         <div className="flex min-w-0 items-center gap-3">
           <LogoMark size={22} />

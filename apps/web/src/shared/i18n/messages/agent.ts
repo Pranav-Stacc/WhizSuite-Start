@@ -51,4 +51,9 @@ export const agentMessages = {
   'agent.pickAgent': 'Agent',
   'agent.pickAgent.default': 'Default supervisor',
   'agent.coverage': 'Full platform coverage',
+  'agent.attach.add': 'Add image or PDF',
+  'agent.attach.uploading': 'Uploading…',
+  'agent.attach.unsupported': 'Only images and PDF files are supported.',
+  'agent.attach.tooLarge': 'File is too large (max 25 MB).',
+  'agent.attach.remove': 'Remove',
 };

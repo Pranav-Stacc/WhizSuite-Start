@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { SharedModule } from '../../shared/shared.module';
 import { AccessModule } from '../access/access.module';
 import { TenancyModule } from '../tenancy/tenancy.module';
+import { AuthEmailService } from './application/services/auth-email.service';
 import { AuthService } from './application/services/auth.service';
 import { IdentityService } from './application/services/identity.service';
 import { MembersService } from './application/services/members.service';
@@ -16,6 +18,7 @@ import { ProfileController } from './interface/http/controllers/profile.controll
 
 @Module({
   imports: [
+    SharedModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
     AccessModule,
@@ -24,6 +27,7 @@ import { ProfileController } from './interface/http/controllers/profile.controll
   controllers: [AuthController, MembersController, ProfileController],
   providers: [
     AuthService,
+    AuthEmailService,
     IdentityService,
     MembersService,
     ProfileService,
@@ -31,6 +35,6 @@ import { ProfileController } from './interface/http/controllers/profile.controll
     GoogleIdTokenVerifier,
     JwtStrategy,
   ],
-  exports: [AuthService, IdentityService, IdentityRepository, MembersService],
+  exports: [AuthService, AuthEmailService, IdentityService, IdentityRepository, MembersService],
 })
 export class IdentityModule {}

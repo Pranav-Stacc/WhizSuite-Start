@@ -8,6 +8,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../roles/domain/role.dart';
 import '../../team/domain/member.dart';
 import '../domain/workflow.dart';
+import 'workflow_basis_labels.dart';
 
 List<String> _toggleId(List<String> list, String id) =>
     list.contains(id) ? list.where((entry) => entry != id).toList() : [...list, id];
@@ -286,7 +287,7 @@ class _WorkflowStagesEditorState extends State<WorkflowStagesEditor> {
                     decoration: InputDecoration(labelText: l10n.workflowStageBasis, isDense: true),
                     items: [
                       for (final basis in ApproverBases.values)
-                        DropdownMenuItem(value: basis, child: Text(_basisLabel(l10n, basis))),
+                        DropdownMenuItem(value: basis, child: Text(workflowBasisLabel(l10n, basis))),
                     ],
                     onChanged: (value) {
                       if (value == null) return;
@@ -328,17 +329,6 @@ class _WorkflowStagesEditorState extends State<WorkflowStagesEditor> {
     );
   }
 }
-
-String _basisLabel(AppLocalizations l10n, String basis) => switch (basis) {
-      ApproverBases.person => l10n.workflowBasisPerson,
-      ApproverBases.designation => l10n.workflowBasisDesignation,
-      ApproverBases.department => l10n.workflowBasisDepartment,
-      ApproverBases.client => l10n.workflowBasisClient,
-      ApproverBases.clientContact => l10n.workflowBasisClientContact,
-      ApproverBases.project => l10n.workflowBasisProject,
-      ApproverBases.assignee => l10n.workflowBasisAssignee,
-      _ => l10n.workflowBasisRole,
-    };
 
 String _approvalRuleLabel(AppLocalizations l10n, String rule) => switch (rule) {
       ApprovalStepRules.all => l10n.workflowStageRuleAll,

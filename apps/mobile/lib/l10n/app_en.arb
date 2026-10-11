@@ -870,6 +870,18 @@
   },
   "clientContacts": "Contacts",
   "clientContactsEmpty": "No contacts recorded for this client.",
+  "clientContactAdd": "Add contact",
+  "clientContactFirstName": "First name",
+  "clientContactLastName": "Last name",
+  "clientContactRole": "Role",
+  "clientContactDeleteConfirm": "Remove {name} from this client?",
+  "@clientContactDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "clientDecisionMaker": "Decision maker",
   "clientDetails": "Details",
   "clientEdit": "Edit client",
@@ -1333,6 +1345,37 @@
   "@contentWorkflowHint": {
     "placeholders": {
       "status": {
+        "type": "String"
+      }
+    }
+  },
+  "contentApprovalAnyApprover": "Anyone with approve permission",
+  "contentApprovalDue": "Due by {at}",
+  "@contentApprovalDue": {
+    "placeholders": {
+      "at": {
+        "type": "String"
+      }
+    }
+  },
+  "contentApprovalStage": "Stage {step} of {total}: {name}",
+  "@contentApprovalStage": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contentApprovalWaiting": "Waiting on: {who}",
+  "@contentApprovalWaiting": {
+    "placeholders": {
+      "who": {
         "type": "String"
       }
     }
@@ -3648,6 +3691,22 @@
   "settingsSignOut": "Sign out",
   "settingsSignOutConfirm": "Sign out of WhizSuite on this device?",
   "settingsTitle": "Settings",
+  "workspaceActiveBody": "New clients and projects are created in the active workspace.",
+  "workspaceActiveTitle": "Active workspace",
+  "workspaceCreateTitle": "Create workspace",
+  "workspaceEmptyBody": "Ask an admin to create a workspace, or create one if you have permission.",
+  "workspaceEmptyTitle": "No workspaces",
+  "workspaceNameField": "Workspace name",
+  "workspaceNameHint": "e.g. Main studio",
+  "workspaceSlugField": "Workspace URL slug",
+  "workspaceSwitched": "Switched to {name}",
+  "@workspaceSwitched": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "storageClearSelection": "Clear selection",
   "storageDriveConnect": "Connect Google Drive",
   "storageDriveConnectFailed": "Could not start Google Drive connect.",
@@ -4466,6 +4525,15 @@
   "workflowStageApprovalRule": "Approval rule",
   "workflowStageAssigneesTitle": "Stage assignees",
   "workflowStageBasis": "Who approves",
+  "workflowStageTargetCount": "{count, plural, =1{1 selection} other{{count} selections}}",
+  "@workflowStageTargetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workflowStageTargets": "Selections",
   "workflowStageCount": "{count, plural, =1{1 stage} other{{count} stages}}",
   "@workflowStageCount": {
     "placeholders": {

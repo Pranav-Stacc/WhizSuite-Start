@@ -103,7 +103,7 @@ export function ChatWorkspace({
                 }
                 className={cn(
                   'block border-b border-border-soft px-4 py-3 transition hover:bg-muted/60',
-                  whizActive && 'bg-muted',
+                  whizActive && 'bg-surface-2/70',
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -129,7 +129,10 @@ export function ChatWorkspace({
               <li key={room.id}>
                 <Link
                   href={`/chat?room=${room.id}`}
-                  className={cn('block px-4 py-3 transition hover:bg-muted/60', active && 'bg-muted')}
+                  className={cn(
+                    'block px-4 py-3 transition hover:bg-surface-2/50',
+                    active && 'bg-surface-2/70',
+                  )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -188,8 +191,8 @@ export function ChatWorkspace({
             canManageAgents={whiz.canManageAgents}
           />
         ) : selected ? (
-          <>
-            <header className="flex items-center gap-3 border-b border-border-soft px-4 py-3">
+          <div className="flex min-h-0 flex-1 flex-col">
+            <header className="flex shrink-0 items-center gap-3 border-b border-border-soft px-4 py-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                 <RoomTypeIcon type={selected.type} />
               </div>
@@ -220,7 +223,7 @@ export function ChatWorkspace({
               mentionCandidates={mentionCandidates}
               canPost={selected.viewerCanPost}
             />
-          </>
+          </div>
         ) : (
           <div className="flex flex-1 items-center justify-center p-8">
             <EmptyState
@@ -242,7 +245,7 @@ export function ChatWorkspace({
         compact ? 'min-h-[28rem]' : 'min-h-[min(70vh,36rem)] sm:min-h-[70vh]',
       )}
       listClassName="border-b border-border-soft lg:max-h-none lg:border-b-0 lg:border-r"
-      detailClassName="min-h-[50vh]"
+      detailClassName="flex min-h-0 min-h-[50vh] flex-col"
       list={roomList}
       detail={detailPane}
     />

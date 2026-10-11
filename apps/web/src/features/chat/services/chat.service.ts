@@ -61,8 +61,15 @@ export async function sendMessage(
     endOffset?: number;
   }> = [],
   replyToId?: string,
+  attachments: Array<{
+    kind: string;
+    assetId?: string;
+    fileName?: string;
+    mimeType?: string;
+    sizeBytes?: number;
+  }> = [],
 ): Promise<ChatMessageDto> {
-  if (isLiveMode) return sendChatMessage(roomId, body, mentions, undefined, replyToId);
+  if (isLiveMode) return sendChatMessage(roomId, body, mentions, attachments, replyToId);
   const message = await chatMessagesRepository.create({
     roomId,
     senderId: 'm-aarav',

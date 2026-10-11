@@ -4,6 +4,7 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/content.dart';
+import '../domain/content_approval_summary.dart';
 
 class ContentRepository {
   ContentRepository(this._api);
@@ -20,6 +21,14 @@ class ContentRepository {
   Future<List<Content>> list() async => jsonList(await _api.get<Object?>(_base)).map(Content.fromJson).toList();
 
   Future<Content> get(String id) async => Content.fromJson(jsonObject(await _api.get<Object?>('$_base/$id')));
+
+  Future<ContentApprovalSummary?> approvalSummary(String contentId) async {
+    final raw = await _api.get<Object?>('$_base/$contentId/approval-summary');
+    if (raw == null) return null;
+    if (raw is! Map) return null;
+    final summary = ContentApprovalSummary.fromJson(raw.cast<String, dynamic>());
+    return summary.currentStep.name.isEmpty && summary.requestId.isEmpty ? null : summary;
+  }
 
   Future<Content> create(ContentInput input, {required String status}) async =>
       Content.fromJson(jsonObject(await _api.post<Object?>(_base, body: input.toCreateJson(status: status))));

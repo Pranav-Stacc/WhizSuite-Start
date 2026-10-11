@@ -12,6 +12,7 @@ import '../../roles/domain/role.dart';
 import '../../team/domain/member.dart';
 import '../application/workflows_controller.dart';
 import '../domain/workflow.dart';
+import 'workflow_basis_labels.dart';
 
 String workflowApprovalRuleLabel(AppLocalizations l10n, String rule) => switch (rule) {
       ApprovalStepRules.all => l10n.workflowStageRuleAll,
@@ -182,6 +183,17 @@ class WorkflowStageDetailsList extends StatelessWidget {
                     InfoRow(
                       label: l10n.workflowStageQuorum,
                       value: Text('${stage.quorumCount}'),
+                    ),
+                  InfoRow(
+                    label: l10n.workflowStageBasis,
+                    value: Text(workflowBasisLabel(l10n, stage.basis)),
+                  ),
+                  if (stage.basis == ApproverBases.assignee)
+                    Text(l10n.workflowBasisAssigneeHint, style: text.bodySmall?.copyWith(color: tokens.muted))
+                  else if (stage.targetIds.isNotEmpty)
+                    InfoRow(
+                      label: l10n.workflowStageTargets,
+                      value: Text(l10n.workflowStageTargetCount(stage.targetIds.length)),
                     ),
                   if (stage.roleIds.isNotEmpty)
                     InfoRow(

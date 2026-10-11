@@ -34,12 +34,6 @@ final workspaceDirectoryProvider = FutureProvider<Directory>(
   (ref) => _load(ref, Permissions.workspacesView, (repo) => repo.workspaces()),
 );
 
-/// Id of the workspace new clients are created in, or null when none is visible.
-final defaultWorkspaceIdProvider = FutureProvider<String?>((ref) async {
-  final workspaces = await ref.watch(workspaceDirectoryProvider.future);
-  return workspaces.entries.isEmpty ? null : workspaces.entries.first.id;
-});
-
 /// Staff members only (assignable to work).
 final staffDirectoryProvider = FutureProvider<Directory>((ref) async {
   final members = await ref.watch(memberDirectoryProvider.future);

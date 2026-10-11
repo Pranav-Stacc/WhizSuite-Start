@@ -1,6 +1,9 @@
 import 'server-only';
 import { Permissions } from '@agency-os/contracts';
+import { isLiveMode } from '@/shared/config/env';
 import { can } from '@/shared/auth/permissions';
+import { activeWorkspaceClientIds, filterByWorkspaceClients } from '@/shared/workspace/active-scope';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
 import { projectsRepository, type Project } from '../data/projects.repository';
 import { listTasks } from '@/features/tasks/services/tasks.service';
 
@@ -11,7 +14,9 @@ export interface ProjectWithProgress extends Project {
 }
 
 export async function listProjects(): Promise<Project[]> {
-  return projectsRepository.list();
+  const rows = await projectsRepository.list();
+  if (!isLiveMode || !TENANCY_WORKSPACE_UI_ENABLED) return rows;
+  return filterByWorkspaceClients(rows, await activeWorkspaceClientIds());
 }
 
 export async function getProject(id: string): Promise<Project | undefined> {

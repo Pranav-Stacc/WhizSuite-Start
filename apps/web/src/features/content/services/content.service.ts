@@ -1,5 +1,7 @@
 import 'server-only';
 import { isLiveMode } from '@/shared/config/env';
+import { activeWorkspaceClientIds, filterByWorkspaceClients } from '@/shared/workspace/active-scope';
+import { TENANCY_WORKSPACE_UI_ENABLED } from '@/shared/workspace/tenancy-ui';
 import { fetchContentComments, postContentComment } from '@/shared/api/live/feedback';
 import { memberDirectory } from '@/features/team/services/members.service';
 import { contentEventsRepository, contentRepository, type ContentEvent, type ContentEventKind, type Post } from '../data/content.repository';
@@ -9,7 +11,9 @@ const CONTENT_CACHE_TAG = 'content';
 const CONVERSATION_KINDS: ReadonlySet<ContentEventKind> = new Set(['comment', 'changes', 'rejected']);
 
 export async function listContent(): Promise<Post[]> {
-  return contentRepository.list();
+  const rows = await contentRepository.list();
+  if (!isLiveMode || !TENANCY_WORKSPACE_UI_ENABLED) return rows;
+  return filterByWorkspaceClients(rows, await activeWorkspaceClientIds());
 }
 
 export async function listClientContent(clientId: string): Promise<Post[]> {

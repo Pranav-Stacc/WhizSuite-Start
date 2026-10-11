@@ -1,10 +1,11 @@
 import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
-import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { PageHeader } from '@/shared/ui/page-header';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
-import { listMembers, membersById } from '@/features/team/services/members.service';
+import { buildChatMentionCandidates } from '@/features/chat/services/chat-mention-candidates.service';
+import { membersById } from '@/features/team/services/members.service';
 import { ChatWorkspace } from '@/features/chat/components/chat-workspace';
 import { NewChatDialogs } from '@/features/chat/components/new-chat-dialogs';
 import { getRoom, listMessages, listRooms, markRead } from '@/features/chat/services/chat.service';
@@ -31,14 +32,14 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const whizActive = canUseWhiz && (whizParam === '1' || whizParam === 'true');
   let agentSessionId = param(sp, 'session');
 
-  const [rooms, membersMap, allMembers] = await Promise.all([
+  const [rooms, membersMap, mentionCandidates] = await Promise.all([
     listRooms(),
     membersById(),
-    loadIf(Permissions.MEMBERS_VIEW, listMembers, []),
+    buildChatMentionCandidates(session.userId),
   ]);
 
   let whizProps = null;
-  if (canUseWhiz) {
+  if (canUseWhiz && whizActive) {
     const orgId = session.orgId!;
     let sessions = await listAgentSessions(orgId).catch(() => []);
     if (sessions.length === 0) {
@@ -73,6 +74,18 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
       sessionId: agentSessionId,
       canManageAgents,
     };
+  } else if (canUseWhiz) {
+    whizProps = {
+      sessions: [],
+      selectedSession: null,
+      messages: [],
+      runs: [],
+      pendingActions: [],
+      definitions: [],
+      schedules: [],
+      sessionId: undefined,
+      canManageAgents: false,
+    };
   }
 
   const selected = whizActive ? null : roomId ? await getRoom(roomId) : null;
@@ -103,13 +116,9 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     if (peer) roomTitles.set(selected.id, names.get(peer.userId) ?? t('chat.dm'));
   }
 
-  const memberOptions = allMembers
-    .filter((m) => m.id !== session.userId && m.status !== 'INVITED')
-    .map((m) => ({ value: m.id, label: m.name }));
-
-  const mentionCandidates = allMembers
-    .filter((m) => m.id !== session.userId)
-    .map((m) => ({ id: m.id, label: m.name.split(' ')[0] || m.name, type: 'USER' as const }));
+  const memberOptions = mentionCandidates
+    .filter((m) => m.type === 'USER')
+    .map((m) => ({ value: m.id, label: m.subtitle ?? m.label }));
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react';
+import { ExternalLink, FileText } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 
 /** Lightweight safe Markdown → React for agent replies (no raw HTML). */
@@ -20,6 +21,7 @@ type Block =
   | { type: 'quote'; lines: string[] }
   | { type: 'table'; header: string[]; rows: string[][] }
   | { type: 'rule' }
+  | { type: 'image'; alt: string; src: string }
   | { type: 'paragraph'; lines: string[] };
 
 const HEADING = /^(#{1,6})\s+(.+)$/;
@@ -30,6 +32,10 @@ const RULE = /^\s*(-{3,}|\*{3,}|_{3,})\s*$/;
 const TABLE_ROW = /^\s*\|.*\|\s*$/;
 const TABLE_DIVIDER = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
 const BLOCK_START = /^(#{1,6}\s+|\s*[-*+•]\s+|\s*\d+[.)]\s+|>|```|\s*\|)/;
+const IMAGE_MD = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/;
+const BARE_IMAGE_URL =
+  /^https?:\/\/[^\s]+\.(png|jpe?g|gif|webp|avif|svg)(\?[^\s]*)?\s*$/i;
+const SAFE_HREF = /^(https?:\/\/|\/|mailto:)/i;
 
 function splitRow(line: string): string[] {
   return line
@@ -71,6 +77,17 @@ function parseBlocks(src: string): Block[] {
     const heading = HEADING.exec(line);
     if (heading) {
       blocks.push({ type: 'heading', level: heading[1].length, text: heading[2] });
+      i += 1;
+      continue;
+    }
+    const imageMd = IMAGE_MD.exec(line.trim());
+    if (imageMd && SAFE_HREF.test(imageMd[2])) {
+      blocks.push({ type: 'image', alt: imageMd[1], src: imageMd[2] });
+      i += 1;
+      continue;
+    }
+    if (BARE_IMAGE_URL.test(line.trim())) {
+      blocks.push({ type: 'image', alt: '', src: line.trim() });
       i += 1;
       continue;
     }
@@ -202,6 +219,8 @@ function BlockView({ block }: { block: Block }) {
       );
     case 'rule':
       return <hr className="border-border-soft/70" />;
+    case 'image':
+      return <MarkdownImage alt={block.alt} src={block.src} />;
     case 'paragraph':
       return (
         <p className="text-foreground/90">
@@ -224,8 +243,8 @@ function Lines({ lines }: { lines: string[] }) {
   );
 }
 
-const INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\)|\*[^*\s][^*]*\*)/g;
-const SAFE_HREF = /^(https?:\/\/|\/|mailto:)/i;
+const INLINE =
+  /(\*\*[^*]+\*\*|`[^`]+`|!\[[^\]]*\]\([^)\s]+\)|\[[^\]]+\]\([^)\s]+\)|\*[^*\s][^*]*\*)/g;
 
 function Inline({ text }: { text: string }) {
   const parts = text.split(INLINE).filter(Boolean);
@@ -247,10 +266,20 @@ function renderInline(part: string, key: number): ReactNode {
       </code>
     );
   }
+  const image = /^!\[([^\]]*)\]\(([^)\s]+)\)$/.exec(part);
+  if (image) {
+    const src = image[2] ?? '';
+    if (!SAFE_HREF.test(src)) return <span key={key}>{part}</span>;
+    return <MarkdownImage key={key} alt={image[1] ?? ''} src={src} inline />;
+  }
   const link = /^\[([^\]]+)\]\(([^)\s]+)\)$/.exec(part);
   if (link) {
     const href = link[2] ?? '';
-    if (!SAFE_HREF.test(href)) return <span key={key}>{link[1]}</span>;
+    const label = link[1] ?? '';
+    if (!SAFE_HREF.test(href)) return <span key={key}>{label}</span>;
+    if (isPdfLink(href, label)) {
+      return <PdfLinkCard key={key} name={label} href={href} />;
+    }
     const external = /^https?:\/\//i.test(href);
     return (
       <a
@@ -259,7 +288,7 @@ function renderInline(part: string, key: number): ReactNode {
         className="text-sky-300 underline underline-offset-2 hover:text-sky-200"
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
-        {link[1]}
+        {label}
       </a>
     );
   }
@@ -271,4 +300,55 @@ function renderInline(part: string, key: number): ReactNode {
     );
   }
   return <span key={key}>{part}</span>;
+}
+
+function isPdfLink(href: string, label: string): boolean {
+  return /\.pdf(\?|#|$)/i.test(href) || /\.pdf$/i.test(label);
+}
+
+function MarkdownImage({
+  alt,
+  src,
+  inline,
+}: {
+  alt: string;
+  src: string;
+  inline?: boolean;
+}) {
+  return (
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn('block max-w-full', inline ? 'my-1' : 'my-2')}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- agent content may be any signed URL */}
+      <img
+        src={src}
+        alt={alt || 'Image'}
+        loading="lazy"
+        className="max-h-72 w-auto max-w-full rounded-xl border border-border-soft/80 bg-surface-2/50 object-contain shadow-sm"
+      />
+    </a>
+  );
+}
+
+function PdfLinkCard({ name, href }: { name: string; href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="my-1 flex max-w-sm items-center gap-3 rounded-xl border border-border-soft/80 bg-surface-2/60 px-3 py-2.5 transition hover:border-sky-500/40 hover:bg-surface-2"
+    >
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-300">
+        <FileText className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium text-foreground">{name}</span>
+        <span className="text-[11px] text-muted">PDF</span>
+      </span>
+      <ExternalLink className="size-4 shrink-0 text-muted" />
+    </a>
+  );
 }

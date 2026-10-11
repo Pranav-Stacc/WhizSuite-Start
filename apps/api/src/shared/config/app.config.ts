@@ -159,11 +159,20 @@ export const appConfigSchema = z
     SEARCH_RESULT_LIMIT: z.coerce.number().int().positive().default(20),
     THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
     THROTTLE_LIMIT: z.coerce.number().int().positive().default(120),
-    EMAIL_PROVIDER: z.string().default('mailpit'),
+    EMAIL_PROVIDER: z.enum(['mailpit', 'ses-smtp']).default('mailpit'),
     SMTP_HOST: z.string().default('localhost'),
     SMTP_PORT: z.coerce.number().int().default(1025),
-    EMAIL_FROM: z.string().default('Agency OS <noreply@agency-os.local>'),
+    SMTP_USER: z.string().default(''),
+    SMTP_PASS: z.string().default(''),
+    SMTP_SECURE: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    EMAIL_FROM: z.string().default('WhizSuite <noreply@whizsuite.com>'),
+    EMAIL_LOGO_URL: z.string().default(''),
     WEB_APP_URL: z.string().url().default('http://localhost:3000'),
+    AUTH_PASSWORD_RESET_TTL_HOURS: z.coerce.number().int().positive().default(24),
+    AUTH_EMAIL_VERIFY_TTL_HOURS: z.coerce.number().int().positive().default(72),
     INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
     /** How long a shareable portal access link stays redeemable. */
     PORTAL_ACCESS_LINK_TTL_HOURS: z.coerce
