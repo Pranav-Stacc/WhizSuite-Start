@@ -49,6 +49,15 @@ export class RolesResourceController {
     return this.roles.list(requireOrganizationId(organizationId), filter);
   }
 
+  @Get(':roleId')
+  @RequirePermissions(Permissions.ROLES_MANAGE)
+  get(
+    @Param('organizationId') organizationId: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+  ) {
+    return this.roles.get(requireOrganizationId(organizationId), roleId);
+  }
+
   @Post()
   @RequirePermissions(Permissions.ROLES_MANAGE)
   create(

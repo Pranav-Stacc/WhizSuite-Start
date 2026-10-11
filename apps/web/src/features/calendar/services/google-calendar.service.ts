@@ -26,9 +26,11 @@ export async function getGoogleCalendarConnection(): Promise<GoogleCalendarConne
   const session = await getSession();
   if (!session?.orgId) return DISABLED;
   try {
-    return await apiFetch<GoogleCalendarConnectionDto>(
-      orgPath(session.orgId, 'calendar/google'),
-      { tags: [`org:${session.orgId}:calendar`] },
+    return (
+      (await apiFetch<GoogleCalendarConnectionDto>(
+        orgPath(session.orgId, 'calendar/google'),
+        { tags: [`org:${session.orgId}:calendar`] },
+      )) ?? DISABLED
     );
   } catch {
     return DISABLED;

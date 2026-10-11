@@ -297,6 +297,13 @@ export class AuthService {
     };
   }
 
+  private async organizationForLogin(organizationId?: string) {
+    if (!organizationId) return undefined;
+    const org = await this.repo.findOrganizationById(organizationId);
+    if (!org) return undefined;
+    return { id: org.id, name: org.name, slug: org.slug };
+  }
+
   private async completeLogin(user: {
     id: string;
     email: string;
@@ -304,6 +311,7 @@ export class AuthService {
     lastName: string | null;
   }) {
     const membership = await this.repo.findPrimaryMembership(user.id);
+    const organization = await this.organizationForLogin(membership?.organizationId);
     const tokens = await this.issueTokens(
       user.id,
       user.email,
@@ -338,6 +346,7 @@ export class AuthService {
         lastName: user.lastName,
       },
       organizationId: membership?.organizationId,
+      organization,
       ...tokens,
     };
   }
@@ -554,6 +563,7 @@ export class AuthService {
     membershipId: string,
   ) {
     const membership = await this.repo.findMembershipById(membershipId);
+    const organization = await this.organizationForLogin(membership?.organizationId);
     const tokens = await this.issueTokens(
       user.id,
       user.email,
@@ -568,6 +578,7 @@ export class AuthService {
         lastName: user.lastName,
       },
       organizationId: membership?.organizationId,
+      organization,
       ...tokens,
     };
   }

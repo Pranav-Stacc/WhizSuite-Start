@@ -91,6 +91,112 @@ export class ClientsRepository {
     });
   }
 
+  listContacts(organizationId: string, clientId?: string) {
+    return this.prisma.clientContact.findMany({
+      where: {
+        organizationId,
+        ...(clientId ? { clientId } : {}),
+      },
+      orderBy: [{ clientId: 'asc' }, { firstName: 'asc' }],
+      include: { client: { select: { displayName: true } } },
+    });
+  }
+
+  createContact(
+    organizationId: string,
+    clientId: string,
+    data: {
+      firstName: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      isDecisionMaker?: boolean;
+    },
+  ) {
+    return this.prisma.clientContact.create({
+      data: {
+        organizationId,
+        clientId,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        isDecisionMaker: data.isDecisionMaker ?? false,
+      },
+    });
+  }
+
+  updateContact(
+    organizationId: string,
+    contactId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      isDecisionMaker?: boolean;
+    },
+  ) {
+    return this.prisma.clientContact.updateMany({
+      where: { id: contactId, organizationId },
+      data,
+    });
+  }
+
+  deleteContact(organizationId: string, contactId: string) {
+    return this.prisma.clientContact.deleteMany({
+      where: { id: contactId, organizationId },
+    });
+  }
+
+  /** Portal users linked to client contact emails (CLIENT membership on that client). */
+  async userIdsForContacts(
+    organizationId: string,
+    contactIds: string[],
+  ): Promise<string[]> {
+    if (contactIds.length === 0) return [];
+    const contacts = await this.prisma.clientContact.findMany({
+      where: { organizationId, id: { in: contactIds } },
+      select: { email: true, clientId: true },
+    });
+    const emails = [
+      ...new Set(
+        contacts
+          .map((row) => row.email?.trim().toLowerCase())
+          .filter((email): email is string => !!email),
+      ),
+    ];
+    if (emails.length === 0) return [];
+    const users = await this.prisma.user.findMany({
+      where: { email: { in: emails, mode: 'insensitive' } },
+      select: { id: true, email: true },
+    });
+    const emailToUser = new Map(
+      users.map((user) => [user.email.toLowerCase(), user.id]),
+    );
+    const userIds = new Set<string>();
+    for (const contact of contacts) {
+      const email = contact.email?.trim().toLowerCase();
+      if (!email) continue;
+      const userId = emailToUser.get(email);
+      if (!userId) continue;
+      const membership = await this.prisma.organizationMembership.findFirst({
+        where: {
+          organizationId,
+          userId,
+          type: 'CLIENT',
+          status: 'ACTIVE',
+        },
+        select: { id: true },
+      });
+      if (membership) userIds.add(userId);
+    }
+    return [...userIds];
+  }
+
   upsertBrandKit(
     organizationId: string,
     clientId: string,

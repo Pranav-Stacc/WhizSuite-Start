@@ -16,16 +16,14 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   NotificationTypeKeys,
-  Permissions,
   type NotificationTypeKey,
 } from '@agency-os/contracts';
+import { AllowAuthenticated } from '../../../../../shared/auth/allow-authenticated.decorator';
 import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
-import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
-import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { DevicesService } from '../../../application/services/devices.service';
 import { NotificationsService } from '../../../application/services/notifications.service';
@@ -35,8 +33,8 @@ import { UpdateNotificationPreferenceDto } from '../dto/notification-preference.
 @ApiTags('notifications')
 @ApiBearerAuth()
 @Controller('v1/organizations/:organizationId/notifications')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
-@RequirePermissions(Permissions.ORG_VIEW)
+@UseGuards(JwtAuthGuard)
+@AllowAuthenticated()
 export class NotificationsResourceController {
   constructor(
     private readonly notifications: NotificationsService,

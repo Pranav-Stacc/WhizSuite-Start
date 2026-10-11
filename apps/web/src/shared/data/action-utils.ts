@@ -18,7 +18,8 @@ export function parseInput<S extends ZodTypeAny>(schema: S, raw: unknown): Parse
     const key = String(issue.path[0] ?? 'form');
     fieldErrors[key] ??= issue.message;
   }
-  return { ok: false, result: fail(t('toast.invalid'), fieldErrors) };
+  const summary = parsed.error.issues[0]?.message ?? t('toast.invalid');
+  return { ok: false, result: fail(summary, fieldErrors) };
 }
 
 /** Wraps a mutation so thrown errors become typed results instead of crashing the page. */
@@ -28,7 +29,10 @@ export async function guarded<T>(run: () => Promise<ActionResult<T>>): Promise<A
   } catch (error) {
     if (typeof error === 'object' && error !== null && 'digest' in error) throw error;
     if (error instanceof ForbiddenError) return fail(t('toast.forbidden'));
-    if (error instanceof ApiError) return fail(error.status === HTTP_FORBIDDEN ? t('toast.forbidden') : error.message);
+    if (error instanceof ApiError) {
+      if (error.code === 'UPSTREAM_UNAVAILABLE') return fail(t('toast.apiUnavailable'));
+      return fail(error.status === HTTP_FORBIDDEN ? t('toast.forbidden') : error.message);
+    }
     return fail(t('toast.failed'));
   }
 }

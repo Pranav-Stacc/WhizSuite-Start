@@ -14,7 +14,7 @@ import {
   type CreateContentInput,
   type UserRole,
 } from '@agency-os/contracts';
-import { authorize, can } from '@/shared/auth/permissions';
+import { authorize, authorizeAny, can } from '@/shared/auth/permissions';
 import type { Session } from '@/shared/auth/session';
 import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { guarded, parseInput } from '@/shared/data/action-utils';
@@ -28,6 +28,8 @@ import { listAssets } from '@/features/media/services/media.service';
 import { pushNotification } from '@/features/notifications/services/notifications.service';
 import { listMembers } from '@/features/team/services/members.service';
 import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
+import { toComposerAssets } from '../components/composer-mappers';
+import type { ComposerAsset } from '../components/slide-picker';
 import { listClientContent, recordContentEvent } from '../services/content.service';
 import { checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
 
@@ -63,7 +65,13 @@ async function notifyAuthor(post: Post, actor: Session, title: string): Promise<
 async function resolveSlides(ids: string[], existing: PostMedia[] = []): Promise<PostMedia[]> {
   if (!ids.length) return [];
   const known = new Map<string, PostMedia>(existing.map((m) => [m.assetId, m]));
-  for (const asset of await listAssets()) known.set(asset.id, { assetId: asset.id, name: asset.name, mimeType: asset.mimeType, url: asset.url });
+  try {
+    for (const asset of await listAssets()) {
+      known.set(asset.id, { assetId: asset.id, name: asset.name, mimeType: asset.mimeType, url: asset.url });
+    }
+  } catch {
+    // Content editors without files.view can still save using slides already on the post.
+  }
   return ids.flatMap((id) => known.get(id) ?? []);
 }
 
@@ -124,7 +132,7 @@ export async function updateContentAction(id: string, raw: unknown): Promise<Act
       ...(await postFields(input, before.media)),
       ...(isLiveMode ? {} : { status }),
       updatedAt: new Date().toISOString(),
-      version: before.version + 1,
+      version: before.version,
     });
     if (statusChanged && isLiveMode) await transitionContent(id, status);
     if (status === 'IN_REVIEW' && before.status !== 'IN_REVIEW') {
@@ -277,6 +285,15 @@ export async function reorderGridAction(raw: unknown): Promise<ActionResult> {
     await recordAudit({ action: 'content.reordered', entityType: 'client', entityId: clientId, entityLabel: clientId, summary: 'Reordered grid plan' });
     await refreshData('content');
     return succeed(undefined, t('grid.reordered'));
+  });
+}
+
+/** Fresh org-wide library for the post composer (permission-scoped on the API). */
+export async function listComposerLibraryAction(): Promise<ActionResult<ComposerAsset[]>> {
+  return guarded(async () => {
+    await authorizeAny(Permissions.FILES_VIEW, Permissions.CONTENT_EDIT, Permissions.CONTENT_CREATE);
+    const assets = await listAssets();
+    return succeed(toComposerAssets(assets));
   });
 }
 

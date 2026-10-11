@@ -8,12 +8,14 @@ import {
   AssignableScopeTypes,
   RoleKinds,
   allowedScopesForPermission,
+  companionModulesForPermission,
+  companionsForPermission,
   isAssignableScopeType,
+  isPermission,
   moduleKeyForPermission,
   type AssignableScopeType,
   type Permission,
   type PermissionScopeInput,
-  type ScopeType,
 } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
@@ -21,12 +23,9 @@ import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
 import { Field, Input, Textarea } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
-import {
-  optionsForScope,
-  scopeNeedsResource,
-  scopeResourceLabel,
-  type ScopeResourceOptions,
-} from '@/features/team/components/scope-resource-fields';
+import type { ScopeResourceOptions } from '@/features/team/components/scope-resource-fields';
+import { scopeNeedsResource } from '@/features/team/components/scope-resource-fields';
+import { RoleModuleScopePanel } from './role-module-scope-panel';
 import { createRoleAction, updateRoleAction } from '../actions/role.actions';
 import type { AgencyRole } from '../data/roles.repository';
 import type { PermissionRow } from '../services/permissions.service';
@@ -160,6 +159,39 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
     return [...map.entries()].sort(([a], [b]) => moduleRank(a) - moduleRank(b) || a.localeCompare(b));
   }, [permissions]);
 
+  const copyScopeToCompanions = (sourceKey: string) => {
+    const sourceModule = moduleKeyForPermission(sourceKey);
+    if (!isPermission(sourceKey)) return;
+    setModuleScopes((prev) => {
+      const sourceScopes = prev[sourceModule] ?? [defaultScopeFor(sourceKey)];
+      const next = { ...prev };
+      if (!next[sourceModule]?.length) next[sourceModule] = sourceScopes;
+      for (const module of companionModulesForPermission(sourceKey)) {
+        next[module] = sourceScopes.filter((scope) =>
+          allowedScopesForPermission(`${module}.view`).includes(scope),
+        );
+        if ((next[module] ?? []).length === 0) next[module] = [defaultScopeFor(`${module}.view`)];
+      }
+      return next;
+    });
+    setModuleResourceMode((prev) => {
+      const source = prev[sourceModule] ?? {};
+      const next = { ...prev };
+      for (const module of companionModulesForPermission(sourceKey)) {
+        next[module] = { ...next[module], ...source };
+      }
+      return next;
+    });
+    setModuleResourceIds((prev) => {
+      const source = prev[sourceModule] ?? {};
+      const next = { ...prev };
+      for (const module of companionModulesForPermission(sourceKey)) {
+        next[module] = { ...next[module], ...source };
+      }
+      return next;
+    });
+  };
+
   const toggle = (key: string, modulePerms: PermissionRow[]) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -168,32 +200,34 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
         next.add(key);
         const view = modulePerms.find((perm) => perm.key.endsWith('.view'));
         if (view && key !== view.key) next.add(view.key);
+        if (isPermission(key)) {
+          for (const companion of companionsForPermission(key)) next.add(companion);
+        }
       } else {
         next.delete(key);
       }
       return next;
     });
-    setModuleScopes((prev) => {
-      if (prev[moduleKeyForPermission(key)]?.length) return prev;
-      return { ...prev, [moduleKeyForPermission(key)]: [defaultScopeFor(key)] };
-    });
+    copyScopeToCompanions(key);
   };
 
   const toggleAll = (module: string, perms: PermissionRow[], on: boolean) => {
     setSelected((prev) => {
       const next = new Set(prev);
       for (const perm of perms) {
-        if (on) next.add(perm.key);
-        else next.delete(perm.key);
+        if (on) {
+          next.add(perm.key);
+          if (isPermission(perm.key)) {
+            for (const companion of companionsForPermission(perm.key)) next.add(companion);
+          }
+        } else next.delete(perm.key);
       }
       return next;
     });
     if (on) {
-      setModuleScopes((prev) => {
-        if (prev[module]?.length) return prev;
-        const sample = perms[0]?.key ?? module;
-        return { ...prev, [module]: [defaultScopeFor(sample)] };
-      });
+      const sample = perms[0]?.key ?? module;
+      copyScopeToCompanions(sample);
+      for (const perm of perms) copyScopeToCompanions(perm.key);
     }
   };
 
@@ -212,7 +246,34 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
           }));
         }
       }
-      return { ...prev, [module]: [...current] };
+      const nextScopes = { ...prev, [module]: [...current] };
+      if (isPermission(sampleKey)) {
+        for (const companionModule of companionModulesForPermission(sampleKey)) {
+          const allowedCompanion = allowedScopesForPermission(`${companionModule}.view`);
+          nextScopes[companionModule] = [...current].filter((entry) => allowedCompanion.includes(entry));
+          if ((nextScopes[companionModule] ?? []).length === 0) {
+            nextScopes[companionModule] = [defaultScopeFor(`${companionModule}.view`)];
+          }
+        }
+      }
+      return nextScopes;
+    });
+    if (!isPermission(sampleKey)) return;
+    setModuleResourceMode((prev) => {
+      const source = prev[module] ?? {};
+      const next = { ...prev };
+      for (const companionModule of companionModulesForPermission(sampleKey)) {
+        next[companionModule] = { ...next[companionModule], ...source };
+      }
+      return next;
+    });
+    setModuleResourceIds((prev) => {
+      const source = prev[module] ?? {};
+      const next = { ...prev };
+      for (const companionModule of companionModulesForPermission(sampleKey)) {
+        next[companionModule] = { ...next[companionModule], ...source };
+      }
+      return next;
     });
   };
 
@@ -227,12 +288,35 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
   };
 
   const submit = () => {
+    const scopesByModule = { ...moduleScopes };
+    const modesByModule = { ...moduleResourceMode };
+    const idsByModule = { ...moduleResourceIds };
+    for (const key of selected) {
+      if (!isPermission(key)) continue;
+      const sourceModule = moduleKeyForPermission(key);
+      const sourceScopes = scopesByModule[sourceModule] ?? [defaultScopeFor(key)];
+      for (const companion of companionsForPermission(key)) {
+        const companionModule = moduleKeyForPermission(companion);
+        const inherited = sourceScopes.filter((scope) =>
+          allowedScopesForPermission(companion).includes(scope),
+        );
+        if (inherited.length > 0) scopesByModule[companionModule] = inherited;
+        modesByModule[companionModule] = {
+          ...modesByModule[companionModule],
+          ...modesByModule[sourceModule],
+        };
+        idsByModule[companionModule] = {
+          ...idsByModule[companionModule],
+          ...idsByModule[sourceModule],
+        };
+      }
+    }
     const permissionScopes: PermissionScopeInput[] = [];
     const scopeUnion = new Set<AssignableScopeType>();
     for (const key of selected) {
       const module = moduleKeyForPermission(key);
       const allowed = allowedScopesForPermission(key);
-      const chosen = (moduleScopes[module] ?? [defaultScopeFor(key)]).filter((scope) =>
+      const chosen = (scopesByModule[module] ?? [defaultScopeFor(key)]).filter((scope) =>
         allowed.includes(scope),
       );
       const scopeTypes = chosen.length > 0 ? chosen : [defaultScopeFor(key)];
@@ -240,9 +324,9 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
       const scopeResources = scopeTypes
         .filter((scopeType) => scopeNeedsResource(scopeType))
         .flatMap((scopeType) => {
-          const mode = moduleResourceMode[module]?.[scopeType] ?? 'all';
+          const mode = modesByModule[module]?.[scopeType] ?? 'all';
           if (mode === 'all') return [];
-          const resourceIds = moduleResourceIds[module]?.[scopeType] ?? [];
+          const resourceIds = idsByModule[module]?.[scopeType] ?? [];
           return resourceIds.length > 0 ? [{ scopeType, resourceIds: [...resourceIds] }] : [];
         });
       permissionScopes.push({
@@ -252,6 +336,18 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
       });
     }
     const defaultScopeTypes = [...scopeUnion];
+    for (const key of selected) {
+      const module = moduleKeyForPermission(key);
+      const allowed = allowedScopesForPermission(key);
+      const chosen = (scopesByModule[module] ?? [defaultScopeFor(key)]).filter((scope) => allowed.includes(scope));
+      for (const scopeType of chosen.filter(scopeNeedsResource)) {
+        const mode = modesByModule[module]?.[scopeType] ?? 'all';
+        if (mode === 'specific' && (idsByModule[module]?.[scopeType] ?? []).length === 0) {
+          toast.error(t('roles.scopes.resourceRequired', { scope: humanizeKey(scopeType) }));
+          return;
+        }
+      }
+    }
     startTransition(async () => {
       const input = JSON.parse(
         JSON.stringify({
@@ -314,11 +410,7 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
               {grouped.map(([module, perms]) => {
                 const active = perms.filter((perm) => selected.has(perm.key));
                 const allOn = perms.every((perm) => selected.has(perm.key));
-                const sampleKey = perms[0]?.key ?? module;
-                const allowed = allowedScopesForPermission(sampleKey);
-                const chosen = new Set<ScopeType>(
-                  moduleScopes[module] ?? (active.length > 0 ? [defaultScopeFor(sampleKey)] : []),
-                );
+                const activeKeys = active.map((perm) => perm.key);
                 return (
                   <section key={module}>
                     <div className="mb-1 flex items-center justify-between gap-2">
@@ -352,122 +444,39 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
                         </li>
                       ))}
                     </ul>
-                    {active.length > 0 ? (
-                      <div className="mt-2 rounded-lg border border-border-soft bg-surface-2/40 px-2.5 py-2">
-                        <p className="text-[11px] font-medium">{t('roles.module.where')}</p>
-                        <p className="mb-2 text-[11px] text-muted">{t('roles.module.hint')}</p>
-                        <ul className="flex flex-wrap gap-1.5">
-                          {allowed.map((scope) => {
-                            const on = chosen.has(scope);
-                            return (
-                              <li key={scope}>
-                                <label
-                                  className={cn(
-                                    'flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
-                                    on ? 'border-primary bg-primary/10' : 'border-border-soft bg-surface',
-                                  )}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={on}
-                                    onChange={() => toggleScope(module, scope, sampleKey)}
-                                    className="size-3.5 accent-primary"
-                                  />
-                                  {humanizeKey(scope)}
-                                </label>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                        <p className="mt-1.5 text-[11px] text-muted">
-                          {t('roles.scopes.selected', { count: chosen.size || 1 })}
-                        </p>
-                        {[...chosen]
-                          .filter((scopeType): scopeType is AssignableScopeType => isAssignableScopeType(scopeType))
-                          .filter(scopeNeedsResource)
-                          .map((scopeType) => {
-                          const label = scopeResourceLabel(scopeType);
-                          const mode = moduleResourceMode[module]?.[scopeType] ?? 'all';
-                          const choices = optionsForScope(scopeType, scopeResources);
-                          const picked = new Set(moduleResourceIds[module]?.[scopeType] ?? []);
-                          return (
-                            <div key={scopeType} className="mt-3 space-y-2 border-t border-border-soft pt-2">
-                              <p className="text-[11px] font-medium">{label}</p>
-                              <div className="flex flex-wrap gap-2">
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    'rounded-full border px-2.5 py-1 text-[11px]',
-                                    mode === 'all' ? 'border-primary bg-primary/10' : 'border-border-soft',
-                                  )}
-                                  onClick={() =>
-                                    setModuleResourceMode((prev) => ({
-                                      ...prev,
-                                      [module]: { ...prev[module], [scopeType]: 'all' },
-                                    }))
-                                  }
-                                >
-                                  {t('team.roles.resource.all', { resource: label })}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={cn(
-                                    'rounded-full border px-2.5 py-1 text-[11px]',
-                                    mode === 'specific' ? 'border-primary bg-primary/10' : 'border-border-soft',
-                                  )}
-                                  onClick={() =>
-                                    setModuleResourceMode((prev) => ({
-                                      ...prev,
-                                      [module]: { ...prev[module], [scopeType]: 'specific' },
-                                    }))
-                                  }
-                                >
-                                  {t('team.roles.resource.choose')}
-                                </button>
-                              </div>
-                              {mode === 'specific' ? (
-                                <ul className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
-                                  {choices.length === 0 ? (
-                                    <li className="px-2 py-1 text-[11px] text-muted">{t('team.roles.resource.empty')}</li>
-                                  ) : (
-                                    choices.map((item) => (
-                                      <li key={item.id}>
-                                        <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-[11px] hover:bg-surface-2">
-                                          <input
-                                            type="checkbox"
-                                            className="size-3.5 accent-primary"
-                                            checked={picked.has(item.id)}
-                                            onChange={() => {
-                                              setModuleResourceIds((prev) => {
-                                                const current = new Set(prev[module]?.[scopeType] ?? []);
-                                                if (current.has(item.id)) current.delete(item.id);
-                                                else current.add(item.id);
-                                                return {
-                                                  ...prev,
-                                                  [module]: { ...prev[module], [scopeType]: [...current] },
-                                                };
-                                              });
-                                            }}
-                                          />
-                                          <span className="truncate">{item.label}</span>
-                                        </label>
-                                      </li>
-                                    ))
-                                  )}
-                                </ul>
-                              ) : (
-                                <p className="text-[11px] text-muted">{t('team.roles.resource.allHint')}</p>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : null}
+                    <RoleModuleScopePanel
+                      module={module}
+                      activeKeys={activeKeys}
+                      moduleScopes={moduleScopes}
+                      moduleResourceMode={moduleResourceMode}
+                      moduleResourceIds={moduleResourceIds}
+                      scopeResources={scopeResources}
+                      defaultScopeFor={defaultScopeFor}
+                      onToggleScope={toggleScope}
+                      onSetResourceMode={(mod, scopeType, mode) =>
+                        setModuleResourceMode((prev) => ({
+                          ...prev,
+                          [mod]: { ...prev[mod], [scopeType]: mode },
+                        }))
+                      }
+                      onToggleResourceId={(mod, scopeType, resourceId) => {
+                        setModuleResourceIds((prev) => {
+                          const current = new Set(prev[mod]?.[scopeType] ?? []);
+                          if (current.has(resourceId)) current.delete(resourceId);
+                          else current.add(resourceId);
+                          return {
+                            ...prev,
+                            [mod]: { ...prev[mod], [scopeType]: [...current] },
+                          };
+                        });
+                      }}
+                    />
                   </section>
                 );
               })}
             </div>
             <p className="mt-2 text-xs text-muted">{t('roles.permissions.selected', { count: selected.size })}</p>
+            <p className="mt-1 text-xs text-muted">{t('roles.permissions.companions')}</p>
           </div>
           <Button variant="primary" className="w-full" disabled={pending || !canSubmit} onClick={submit}>
             {pending ? <Loader2 className="animate-spin" /> : null}

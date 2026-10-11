@@ -21,6 +21,28 @@ String _approvalRule(String? raw) {
   return ApprovalStepRules.any;
 }
 
+/// How a stage finds approvers. Matches the API `ApproverBases`.
+abstract final class ApproverBases {
+  static const person = 'PERSON';
+  static const role = 'ROLE';
+  static const designation = 'DESIGNATION';
+  static const department = 'DEPARTMENT';
+  static const client = 'CLIENT';
+  static const clientContact = 'CLIENT_CONTACT';
+  static const project = 'PROJECT';
+  static const assignee = 'ASSIGNEE';
+  static const values = [person, role, designation, department, client, clientContact, project, assignee];
+}
+
+/// What a workflow approves.
+abstract final class WorkflowSubjects {
+  static const content = 'content';
+  static const task = 'task';
+  static const project = 'project';
+  static const custom = 'custom';
+  static const values = [content, task, project, custom];
+}
+
 /// One step in an approval pipeline with optional assignees and sign-off rules.
 class WorkflowStage {
   const WorkflowStage({
@@ -30,6 +52,8 @@ class WorkflowStage {
     this.quorumCount,
     this.approverIds = const [],
     this.roleIds = const [],
+    this.basis = ApproverBases.role,
+    this.targetIds = const [],
     this.scopeType,
     this.scopeResourceId,
   });
@@ -43,6 +67,11 @@ class WorkflowStage {
         ? [...roleIds, assigneeRoleId]
         : roleIds;
     final rule = json.strOrNull('approvalRule');
+    final storedBasis = json.strOrNull('basis');
+    final basis = ApproverBases.values.contains(storedBasis)
+        ? storedBasis!
+        : (mergedRoleIds.isNotEmpty ? ApproverBases.role : ApproverBases.person);
+    final storedTargets = _uuidList(json['targetIds']);
     return WorkflowStage(
       name: json.str('name'),
       assigneeRoleId: assigneeRoleId ?? (mergedRoleIds.isNotEmpty ? mergedRoleIds.first : null),
@@ -50,6 +79,10 @@ class WorkflowStage {
       quorumCount: json.integerOrNull('quorumCount'),
       approverIds: _uuidList(json['approverIds']),
       roleIds: mergedRoleIds,
+      basis: basis,
+      targetIds: storedTargets.isNotEmpty
+          ? storedTargets
+          : (basis == ApproverBases.role ? mergedRoleIds : _uuidList(json['approverIds'])),
       scopeType: json.strOrNull('scopeType'),
       scopeResourceId: json.strOrNull('scopeResourceId'),
     );
@@ -61,6 +94,8 @@ class WorkflowStage {
   final int? quorumCount;
   final List<String> approverIds;
   final List<String> roleIds;
+  final String basis;
+  final List<String> targetIds;
   final String? scopeType;
   final String? scopeResourceId;
 
@@ -71,9 +106,11 @@ class WorkflowStage {
         'name': name.trim(),
         'approvalRule': approvalRule,
         if (approvalRule == ApprovalStepRules.quorum && quorumCount != null) 'quorumCount': quorumCount,
-        'roleIds': roleIds,
-        'assigneeRoleId': roleIds.isNotEmpty ? roleIds.first : assigneeRoleId,
-        'approverIds': approverIds,
+        'roleIds': basis == ApproverBases.role ? targetIds : roleIds,
+        'assigneeRoleId': basis == ApproverBases.role && targetIds.isNotEmpty ? targetIds.first : assigneeRoleId,
+        'approverIds': basis == ApproverBases.person ? targetIds : approverIds,
+        'basis': basis,
+        'targetIds': targetIds,
         if (scopeType != null) 'scopeType': scopeType,
         if (scopeResourceId != null) 'scopeResourceId': scopeResourceId,
       };
@@ -105,6 +142,8 @@ class Workflow {
     required this.createdAt,
     required this.updatedAt,
     this.slaHours,
+    this.scopeType = 'ORGANIZATION',
+    this.scopeId,
     this.requiresClientApproval = false,
     this.active = true,
     this.version,
@@ -117,7 +156,9 @@ class Workflow {
     return Workflow(
       id: json.str('id'),
       name: json.str('name'),
-      entityType: json.str('entityType'),
+      entityType: json.str('entityType', WorkflowSubjects.content),
+      scopeType: json.str('scopeType', 'ORGANIZATION'),
+      scopeId: json.strOrNull('scopeId'),
       stages: parseWorkflowStagesFromJson(json),
       slaHours: json.integerOrNull('slaHours'),
       requiresClientApproval: json.flag('requiresClientApproval'),
@@ -133,6 +174,8 @@ class Workflow {
   final String id;
   final String name;
   final String entityType;
+  final String scopeType;
+  final String? scopeId;
   final List<WorkflowStage> stages;
   final int? slaHours;
   final bool requiresClientApproval;
@@ -228,10 +271,16 @@ class WorkflowInput {
     required this.stages,
     required this.requiresClientApproval,
     required this.active,
+    this.entityType = WorkflowSubjects.content,
+    this.scopeType = 'ORGANIZATION',
+    this.scopeId,
     this.slaHours,
   });
 
   final String name;
+  final String entityType;
+  final String scopeType;
+  final String? scopeId;
   final List<WorkflowStage> stages;
   final int? slaHours;
   final bool requiresClientApproval;
@@ -240,6 +289,9 @@ class WorkflowInput {
   /// Creating omits an empty SLA; editing sends null so the API clears it.
   Json toJson({required bool clearEmpty}) => {
         'name': name,
+        'entityType': entityType,
+        'scopeType': scopeId == null ? 'ORGANIZATION' : scopeType,
+        if (scopeId != null) 'scopeId': scopeId,
         'stages': stages.map((stage) => stage.toJson()).toList(),
         if (slaHours != null || clearEmpty) 'slaHours': slaHours,
         'requiresClientApproval': requiresClientApproval,

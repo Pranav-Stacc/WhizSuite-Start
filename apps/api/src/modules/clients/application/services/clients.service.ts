@@ -118,4 +118,81 @@ export class ClientsService {
     });
     return kit;
   }
+
+  listContacts(organizationId: string, clientId?: string) {
+    return this.repo.listContacts(organizationId, clientId);
+  }
+
+  async createContact(
+    organizationId: string,
+    actorId: string,
+    input: {
+      clientId: string;
+      firstName: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      isDecisionMaker?: boolean;
+    },
+  ) {
+    await this.get(organizationId, input.clientId);
+    const contact = await this.repo.createContact(
+      organizationId,
+      input.clientId,
+      input,
+    );
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'client.contact.create',
+      entityType: 'client_contact',
+      entityId: contact.id,
+      after: contact,
+    });
+    return contact;
+  }
+
+  async updateContact(
+    organizationId: string,
+    contactId: string,
+    actorId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+      role?: string;
+      isDecisionMaker?: boolean;
+    },
+  ) {
+    await this.repo.updateContact(organizationId, contactId, data);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'client.contact.update',
+      entityType: 'client_contact',
+      entityId: contactId,
+      after: data,
+    });
+    return { id: contactId, ...data };
+  }
+
+  async deleteContact(
+    organizationId: string,
+    contactId: string,
+    actorId: string,
+  ) {
+    await this.repo.deleteContact(organizationId, contactId);
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'client.contact.delete',
+      entityType: 'client_contact',
+      entityId: contactId,
+    });
+  }
 }

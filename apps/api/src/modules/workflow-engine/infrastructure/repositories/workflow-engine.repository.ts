@@ -15,6 +15,9 @@ function textOr(value: unknown, fallback: string): string {
 
 export interface WorkflowSettings {
   name?: string;
+  entityType?: string;
+  scopeType?: string;
+  scopeId?: string | null;
   slaHours?: number | null;
   requiresClientApproval?: boolean;
   active?: boolean;
@@ -67,6 +70,8 @@ export class WorkflowEngineRepository {
         organizationId,
         entityType: data.entityType,
         name: data.name,
+        scopeType: data.scopeType ?? 'ORGANIZATION',
+        scopeId: data.scopeId ?? null,
         slaHours: data.slaHours ?? null,
         requiresClientApproval: data.requiresClientApproval ?? false,
         active: data.active ?? true,

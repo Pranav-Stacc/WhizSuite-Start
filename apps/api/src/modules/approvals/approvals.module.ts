@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccessModule } from '../access/access.module';
+import { ClientsModule } from '../clients/clients.module';
 import { IdentityModule } from '../identity/identity.module';
 import { ApprovalsService } from './application/services/approvals.service';
 import { ApproverResolutionService } from './application/services/approver-resolution.service';
@@ -8,7 +9,7 @@ import { ApprovalsResourceController } from './interface/http/controllers/approv
 import { ApprovalReminderScheduler } from './jobs/approval-reminder.scheduler';
 
 @Module({
-  imports: [AccessModule, IdentityModule],
+  imports: [AccessModule, IdentityModule, ClientsModule],
   controllers: [ApprovalsResourceController],
   providers: [
     ApprovalsService,

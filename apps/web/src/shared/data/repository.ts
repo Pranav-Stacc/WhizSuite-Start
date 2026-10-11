@@ -70,8 +70,8 @@ export function createRepository<T extends Entity>(
     async list() {
       if (useLive(live)) {
         const org = await orgId();
-        const rows = await fetchAllPages(live.path(org), [`org:${org}:${live.tag}`]);
-        return rows.map(live.fromApi);
+        const fetched = await fetchAllPages(live.path(org), [`org:${org}:${live.tag}`]);
+        return fetched.map(live.fromApi);
       }
       return [...rows()];
     },

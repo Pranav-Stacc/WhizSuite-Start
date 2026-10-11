@@ -7366,6 +7366,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workflowApprovalMetric => 'Sign-off';
 
   @override
+  String get workflowBasisAssignee => 'Whoever is assigned';
+
+  @override
+  String get workflowBasisAssigneeHint =>
+      'The people assigned to the content, task, or project approve this stage.';
+
+  @override
+  String get workflowBasisClient => 'People with access to a client';
+
+  @override
+  String get workflowBasisClientContact => 'Client contact (portal)';
+
+  @override
+  String get workflowBasisDepartment => 'A department';
+
+  @override
+  String get workflowBasisDesignation => 'A designation';
+
+  @override
+  String get workflowBasisPerson => 'Specific people';
+
+  @override
+  String get workflowBasisProject => 'People with access to a project';
+
+  @override
+  String get workflowBasisRole => 'A role';
+
+  @override
   String get workflowCheckerAllowed => 'Allowed';
 
   @override
@@ -7447,6 +7475,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workflowNoVersion => 'This workflow has no published version yet.';
 
   @override
+  String get workflowScopeClient => 'One client';
+
+  @override
+  String get workflowScopeField => 'Applies to';
+
+  @override
+  String get workflowScopeOrganization => 'The whole organisation';
+
+  @override
   String workflowSla(int hours) {
     return 'Respond within ${hours}h';
   }
@@ -7477,6 +7514,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workflowStageAssigneesTitle => 'Stage assignees';
+
+  @override
+  String get workflowStageBasis => 'Who approves';
 
   @override
   String workflowStageCount(int count) {
@@ -7514,6 +7554,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add specific people who can approve this stage.';
 
   @override
+  String get workflowStagePickEmpty => 'Nothing matches.';
+
+  @override
   String get workflowStageQuorum => 'Approvals needed';
 
   @override
@@ -7544,6 +7587,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workflowStageRuleQuorum => 'Quorum (N of pool)';
+
+  @override
+  String get workflowStageSearch => 'Search';
 
   @override
   String get workflowStagesBlank => 'Every stage needs a name';
@@ -7592,6 +7638,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workflowStagesVersionNote =>
       'Changing the stages publishes a new version. Content already in progress keeps its version.';
+
+  @override
+  String get workflowSubjectContent => 'Content publishing';
+
+  @override
+  String get workflowSubjectCustom => 'Custom';
+
+  @override
+  String get workflowSubjectField => 'This workflow is for';
+
+  @override
+  String get workflowSubjectProject => 'Projects';
+
+  @override
+  String get workflowSubjectTask => 'Tasks';
 
   @override
   String workflowToggle(String name) {

@@ -92,6 +92,7 @@ export const common = {
   'action.copyLink': 'Copy invite link',
   'toast.invalid': 'Please fix the highlighted fields.',
   'toast.failed': 'Something went wrong. Please try again.',
+  'toast.apiUnavailable': 'Could not reach the API. Start the API on port 3001 and try again.',
   'toast.forbidden': 'You do not have permission to do that.',
   'toast.moved': 'Moved',
   'toast.deleted': 'Deleted',

@@ -10,7 +10,7 @@ export const getAccessCapabilities = cache(async (): Promise<AccessCapabilities 
   const session = await requireSession();
   if (!isLiveMode || session.demo) return null;
   try {
-    return await apiFetch<AccessCapabilities>('v1/access/capabilities', { tags: ['access'] });
+    return await apiFetch<AccessCapabilities>('v1/access/capabilities');
   } catch {
     return null;
   }

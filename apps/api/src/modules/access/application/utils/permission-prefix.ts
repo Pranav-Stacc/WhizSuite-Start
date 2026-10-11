@@ -43,6 +43,8 @@ const SEGMENT_PREFIX: Record<string, string> = {
  */
 export function permissionPrefixForPath(url: string): string | undefined {
   const path = url.split('?')[0] ?? url;
+  // Content-item threads inherit content role scopes, not feedback module scopes.
+  if (/\/feedback\/subjects\/CONTENT\//i.test(path)) return 'content';
   const segments = path.split('/').filter(Boolean);
   for (let index = segments.length - 1; index >= 0; index -= 1) {
     const prefix = SEGMENT_PREFIX[segments[index] ?? ''];

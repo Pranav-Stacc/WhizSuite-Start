@@ -6,6 +6,7 @@ import {
   RoleKinds,
   ScopeTypes,
   allowedScopesForPermission,
+  dataScopePrefixesFor,
   isAssignableScopeType,
   isPermission,
   readPermissionScopeTypes,
@@ -27,6 +28,7 @@ import {
 } from '../../application/utils/effective-permissions';
 import { permissionPrefixForPath } from '../../application/utils/permission-prefix';
 import {
+  compileDataScopeRows,
   resolveDataScopeFromAssignments,
   scopesApplicableToPermissions,
   type ResolvedDataScope,
@@ -35,6 +37,11 @@ import {
   ACTIVE_MEMBERSHIP_STATUS,
   OWNER_MEMBERSHIP_TYPE,
 } from '../../config/default-roles';
+
+const ROLE_DETAIL_INCLUDE = {
+  permissions: { include: { permission: true } },
+  assignments: { select: { id: true } },
+} satisfies Prisma.RoleInclude;
 
 const ROLE_SUMMARY_SELECT = {
   id: true,
@@ -390,6 +397,7 @@ export class AccessRepository {
     url?: string,
   ): Promise<ResolvedDataScope> {
     const prefix = url ? permissionPrefixForPath(url) : undefined;
+    const prefixes = prefix ? dataScopePrefixesFor(prefix) : undefined;
     const assignments = await this.prisma.roleAssignment.findMany({
       where: { organizationId, membershipId },
       include: {
@@ -403,13 +411,15 @@ export class AccessRepository {
     });
     const compiled = assignments
       .map((assignment) => ({
-        scopes: scopesApplicableToPermissions(
+        scopes: compileDataScopeRows(
           assignment.scopes,
-          assignment.role.permissions.map((row) => ({
-            key: row.permission.key,
-            scopeTypes: readPermissionScopeTypes(row.conditions),
-          })),
-          prefix ? [prefix] : undefined,
+          assignment.role.permissions
+            .filter((row) => row.effect === PermissionEffects.ALLOW)
+            .map((row) => ({
+              key: row.permission.key,
+              conditions: row.conditions,
+            })),
+          prefixes,
         ),
       }))
       .filter((assignment) => assignment.scopes.length > 0);
@@ -453,10 +463,14 @@ export class AccessRepository {
         ...(kind ? { kind } : {}),
       },
       orderBy: [{ kind: 'asc' }, { name: 'asc' }],
-      include: {
-        permissions: { include: { permission: true } },
-        assignments: { select: { id: true } },
-      },
+      include: ROLE_DETAIL_INCLUDE,
+    });
+  }
+
+  getRole(organizationId: string, roleId: string) {
+    return this.prisma.role.findFirst({
+      where: { id: roleId, organizationId },
+      include: ROLE_DETAIL_INCLUDE,
     });
   }
 
@@ -809,6 +823,58 @@ export class AccessRepository {
       byMembership.set(row.membershipId, list);
     }
     return byMembership;
+  }
+
+  /** Memberships placed in any of the given designations. */
+  async membershipIdsForDesignations(
+    organizationId: string,
+    designationIds: readonly string[],
+  ): Promise<string[]> {
+    if (designationIds.length === 0) return [];
+    const rows = await this.prisma.memberDesignation.findMany({
+      where: { organizationId, designationId: { in: [...designationIds] } },
+      select: { membershipId: true },
+    });
+    return [...new Set(rows.map((row) => row.membershipId))];
+  }
+
+  /** Memberships whose designation sits in any of the given departments. */
+  async membershipIdsInDepartments(
+    organizationId: string,
+    departmentIds: readonly string[],
+  ): Promise<string[]> {
+    if (departmentIds.length === 0) return [];
+    const designations = await this.prisma.designation.findMany({
+      where: { organizationId, departmentId: { in: [...departmentIds] } },
+      select: { id: true },
+    });
+    return this.membershipIdsForDesignations(
+      organizationId,
+      designations.map((row) => row.id),
+    );
+  }
+
+  /**
+   * Memberships that can see the given clients or projects: an organisation-wide
+   * assignment, or an assignment scoped to one of those records.
+   */
+  async membershipIdsWithResourceAccess(
+    organizationId: string,
+    scopeType: 'CLIENT' | 'PROJECT',
+    resourceIds: readonly string[],
+  ): Promise<string[]> {
+    if (resourceIds.length === 0) return [];
+    const rows = await this.prisma.roleAssignmentScope.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { scopeType: 'ORGANIZATION' },
+          { scopeType, resourceId: { in: [...resourceIds] } },
+        ],
+      },
+      select: { roleAssignment: { select: { membershipId: true } } },
+    });
+    return [...new Set(rows.map((row) => row.roleAssignment.membershipId))];
   }
 
   /** Member counts per designation id (only includes designations that have rows). */

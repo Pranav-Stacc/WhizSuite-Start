@@ -12,6 +12,7 @@ import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import { setClientStatusAction } from '@/features/clients/actions/client.actions';
 import { OverviewTab, WorkTab } from '@/features/clients/components/client-sections';
 import { HealthPill } from '@/features/clients/components/health-pill';
+import { listClientContacts } from '@/features/clients/services/client-contacts.service';
 import { getClient } from '@/features/clients/services/clients.service';
 import { clientSectionNumber } from '@/features/clients/workspace';
 import { listContent } from '@/features/content/services/content.service';
@@ -34,11 +35,14 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
   const granted = await getPermissions();
   const canEdit = granted.has(Permissions.CLIENTS_EDIT);
   const canInvite = granted.has(Permissions.MEMBERS_INVITE);
-  const [members, integrations, projects, content] = await Promise.all([
-    granted.has(Permissions.MEMBERS_VIEW) ? membersById() : new Map<string, Member>(),
-    granted.has(Permissions.INTEGRATIONS_MANAGE) ? listIntegrations() : [],
-    granted.has(Permissions.PROJECTS_VIEW) ? listProjectsWithProgress() : [],
-    granted.has(Permissions.CONTENT_VIEW) ? listContent() : [],
+  const [members, integrations, projects, content, contacts] = await Promise.all([
+    granted.has(Permissions.MEMBERS_VIEW)
+      ? membersById().catch(() => new Map<string, Member>())
+      : Promise.resolve(new Map<string, Member>()),
+    granted.has(Permissions.INTEGRATIONS_MANAGE) ? listIntegrations().catch(() => []) : Promise.resolve([]),
+    granted.has(Permissions.PROJECTS_VIEW) ? listProjectsWithProgress().catch(() => []) : Promise.resolve([]),
+    granted.has(Permissions.CONTENT_VIEW) ? listContent().catch(() => []) : Promise.resolve([]),
+    canEdit ? listClientContacts(client.id).catch(() => []) : Promise.resolve([]),
   ]);
   const clientProjects = projects.filter((p) => p.clientId === client.id);
   const clientPosts = content
@@ -99,11 +103,29 @@ export default async function ClientOverviewPage({ params }: { params: Promise<{
 
       <section>
         <SectionHeading number={clientSectionNumber('overview')} title={t('clients.workspace.overview')} />
-        <OverviewTab client={client} ownerName={members.get(client.ownerId)?.name} integrations={integrations.filter((i) => i.clientId === client.id)} />
+        <OverviewTab
+          client={client}
+          ownerName={members.get(client.ownerId)?.name}
+          integrations={integrations.filter((i) => i.clientId === client.id)}
+          canEditContacts={canEdit}
+          contacts={contacts.map((row) => ({
+            id: row.id,
+            firstName: row.firstName,
+            lastName: row.lastName,
+            email: row.email,
+            role: row.role,
+          }))}
+        />
       </section>
       <section>
         <SectionHeading title={t('clients.tab.work')} />
-        <WorkTab clientId={client.id} projects={clientProjects} posts={clientPosts} canManage={granted.has(Permissions.PROJECTS_CREATE)} />
+        <WorkTab
+          clientId={client.id}
+          projects={clientProjects}
+          posts={clientPosts}
+          canManage={granted.has(Permissions.PROJECTS_CREATE)}
+          canCreatePost={granted.has(Permissions.CONTENT_CREATE)}
+        />
       </section>
     </div>
   );

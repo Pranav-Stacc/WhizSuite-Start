@@ -12,6 +12,7 @@ import { StatusBadge } from '@/shared/ui/status';
 import type { Client } from '../data/clients.repository';
 import { clientSectionHref } from '../workspace';
 import { BrandKitDialog } from './client-dialogs';
+import { ClientContactsPanel, type ClientContactView } from './client-contacts-panel';
 
 // Structural row shapes keep this feature independent of other domains' internals;
 // the page composes them from each owning module's public service.
@@ -43,7 +44,19 @@ export interface InvoiceRow {
   total: number;
 }
 
-export function OverviewTab({ client, ownerName, integrations }: { client: Client; ownerName?: string; integrations: ChannelRow[] }) {
+export function OverviewTab({
+  client,
+  ownerName,
+  integrations,
+  contacts = [],
+  canEditContacts = false,
+}: {
+  client: Client;
+  ownerName?: string;
+  integrations: ChannelRow[];
+  contacts?: ClientContactView[];
+  canEditContacts?: boolean;
+}) {
   const connected = integrations.filter((i) => i.connected);
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -78,6 +91,15 @@ export function OverviewTab({ client, ownerName, integrations }: { client: Clien
           ) : null}
         </CardBody>
       </Card>
+
+      {canEditContacts ? (
+        <Card className="lg:col-span-3">
+          <CardHeader title={t('clients.contacts.title')} icon={<UserRound />} />
+          <CardBody>
+            <ClientContactsPanel clientId={client.id} contacts={contacts} />
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card className="lg:col-span-2">
         <CardHeader
@@ -187,7 +209,19 @@ export function BrandTab({ client, canEdit }: { client: Client; canEdit: boolean
   );
 }
 
-export function WorkTab({ clientId, projects, posts, canManage }: { clientId: string; projects: ProjectRow[]; posts: PostRow[]; canManage: boolean }) {
+export function WorkTab({
+  clientId,
+  projects,
+  posts,
+  canManage,
+  canCreatePost,
+}: {
+  clientId: string;
+  projects: ProjectRow[];
+  posts: PostRow[];
+  canManage: boolean;
+  canCreatePost: boolean;
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <Card>
@@ -229,12 +263,14 @@ export function WorkTab({ clientId, projects, posts, canManage }: { clientId: st
         <CardHeader
           title={t('clients.content')}
           action={
-            <Button variant="ghost" size="sm" asChild>
-              <Link href={`/content?new=1&client=${clientId}`}>
-                <Plus />
-                {t('clients.content.new')}
-              </Link>
-            </Button>
+            canCreatePost ? (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={`/content?new=1&client=${clientId}`}>
+                  <Plus />
+                  {t('clients.content.new')}
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
         <CardBody className="pt-3">

@@ -1,7 +1,7 @@
 import { ContentStatuses, Permissions, Platforms } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { KanbanSquare, List, PencilLine, Plus } from 'lucide-react';
-import { loadIf, requirePermission } from '@/shared/auth/permissions';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
@@ -24,7 +24,7 @@ import { listContent } from '@/features/content/services/content.service';
 import { listAssets } from '@/features/media/services/media.service';
 import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
-import { listClients } from '@/features/clients/services/clients.service';
+import { listClientsForContent } from '@/features/content/services/content-clients.service';
 
 export const metadata: Metadata = { title: t('content.title') };
 
@@ -39,6 +39,7 @@ const GUIDE: GuideItem[] = [
 
 export default async function ContentPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const session = await requirePermission(Permissions.CONTENT_VIEW);
+  const canCreate = await can(Permissions.CONTENT_CREATE);
   const sp = await searchParams;
   const view = param(sp, 'view') === 'list' ? 'list' : 'board';
   const clientId = param(sp, 'client');
@@ -47,11 +48,11 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const mine = param(sp, 'f') === 'mine';
   const query = (param(sp, 'q') ?? '').trim().toLowerCase();
 
-  const [posts, clientRows, members, assets] = await Promise.all([
-    listContent(),
-    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+  const posts = await listContent();
+  const [clientRows, members, assets] = await Promise.all([
+    listClientsForContent(posts),
     loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
-    loadIf(Permissions.FILES_VIEW, listAssets, []),
+    loadIf(Permissions.FILES_VIEW, listAssets, []).catch(() => []),
   ]);
   const clients = new Map(clientRows.map((c) => [c.id, c]));
   const scoped = posts.filter(
@@ -66,12 +67,12 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const hasFilters = Boolean(clientId || platform || status || mine || query);
 
   const composerClients = toComposerClients([...clients.values()]);
-  const newButton = (
+  const newButton = canCreate ? (
     <Button variant="primary">
       <Plus />
       {t('content.new')}
     </Button>
-  );
+  ) : undefined;
 
   const columns = ContentStatuses.map((s) => ({
     id: s,
@@ -95,7 +96,16 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
                 { href: link({ view: 'list' }), label: t('tasks.view.list'), active: view === 'list', icon: <List /> },
               ]}
             />
-            <ContentComposer clients={composerClients} assets={toComposerAssets(assets)} defaultOpen={param(sp, 'new') === '1'} defaultClientId={clientId} uploadEnabled={isLiveMode} trigger={newButton} />
+            {canCreate ? (
+              <ContentComposer
+                clients={composerClients}
+                assets={toComposerAssets(assets)}
+                defaultOpen={param(sp, 'new') === '1'}
+                defaultClientId={clientId}
+                uploadEnabled={isLiveMode}
+                trigger={newButton}
+              />
+            ) : null}
           </>
         }
       />
@@ -141,7 +151,14 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
             icon={<PencilLine />}
             title={t('content.empty.title')}
             body={t('content.empty.body')}
-            action={<EmptyAction filtered={hasFilters} clearHref={BASE} createHref={link({ new: '1' })} createLabel={t('content.new')} />}
+            action={
+              <EmptyAction
+                filtered={hasFilters}
+                clearHref={BASE}
+                createHref={canCreate ? link({ new: '1' }) : undefined}
+                createLabel={canCreate ? t('content.new') : undefined}
+              />
+            }
           />
         </div>
       ) : view === 'board' ? (

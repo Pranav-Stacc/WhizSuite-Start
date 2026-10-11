@@ -15,6 +15,7 @@ type DrawerTarget = { kind: 'edit'; postId: string } | ({ kind: 'new'; nonce: nu
 interface PlannerDrawerApi {
   openPost: (postId: string) => void;
   newPost: (options?: NewPostOptions) => void;
+  canCreate: boolean;
 }
 
 const PlannerDrawerContext = createContext<PlannerDrawerApi | null>(null);
@@ -37,12 +38,23 @@ interface PlannerDrawerProviderProps {
   posts: ComposerPost[];
   /** Posts that may no longer be edited (published) open their detail page instead. */
   lockedPostIds: string[];
+  /** When false, new-post entry points are hidden and the create drawer cannot open. */
+  canCreate?: boolean;
   uploadEnabled?: boolean;
   children: ReactNode;
 }
 
 /** One post-details drawer per planner page; any tile, cell or row can open it. */
-export function PlannerDrawerProvider({ clientId, clients, assets, posts, lockedPostIds, uploadEnabled = true, children }: PlannerDrawerProviderProps) {
+export function PlannerDrawerProvider({
+  clientId,
+  clients,
+  assets,
+  posts,
+  lockedPostIds,
+  canCreate = false,
+  uploadEnabled = true,
+  children,
+}: PlannerDrawerProviderProps) {
   const router = useRouter();
   const [target, setTarget] = useState<DrawerTarget | null>(null);
   const byId = useMemo(() => new Map(posts.map((p) => [p.id, p])), [posts]);
@@ -54,9 +66,13 @@ export function PlannerDrawerProvider({ clientId, clients, assets, posts, locked
         if (locked.has(postId)) router.push(`/content/${postId}`);
         else setTarget({ kind: 'edit', postId });
       },
-      newPost: (options) => setTarget({ kind: 'new', nonce: Date.now(), ...options }),
+      newPost: (options) => {
+        if (!canCreate) return;
+        setTarget({ kind: 'new', nonce: Date.now(), ...options });
+      },
+      canCreate,
     }),
-    [locked, router],
+    [canCreate, locked, router],
   );
 
   const post = target?.kind === 'edit' ? byId.get(target.postId) : undefined;
@@ -65,20 +81,22 @@ export function PlannerDrawerProvider({ clientId, clients, assets, posts, locked
   return (
     <PlannerDrawerContext.Provider value={api}>
       {children}
-      <ContentComposer
-        key={key}
-        clients={clients}
-        assets={assets}
-        post={post}
-        defaultClientId={clientId}
-        defaultScheduledAt={target?.kind === 'new' ? target.scheduledAt : undefined}
-        defaultAssetIds={target?.kind === 'new' ? target.assetIds : undefined}
-        open={target !== null}
-        onOpenChange={(open) => !open && setTarget(null)}
-        stayOnSave
-        uploadEnabled={uploadEnabled}
-        compact
-      />
+      {target?.kind === 'edit' || (target?.kind === 'new' && canCreate) ? (
+        <ContentComposer
+          key={key}
+          clients={clients}
+          assets={assets}
+          post={post}
+          defaultClientId={clientId}
+          defaultScheduledAt={target?.kind === 'new' ? target.scheduledAt : undefined}
+          defaultAssetIds={target?.kind === 'new' ? target.assetIds : undefined}
+          open={target !== null}
+          onOpenChange={(open) => !open && setTarget(null)}
+          stayOnSave
+          uploadEnabled={uploadEnabled}
+          compact
+        />
+      ) : null}
     </PlannerDrawerContext.Provider>
   );
 }
@@ -107,7 +125,8 @@ interface NewPostButtonProps {
 }
 
 export function NewPostButton({ scheduledAt, className, label, children }: NewPostButtonProps) {
-  const { newPost } = usePlannerDrawer();
+  const { newPost, canCreate } = usePlannerDrawer();
+  if (!canCreate) return null;
   return (
     <button type="button" onClick={() => newPost({ scheduledAt })} aria-label={label} className={className}>
       {children}

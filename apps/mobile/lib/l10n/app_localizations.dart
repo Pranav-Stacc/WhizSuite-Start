@@ -10787,6 +10787,60 @@ abstract class AppLocalizations {
   /// **'Sign-off'**
   String get workflowApprovalMetric;
 
+  /// No description provided for @workflowBasisAssignee.
+  ///
+  /// In en, this message translates to:
+  /// **'Whoever is assigned'**
+  String get workflowBasisAssignee;
+
+  /// No description provided for @workflowBasisAssigneeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The people assigned to the content, task, or project approve this stage.'**
+  String get workflowBasisAssigneeHint;
+
+  /// No description provided for @workflowBasisClient.
+  ///
+  /// In en, this message translates to:
+  /// **'People with access to a client'**
+  String get workflowBasisClient;
+
+  /// No description provided for @workflowBasisClientContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Client contact (portal)'**
+  String get workflowBasisClientContact;
+
+  /// No description provided for @workflowBasisDepartment.
+  ///
+  /// In en, this message translates to:
+  /// **'A department'**
+  String get workflowBasisDepartment;
+
+  /// No description provided for @workflowBasisDesignation.
+  ///
+  /// In en, this message translates to:
+  /// **'A designation'**
+  String get workflowBasisDesignation;
+
+  /// No description provided for @workflowBasisPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific people'**
+  String get workflowBasisPerson;
+
+  /// No description provided for @workflowBasisProject.
+  ///
+  /// In en, this message translates to:
+  /// **'People with access to a project'**
+  String get workflowBasisProject;
+
+  /// No description provided for @workflowBasisRole.
+  ///
+  /// In en, this message translates to:
+  /// **'A role'**
+  String get workflowBasisRole;
+
   /// No description provided for @workflowCheckerAllowed.
   ///
   /// In en, this message translates to:
@@ -10925,6 +10979,24 @@ abstract class AppLocalizations {
   /// **'This workflow has no published version yet.'**
   String get workflowNoVersion;
 
+  /// No description provided for @workflowScopeClient.
+  ///
+  /// In en, this message translates to:
+  /// **'One client'**
+  String get workflowScopeClient;
+
+  /// No description provided for @workflowScopeField.
+  ///
+  /// In en, this message translates to:
+  /// **'Applies to'**
+  String get workflowScopeField;
+
+  /// No description provided for @workflowScopeOrganization.
+  ///
+  /// In en, this message translates to:
+  /// **'The whole organisation'**
+  String get workflowScopeOrganization;
+
   /// No description provided for @workflowSla.
   ///
   /// In en, this message translates to:
@@ -10979,6 +11051,12 @@ abstract class AppLocalizations {
   /// **'Stage assignees'**
   String get workflowStageAssigneesTitle;
 
+  /// No description provided for @workflowStageBasis.
+  ///
+  /// In en, this message translates to:
+  /// **'Who approves'**
+  String get workflowStageBasis;
+
   /// No description provided for @workflowStageCount.
   ///
   /// In en, this message translates to:
@@ -11026,6 +11104,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add specific people who can approve this stage.'**
   String get workflowStagePeopleHint;
+
+  /// No description provided for @workflowStagePickEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches.'**
+  String get workflowStagePickEmpty;
 
   /// No description provided for @workflowStageQuorum.
   ///
@@ -11080,6 +11164,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quorum (N of pool)'**
   String get workflowStageRuleQuorum;
+
+  /// No description provided for @workflowStageSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get workflowStageSearch;
 
   /// No description provided for @workflowStagesBlank.
   ///
@@ -11140,6 +11230,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Changing the stages publishes a new version. Content already in progress keeps its version.'**
   String get workflowStagesVersionNote;
+
+  /// No description provided for @workflowSubjectContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content publishing'**
+  String get workflowSubjectContent;
+
+  /// No description provided for @workflowSubjectCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get workflowSubjectCustom;
+
+  /// No description provided for @workflowSubjectField.
+  ///
+  /// In en, this message translates to:
+  /// **'This workflow is for'**
+  String get workflowSubjectField;
+
+  /// No description provided for @workflowSubjectProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get workflowSubjectProject;
+
+  /// No description provided for @workflowSubjectTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get workflowSubjectTask;
 
   /// No description provided for @workflowToggle.
   ///

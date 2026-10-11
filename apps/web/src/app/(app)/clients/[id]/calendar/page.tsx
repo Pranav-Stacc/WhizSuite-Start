@@ -82,7 +82,10 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
   const monthPosts = filtered.filter((p) => inMonth(p, ref));
   const prev = shiftMonth(ref, -1);
   const next = shiftMonth(ref, 1);
-  const approver = await can(Permissions.APPROVALS_APPROVE);
+  const [approver, canCreate] = await Promise.all([
+    can(Permissions.APPROVALS_APPROVE),
+    can(Permissions.CONTENT_CREATE),
+  ]);
 
   const viewNav = (
     <nav aria-label={t('sheet.views')} className="flex items-center gap-5">
@@ -153,7 +156,7 @@ export default async function ClientCalendarPage({ params, searchParams }: { par
   }
 
   return (
-    <PlannerDrawerProvider {...planner.drawer} uploadEnabled={isLiveMode}>
+    <PlannerDrawerProvider {...planner.drawer} canCreate={canCreate} uploadEnabled={isLiveMode}>
       <section>
         <SectionHeading number={clientSectionNumber('calendar')} title={t('clients.workspace.calendar')}>
           {viewNav}

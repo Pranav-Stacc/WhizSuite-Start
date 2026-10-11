@@ -1,6 +1,7 @@
 import {
   ALL_PERMISSIONS,
   PermissionEffects,
+  expandCompanionPermissions,
   type MemberPermissionOverride,
   type Permission,
 } from '@agency-os/contracts';
@@ -25,6 +26,9 @@ export function applyPermissionOverrides({
   const granted = new Set<Permission>(rolePermissions);
   for (const override of overrides) {
     if (override.effect === PermissionEffects.ALLOW) granted.add(override.key);
+  }
+  for (const companion of expandCompanionPermissions(granted)) {
+    granted.add(companion);
   }
   for (const override of overrides) {
     if (override.effect === PermissionEffects.DENY)

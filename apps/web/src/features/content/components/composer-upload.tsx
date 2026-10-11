@@ -6,6 +6,7 @@ import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui/button';
 import { useAssetUpload } from '@/features/media/hooks/use-asset-upload';
+import type { ComposerAsset } from './slide-picker';
 
 /** Compact upload control for the content composer — attaches new assets as slides immediately. */
 export function ComposerUpload({
@@ -15,7 +16,7 @@ export function ComposerUpload({
 }: {
   clientId: string;
   enabled: boolean;
-  onUploaded: (assetIds: string[]) => void;
+  onUploaded: (assets: ComposerAsset[]) => void;
 }) {
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -46,7 +47,15 @@ export function ComposerUpload({
           const files = e.target.files;
           if (!files?.length) return;
           void upload.uploadNow(files, clientId).then((result) => {
-            if (result.assetIds.length) onUploaded(result.assetIds);
+            if (!result.uploaded.length) return;
+            onUploaded(
+              result.uploaded.map((item) => ({
+                assetId: item.assetId,
+                clientId,
+                name: item.name,
+                mimeType: item.mimeType,
+              })),
+            );
           });
           e.target.value = '';
         }}

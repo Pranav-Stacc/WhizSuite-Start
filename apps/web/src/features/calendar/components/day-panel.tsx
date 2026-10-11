@@ -45,7 +45,8 @@ interface DayPanelProps {
   items: CalendarItem[];
   closeHref: string;
   clientId?: string;
-  canCreate: boolean;
+  canCreatePost: boolean;
+  canCreateEvent: boolean;
   canPlanShoot: boolean;
   googleConnected: boolean;
   defaultSyncToGoogle: boolean;
@@ -58,7 +59,8 @@ export function DayPanel({
   items,
   closeHref,
   clientId,
-  canCreate,
+  canCreatePost,
+  canCreateEvent,
   canPlanShoot,
   googleConnected,
   defaultSyncToGoogle,
@@ -82,30 +84,30 @@ export function DayPanel({
       width="max-w-md"
     >
       <div className="space-y-5">
-        {(canCreate || canPlanShoot) && (
+        {(canCreatePost || canCreateEvent || canPlanShoot) && (
           <div className="flex flex-wrap gap-2">
-            {canCreate ? (
-              <>
-                <Button variant="primary" size="sm" asChild>
-                  <Link href={contentHref}>
+            {canCreatePost ? (
+              <Button variant="primary" size="sm" asChild>
+                <Link href={contentHref}>
+                  <Plus className="size-3.5" />
+                  {t('content.new')}
+                </Link>
+              </Button>
+            ) : null}
+            {canCreateEvent ? (
+              <CreateEventDialog
+                defaultStartsAt={dayStartLocal}
+                defaultClientId={clientId}
+                clients={clients}
+                googleConnected={googleConnected}
+                defaultSyncToGoogle={defaultSyncToGoogle}
+                trigger={
+                  <Button variant="secondary" size="sm">
                     <Plus className="size-3.5" />
-                    {t('content.new')}
-                  </Link>
-                </Button>
-                <CreateEventDialog
-                  defaultStartsAt={dayStartLocal}
-                  defaultClientId={clientId}
-                  clients={clients}
-                  googleConnected={googleConnected}
-                  defaultSyncToGoogle={defaultSyncToGoogle}
-                  trigger={
-                    <Button variant="secondary" size="sm">
-                      <Plus className="size-3.5" />
-                      {t('calendar.event.open')}
-                    </Button>
-                  }
-                />
-              </>
+                    {t('calendar.event.open')}
+                  </Button>
+                }
+              />
             ) : null}
             {canPlanShoot ? (
               <PlanShootDialog

@@ -1,6 +1,7 @@
 import 'server-only';
-import type { MemberAccess } from '@agency-os/contracts';
+import { Permissions, type MemberAccess, type Permission } from '@agency-os/contracts';
 import { ApiError, apiFetch } from '@/shared/api/api-client';
+import { can } from '@/shared/auth/permissions';
 import { orgPath } from '@/shared/api/live/utils';
 import { invitationsLive, membersLive } from '@/shared/api/live/bindings';
 import { unwrapList } from '@/shared/api/live/utils';
@@ -8,7 +9,6 @@ import { isLiveMode } from '@/shared/config/env';
 import { getSession } from '@/shared/auth/session';
 import { membersRepository, type Member } from '../data/members.repository';
 
-const FORBIDDEN = 403;
 /** Client portal users have memberships too, but they are not part of the agency team. */
 const CLIENT_MEMBERSHIP = 'CLIENT';
 
@@ -19,18 +19,14 @@ export interface DirectoryEntry {
   isClient: boolean;
 }
 
-/** Lists the caller may not be allowed to see resolve to empty rather than failing the page. */
-async function fetchVisible(path: string, tag: string): Promise<RawRecord[]> {
-  try {
-    return unwrapList(await apiFetch<unknown>(path, { tags: [tag] }));
-  } catch (error) {
-    if (error instanceof ApiError && error.status === FORBIDDEN) return [];
-    throw error;
-  }
+/** Lists the caller is not permitted to read resolve to empty without calling the API. */
+async function fetchPermitted(permission: Permission, path: string, tag: string): Promise<RawRecord[]> {
+  if (!(await can(permission))) return [];
+  return unwrapList(await apiFetch<unknown>(path, { tags: [tag] }));
 }
 
 async function liveMemberships(org: string): Promise<RawRecord[]> {
-  return fetchVisible(membersLive.path(org), `org:${org}:${membersLive.tag}`);
+  return fetchPermitted(Permissions.MEMBERS_VIEW, membersLive.path(org), `org:${org}:${membersLive.tag}`);
 }
 
 export async function listMembers(): Promise<Member[]> {
@@ -39,7 +35,7 @@ export async function listMembers(): Promise<Member[]> {
   if (!org) return [];
   const [memberships, invites] = await Promise.all([
     liveMemberships(org),
-    fetchVisible(invitationsLive.path(org), `org:${org}:${invitationsLive.tag}`),
+    fetchPermitted(Permissions.MEMBERS_INVITE, invitationsLive.path(org), `org:${org}:${invitationsLive.tag}`),
   ]);
   const team = memberships.filter((raw) => raw.membershipType !== CLIENT_MEMBERSHIP).map(membersLive.fromApi);
   const joined = new Set(team.map((m) => m.email.toLowerCase()));
@@ -82,7 +78,7 @@ export async function getMemberAccess(userId: string): Promise<MemberAccess | nu
       tags: [`org:${org}:team`],
     });
   } catch (error) {
-    if (error instanceof ApiError && error.status === FORBIDDEN) return null;
+    if (error instanceof ApiError) return null;
     throw error;
   }
 }

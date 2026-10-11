@@ -95,6 +95,26 @@ export type FeedbackThreadStatus = (typeof FeedbackThreadStatuses)[number];
 export const ApprovalStepRules = ['ANY', 'ALL', 'QUORUM'] as const;
 export type ApprovalStepRule = (typeof ApprovalStepRules)[number];
 
+/** What a workflow approves. Content publishing, tasks, projects, or a custom subject. */
+export const WorkflowSubjects = ['content', 'task', 'project', 'custom'] as const;
+export type WorkflowSubject = (typeof WorkflowSubjects)[number];
+
+/**
+ * How a stage finds its approvers. The builder picks one basis, then the
+ * matching list (people, roles, designations, and so on).
+ */
+export const ApproverBases = [
+  'PERSON',
+  'ROLE',
+  'DESIGNATION',
+  'DEPARTMENT',
+  'CLIENT',
+  'CLIENT_CONTACT',
+  'PROJECT',
+  'ASSIGNEE',
+] as const;
+export type ApproverBasis = (typeof ApproverBases)[number];
+
 /**
  * Who may approve a step / workflow stage.
  * - `approverIds`: concrete user ids
@@ -106,9 +126,15 @@ export type ApprovalStepRule = (typeof ApprovalStepRules)[number];
 export type ApproverSpec = {
   approverIds?: string[];
   roleIds?: string[];
+  /** Which list `targetIds` refers to. Absent means the legacy people + roles fields. */
+  basis?: ApproverBasis;
+  /** Ids for the chosen basis (user, role, designation, department, client, or project). */
+  targetIds?: string[];
   scopeType?: string;
   scopeResourceId?: string | null;
   quorumCount?: number;
+  /** People assigned to the subject, used when basis is ASSIGNEE. */
+  assigneeUserIds?: string[];
   resolvedUserIds?: string[];
 };
 

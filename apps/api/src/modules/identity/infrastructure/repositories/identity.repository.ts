@@ -71,6 +71,13 @@ export class IdentityRepository {
     });
   }
 
+  findOrganizationById(organizationId: string) {
+    return this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { id: true, name: true, slug: true },
+    });
+  }
+
   findMembershipById(membershipId: string) {
     return this.prisma.organizationMembership.findFirst({
       where: {

@@ -12,20 +12,27 @@ import '../domain/workflow.dart';
 List<String> _toggleId(List<String> list, String id) =>
     list.contains(id) ? list.where((entry) => entry != id).toList() : [...list, id];
 
+class WorkflowPickOption {
+  const WorkflowPickOption({required this.id, required this.label});
+
+  final String id;
+  final String label;
+}
+
 class _DraftStage {
   _DraftStage(this.id, WorkflowStage stage)
       : nameController = TextEditingController(text: stage.name),
         quorumController = TextEditingController(text: '${stage.quorumCount ?? 2}'),
         approvalRule = stage.approvalRule,
-        roleIds = List.of(stage.roleIds),
-        approverIds = List.of(stage.approverIds);
+        basis = stage.basis,
+        targetIds = List.of(stage.targetIds);
 
   final int id;
   final TextEditingController nameController;
   final TextEditingController quorumController;
   String approvalRule;
-  List<String> roleIds;
-  List<String> approverIds;
+  String basis;
+  List<String> targetIds;
 
   WorkflowStage toStage() => WorkflowStage(
         name: nameController.text.trim(),
@@ -33,9 +40,11 @@ class _DraftStage {
         quorumCount: approvalRule == ApprovalStepRules.quorum
             ? int.tryParse(quorumController.text.trim()) ?? 2
             : null,
-        roleIds: roleIds,
-        approverIds: approverIds,
-        assigneeRoleId: roleIds.isNotEmpty ? roleIds.first : null,
+        basis: basis,
+        targetIds: basis == ApproverBases.assignee ? const [] : targetIds,
+        roleIds: basis == ApproverBases.role ? targetIds : const [],
+        approverIds: basis == ApproverBases.person ? targetIds : const [],
+        assigneeRoleId: basis == ApproverBases.role && targetIds.isNotEmpty ? targetIds.first : null,
       );
 }
 
@@ -45,6 +54,11 @@ class WorkflowStagesEditor extends StatefulWidget {
     required this.initial,
     required this.roles,
     required this.members,
+    this.designations = const [],
+    this.departments = const [],
+    this.clients = const [],
+    this.clientContacts = const [],
+    this.projects = const [],
     required this.onChanged,
     super.key,
   });
@@ -52,6 +66,11 @@ class WorkflowStagesEditor extends StatefulWidget {
   final List<WorkflowStage> initial;
   final List<Role> roles;
   final List<Member> members;
+  final List<WorkflowPickOption> designations;
+  final List<WorkflowPickOption> departments;
+  final List<WorkflowPickOption> clients;
+  final List<WorkflowPickOption> clientContacts;
+  final List<WorkflowPickOption> projects;
   final ValueChanged<List<WorkflowStage>> onChanged;
 
   @override
@@ -115,6 +134,27 @@ class _WorkflowStagesEditorState extends State<WorkflowStagesEditor> {
   void _patch(int index, void Function(_DraftStage row) update) {
     setState(() => update(_rows[index]));
     _emit();
+  }
+
+  List<WorkflowPickOption> _optionsFor(String basis, List<Role> roles, List<Member> people) {
+    switch (basis) {
+      case ApproverBases.person:
+        return [for (final member in people) WorkflowPickOption(id: member.userId, label: member.name)];
+      case ApproverBases.role:
+        return [for (final role in roles) WorkflowPickOption(id: role.id, label: role.name)];
+      case ApproverBases.designation:
+        return widget.designations;
+      case ApproverBases.department:
+        return widget.departments;
+      case ApproverBases.client:
+        return widget.clients;
+      case ApproverBases.clientContact:
+        return widget.clientContacts;
+      case ApproverBases.project:
+        return widget.projects;
+      default:
+        return const [];
+    }
   }
 
   @override
@@ -239,57 +279,34 @@ class _WorkflowStagesEditorState extends State<WorkflowStagesEditor> {
                       keyboardType: TextInputType.number,
                     ),
                   ],
-                  SizedBox(height: tokens.md),
-                  Text(l10n.workflowStageRoles, style: text.labelLarge),
-                  SizedBox(height: tokens.xs),
-                  Text(l10n.workflowStageRolesHint, style: text.bodySmall?.copyWith(color: tokens.muted)),
                   SizedBox(height: tokens.sm),
-                  _CheckboxPanel(
-                    emptyLabel: l10n.workflowStageRolesEmpty,
-                    children: [
-                      for (final role in roleOptions)
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Text(
-                            role.isSystem ? '${role.name} · ${l10n.roleKind('system')}' : role.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          value: row.roleIds.contains(role.id),
-                          onChanged: (_) => _patch(
-                            i,
-                            (draft) => draft.roleIds = _toggleId(draft.roleIds, role.id),
-                          ),
-                        ),
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('basis-${row.id}-${row.basis}'),
+                    initialValue: row.basis,
+                    decoration: InputDecoration(labelText: l10n.workflowStageBasis, isDense: true),
+                    items: [
+                      for (final basis in ApproverBases.values)
+                        DropdownMenuItem(value: basis, child: Text(_basisLabel(l10n, basis))),
                     ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      _patch(i, (draft) {
+                        draft.basis = value;
+                        draft.targetIds = [];
+                      });
+                    },
                   ),
-                  SizedBox(height: tokens.md),
-                  Text(l10n.workflowStagePeople, style: text.labelLarge),
-                  SizedBox(height: tokens.xs),
-                  Text(l10n.workflowStagePeopleHint, style: text.bodySmall?.copyWith(color: tokens.muted)),
                   SizedBox(height: tokens.sm),
-                  _CheckboxPanel(
-                    emptyLabel: l10n.workflowStagePeopleEmpty,
-                    children: [
-                      for (final member in people)
-                        CheckboxListTile(
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          controlAffinity: ListTileControlAffinity.leading,
-                          title: Text(member.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          subtitle: member.title == null
-                              ? null
-                              : Text(member.title!, maxLines: 1, overflow: TextOverflow.ellipsis),
-                          value: row.approverIds.contains(member.userId),
-                          onChanged: (_) => _patch(
-                            i,
-                            (draft) => draft.approverIds = _toggleId(draft.approverIds, member.userId),
-                          ),
-                        ),
-                    ],
-                  ),
+                  if (row.basis == ApproverBases.assignee)
+                    Text(l10n.workflowBasisAssigneeHint, style: text.bodySmall?.copyWith(color: tokens.muted))
+                  else
+                    _SearchableChecks(
+                      options: _optionsFor(row.basis, roleOptions, people),
+                      selected: row.targetIds,
+                      emptyLabel: l10n.workflowStagePickEmpty,
+                      searchLabel: l10n.workflowStageSearch,
+                      onToggle: (id) => _patch(i, (draft) => draft.targetIds = _toggleId(draft.targetIds, id)),
+                    ),
                 ],
               ),
             ),
@@ -312,39 +329,101 @@ class _WorkflowStagesEditorState extends State<WorkflowStagesEditor> {
   }
 }
 
+String _basisLabel(AppLocalizations l10n, String basis) => switch (basis) {
+      ApproverBases.person => l10n.workflowBasisPerson,
+      ApproverBases.designation => l10n.workflowBasisDesignation,
+      ApproverBases.department => l10n.workflowBasisDepartment,
+      ApproverBases.client => l10n.workflowBasisClient,
+      ApproverBases.clientContact => l10n.workflowBasisClientContact,
+      ApproverBases.project => l10n.workflowBasisProject,
+      ApproverBases.assignee => l10n.workflowBasisAssignee,
+      _ => l10n.workflowBasisRole,
+    };
+
 String _approvalRuleLabel(AppLocalizations l10n, String rule) => switch (rule) {
       ApprovalStepRules.all => l10n.workflowStageRuleAll,
       ApprovalStepRules.quorum => l10n.workflowStageRuleQuorum,
       _ => l10n.workflowStageRuleAny,
     };
 
-class _CheckboxPanel extends StatelessWidget {
-  const _CheckboxPanel({required this.emptyLabel, required this.children});
+class _SearchableChecks extends StatefulWidget {
+  const _SearchableChecks({
+    required this.options,
+    required this.selected,
+    required this.emptyLabel,
+    required this.searchLabel,
+    required this.onToggle,
+  });
 
+  final List<WorkflowPickOption> options;
+  final List<String> selected;
   final String emptyLabel;
-  final List<Widget> children;
+  final String searchLabel;
+  final ValueChanged<String> onToggle;
+
+  @override
+  State<_SearchableChecks> createState() => _SearchableChecksState();
+}
+
+class _SearchableChecksState extends State<_SearchableChecks> {
+  final _query = TextEditingController();
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final text = Theme.of(context).textTheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: tokens.border),
-        borderRadius: BorderRadius.circular(tokens.radius),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 160),
-        child: children.isEmpty
-            ? Padding(
-                padding: EdgeInsets.all(tokens.md),
-                child: Text(emptyLabel, style: text.bodySmall?.copyWith(color: tokens.muted)),
-              )
-            : SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: tokens.sm),
-                child: Column(children: children),
-              ),
-      ),
+    final needle = _query.text.trim().toLowerCase();
+    final shown = needle.isEmpty
+        ? widget.options
+        : widget.options.where((option) => option.label.toLowerCase().contains(needle)).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _query,
+          decoration: InputDecoration(
+            isDense: true,
+            prefixIcon: const Icon(Icons.search, size: 18),
+            hintText: widget.searchLabel,
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        SizedBox(height: tokens.xs),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: tokens.border),
+            borderRadius: BorderRadius.circular(tokens.radius),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 140),
+            child: shown.isEmpty
+                ? Padding(
+                    padding: EdgeInsets.all(tokens.sm),
+                    child: Text(widget.emptyLabel, style: text.bodySmall?.copyWith(color: tokens.muted)),
+                  )
+                : ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final option in shown)
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.symmetric(horizontal: tokens.sm),
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(option.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          value: widget.selected.contains(option.id),
+                          onChanged: (_) => widget.onToggle(option.id),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }

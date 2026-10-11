@@ -20,6 +20,7 @@ import {
   problem,
   unprocessable,
 } from '../../../../shared/errors/problem-details.exception';
+import { ContentApprovalOrchestratorService } from './content-approval-orchestrator.service';
 import { OutboxService } from '../../../../shared/events/outbox.service';
 import { contentMatchesScope } from '../../../../shared/tenant/scope-filters';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
@@ -56,6 +57,7 @@ export class SocialService {
     private readonly audit: AuditService,
     private readonly media: MediaService,
     private readonly config: ConfigService<AppConfig, true>,
+    private readonly contentApproval: ContentApprovalOrchestratorService,
   ) {}
 
   async listContent(
@@ -335,7 +337,38 @@ export class SocialService {
     if (current.status !== REVIEWABLE_STATUS) {
       throw unprocessable('Content is not awaiting review');
     }
+    const mayAct = await this.contentApproval.canUserApprove(
+      organizationId,
+      actorId,
+      contentId,
+    );
+    if (!mayAct) {
+      throw problem(
+        HttpStatus.FORBIDDEN,
+        'Forbidden',
+        ErrorCodes.FORBIDDEN,
+        'You are not an approver for the current workflow step',
+      );
+    }
+    const workflowResult = await this.contentApproval.actOnReview(
+      organizationId,
+      actorId,
+      contentId,
+      toStatus,
+    );
+    if (
+      workflowResult &&
+      toStatus === 'APPROVED' &&
+      workflowResult.requestStatus === 'PENDING'
+    ) {
+      return this.toDto(organizationId, current);
+    }
     return this.transitionContent(organizationId, actorId, contentId, toStatus);
+  }
+
+  async contentApprovalSummary(organizationId: string, contentId: string) {
+    await this.findOrThrow(organizationId, contentId);
+    return this.contentApproval.summarize(organizationId, contentId);
   }
 
   async transitionContent(
@@ -412,6 +445,25 @@ export class SocialService {
         after: { status: toStatus },
       },
     );
+    if (toStatus === REVIEWABLE_STATUS && before.status !== REVIEWABLE_STATUS) {
+      const versionId = await this.contentApproval.startForContent(
+        organizationId,
+        actorId,
+        {
+          id: contentId,
+          clientId: before.clientId,
+          createdById: before.createdById,
+          version: after.version,
+        },
+      );
+      if (versionId) {
+        await this.repository.setWorkflowVersion(
+          organizationId,
+          contentId,
+          versionId,
+        );
+      }
+    }
     return this.toDto(organizationId, after);
   }
 

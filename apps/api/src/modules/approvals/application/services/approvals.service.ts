@@ -14,6 +14,7 @@ import {
   approverIdsOf,
   evaluateApprovalAction,
   parseApproverSpec,
+  type EvaluatedRequest,
 } from '../domain/approval-evaluation';
 import { SubjectScopeService } from '../../../../shared/tenant/subject-scope.service';
 import { ApproverResolutionService } from './approver-resolution.service';
@@ -80,6 +81,9 @@ export class ApprovalsService {
         const resolved = await this.resolver.resolve(organizationId, {
           approverIds: step.approverIds ?? [],
           roleIds: step.roleIds ?? [],
+          basis: step.basis,
+          targetIds: step.targetIds,
+          assigneeUserIds: step.assigneeUserIds,
           scopeType: step.scopeType,
           scopeResourceId: step.scopeResourceId,
           quorumCount: step.quorumCount,
@@ -91,11 +95,13 @@ export class ApprovalsService {
         };
       }),
     );
+    const dueAt = input.dueAt ? new Date(input.dueAt) : null;
     const request = await this.repository.create(organizationId, {
       subjectType: input.subjectType,
       subjectId: input.subjectId,
       subjectVersion: input.subjectVersion,
       requestedById: actorId,
+      dueAt,
       steps,
     });
     await this.notifyPendingStep(organizationId, actorId, request);
@@ -167,6 +173,72 @@ export class ApprovalsService {
       metadata: { action: input.action, stepId: transition.stepId },
     });
     return this.get(organizationId, requestId);
+  }
+
+  findPendingForSubject(
+    organizationId: string,
+    subjectType: string,
+    subjectId: string,
+  ) {
+    return this.repository.findPendingBySubject(
+      organizationId,
+      subjectType,
+      subjectId,
+    );
+  }
+
+  async cancelPendingForSubject(
+    organizationId: string,
+    subjectType: string,
+    subjectId: string,
+  ): Promise<void> {
+    const row = await this.repository.findPendingBySubject(
+      organizationId,
+      subjectType,
+      subjectId,
+    );
+    if (row) await this.repository.cancelRequest(organizationId, row.id);
+  }
+
+  canActorApproveStep(request: EvaluatedRequest, actorId: string): boolean {
+    const steps = [...request.steps].sort((a, b) => a.order - b.order);
+    const step = steps.find((row) => row.status === PENDING);
+    if (!step) return false;
+    const pool = approverIdsOf(step);
+    return pool.length === 0 || pool.includes(actorId);
+  }
+
+  summarizePending(request: {
+    id: string;
+    status: string;
+    dueAt: Date | null;
+    steps: Array<{
+      id: string;
+      order: number;
+      name: string;
+      status: string;
+      rule: string;
+      approverSpec: unknown;
+    }>;
+  }) {
+    const steps = [...request.steps].sort((a, b) => a.order - b.order);
+    const current = steps.find((row) => row.status === PENDING);
+    if (!current) return null;
+    const spec = parseApproverSpec(current.approverSpec);
+    return {
+      requestId: request.id,
+      status: request.status,
+      dueAt: request.dueAt,
+      currentStep: {
+        order: current.order,
+        name: current.name,
+        rule: current.rule,
+        basis: spec.basis,
+        approverUserIds: approverIdsOf(current),
+        quorumCount: spec.quorumCount,
+      },
+      totalSteps: steps.length,
+    };
   }
 
   private async notifyPendingStep(

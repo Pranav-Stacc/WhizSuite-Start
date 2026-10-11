@@ -35,7 +35,7 @@ export async function fetchSocialAccounts(): Promise<SocialAccount[]> {
   const org = (await getSession())?.orgId ?? '';
   if (!org) return [];
   const rows = await apiFetch<ApiSocialAccount[]>(orgPath(org, 'social-accounts'), { tags: [`org:${org}:${TAG}`] });
-  return rows.flatMap((row) => {
+  return (Array.isArray(rows) ? rows : []).flatMap((row) => {
     const platform = platformOf(row.platform);
     if (!platform) return [];
     return [{

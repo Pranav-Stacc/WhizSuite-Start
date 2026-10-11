@@ -93,12 +93,19 @@ function setup() {
   const audit = { record: jest.fn() };
   const media = { resolveForEmbedding: jest.fn().mockResolvedValue(new Map()) };
   const config = { get: (key: keyof AppConfig) => configValues[key] };
+  const contentApproval = {
+    startForContent: jest.fn().mockResolvedValue(null),
+    actOnReview: jest.fn().mockResolvedValue(null),
+    canUserApprove: jest.fn().mockResolvedValue(true),
+    summarize: jest.fn().mockResolvedValue(null),
+  };
   const service = new SocialService(
     repository as unknown as SocialRepository,
     outbox as unknown as OutboxService,
     audit as unknown as AuditService,
     media as unknown as MediaService,
     config as unknown as ConfigService<AppConfig, true>,
+    contentApproval as never,
   );
   return { service, repository, outbox, audit, media };
 }

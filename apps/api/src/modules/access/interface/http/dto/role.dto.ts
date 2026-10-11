@@ -7,6 +7,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -26,6 +27,22 @@ import {
 } from '@agency-os/contracts';
 
 const ROLE_NAME_MIN_LENGTH = 2;
+const SCOPE_RESOURCE_IDS_MAX = 100;
+
+export class PermissionScopeResourceDto {
+  @ApiProperty({ enum: ASSIGNABLE_SCOPE_TYPE_KEYS })
+  @IsIn(ASSIGNABLE_SCOPE_TYPE_KEYS)
+  scopeType!: AssignableScopeType;
+
+  @ApiProperty({
+    type: [String],
+    description: 'Empty means all records of this scope type in the organisation.',
+  })
+  @IsArray()
+  @ArrayMaxSize(SCOPE_RESOURCE_IDS_MAX)
+  @IsUUID('4', { each: true })
+  resourceIds: string[] = [];
+}
 
 export class PermissionScopeDto {
   @ApiProperty({ enum: ALL_PERMISSIONS })
@@ -38,6 +55,14 @@ export class PermissionScopeDto {
   @ArrayMaxSize(ASSIGNABLE_SCOPE_TYPE_KEYS.length)
   @IsIn(ASSIGNABLE_SCOPE_TYPE_KEYS, { each: true })
   scopeTypes!: AssignableScopeType[];
+
+  @ApiPropertyOptional({ type: [PermissionScopeResourceDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(ASSIGNABLE_SCOPE_TYPE_KEYS.length)
+  @ValidateNested({ each: true })
+  @Type(() => PermissionScopeResourceDto)
+  scopeResources?: PermissionScopeResourceDto[];
 }
 
 export class CreateRoleDto {

@@ -89,6 +89,11 @@ describe('Agency OS API (e2e)', () => {
     accessToken = res.body.accessToken;
     refreshToken = res.body.refreshToken;
     expect(res.body.organizationId).toBe(organizationId);
+    expect(res.body.organization).toMatchObject({
+      id: organizationId,
+      name: expect.any(String),
+      slug: expect.any(String),
+    });
   });
 
   it('POST /api/v1/auth/refresh', async () => {

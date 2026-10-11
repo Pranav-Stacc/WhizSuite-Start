@@ -1,4 +1,8 @@
-import { ScopeTypes } from '@agency-os/contracts';
+import {
+  readPermissionScopeResources,
+  readPermissionScopeTypes,
+  ScopeTypes,
+} from '@agency-os/contracts';
 import type { PrismaService } from '../../../../shared/database/prisma.service';
 
 export interface ResolvedDataScope {
@@ -47,6 +51,84 @@ export function scopesApplicableToPermissions(
     relevant.flatMap((permission) => permission.scopeTypes ?? []),
   );
   return scopes.filter((scope) => allowed.has(scope.scopeType));
+}
+
+function dedupeScopeRows(scopes: readonly ScopeRow[]): ScopeRow[] {
+  const seen = new Set<string>();
+  const out: ScopeRow[] = [];
+  for (const scope of scopes) {
+    const key = `${scope.scopeType}:${scope.resourceId ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(scope);
+  }
+  return out;
+}
+
+export interface RolePermissionScopeSource {
+  key: string;
+  conditions: unknown;
+}
+
+/**
+ * Merges assignment scopes with resource ids stored on role permissions (`conditions.resources`).
+ * Role-level client/project bindings apply even when the assignment only has an org-wide scope row.
+ */
+export function compileDataScopeRows(
+  assignmentScopes: readonly ScopeRow[],
+  permissions: readonly RolePermissionScopeSource[],
+  prefixes?: readonly string[],
+): ScopeRow[] {
+  const relevant = prefixes
+    ? permissions.filter((permission) =>
+        prefixes.some(
+          (prefix) =>
+            permission.key === prefix ||
+            permission.key.startsWith(`${prefix}.`),
+        ),
+      )
+    : [...permissions];
+  if (relevant.length === 0) return [];
+
+  const permissionRules: PermissionScopeRule[] = relevant.map((permission) => ({
+    key: permission.key,
+    scopeTypes: readPermissionScopeTypes(permission.conditions),
+  }));
+
+  const resourceRows: ScopeRow[] = [];
+  for (const permission of relevant) {
+    const resources = readPermissionScopeResources(permission.conditions);
+    for (const [scopeType, resourceIds] of Object.entries(resources)) {
+      for (const resourceId of resourceIds ?? []) {
+        resourceRows.push({ scopeType, resourceId });
+      }
+    }
+  }
+
+  const effectiveAssignmentScopes =
+    assignmentScopes.length === 0
+      ? [{ scopeType: ScopeTypes.ORGANIZATION, resourceId: null }]
+      : [...assignmentScopes];
+
+  const fromAssignment = scopesApplicableToPermissions(
+    effectiveAssignmentScopes,
+    permissionRules,
+    prefixes,
+  );
+  const fromRoleResources = scopesApplicableToPermissions(
+    dedupeScopeRows(resourceRows),
+    permissionRules,
+    prefixes,
+  );
+
+  if (fromRoleResources.length > 0) {
+    const assignmentNarrowing = fromAssignment.filter(
+      (scope) => scope.scopeType !== ScopeTypes.ORGANIZATION,
+    );
+    return dedupeScopeRows([...fromRoleResources, ...assignmentNarrowing]);
+  }
+
+  return fromAssignment;
 }
 
 async function membershipIdsInDepartment(

@@ -15,7 +15,10 @@ import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { StatusBadge } from '@/shared/ui/status';
-import { listClients } from '@/features/clients/services/clients.service';
+import {
+  listClientsForContent,
+  stubClientFromPost,
+} from '@/features/content/services/content-clients.service';
 import { addCommentAction, deleteContentAction, rescheduleContentAction } from '@/features/content/actions/content.actions';
 import { ActivityTimeline } from '@/features/content/components/activity-timeline';
 import { toComposerAssets, toComposerClients, toComposerPost } from '@/features/content/components/composer-mappers';
@@ -35,8 +38,12 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const post = await getPost((await params).id);
-  return { title: post?.title ?? t('content.notFound') };
+  try {
+    const post = await getPost((await params).id);
+    return { title: post?.title ?? t('content.notFound') };
+  } catch {
+    return { title: t('content.notFound') };
+  }
 }
 
 export default async function ContentDetailPage({ params, searchParams }: PageProps) {
@@ -46,13 +53,23 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
   if (!post) notFound();
 
   const granted = await getPermissions();
+  const canReadThread =
+    granted.has(Permissions.FEEDBACK_VIEW) || granted.has(Permissions.CONTENT_VIEW);
+  const canComment =
+    granted.has(Permissions.FEEDBACK_CREATE) || granted.has(Permissions.CONTENT_EDIT);
   const [events, clients, members, assets] = await Promise.all([
-    eventsFor(post.id),
-    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
-    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()),
-    loadIf(Permissions.FILES_VIEW, listAssets, []),
+    canReadThread ? eventsFor(post.id).catch(() => []) : Promise.resolve([]),
+    listClientsForContent([post]).catch(() => []),
+    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()).catch(
+      () => new Map<string, Member>(),
+    ),
+    loadIf(Permissions.FILES_VIEW, listAssets, []).catch(() => []),
   ]);
-  const client = clients.find((c) => c.id === post.clientId);
+  const client =
+    clients.find((c) => c.id === post.clientId) ?? stubClientFromPost(post.clientId);
+  const composerClients = toComposerClients(
+    clients.some((c) => c.id === post.clientId) ? clients : [...clients, client],
+  );
   const author = members.get(post.authorId);
   const approver = granted.has(Permissions.APPROVALS_APPROVE);
   const editable = isEditable(post.status) && granted.has(Permissions.CONTENT_EDIT);
@@ -89,7 +106,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
             {editable ? (
               <ContentComposer
                 key={`${post.id}-${post.version}`}
-                clients={toComposerClients(clients)}
+                clients={composerClients}
                 assets={toComposerAssets(assets)}
                 post={toComposerPost(post)}
                 trigger={
@@ -191,7 +208,14 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
             <CardHeader title={t('content.activity.title')} description={t('content.activity.desc')} />
             <CardBody className="space-y-5">
               <ActivityTimeline events={events} />
-              <InlineMessageForm action={addCommentAction.bind(null, post.id)} label={t('content.comment.label')} placeholder={t('content.comment.placeholder')} submitLabel={t('content.comment.send')} />
+              {canComment ? (
+                <InlineMessageForm
+                  action={addCommentAction.bind(null, post.id)}
+                  label={t('content.comment.label')}
+                  placeholder={t('content.comment.placeholder')}
+                  submitLabel={t('content.comment.send')}
+                />
+              ) : null}
             </CardBody>
           </Card>
         </div>

@@ -26,10 +26,15 @@ function toWorkflowFields(input: CreateWorkflowInput) {
         quorumCount: stage.quorumCount,
         approverIds: stage.approverIds ?? [],
         roleIds,
+        basis: stage.basis,
+        targetIds: stage.targetIds ?? [],
         scopeType: stage.scopeType,
         scopeResourceId: stage.scopeResourceId ?? null,
       };
     }),
+    entityType: input.entityType,
+    scopeType: input.scopeId ? 'CLIENT' : input.scopeType,
+    scopeId: input.scopeId ?? null,
     slaHours: input.slaHours,
     requiresClientApproval: input.requiresClientApproval,
   };

@@ -176,6 +176,17 @@ export class SocialRepository {
     });
   }
 
+  setWorkflowVersion(
+    organizationId: string,
+    contentId: string,
+    workflowVersionId: string,
+  ) {
+    return this.prisma.contentItem.updateMany({
+      where: { id: contentId, organizationId, deletedAt: null },
+      data: { workflowVersionId },
+    });
+  }
+
   /** Applies changes only if the row is still at `expectedVersion`; returns the number of rows updated (0 or 1). */
   async updateContentIfVersion(
     tx: SocialTx,

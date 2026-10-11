@@ -57,16 +57,18 @@ export function useAssetUpload() {
     queue: UploadItem[],
     clientId: string,
     options?: { folderId?: string; projectId?: string },
-  ): Promise<{ failed: number; assetIds: string[] }> => {
+  ): Promise<{ failed: number; assetIds: string[]; uploaded: { assetId: string; name: string; mimeType: string }[] }> => {
     setBusy(true);
     let failed = 0;
     const assetIds: string[] = [];
+    const uploaded: { assetId: string; name: string; mimeType: string }[] = [];
     for (const item of queue) {
       if (item.status === 'done') continue;
       patch(item.key, { status: 'uploading', progress: 0, error: undefined });
       try {
         const assetId = await uploadOne(item.file, clientId, (progress) => patch(item.key, { progress }), options);
         assetIds.push(assetId);
+        uploaded.push({ assetId, name: item.file.name, mimeType: item.file.type || FALLBACK_MIME_TYPE });
         patch(item.key, { status: 'done', progress: 1 });
       } catch (error) {
         failed += 1;
@@ -76,7 +78,7 @@ export function useAssetUpload() {
     setBusy(false);
     if (failed === 0) toast.success(t('media.upload.allDone', { count: queue.length }));
     else toast.error(t('media.upload.someFailed', { count: failed }));
-    return { failed, assetIds };
+    return { failed, assetIds, uploaded };
   };
 
   return {

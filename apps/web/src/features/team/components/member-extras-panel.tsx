@@ -97,6 +97,7 @@ export function MemberExtrasPanel({ memberId, overrides, roleGrantedKeys, catalo
   return (
     <div className="space-y-3 border-t border-border-soft pt-4">
       <p className="text-xs text-muted">{t('team.detail.extras.hint')}</p>
+      <p className="text-[11px] text-muted">{t('team.detail.permissions.scopeHint')}</p>
       <div className="max-h-[36vh] space-y-3 overflow-y-auto rounded-xl border border-border-soft p-3">
         {grouped.map(([category, perms]) => (
           <section key={category}>

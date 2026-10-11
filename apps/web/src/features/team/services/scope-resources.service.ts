@@ -1,7 +1,7 @@
 import 'server-only';
 import { Permissions } from '@agency-os/contracts';
 import { apiFetch } from '@/shared/api/api-client';
-import { loadIf } from '@/shared/auth/permissions';
+import { loadIf, loadIfAny } from '@/shared/auth/permissions';
 import { getSession } from '@/shared/auth/session';
 import { isLiveMode } from '@/shared/config/env';
 import { unwrapList } from '@/shared/api/live/utils';
@@ -29,7 +29,7 @@ async function listTeamsLive(): Promise<TeamRow[]> {
 export async function loadScopeResources(): Promise<ScopeResourceOptions> {
   const [departments, clients, projects, teams] = await Promise.all([
     loadIf(Permissions.ORG_VIEW, listDepartments, []),
-    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIfAny([Permissions.CLIENTS_VIEW, Permissions.CONTENT_VIEW], listClients, []),
     loadIf(Permissions.PROJECTS_VIEW, listProjects, []),
     isLiveMode
       ? loadIf(Permissions.ORG_VIEW, listTeamsLive, [])

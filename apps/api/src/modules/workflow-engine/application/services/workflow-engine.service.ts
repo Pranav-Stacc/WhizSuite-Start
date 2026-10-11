@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { ApprovalStepRule } from '@agency-os/contracts';
+import {
+  ApproverBases,
+  type ApprovalStepRule,
+  type ApproverBasis,
+} from '@agency-os/contracts';
 import { notFound } from '../../../../shared/errors/problem-details.exception';
 import {
   WorkflowEngineRepository,
@@ -15,6 +19,7 @@ import type {
 const ENTITY_TYPE = 'workflowDefinition';
 const DEFAULT_RULE: ApprovalStepRule = 'ANY';
 
+
 type DefinitionRow = NonNullable<
   Awaited<ReturnType<WorkflowEngineRepository['findDefinition']>>
 >;
@@ -26,6 +31,8 @@ export type WorkflowStageView = {
   quorumCount?: number;
   approverIds: string[];
   roleIds: string[];
+  basis: ApproverBasis;
+  targetIds: string[];
   scopeType?: string;
   scopeResourceId?: string | null;
 };
@@ -36,9 +43,15 @@ type StageGuards = {
   quorumCount?: number;
   approverIds?: string[];
   roleIds?: string[];
+  basis?: string;
+  targetIds?: string[];
   scopeType?: string;
   scopeResourceId?: string | null;
 };
+
+function asBasis(value: unknown): ApproverBasis | undefined {
+  return ApproverBases.find((basis) => basis === value);
+}
 
 const stateKey = (name: string, idx: number) =>
   `${
@@ -63,14 +76,27 @@ function normalizeStage(stage: WorkflowStageDto): WorkflowStageView {
     ...(stage.assigneeRoleId ? [stage.assigneeRoleId] : []),
   ]);
   const approvalRule = stage.approvalRule ?? DEFAULT_RULE;
+  const basis =
+    asBasis(stage.basis) ??
+    (roleIds.length > 0 && asIds(stage.approverIds).length === 0
+      ? 'ROLE'
+      : 'PERSON');
+  const targetIds =
+    asIds(stage.targetIds).length > 0
+      ? asIds(stage.targetIds)
+      : basis === 'ROLE'
+        ? roleIds
+        : asIds(stage.approverIds);
   return {
     name: stage.name,
-    assigneeRoleId: stage.assigneeRoleId ?? roleIds[0] ?? null,
+    assigneeRoleId: basis === 'ROLE' ? (targetIds[0] ?? null) : null,
     approvalRule,
     quorumCount:
       approvalRule === 'QUORUM' ? (stage.quorumCount ?? 1) : stage.quorumCount,
-    approverIds: asIds(stage.approverIds),
-    roleIds,
+    approverIds: basis === 'PERSON' ? targetIds : [],
+    roleIds: basis === 'ROLE' ? targetIds : [],
+    basis,
+    targetIds,
     scopeType: stage.scopeType,
     scopeResourceId: stage.scopeResourceId ?? null,
   };
@@ -83,6 +109,8 @@ function stageGuards(stage: WorkflowStageView): StageGuards {
     quorumCount: stage.quorumCount,
     approverIds: stage.approverIds,
     roleIds: stage.roleIds,
+    basis: stage.basis,
+    targetIds: stage.targetIds,
     scopeType: stage.scopeType,
     scopeResourceId: stage.scopeResourceId ?? null,
   };
@@ -95,6 +123,8 @@ function readStageGuards(guards: unknown): Omit<WorkflowStageView, 'name'> {
       approvalRule: DEFAULT_RULE,
       approverIds: [],
       roleIds: [],
+      basis: 'PERSON',
+      targetIds: [],
       scopeResourceId: null,
     };
   }
@@ -111,18 +141,26 @@ function readStageGuards(guards: unknown): Omit<WorkflowStageView, 'name'> {
     raw.approvalRule === 'ANY'
       ? raw.approvalRule
       : DEFAULT_RULE;
+  const approverIds = asIds(raw.approverIds);
+  const basis =
+    asBasis(raw.basis) ?? (roleIds.length > 0 ? 'ROLE' : 'PERSON');
+  const targetIds =
+    asIds(raw.targetIds).length > 0
+      ? asIds(raw.targetIds)
+      : basis === 'ROLE'
+        ? roleIds
+        : approverIds;
   return {
-    assigneeRoleId:
-      typeof raw.assigneeRoleId === 'string' && raw.assigneeRoleId
-        ? raw.assigneeRoleId
-        : (roleIds[0] ?? null),
+    assigneeRoleId: basis === 'ROLE' ? (targetIds[0] ?? null) : null,
     approvalRule,
     quorumCount:
       typeof raw.quorumCount === 'number' && Number.isFinite(raw.quorumCount)
         ? Math.max(1, Math.floor(raw.quorumCount))
         : undefined,
-    approverIds: asIds(raw.approverIds),
-    roleIds,
+    approverIds: basis === 'PERSON' ? targetIds : [],
+    roleIds: basis === 'ROLE' ? targetIds : [],
+    basis,
+    targetIds,
     scopeType: typeof raw.scopeType === 'string' ? raw.scopeType : undefined,
     scopeResourceId:
       typeof raw.scopeResourceId === 'string' ? raw.scopeResourceId : null,
@@ -165,6 +203,8 @@ function toDto(row: DefinitionRow) {
     id: row.id,
     name: row.name,
     entityType: row.entityType,
+    scopeType: row.scopeType,
+    scopeId: row.scopeId,
     slaHours: row.slaHours,
     requiresClientApproval: row.requiresClientApproval,
     active: row.active,
@@ -188,6 +228,8 @@ function sameStage(a: WorkflowStageView, b: WorkflowStageDto): boolean {
     (a.quorumCount ?? null) === (next.quorumCount ?? null) &&
     a.approverIds.join() === next.approverIds.join() &&
     a.roleIds.join() === next.roleIds.join() &&
+    a.basis === next.basis &&
+    a.targetIds.join() === next.targetIds.join() &&
     (a.scopeType ?? null) === (next.scopeType ?? null) &&
     (a.scopeResourceId ?? null) === (next.scopeResourceId ?? null)
   );
@@ -205,6 +247,27 @@ export class WorkflowEngineService {
 
   async list(organizationId: string) {
     return (await this.repository.listDefinitions(organizationId)).map(toDto);
+  }
+
+  /** Best-matching active definition for a subject (client-specific beats org-wide). */
+  async pickDefinition(
+    organizationId: string,
+    entityType: string,
+    clientId?: string,
+  ) {
+    const rows = (await this.list(organizationId)).filter(
+      (row) => row.active && row.entityType === entityType,
+    );
+    const clientMatch = clientId
+      ? rows.find(
+          (row) => row.scopeType === 'CLIENT' && row.scopeId === clientId,
+        )
+      : undefined;
+    return (
+      clientMatch ??
+      rows.find((row) => row.scopeType === 'ORGANIZATION') ??
+      rows[0]
+    );
   }
 
   async get(organizationId: string, id: string) {
@@ -230,6 +293,8 @@ export class WorkflowEngineService {
     const definition = await this.repository.createDefinition(organizationId, {
       entityType: input.entityType,
       name: input.name,
+      scopeType: input.scopeId ? 'CLIENT' : (input.scopeType ?? 'ORGANIZATION'),
+      scopeId: input.scopeId ?? null,
       slaHours: input.slaHours,
       requiresClientApproval: input.requiresClientApproval,
       active: input.active,

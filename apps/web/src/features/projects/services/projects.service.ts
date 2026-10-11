@@ -1,4 +1,6 @@
 import 'server-only';
+import { Permissions } from '@agency-os/contracts';
+import { can } from '@/shared/auth/permissions';
 import { projectsRepository, type Project } from '../data/projects.repository';
 import { listTasks } from '@/features/tasks/services/tasks.service';
 
@@ -17,7 +19,10 @@ export async function getProject(id: string): Promise<Project | undefined> {
 }
 
 export async function listProjectsWithProgress(): Promise<ProjectWithProgress[]> {
-  const [projects, tasks] = await Promise.all([listProjects(), listTasks()]);
+  const [projects, tasks] = await Promise.all([
+    listProjects(),
+    (await can(Permissions.TASKS_VIEW)) ? listTasks() : Promise.resolve([]),
+  ]);
   const counts = new Map<string, { total: number; done: number }>();
   for (const task of tasks) {
     if (!task.projectId) continue;

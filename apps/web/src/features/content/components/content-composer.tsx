@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Controller, useForm, useWatch, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +14,7 @@ import { Button } from '@/shared/ui/button';
 import { Field, Input, Select, Textarea } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
 import { PLATFORM_META, PlatformBadge } from '@/shared/ui/platform';
-import { createContentAction, deleteContentAction, updateContentAction } from '../actions/content.actions';
+import { createContentAction, deleteContentAction, listComposerLibraryAction, updateContentAction } from '../actions/content.actions';
 import { ComposerUpload } from './composer-upload';
 import { SlidePicker, type ComposerAsset, type ComposerSlide } from './slide-picker';
 
@@ -63,7 +63,7 @@ interface ContentFormValues {
 
 interface ContentComposerProps {
   clients: ComposerClient[];
-  /** Library assets available as slides (filtered to the selected client in the picker). */
+  /** Org-wide library assets the member may attach as slides (API permission-scoped). */
   assets?: ComposerAsset[];
   post?: ComposerPost;
   trigger?: ReactNode;
@@ -115,6 +115,12 @@ export function ContentComposer({
   const open = controlledOpen ?? internalOpen;
   const [pending, startTransition] = useTransition();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [library, setLibrary] = useState<ComposerAsset[]>(assets);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+
+  useEffect(() => {
+    setLibrary(assets);
+  }, [assets]);
 
   const initialClient = clients.find((c) => c.id === (post?.clientId ?? defaultClientId)) ?? clients[0];
   const defaults: ContentFormValues = {
@@ -135,12 +141,29 @@ export function ContentComposer({
   const [clientId, platforms, caption, hashtags] = useWatch({ control: form.control, name: ['clientId', 'platforms', 'caption', 'hashtags'] });
   const client = clients.find((c) => c.id === clientId);
   const tightestLimit = platforms.length ? Math.min(...platforms.map((p) => PLATFORM_META[p].limit)) : undefined;
-  const libraryAssets = [...assets].sort((a, b) => {
+  const clientNames = useMemo(() => Object.fromEntries(clients.map((c) => [c.id, c.name])), [clients]);
+  const mergeLibrary = useCallback((incoming: ComposerAsset[]) => {
+    setLibrary((current) => {
+      const byId = new Map(current.map((a) => [a.assetId, a]));
+      for (const asset of incoming) byId.set(asset.assetId, asset);
+      return [...byId.values()];
+    });
+  }, []);
+  const libraryAssets = [...library].sort((a, b) => {
     if (a.clientId === clientId && b.clientId !== clientId) return -1;
     if (b.clientId === clientId && a.clientId !== clientId) return 1;
     return a.name.localeCompare(b.name);
   });
   const knownSlides = [...(post?.slides ?? []), ...libraryAssets];
+  const refreshLibrary = useCallback(() => {
+    if (!uploadEnabled) return;
+    setLibraryLoading(true);
+    void listComposerLibraryAction()
+      .then((result) => {
+        if (result.ok && result.data) mergeLibrary(result.data);
+      })
+      .finally(() => setLibraryLoading(false));
+  }, [mergeLibrary, uploadEnabled]);
 
   useEffect(() => {
     if (defaultOpen) setInternalOpen(true);
@@ -245,11 +268,24 @@ export function ContentComposer({
             name="mediaAssetIds"
             render={({ field }) => (
               <div className="space-y-3">
-                <SlidePicker value={field.value} onChange={field.onChange} known={knownSlides} library={libraryAssets} />
+                <SlidePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  postClientId={clientId}
+                  clientNames={clientNames}
+                  known={knownSlides}
+                  library={libraryAssets}
+                  libraryLoading={libraryLoading}
+                  onBrowseOpen={refreshLibrary}
+                />
                 <ComposerUpload
                   clientId={clientId}
                   enabled={uploadEnabled}
-                  onUploaded={(ids) => field.onChange([...field.value, ...ids.filter((id) => !field.value.includes(id))])}
+                  onUploaded={(uploaded) => {
+                    mergeLibrary(uploaded);
+                    const ids = uploaded.map((a) => a.assetId);
+                    field.onChange([...field.value, ...ids.filter((id) => !field.value.includes(id))]);
+                  }}
                 />
               </div>
             )}
@@ -268,7 +304,6 @@ export function ContentComposer({
                   onChange: (e) => {
                     const next = clients.find((c) => c.id === e.target.value);
                     if (next) form.setValue('platforms', next.platforms.slice(0, 1));
-                    form.setValue('mediaAssetIds', []);
                   },
                 })}
               >

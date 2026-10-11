@@ -5,12 +5,23 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/widgets/forms.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../clients/application/clients_controller.dart';
+import '../../departments/application/departments_controller.dart';
+import '../../projects/application/projects_controller.dart';
 import '../../roles/application/roles_controller.dart';
 import '../../team/application/team_controller.dart';
 import '../../team/domain/member.dart';
 import '../application/workflows_controller.dart';
 import '../domain/workflow.dart';
 import 'workflow_stages_editor.dart';
+
+Future<List<T>> _quiet<T>(Future<List<T>> future) async {
+  try {
+    return await future;
+  } catch (_) {
+    return <T>[];
+  }
+}
 
 /// Create (when [workflow] is null) or edit a workflow. Resolves to true when saved.
 Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? workflow}) async {
@@ -19,10 +30,15 @@ Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? wo
   final members = (await ref.read(membersProvider.future))
       .where((member) => member.status == MemberStatuses.active)
       .toList();
+  final departments = await _quiet(ref.read(departmentsProvider.future));
+  final clients = await _quiet(ref.read(clientsProvider.future));
+  final projects = await _quiet(ref.read(projectsProvider.future));
   if (!context.mounted) return false;
   final name = TextEditingController(text: workflow?.name);
   final sla = TextEditingController(text: workflow?.slaHours?.toString() ?? (workflow == null ? '48' : ''));
   var stages = workflow?.stages ?? const <WorkflowStage>[];
+  var entityType = workflow?.entityType ?? WorkflowSubjects.content;
+  var scopeClientId = workflow?.scopeId;
   var requiresClientApproval = workflow?.requiresClientApproval ?? true;
   var active = workflow?.active ?? true;
   final actions = ref.read(workflowsActionsProvider);
@@ -46,10 +62,47 @@ Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? wo
         maxLength: resourceNameMaxLength,
         validator: Validators(l10n).minLength(resourceNameMinLength),
       ),
+      DropdownButtonFormField<String>(
+        initialValue: entityType,
+        decoration: InputDecoration(labelText: l10n.workflowSubjectField, isDense: true),
+        items: [
+          DropdownMenuItem(value: WorkflowSubjects.content, child: Text(l10n.workflowSubjectContent)),
+          DropdownMenuItem(value: WorkflowSubjects.task, child: Text(l10n.workflowSubjectTask)),
+          DropdownMenuItem(value: WorkflowSubjects.project, child: Text(l10n.workflowSubjectProject)),
+          DropdownMenuItem(value: WorkflowSubjects.custom, child: Text(l10n.workflowSubjectCustom)),
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          setState(() => entityType = value);
+        },
+      ),
+      DropdownButtonFormField<String?>(
+        initialValue: scopeClientId,
+        decoration: InputDecoration(labelText: l10n.workflowScopeField, isDense: true),
+        items: [
+          DropdownMenuItem(value: null, child: Text(l10n.workflowScopeOrganization)),
+          for (final client in clients)
+            DropdownMenuItem(value: client.id, child: Text(client.name, overflow: TextOverflow.ellipsis)),
+        ],
+        onChanged: (value) => setState(() => scopeClientId = value),
+      ),
       WorkflowStagesEditor(
         initial: stages,
         roles: roles,
         members: members,
+        designations: [
+          for (final department in departments)
+            for (final position in department.positions)
+              WorkflowPickOption(id: position.id, label: '${position.name} · ${department.name}'),
+        ],
+        departments: [for (final department in departments) WorkflowPickOption(id: department.id, label: department.name)],
+        clients: [for (final client in clients) WorkflowPickOption(id: client.id, label: client.name)],
+        clientContacts: [
+          for (final client in clients)
+            for (final contact in client.contacts)
+              WorkflowPickOption(id: contact.id, label: '${contact.name} · ${client.name}'),
+        ],
+        projects: [for (final project in projects) WorkflowPickOption(id: project.id, label: project.name)],
         onChanged: (value) => stages = value,
       ),
       if (workflow != null && workflow.stages.isNotEmpty)
@@ -82,6 +135,9 @@ Future<bool> showWorkflowForm(BuildContext context, WidgetRef ref, {Workflow? wo
     onSubmit: () async {
       final input = WorkflowInput(
         name: name.text.trim(),
+        entityType: entityType,
+        scopeType: scopeClientId == null ? 'ORGANIZATION' : 'CLIENT',
+        scopeId: scopeClientId,
         stages: stages,
         slaHours: parseWorkflowSla(sla.text).hours,
         requiresClientApproval: requiresClientApproval,

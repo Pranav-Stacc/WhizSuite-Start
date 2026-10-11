@@ -26,12 +26,13 @@ function nextCursorOf(payload: unknown): string | null {
 }
 
 /** Fetches every page of a list endpoint, following `nextCursor` up to the configured page cap. */
-export async function fetchAllPages(path: string, tags: string[]): Promise<RawRecord[]> {
+export async function fetchAllPages(path: string, tags?: string[]): Promise<RawRecord[]> {
   const rows: RawRecord[] = [];
   const separator = path.includes('?') ? '&' : '?';
   let url = path;
+  const cacheTags = tags && tags.length > 0 ? tags : undefined;
   for (let page = 0; page < env.API_LIST_MAX_PAGES; page += 1) {
-    const payload = await apiFetch<unknown>(url, { tags });
+    const payload = await apiFetch<unknown>(url, cacheTags ? { tags: cacheTags } : {});
     rows.push(...unwrapList(payload));
     const cursor = nextCursorOf(payload);
     if (!cursor) break;

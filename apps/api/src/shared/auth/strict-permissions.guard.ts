@@ -5,7 +5,11 @@ import { ErrorCodes } from '@agency-os/contracts';
 import { ProblemDetailsException } from '../errors/problem-details.exception';
 import { ALLOW_AUTHENTICATED_KEY } from './allow-authenticated.decorator';
 import { IS_PUBLIC_KEY } from './public-route.decorator';
-import { PERMISSIONS_KEY } from './permissions.decorator';
+import {
+  assertPermissionRequirements,
+  hasPermissionRequirements,
+  readPermissionRequirements,
+} from './permission-requirements';
 import type { AuthenticatedUser } from './current-user.decorator';
 
 const TENANT_ROUTE_PATTERN = /\/organizations\/[^/]+/;
@@ -26,10 +30,7 @@ export class StrictPermissionsGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    const required = this.reflector.getAllAndOverride<Permission[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requirements = readPermissionRequirements(this.reflector, context);
 
     const request = context.switchToHttp().getRequest<{
       user?: AuthenticatedUser & { permissions?: Permission[] };
@@ -44,8 +45,9 @@ export class StrictPermissionsGuard implements CanActivate {
       return true;
     }
 
-    if (required?.length) {
-      return this.assertPermissions(required, request.user);
+    if (hasPermissionRequirements(requirements)) {
+      assertPermissionRequirements(requirements, request.user?.permissions);
+      return true;
     }
 
     const routePath = request.route?.path ?? request.path ?? '';
@@ -66,38 +68,6 @@ export class StrictPermissionsGuard implements CanActivate {
       throw this.unauthorized();
     }
 
-    return true;
-  }
-
-  private assertPermissions(
-    required: Permission[],
-    user?: AuthenticatedUser & { permissions?: Permission[] },
-  ): boolean {
-    if (!user?.permissions) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Forbidden',
-          status: 403,
-          code: ErrorCodes.FORBIDDEN,
-          detail: 'Insufficient permissions',
-        },
-        403,
-      );
-    }
-    const allowed = required.every((p) => user.permissions!.includes(p));
-    if (!allowed) {
-      throw new ProblemDetailsException(
-        {
-          type: 'about:blank',
-          title: 'Forbidden',
-          status: 403,
-          code: ErrorCodes.FORBIDDEN,
-          detail: `Missing permissions: ${required.join(', ')}`,
-        },
-        403,
-      );
-    }
     return true;
   }
 

@@ -7,7 +7,7 @@ import {
 } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
-import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
+import { RequireAnyPermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { FeedbackService } from '../../../application/services/feedback.service';
 import {
@@ -25,7 +25,7 @@ export class FeedbackSubjectCommentsController {
   constructor(private readonly service: FeedbackService) {}
 
   @Get()
-  @RequirePermissions(Permissions.FEEDBACK_VIEW)
+  @RequireAnyPermissions(Permissions.FEEDBACK_VIEW, Permissions.CONTENT_VIEW)
   list(@Param() params: FeedbackSubjectParamsDto) {
     return this.service.listSubjectComments(
       requireOrganizationId(params.organizationId),
@@ -37,7 +37,7 @@ export class FeedbackSubjectCommentsController {
   }
 
   @Post()
-  @RequirePermissions(Permissions.FEEDBACK_CREATE)
+  @RequireAnyPermissions(Permissions.FEEDBACK_CREATE, Permissions.CONTENT_EDIT)
   create(
     @Param() params: FeedbackSubjectParamsDto,
     @Body() dto: CreateFeedbackCommentDto,

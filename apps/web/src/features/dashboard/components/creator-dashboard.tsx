@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Clock, KanbanSquare, MessageSquare, PencilLine, Plus } from 'lucide-react';
 import { Permissions } from '@agency-os/contracts';
 import type { Session } from '@/shared/auth/session';
-import { loadIf } from '@/shared/auth/permissions';
+import { can, loadIf } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatNumber, relativeTime } from '@/shared/lib/format';
 import { Badge } from '@/shared/ui/badge';
@@ -33,6 +33,7 @@ const GUIDE: GuideItem[] = [
 ];
 
 export async function CreatorDashboard({ session }: { session: Session }) {
+  const canCreatePost = await can(Permissions.CONTENT_CREATE);
   const [tasks, content, events, entries, timer, byClient, byMember] = await Promise.all([
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
     loadIf(Permissions.CONTENT_VIEW, listContent, []),
@@ -69,12 +70,14 @@ export async function CreatorDashboard({ session }: { session: Session }) {
                 {t('dashboard.myTasks.board')}
               </Link>
             </Button>
-            <Button variant="primary" asChild>
-              <Link href="/content?new=1">
-                <Plus />
-                {t('dashboard.quick.newPost')}
-              </Link>
-            </Button>
+            {canCreatePost ? (
+              <Button variant="primary" asChild>
+                <Link href="/content?new=1">
+                  <Plus />
+                  {t('dashboard.quick.newPost')}
+                </Link>
+              </Button>
+            ) : null}
           </>
         }
       />

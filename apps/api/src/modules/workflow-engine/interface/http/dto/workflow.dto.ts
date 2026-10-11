@@ -1,13 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ApproverBases,
   ApprovalStepRules,
   AssignableScopeTypes,
   MAX_WORKFLOW_SLA_HOURS,
   MAX_WORKFLOW_STAGE_LENGTH,
   MAX_WORKFLOW_STAGES,
   MIN_WORKFLOW_STAGES,
+  WorkflowSubjects,
   type ApprovalStepRule,
+  type ApproverBasis,
+  type WorkflowSubject,
 } from '@agency-os/contracts';
 import {
   ArrayMaxSize,
@@ -30,7 +34,8 @@ import {
 
 const NAME_MIN = 2;
 const NAME_MAX = 200;
-const DEFAULT_ENTITY_TYPE = 'content';
+const DEFAULT_ENTITY_TYPE: WorkflowSubject = 'content';
+const WORKFLOW_SCOPES = ['ORGANIZATION', 'CLIENT'] as const;
 const MAX_APPROVERS = 50;
 const MAX_QUORUM = 50;
 
@@ -96,6 +101,19 @@ export class WorkflowStageDto {
   @IsUUID('4', { each: true })
   roleIds?: string[];
 
+  @ApiProperty({ required: false, enum: ApproverBases })
+  @IsOptional()
+  @IsIn(ApproverBases)
+  basis?: ApproverBasis;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(MAX_APPROVERS)
+  @IsUUID('4', { each: true })
+  targetIds?: string[];
+
   @ApiProperty({ required: false, enum: SCOPE_TYPES })
   @IsOptional()
   @IsIn(SCOPE_TYPES)
@@ -114,10 +132,20 @@ export class CreateWorkflowDto {
   @MaxLength(NAME_MAX)
   name!: string;
 
-  @ApiProperty({ required: false, default: DEFAULT_ENTITY_TYPE })
+  @ApiProperty({ required: false, enum: WorkflowSubjects, default: DEFAULT_ENTITY_TYPE })
   @IsOptional()
-  @IsString()
-  entityType: string = DEFAULT_ENTITY_TYPE;
+  @IsIn(WorkflowSubjects)
+  entityType: WorkflowSubject = DEFAULT_ENTITY_TYPE;
+
+  @ApiProperty({ required: false, enum: WORKFLOW_SCOPES, default: 'ORGANIZATION' })
+  @IsOptional()
+  @IsIn(WORKFLOW_SCOPES)
+  scopeType?: (typeof WORKFLOW_SCOPES)[number];
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  scopeId?: string | null;
 
   @ApiProperty({
     type: [WorkflowStageDto],
@@ -182,4 +210,19 @@ export class UpdateWorkflowDto {
   @IsOptional()
   @IsBoolean()
   active?: boolean;
+
+  @ApiProperty({ required: false, enum: WorkflowSubjects })
+  @IsOptional()
+  @IsIn(WorkflowSubjects)
+  entityType?: WorkflowSubject;
+
+  @ApiProperty({ required: false, enum: WORKFLOW_SCOPES })
+  @IsOptional()
+  @IsIn(WORKFLOW_SCOPES)
+  scopeType?: (typeof WORKFLOW_SCOPES)[number];
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsUUID('4')
+  scopeId?: string | null;
 }

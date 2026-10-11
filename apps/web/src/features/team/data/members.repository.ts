@@ -15,6 +15,8 @@ export interface MemberPosition {
 }
 
 export interface Member extends Entity {
+  /** Auth user id — use for workflow PERSON approvers. */
+  userId?: string;
   name: string;
   email: string;
   role: MemberRole;

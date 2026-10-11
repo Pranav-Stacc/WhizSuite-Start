@@ -16,6 +16,8 @@ import { listPermissionCatalog } from '@/features/roles/services/permissions.ser
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 import { AssignRolesDialog } from '@/features/team/components/assign-roles-dialog';
 import { MemberExtrasPanel } from '@/features/team/components/member-extras-panel';
+import { MemberRoleScopeSummary } from '@/features/team/components/member-role-scope-summary';
+import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { removeMemberAction } from '@/features/team/actions/member.actions';
 import { PERSONAL_ACCESS_PREFIX } from '@/features/team/config';
 import { getMember, getMemberAccess } from '@/features/team/services/members.service';
@@ -31,12 +33,15 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   if (!member) notFound();
 
   const manageRoles = await can(Permissions.ROLES_MANAGE);
-  const [canRemove, roles, catalog, tasks, memberAccess] = await Promise.all([
+  const [canRemove, roles, catalog, tasks, memberAccess, scopeResources] = await Promise.all([
     can(Permissions.MEMBERS_DEACTIVATE),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
     loadIf(Permissions.ROLES_MANAGE, listPermissionCatalog, []),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
-    manageRoles && member.status === 'ACTIVE' ? getMemberAccess(member.id) : Promise.resolve(null),
+    manageRoles && member.status === 'ACTIVE'
+      ? getMemberAccess(member.id).catch(() => null)
+      : Promise.resolve(null),
+    manageRoles ? loadScopeResources().catch(() => null) : Promise.resolve(null),
   ]);
 
   const assignableRoles = manageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : [];
@@ -46,6 +51,25 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
     .filter((role) => role.id !== personalRole?.id)
     .flatMap((role) => role.permissionKeys);
   const grantedKeys = new Set(memberAccess?.effectivePermissions ?? roleGrantedKeys);
+
+  function scopeHintForPermission(key: string): string | undefined {
+    for (const role of roleDetails) {
+      const row = role.permissionScopes.find((scope) => scope.key === key);
+      if (row) {
+        const parts = (row.scopeTypes ?? []).map((scope) => humanizeKey(scope));
+        const clientScope = row.scopeResources?.find((r) => r.scopeType === 'CLIENT');
+        if (clientScope?.resourceIds?.length) {
+          parts.push(t('team.detail.permissions.scopedRecords', { count: clientScope.resourceIds.length }));
+        }
+        return parts.join(' · ');
+      }
+    }
+    const fallback = roleDetails.find((role) => role.permissionKeys.includes(key));
+    if (fallback?.defaultScopeTypes.length) {
+      return fallback.defaultScopeTypes.map((scope) => humanizeKey(scope)).join(' · ');
+    }
+    return undefined;
+  }
   const hours = openHoursByAssignee(tasks).get(member.id) ?? 0;
   const ratio = member.capacityHours > 0 ? hours / member.capacityHours : 0;
   const isSelf = member.id === session.userId;
@@ -154,6 +178,9 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                 ))}
               </ul>
             )}
+            {manageRoles && scopeResources && roleDetails.length > 0 ? (
+              <MemberRoleScopeSummary roles={roleDetails} scopeResources={scopeResources} />
+            ) : null}
             {canEditAccess && memberAccess ? (
               <MemberExtrasPanel
                 memberId={member.id}
@@ -166,15 +193,24 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
 
           <div className="card-surface space-y-3 p-5">
             <h2 className="text-sm font-semibold">{t('team.detail.permissions')}</h2>
+            <p className="text-xs text-muted">{t('team.detail.permissions.scopeHint')}</p>
             {grantedKeys.size === 0 ? (
               <p className="text-sm text-muted">{t('team.detail.permissions.empty')}</p>
             ) : (
-              <ul className="grid max-h-[50vh] gap-1 overflow-y-auto sm:grid-cols-2">
-                {[...grantedKeys].sort().map((key) => (
-                  <li key={key} className="rounded-lg bg-surface-2 px-2 py-1.5 text-xs">
-                    {humanizeKey(key)}
-                  </li>
-                ))}
+              <ul className="grid max-h-[50vh] gap-2 overflow-y-auto sm:grid-cols-2">
+                {[...grantedKeys].sort().map((key) => {
+                  const scopeHint = scopeHintForPermission(key);
+                  return (
+                    <li key={key} className="rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-xs">
+                      <p className="font-medium text-foreground">{humanizeKey(key)}</p>
+                      {scopeHint ? (
+                        <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted">
+                          {t('team.detail.permissions.dataScope')}: {scopeHint}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

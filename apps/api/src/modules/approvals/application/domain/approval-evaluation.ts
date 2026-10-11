@@ -35,10 +35,15 @@ export function parseApproverSpec(raw: unknown): ApproverSpec {
           (id): id is string => typeof id === 'string' && id.length > 0,
         )
       : [];
+  const basisRaw = spec.basis;
+  const basis =
+    typeof basisRaw === 'string' ? (basisRaw as ApproverSpec['basis']) : undefined;
   return {
     approverIds: asIds(spec.approverIds),
     roleIds: asIds(spec.roleIds),
     resolvedUserIds: asIds(spec.resolvedUserIds),
+    basis,
+    targetIds: asIds(spec.targetIds),
     scopeType: typeof spec.scopeType === 'string' ? spec.scopeType : undefined,
     scopeResourceId:
       typeof spec.scopeResourceId === 'string' ? spec.scopeResourceId : null,

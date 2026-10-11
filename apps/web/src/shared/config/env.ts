@@ -31,6 +31,9 @@ const envSchema = z.object({
   SESSION_REFRESH_SHARE_MS: z.coerce.number().int().nonnegative().default(10_000),
   API_LIST_PAGE_SIZE: z.coerce.number().int().positive().default(100),
   API_LIST_MAX_PAGES: z.coerce.number().int().positive().default(50),
+  /** Server-side API call logging: `off`, `errors` (failed calls only) or `all`. */
+  API_DEBUG_LOG: z.enum(['off', 'errors', 'all']).default('errors'),
+  API_DEBUG_BODY_MAX_CHARS: z.coerce.number().int().positive().default(2000),
 });
 
 function loadEnv() {

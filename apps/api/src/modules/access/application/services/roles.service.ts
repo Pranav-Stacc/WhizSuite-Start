@@ -52,6 +52,12 @@ export class RolesService {
     return this.repository.listRoles(organizationId, kind);
   }
 
+  async get(organizationId: string, roleId: string) {
+    const role = await this.repository.getRole(organizationId, roleId);
+    if (!role) throw notFound();
+    return role;
+  }
+
   async create(organizationId: string, actorId: string, raw: unknown) {
     const input = parseRoleInput(raw);
     const role = await this.repository.createRole(organizationId, input);

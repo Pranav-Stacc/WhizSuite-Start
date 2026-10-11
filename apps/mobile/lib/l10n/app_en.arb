@@ -4390,6 +4390,15 @@
   "workflowActiveField": "Active",
   "workflowActiveHint": "Inactive workflows are not offered for new content.",
   "workflowApprovalMetric": "Sign-off",
+  "workflowBasisAssignee": "Whoever is assigned",
+  "workflowBasisAssigneeHint": "The people assigned to the content, task, or project approve this stage.",
+  "workflowBasisClient": "People with access to a client",
+  "workflowBasisClientContact": "Client contact (portal)",
+  "workflowBasisDepartment": "A department",
+  "workflowBasisDesignation": "A designation",
+  "workflowBasisPerson": "Specific people",
+  "workflowBasisProject": "People with access to a project",
+  "workflowBasisRole": "A role",
   "workflowCheckerAllowed": "Allowed",
   "workflowCheckerBlocked": "Not allowed",
   "workflowCheckerBody": "Pick two stages to see whether content can move directly between them.",
@@ -4430,6 +4439,9 @@
   "workflowNew": "New workflow",
   "workflowNoSla": "No response time set",
   "workflowNoVersion": "This workflow has no published version yet.",
+  "workflowScopeClient": "One client",
+  "workflowScopeField": "Applies to",
+  "workflowScopeOrganization": "The whole organisation",
   "workflowSla": "Respond within {hours}h",
   "@workflowSla": {
     "placeholders": {
@@ -4453,6 +4465,7 @@
   "workflowStageAdd": "Add stage",
   "workflowStageApprovalRule": "Approval rule",
   "workflowStageAssigneesTitle": "Stage assignees",
+  "workflowStageBasis": "Who approves",
   "workflowStageCount": "{count, plural, =1{1 stage} other{{count} stages}}",
   "@workflowStageCount": {
     "placeholders": {
@@ -4475,6 +4488,7 @@
   "workflowStagePeople": "Named people",
   "workflowStagePeopleEmpty": "No active team members to pick.",
   "workflowStagePeopleHint": "Add specific people who can approve this stage.",
+  "workflowStagePickEmpty": "Nothing matches.",
   "workflowStageQuorum": "Approvals needed",
   "workflowStageQuorumHint": "How many people from the pool must approve.",
   "workflowStageRemove": "Remove stage {number}",
@@ -4491,6 +4505,7 @@
   "workflowStageRuleAll": "Everyone must approve",
   "workflowStageRuleAny": "Any one approver",
   "workflowStageRuleQuorum": "Quorum (N of pool)",
+  "workflowStageSearch": "Search",
   "workflowStagesBlank": "Every stage needs a name",
   "workflowStagesCount": "{count} of {max}",
   "@workflowStagesCount": {
@@ -4542,6 +4557,11 @@
     }
   },
   "workflowStagesVersionNote": "Changing the stages publishes a new version. Content already in progress keeps its version.",
+  "workflowSubjectContent": "Content publishing",
+  "workflowSubjectCustom": "Custom",
+  "workflowSubjectField": "This workflow is for",
+  "workflowSubjectProject": "Projects",
+  "workflowSubjectTask": "Tasks",
   "workflowToggle": "Turn {name} on or off",
   "@workflowToggle": {
     "placeholders": {

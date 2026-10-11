@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CalendarClock, CheckSquare, Hourglass, MessageSquare, Plus, Users } from 'lucide-react';
 import { Permissions } from '@agency-os/contracts';
 import type { Session } from '@/shared/auth/session';
-import { loadIf } from '@/shared/auth/permissions';
+import { can, loadIf } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { dueInfo, formatDateTime, relativeTime } from '@/shared/lib/format';
 import { Avatar, LogoTile } from '@/shared/ui/avatar';
@@ -34,6 +34,7 @@ const APPROVALS_SHOWN = 6;
 const WEEK_MS = UPCOMING_DAYS * 24 * 60 * 60 * 1000;
 
 export async function ManagerDashboard({ session }: { session: Session }) {
+  const canCreatePost = await can(Permissions.CONTENT_CREATE);
   const [clients, approvals, overdue, chatUnread, content, byClient, byMember] = await Promise.all([
     loadIf(Permissions.CLIENTS_VIEW, listClients, []),
     loadIf(Permissions.APPROVALS_VIEW, pendingApprovals, []),
@@ -58,12 +59,14 @@ export async function ManagerDashboard({ session }: { session: Session }) {
         subtitle={t('dashboard.manager.subtitle')}
         guide={GUIDE}
         actions={
-          <Button variant="primary" asChild>
-            <Link href="/content?new=1">
-              <Plus />
-              {t('dashboard.quick.newPost')}
-            </Link>
-          </Button>
+          canCreatePost ? (
+            <Button variant="primary" asChild>
+              <Link href="/content?new=1">
+                <Plus />
+                {t('dashboard.quick.newPost')}
+              </Link>
+            </Button>
+          ) : null
         }
       />
 

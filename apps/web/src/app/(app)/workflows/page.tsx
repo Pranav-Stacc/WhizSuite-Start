@@ -1,7 +1,7 @@
 import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import { Plus, Workflow } from 'lucide-react';
-import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { EmptyAction } from '@/shared/ui/empty-action';
@@ -10,9 +10,12 @@ import { param, withQuery, type SearchParams } from '@/shared/ui/nav-controls';
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { isOwnerRole } from '@/features/roles/config';
+import { listClientContacts } from '@/features/clients/services/client-contacts.service';
+import { listClients } from '@/features/clients/services/clients.service';
+import { listDepartments } from '@/features/departments/services/departments.service';
+import { listProjects } from '@/features/projects/services/projects.service';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 import { listMembers } from '@/features/team/services/members.service';
-import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { WorkflowCard } from '@/features/workflows/components/workflow-card';
 import { WorkflowDialog } from '@/features/workflows/components/workflow-dialog';
 import { listWorkflows } from '@/features/workflows/services/workflows.service';
@@ -30,17 +33,24 @@ const GUIDE: GuideItem[] = [
 export default async function WorkflowsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requirePermission(Permissions.WORKFLOWS_MANAGE);
   const sp = await searchParams;
-  const [workflows, roles, members, canManageRoles] = await Promise.all([
+  const [workflows, roles, members, departments, clients, clientContacts, projects] = await Promise.all([
     listWorkflows(),
     listRoles().catch(() => []),
     loadIf(Permissions.MEMBERS_VIEW, listMembers, []),
-    can(Permissions.ROLES_MANAGE),
+    loadIf(Permissions.ORG_VIEW, listDepartments, []),
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    loadIf(Permissions.CLIENTS_VIEW, listClientContacts, []),
+    loadIf(Permissions.PROJECTS_VIEW, listProjects, []),
   ]);
-  const scopeResources = canManageRoles ? await loadScopeResources() : undefined;
   const roleSummaries = roles.map(toRoleSummary);
   // Any non-owner role can be attached to a stage — no separate "workflow" role type.
   const workflowRoles = roleSummaries.filter((role) => !isOwnerRole(role));
-  const assignableRoles = canManageRoles ? workflowRoles : [];
+  const designations = departments.flatMap((department) =>
+    department.designations.map((designation) => ({
+      id: designation.id,
+      label: `${designation.name} · ${department.name}`,
+    })),
+  );
   const editWorkflow = param(sp, 'edit') ? workflows.find((w) => w.id === param(sp, 'edit')) : undefined;
   const newButton = (
     <Button variant="primary">
@@ -52,8 +62,11 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
   const dialogProps = {
     workflowRoles,
     members,
-    assignableRoles,
-    scopeResources,
+    designations,
+    departments: departments.map((department) => ({ id: department.id, label: department.name })),
+    clients: clients.map((client) => ({ id: client.id, label: client.name })),
+    clientContacts: clientContacts.map((contact) => ({ id: contact.id, label: contact.label })),
+    projects: projects.map((project) => ({ id: project.id, label: project.name })),
   };
 
   return (

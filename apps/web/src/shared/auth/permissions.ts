@@ -69,3 +69,11 @@ export async function authorize(...required: Permission[]): Promise<Session> {
   if (!(await can(...required))) throw new ForbiddenError();
   return session;
 }
+
+/** Server action guard: succeeds when the member holds at least one listed permission. */
+export async function authorizeAny(...required: Permission[]): Promise<Session> {
+  const session = await requireSession();
+  const granted = await getPermissions();
+  if (!required.some((permission) => granted.has(permission))) throw new ForbiddenError();
+  return session;
+}

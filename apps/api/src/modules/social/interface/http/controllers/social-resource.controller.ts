@@ -92,6 +92,18 @@ export class SocialResourceController {
     );
   }
 
+  @Get('content/:contentId/approval-summary')
+  @RequirePermissions(Permissions.APPROVALS_VIEW)
+  contentApprovalSummary(
+    @Param('organizationId') organizationId: string,
+    @Param('contentId', ParseUUIDPipe) contentId: string,
+  ) {
+    return this.social.contentApprovalSummary(
+      requireOrganizationId(organizationId),
+      contentId,
+    );
+  }
+
   @Patch('content/:contentId')
   @RequirePermissions(Permissions.CONTENT_EDIT)
   updateContent(

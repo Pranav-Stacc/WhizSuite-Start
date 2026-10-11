@@ -25,14 +25,15 @@ export async function chatUnreadCount(): Promise<number> {
   const data = await apiFetch<{ count?: number }>(orgPath(org, 'chat/unread-count'), {
     tags: [`org:${org}:chat`],
   });
-  return typeof data.count === 'number' ? data.count : 0;
+  return typeof data?.count === 'number' ? data.count : 0;
 }
 
-export async function getChatRoom(roomId: string): Promise<ChatRoomDto> {
+export async function getChatRoom(roomId: string): Promise<ChatRoomDto | null> {
   const org = await orgId();
-  return apiFetch<ChatRoomDto>(`${orgPath(org, 'chat/rooms')}/${roomId}`, {
+  const room = await apiFetch<ChatRoomDto>(`${orgPath(org, 'chat/rooms')}/${roomId}`, {
     tags: [`org:${org}:chat`],
   });
+  return room ?? null;
 }
 
 export async function listChatMessages(
@@ -41,10 +42,14 @@ export async function listChatMessages(
 ): Promise<CursorPage<ChatMessageDto>> {
   const org = await orgId();
   const qs = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-  return apiFetch<CursorPage<ChatMessageDto>>(
+  const page = await apiFetch<CursorPage<ChatMessageDto>>(
     `${orgPath(org, 'chat/rooms')}/${roomId}/messages${qs}`,
     { tags: [`org:${org}:chat`] },
   );
+  if (!page || !Array.isArray(page.items)) {
+    return { items: [], nextCursor: null, hasMore: false };
+  }
+  return page;
 }
 
 export async function sendChatMessage(
@@ -96,9 +101,11 @@ export async function createChatGroup(input: {
 
 export async function getOrCreateClientChatRoom(clientId: string): Promise<ChatRoomDto> {
   const org = await orgId();
-  return apiFetch<ChatRoomDto>(`${orgPath(org, 'chat/clients')}/${clientId}/room`, {
+  const room = await apiFetch<ChatRoomDto>(`${orgPath(org, 'chat/clients')}/${clientId}/room`, {
     tags: [`org:${org}:chat`],
   });
+  if (!room) throw new Error('Chat room unavailable');
+  return room;
 }
 
 export async function markChatRead(roomId: string, messageId: string): Promise<void> {

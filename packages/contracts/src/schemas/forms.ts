@@ -19,8 +19,10 @@ import {
   normalizeHashtags,
 } from '../content/content.js';
 import {
+  ApproverBases,
   ApprovalStepRules,
   RESOURCE_NAME_MIN_LENGTH,
+  WorkflowSubjects,
 } from '../platform/resources.js';
 import { MEMBER_ROLES_MAX } from '../auth/access.js';
 import { AssignableScopeTypes } from '../auth/permissions.js';
@@ -422,6 +424,10 @@ export const workflowStageSchema = z
     approverIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
     /** Roles whose holders form the approver pool (optionally scoped). */
     roleIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
+    /** Which list the stage uses to find approvers. */
+    basis: z.enum(ApproverBases).default('PERSON'),
+    /** Ids for `basis` (people, roles, designations, departments, clients, client contacts, or projects). */
+    targetIds: z.array(z.string().uuid()).max(MAX_STAGE_APPROVERS).default([]),
     scopeType: z
       .enum([
         AssignableScopeTypes.ORGANIZATION,
@@ -468,6 +474,11 @@ export type ApprovalStepConfigInput = z.infer<typeof approvalStepConfigSchema>;
 
 export const createWorkflowSchema = z.object({
   name: z.string().trim().min(RESOURCE_NAME_MIN_LENGTH, 'validation.min2'),
+  /** What this workflow approves. */
+  entityType: z.enum(WorkflowSubjects).default('content'),
+  /** ORGANIZATION, or CLIENT when it applies to one account. */
+  scopeType: z.enum(['ORGANIZATION', 'CLIENT']).default('ORGANIZATION'),
+  scopeId: z.string().uuid().nullish(),
   slaHours: z.coerce.number().int().min(1).max(MAX_WORKFLOW_SLA_HOURS).default(48),
   stages: z
     .array(workflowStageSchema)

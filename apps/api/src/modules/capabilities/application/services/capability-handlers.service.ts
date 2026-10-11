@@ -840,7 +840,11 @@ export class CapabilityHandlersService {
       case 'workflows.create':
         return this.workflows.createDefinition(organizationId, actorId, {
           name: input.name as string,
-          entityType: (input.entityType as string) ?? 'CONTENT',
+          entityType: (['content', 'task', 'project', 'custom'] as const).includes(
+            input.entityType as 'content',
+          )
+            ? (input.entityType as 'content' | 'task' | 'project' | 'custom')
+            : 'content',
           stages: input.stages as Array<{ name: string; key: string }>,
           slaHours: input.slaHours as number | undefined,
           requiresClientApproval: input.requiresClientApproval as

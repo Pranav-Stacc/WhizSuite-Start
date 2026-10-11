@@ -83,7 +83,10 @@ export function clientFromApi(raw: Raw): Client {
     tier: str(raw, 'tier'),
     status: asStatus(raw.status, ['ACTIVE', 'ONBOARDING', 'PAUSED', 'CHURNED'] as const, 'ONBOARDING'),
     color: `hsl(${hueFromId(id)} 70% 45%)`,
-    contactName: primaryContact ? str(primaryContact, 'name') : str(raw, 'contactName'),
+    contactName: primaryContact
+      ? [str(primaryContact, 'firstName'), str(primaryContact, 'lastName')].filter(Boolean).join(' ') ||
+        str(primaryContact, 'name')
+      : str(raw, 'contactName'),
     contactEmail: primaryContact ? str(primaryContact, 'email') : str(raw, 'contactEmail'),
     health: HEALTH_BASELINE,
     retainerMinor,
@@ -275,7 +278,9 @@ export function contentToApi(input: Partial<Post>): Raw {
 }
 
 export function contentPatchToApi(patch: Partial<Post>): Raw {
-  return contentFieldsToApi(patch, true);
+  const body = contentFieldsToApi(patch, true);
+  if (patch.version !== undefined) body.expectedVersion = patch.version;
+  return body;
 }
 
 export function leadFromApi(raw: Raw): Lead {
@@ -474,6 +479,10 @@ function workflowStagesFromApi(raw: Raw): Workflow['stages'] {
       quorumCount: typeof row.quorumCount === 'number' ? row.quorumCount : undefined,
       approverIds: asUuidList(row.approverIds),
       roleIds: assigneeRoleId && !roleIds.includes(assigneeRoleId) ? [...roleIds, assigneeRoleId] : roleIds,
+      basis: (['PERSON', 'ROLE', 'DESIGNATION', 'DEPARTMENT', 'CLIENT', 'CLIENT_CONTACT', 'PROJECT', 'ASSIGNEE'] as const).find(
+        (basis) => basis === row.basis,
+      ),
+      targetIds: asUuidList(row.targetIds),
       scopeType: row.scopeType ? str(row, 'scopeType') : undefined,
       scopeResourceId: row.scopeResourceId ? str(row, 'scopeResourceId') : null,
     });
@@ -485,6 +494,9 @@ export function workflowFromApi(raw: Raw): Workflow {
   return {
     id: str(raw, 'id'),
     name: str(raw, 'name'),
+    entityType: str(raw, 'entityType') || 'content',
+    scopeType: str(raw, 'scopeType') || 'ORGANIZATION',
+    scopeId: raw.scopeId ? str(raw, 'scopeId') : null,
     stages: workflowStagesFromApi(raw),
     requiresClientApproval: raw.requiresClientApproval === true,
     slaHours: num(raw, 'slaHours'),
@@ -495,6 +507,9 @@ export function workflowFromApi(raw: Raw): Workflow {
 export function workflowToApi(input: Partial<Workflow>): Raw {
   return {
     name: input.name,
+    entityType: input.entityType,
+    scopeType: input.scopeType,
+    scopeId: input.scopeId ?? null,
     stages: input.stages,
     slaHours: input.slaHours,
     requiresClientApproval: input.requiresClientApproval,
@@ -530,8 +545,10 @@ export function memberFromApi(raw: Raw): Member {
     departmentName: str(row, 'departmentName'),
     isPrimary: row.isPrimary === true,
   })).filter((p) => p.designationId);
+  const userId = str(raw, 'userId');
   return {
     id: str(raw, 'id') || str(raw, 'membershipId'),
+    userId: userId || undefined,
     name: str(raw, 'name') || str(raw, 'email'),
     email: str(raw, 'email'),
     role: mapped,

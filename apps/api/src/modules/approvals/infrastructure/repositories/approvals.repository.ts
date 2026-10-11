@@ -15,6 +15,7 @@ export interface ApprovalCreateRow {
   subjectId: string;
   subjectVersion: string;
   requestedById: string;
+  dueAt?: Date | null;
   steps: ApprovalStepRow[];
 }
 
@@ -110,7 +111,32 @@ export class ApprovalsRepository {
     });
   }
 
+  findPendingBySubject(
+    organizationId: string,
+    subjectType: string,
+    subjectId: string,
+  ) {
+    return this.prisma.approvalRequest.findFirst({
+      where: {
+        organizationId,
+        subjectType,
+        subjectId,
+        status: 'PENDING',
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { ...WITH_STEPS, actions: { orderBy: { createdAt: 'asc' } } },
+    });
+  }
+
+  cancelRequest(organizationId: string, requestId: string) {
+    return this.prisma.approvalRequest.updateMany({
+      where: { id: requestId, organizationId, status: 'PENDING' },
+      data: { status: 'REJECTED' },
+    });
+  }
+
   create(organizationId: string, data: ApprovalCreateRow) {
+    const stepDueAt = data.dueAt ?? null;
     return this.prisma.approvalRequest.create({
       data: {
         organizationId,
@@ -119,6 +145,7 @@ export class ApprovalsRepository {
         subjectVersion: data.subjectVersion,
         requestedById: data.requestedById,
         status: 'PENDING',
+        dueAt: data.dueAt ?? null,
         steps: {
           create: data.steps.map((step, index) => ({
             organizationId,
@@ -127,6 +154,7 @@ export class ApprovalsRepository {
             rule: step.rule,
             approverSpec: toInputJson(step.approverSpec) ?? Prisma.JsonNull,
             status: 'PENDING',
+            dueAt: stepDueAt,
           })),
         },
       },

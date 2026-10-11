@@ -16,7 +16,10 @@ import {
 } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
-import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
+import {
+  RequireAnyPermissions,
+  RequirePermissions,
+} from '../../../../../shared/auth/permissions.decorator';
 import { ClientsService } from '../../../application/services/clients.service';
 import {
   CreateClientDto,
@@ -32,7 +35,7 @@ export class ClientsController {
   constructor(private readonly clients: ClientsService) {}
 
   @Get()
-  @RequirePermissions(Permissions.CLIENTS_VIEW)
+  @RequireAnyPermissions(Permissions.CLIENTS_VIEW, Permissions.CONTENT_VIEW)
   list(
     @Param('organizationId') organizationId: string,
     @Query('workspaceId') workspaceId?: string,
@@ -41,7 +44,7 @@ export class ClientsController {
   }
 
   @Get(':clientId')
-  @RequirePermissions(Permissions.CLIENTS_VIEW)
+  @RequireAnyPermissions(Permissions.CLIENTS_VIEW, Permissions.CONTENT_VIEW)
   get(
     @Param('organizationId') organizationId: string,
     @Param('clientId') clientId: string,

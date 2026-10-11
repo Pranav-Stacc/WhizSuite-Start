@@ -45,6 +45,49 @@ describe('applyPermissionOverrides', () => {
     expect(result).toEqual([Permissions.ORG_VIEW]);
   });
 
+  it('adds optional companion reads for content.edit with the same grant', () => {
+    const result = applyPermissionOverrides({
+      rolePermissions: [Permissions.CONTENT_EDIT],
+      overrides: [],
+      isOwner: false,
+    });
+    expect(result).toEqual(
+      expect.arrayContaining([
+        Permissions.CONTENT_EDIT,
+        Permissions.CONTENT_VIEW,
+        Permissions.CLIENTS_VIEW,
+        Permissions.FILES_VIEW,
+      ]),
+    );
+  });
+
+  it('adds optional companion reads for calendar.view with the same grant', () => {
+    const result = applyPermissionOverrides({
+      rolePermissions: [Permissions.CALENDAR_VIEW],
+      overrides: [],
+      isOwner: false,
+    });
+    expect(result).toEqual(
+      expect.arrayContaining([
+        Permissions.CALENDAR_VIEW,
+        Permissions.CLIENTS_VIEW,
+        Permissions.CONTENT_VIEW,
+      ]),
+    );
+  });
+
+  it('lets DENY remove a companion that would otherwise be implied', () => {
+    const result = applyPermissionOverrides({
+      rolePermissions: [Permissions.CONTENT_EDIT],
+      overrides: [
+        { key: Permissions.FILES_VIEW, effect: PermissionEffects.DENY },
+      ],
+      isOwner: false,
+    });
+    expect(result).toContain(Permissions.CONTENT_EDIT);
+    expect(result).not.toContain(Permissions.FILES_VIEW);
+  });
+
   it('lets DENY beat a matching ALLOW override', () => {
     const result = applyPermissionOverrides({
       rolePermissions: [],

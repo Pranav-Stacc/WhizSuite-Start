@@ -16,6 +16,8 @@ import { toGridTiles } from '@/features/content/components/planner/grid-tiles';
 import { PhoneGrid } from '@/features/content/components/planner/phone-grid';
 import { OpenPostButton, PlannerDrawerProvider } from '@/features/content/components/planner/planner-drawer';
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
+import { ContentApprovalStatus } from '@/features/content/components/content-approval-status';
+import { canApproveContentStep, getContentApprovalSummary } from '@/features/content/services/content-approval.service';
 import { eventsFor, listContent } from '@/features/content/services/content.service';
 import { loadPlanner } from '@/features/content/services/planner.service';
 import { isEditable } from '@/features/content/workflow';
@@ -33,13 +35,22 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const session = await requirePermission(Permissions.APPROVALS_VIEW);
   const sp = await searchParams;
   const clientId = param(sp, 'client');
-  const approver = await can(Permissions.APPROVALS_APPROVE);
+  const [approver, canCreate] = await Promise.all([
+    can(Permissions.APPROVALS_APPROVE),
+    can(Permissions.CONTENT_CREATE),
+  ]);
 
   const [all, clients] = await Promise.all([listContent(), clientsById()]);
   const posts = all.filter((p) => p.status !== 'PUBLISHED' && (!clientId || p.clientId === clientId));
   const selected = posts.find((p) => p.id === param(sp, 'post')) ?? defaultQueuePost(AGENCY_QUEUE_GROUPS, posts);
   const selectedClient = selected ? clients.get(selected.clientId) : undefined;
-  const [thread, planner] = await Promise.all([selected ? eventsFor(selected.id) : [], selectedClient ? loadPlanner(selectedClient.id) : undefined]);
+  const [thread, planner, approvalSummary, canApproveStep] = await Promise.all([
+    selected ? eventsFor(selected.id) : [],
+    selectedClient ? loadPlanner(selectedClient.id) : undefined,
+    selected ? getContentApprovalSummary(selected.id) : null,
+    selected ? canApproveContentStep(selected.id, session.userId) : false,
+  ]);
+  const showApproverActions = approver && canApproveStep;
   const hrefs = Object.fromEntries(all.map((p) => [p.id, withQuery(BASE, sp, { post: p.id })]));
 
   const queue = (
@@ -75,7 +86,12 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
               </OpenPostButton>
             ) : null
           }
-          actions={<WorkflowActions post={selected} approver={approver} size="sm" />}
+          actions={
+            <>
+              {approvalSummary ? <ContentApprovalStatus summary={approvalSummary} /> : null}
+              <WorkflowActions post={selected} approver={showApproverActions} size="sm" />
+            </>
+          }
           composer={
             <InlineMessageForm
               key={selected.id}
@@ -109,7 +125,13 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
           </>
         }
       />
-      {planner ? <PlannerDrawerProvider {...planner.drawer}>{queue}</PlannerDrawerProvider> : queue}
+      {planner ? (
+        <PlannerDrawerProvider {...planner.drawer} canCreate={canCreate}>
+          {queue}
+        </PlannerDrawerProvider>
+      ) : (
+        queue
+      )}
     </div>
   );
 }

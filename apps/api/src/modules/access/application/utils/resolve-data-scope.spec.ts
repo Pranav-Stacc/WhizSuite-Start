@@ -1,7 +1,8 @@
-import { ScopeTypes } from '@agency-os/contracts';
+import { dataScopePrefixesFor, ScopeTypes } from '@agency-os/contracts';
 import type { PrismaService } from '../../../../shared/database/prisma.service';
 import { permissionPrefixForPath } from './permission-prefix';
 import {
+  compileDataScopeRows,
   resolveDataScopeFromAssignments,
   scopesApplicableToPermissions,
 } from './resolve-data-scope';
@@ -79,6 +80,72 @@ describe('resolveDataScopeFromAssignments', () => {
   });
 });
 
+describe('compileDataScopeRows', () => {
+  it('reuses content client scope when compiling files routes', () => {
+    const scopes = compileDataScopeRows(
+      [{ scopeType: ScopeTypes.ORGANIZATION, resourceId: null }],
+      [
+        {
+          key: 'content.edit',
+          conditions: {
+            scopeTypes: [ScopeTypes.CLIENT],
+            resources: { CLIENT: ['client-legal-learn'] },
+          },
+        },
+      ],
+      dataScopePrefixesFor('files'),
+    );
+    expect(scopes).toEqual([
+      { scopeType: ScopeTypes.CLIENT, resourceId: 'client-legal-learn' },
+    ]);
+  });
+
+  it('reuses content client scope when compiling clients routes', () => {
+    const scopes = compileDataScopeRows(
+      [{ scopeType: ScopeTypes.ORGANIZATION, resourceId: null }],
+      [
+        {
+          key: 'content.edit',
+          conditions: {
+            scopeTypes: [ScopeTypes.CLIENT],
+            resources: { CLIENT: ['client-legal-learn'] },
+          },
+        },
+      ],
+      dataScopePrefixesFor('clients'),
+    );
+    expect(scopes).toEqual([
+      { scopeType: ScopeTypes.CLIENT, resourceId: 'client-legal-learn' },
+    ]);
+  });
+
+  it('uses role permission client resources when assignment is org-wide', () => {
+    const scopes = compileDataScopeRows(
+      [{ scopeType: ScopeTypes.ORGANIZATION, resourceId: null }],
+      [
+        {
+          key: 'content.view',
+          conditions: {
+            scopeTypes: [ScopeTypes.CLIENT],
+            resources: { CLIENT: ['client-legal-learn'] },
+          },
+        },
+        {
+          key: 'content.edit',
+          conditions: {
+            scopeTypes: [ScopeTypes.CLIENT],
+            resources: { CLIENT: ['client-legal-learn'] },
+          },
+        },
+      ],
+      ['content'],
+    );
+    expect(scopes).toEqual([
+      { scopeType: ScopeTypes.CLIENT, resourceId: 'client-legal-learn' },
+    ]);
+  });
+});
+
 describe('scopesApplicableToPermissions', () => {
   const scopes = [
     { scopeType: ScopeTypes.ORGANIZATION, resourceId: null },
@@ -117,6 +184,14 @@ describe('scopesApplicableToPermissions', () => {
 });
 
 describe('permissionPrefixForPath', () => {
+  it('maps content feedback threads to the content module', () => {
+    expect(
+      permissionPrefixForPath(
+        '/v1/organizations/org/feedback/subjects/CONTENT/post-1/comments',
+      ),
+    ).toBe('content');
+  });
+
   it('maps content and media routes to their permission modules', () => {
     expect(
       permissionPrefixForPath('/v1/organizations/org/content/abc?status=DRAFT'),

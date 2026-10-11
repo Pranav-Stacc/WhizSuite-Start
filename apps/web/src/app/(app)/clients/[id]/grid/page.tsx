@@ -1,6 +1,6 @@
 import { ContentStatuses, Permissions } from '@agency-os/contracts';
 import { notFound } from 'next/navigation';
-import { getPermissions, requirePermission } from '@/shared/auth/permissions';
+import { can, getPermissions, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { initials } from '@/shared/lib/format';
@@ -24,7 +24,10 @@ export default async function ClientGridPage({ params }: { params: Promise<{ id:
   await requirePermission(Permissions.CONTENT_VIEW);
   const client = await getClient((await params).id);
   if (!client) notFound();
-  const granted = await getPermissions();
+  const [granted, canCreate] = await Promise.all([
+    getPermissions(),
+    can(Permissions.CONTENT_CREATE),
+  ]);
   const [planner, integrations] = await Promise.all([
     loadPlanner(client.id),
     granted.has(Permissions.INTEGRATIONS_MANAGE) || granted.has(Permissions.CLIENTS_VIEW)
@@ -50,7 +53,7 @@ export default async function ClientGridPage({ params }: { params: Promise<{ id:
     }));
 
   return (
-    <PlannerDrawerProvider {...planner.drawer} uploadEnabled={isLiveMode}>
+    <PlannerDrawerProvider {...planner.drawer} canCreate={canCreate} uploadEnabled={isLiveMode}>
       <section>
         <SectionHeading number={clientSectionNumber('grid')} title={t('clients.workspace.grid')}>
           <NewPostButton className="nav-link">{t('grid.newPost')}</NewPostButton>

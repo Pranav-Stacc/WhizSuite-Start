@@ -142,7 +142,7 @@ export function PhoneGrid({
         </div>
 
         <ol className={cn('grid gap-px bg-border-soft', LAYOUT_COLS[layout])} aria-label={t('grid.phone.feed')}>
-          {editable && drawer ? (
+          {editable && drawer?.canCreate ? (
             <li className="bg-background">
               <button
                 type="button"

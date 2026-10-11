@@ -6,6 +6,7 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
+    "start:debug": "nest start --debug 9230 --watch",
     "start": "nest start",
     "start:prod": "node dist/main.js",
     "worker": "node dist/worker.js",

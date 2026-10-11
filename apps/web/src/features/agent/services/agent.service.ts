@@ -13,7 +13,8 @@ const base = (orgId: string) => orgPath(orgId, 'agent');
 const tags = (orgId: string) => [`org:${orgId}:agent`];
 
 export async function listAgentSessions(orgId: string): Promise<AgentSessionDto[]> {
-  return apiFetch(`${base(orgId)}/sessions`, { tags: tags(orgId) });
+  const rows = await apiFetch<AgentSessionDto[]>(`${base(orgId)}/sessions`, { tags: tags(orgId) });
+  return Array.isArray(rows) ? rows : [];
 }
 
 export async function createAgentSession(orgId: string, title?: string): Promise<AgentSessionDto> {
@@ -31,11 +32,13 @@ export async function getAgentSession(orgId: string, sessionId: string) {
 }
 
 export async function listAgentRuns(orgId: string): Promise<AgentRunDto[]> {
-  return apiFetch(`${base(orgId)}/runs`, { tags: tags(orgId) });
+  const rows = await apiFetch<AgentRunDto[]>(`${base(orgId)}/runs`, { tags: tags(orgId) });
+  return Array.isArray(rows) ? rows : [];
 }
 
 export async function listAgentPending(orgId: string): Promise<AgentPendingActionDto[]> {
-  return apiFetch(`${base(orgId)}/pending`, { tags: tags(orgId) });
+  const rows = await apiFetch<AgentPendingActionDto[]>(`${base(orgId)}/pending`, { tags: tags(orgId) });
+  return Array.isArray(rows) ? rows : [];
 }
 
 export async function confirmAgentPending(orgId: string, pendingId: string) {
@@ -48,7 +51,8 @@ export async function rejectAgentPending(orgId: string, pendingId: string) {
 
 export async function listAgentDefinitions(orgId: string): Promise<AgentDefinitionDto[]> {
   try {
-    return await apiFetch(`${base(orgId)}/definitions`, { tags: tags(orgId) });
+    const rows = await apiFetch<AgentDefinitionDto[]>(`${base(orgId)}/definitions`, { tags: tags(orgId) });
+    return Array.isArray(rows) ? rows : [];
   } catch {
     return [];
   }
@@ -69,7 +73,8 @@ export async function createAgentDefinition(
 
 export async function listAgentSchedules(orgId: string): Promise<AgentScheduleDto[]> {
   try {
-    return await apiFetch(`${base(orgId)}/schedules`, { tags: tags(orgId) });
+    const rows = await apiFetch<AgentScheduleDto[]>(`${base(orgId)}/schedules`, { tags: tags(orgId) });
+    return Array.isArray(rows) ? rows : [];
   } catch {
     return [];
   }

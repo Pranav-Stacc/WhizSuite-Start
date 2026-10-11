@@ -1,6 +1,6 @@
 import 'server-only';
-import type { Platform } from '@agency-os/contracts';
-import { ApiError } from '@/shared/api/api-client';
+import { Permissions, type Platform } from '@agency-os/contracts';
+import { can } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { listContent } from '@/features/content/services/content.service';
 import { listInvoices } from '@/features/invoices/services/invoices.service';
@@ -53,7 +53,10 @@ function scoreHealth(client: Client, signals: RiskSignals | undefined): number {
 }
 
 async function riskSignalsByClient(): Promise<Map<string, RiskSignals>> {
-  const [invoices, posts] = await Promise.all([listInvoices(), listContent()]);
+  const [invoices, posts] = await Promise.all([
+    (await can(Permissions.INVOICES_VIEW)) ? listInvoices() : Promise.resolve([]),
+    (await can(Permissions.CONTENT_VIEW)) ? listContent() : Promise.resolve([]),
+  ]);
   const signals = new Map<string, RiskSignals>();
   const bump = (clientId: string, key: keyof RiskSignals) => {
     const entry = signals.get(clientId) ?? { overdueInvoices: 0, changesRequested: 0 };
@@ -67,14 +70,8 @@ async function riskSignalsByClient(): Promise<Map<string, RiskSignals>> {
 
 async function withLiveHealth(clients: Client[]): Promise<Client[]> {
   if (!isLiveMode || clients.length === 0) return clients;
-  try {
-    const signals = await riskSignalsByClient();
-    return clients.map((client) => ({ ...client, health: scoreHealth(client, signals.get(client.id)) }));
-  } catch (error) {
-    // Portal / narrow roles may lack invoice or content list access — keep stored health.
-    if (error instanceof ApiError) return clients;
-    throw error;
-  }
+  const signals = await riskSignalsByClient();
+  return clients.map((client) => ({ ...client, health: scoreHealth(client, signals.get(client.id)) }));
 }
 
 export async function listClients(): Promise<Client[]> {

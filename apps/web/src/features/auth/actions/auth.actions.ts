@@ -62,7 +62,7 @@ function redirectAfterAuth(session: Session): never {
 interface AuthResponse {
   user: { id: string; email: string; firstName: string; lastName?: string | null };
   organizationId?: string;
-  organization?: { id: string; name: string };
+  organization?: { id: string; name: string; slug?: string };
   accessToken: string;
   refreshToken: string;
 }
@@ -99,14 +99,20 @@ async function organizationProfile(
   if (response.organization?.name) {
     return {
       name: response.organization.name,
-      slug: 'slug' in response.organization ? String((response.organization as { slug?: string }).slug ?? '') || undefined : undefined,
+      slug: response.organization.slug,
     };
   }
-  const org = await apiFetch<{ name: string; slug?: string }>('v1/organizations/current', {
-    token: response.accessToken,
-    organizationId: orgId,
-  });
-  return { name: org.name, slug: org.slug };
+  if (!orgId) return { name: 'Organization' };
+  try {
+    const org = await apiFetch<{ name: string; slug?: string }>('v1/organizations/current', {
+      token: response.accessToken,
+      organizationId: orgId,
+    });
+    if (!org?.name) return { name: 'Organization' };
+    return { name: org.name, slug: org.slug };
+  } catch {
+    return { name: 'Organization' };
+  }
 }
 
 async function sessionFromApi(response: AuthResponse): Promise<Session> {
@@ -136,11 +142,16 @@ export async function loginAction(raw: unknown): Promise<ActionResult> {
 
     let session: Session;
     if (isLiveMode) {
+      let response: AuthResponse;
       try {
-        const response = await apiFetch<AuthResponse>('v1/auth/login', { method: 'POST', body: { email, password } });
-        session = await sessionFromApi(response);
+        response = await apiFetch<AuthResponse>('v1/auth/login', { method: 'POST', body: { email, password } });
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) return fail(t('auth.login.invalid'));
+        return fail(t('auth.login.unavailable'));
+      }
+      try {
+        session = await sessionFromApi(response);
+      } catch {
         return fail(t('auth.login.unavailable'));
       }
     } else {

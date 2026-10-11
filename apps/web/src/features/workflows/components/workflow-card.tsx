@@ -21,6 +21,7 @@ export function WorkflowCard({ workflow, editHref }: WorkflowCardProps) {
         <div className="min-w-0">
           <h3 className="text-[15px] font-semibold leading-snug">{workflow.name}</h3>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            <Badge tone="neutral">{t(`workflows.subject.${workflow.entityType}` as 'workflows.subject.content')}</Badge>
             <Badge tone={workflow.active ? 'success' : 'neutral'} dot>
               {workflow.active ? t('workflows.status.active') : t('workflows.status.inactive')}
             </Badge>
@@ -43,7 +44,7 @@ export function WorkflowCard({ workflow, editHref }: WorkflowCardProps) {
             <span className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft bg-surface-2 px-2.5 py-1">
               <span className="grid size-4 place-items-center rounded-full bg-primary/16 text-[10px] font-semibold text-primary">{index + 1}</span>
               {stage.name}
-              {stage.assigneeRoleId || (stage.roleIds?.length ?? 0) > 0 || (stage.approverIds?.length ?? 0) > 0 ? (
+              {stage.basis === 'ASSIGNEE' || (stage.targetIds?.length ?? 0) > 0 || stage.assigneeRoleId || (stage.roleIds?.length ?? 0) > 0 || (stage.approverIds?.length ?? 0) > 0 ? (
                 <UserCheck className="size-3 text-muted" aria-hidden />
               ) : null}
             </span>

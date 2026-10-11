@@ -20,7 +20,10 @@ import {
 } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
-import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
+import {
+  RequireAnyPermissions,
+  RequirePermissions,
+} from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { MediaService } from '../../../application/services/media.service';
 import {
@@ -40,7 +43,7 @@ export class MediaResourceController {
   constructor(private readonly service: MediaService) {}
 
   @Get()
-  @RequirePermissions(Permissions.FILES_VIEW)
+  @RequireAnyPermissions(Permissions.FILES_VIEW, Permissions.CONTENT_EDIT, Permissions.CONTENT_CREATE)
   list(
     @Param('organizationId') organizationId: string,
     @Query() query: ListMediaAssetsQueryDto,

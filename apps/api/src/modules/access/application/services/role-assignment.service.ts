@@ -81,6 +81,38 @@ export class RoleAssignmentService {
     return this.repository.membershipIdsForRole(organizationId, roleId, scope);
   }
 
+  membershipIdsForDesignations(
+    organizationId: string,
+    designationIds: readonly string[],
+  ) {
+    return this.repository.membershipIdsForDesignations(
+      organizationId,
+      designationIds,
+    );
+  }
+
+  membershipIdsInDepartments(
+    organizationId: string,
+    departmentIds: readonly string[],
+  ) {
+    return this.repository.membershipIdsInDepartments(
+      organizationId,
+      departmentIds,
+    );
+  }
+
+  membershipIdsWithResourceAccess(
+    organizationId: string,
+    scopeType: 'CLIENT' | 'PROJECT',
+    resourceIds: readonly string[],
+  ) {
+    return this.repository.membershipIdsWithResourceAccess(
+      organizationId,
+      scopeType,
+      resourceIds,
+    );
+  }
+
   async assign(
     organizationId: string,
     actorId: string,

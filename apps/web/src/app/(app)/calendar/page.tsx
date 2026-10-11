@@ -2,7 +2,7 @@ import { Permissions, Platforms, type Platform } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Plus } from 'lucide-react';
-import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
+import { getPermissions, loadIf, loadIfAny, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
@@ -19,7 +19,7 @@ import { PlanShootDialog } from '@/features/calendar/components/plan-shoot-dialo
 import { groupByDay, listCalendarItems, monthGrid, type CalendarItem } from '@/features/calendar/services/calendar.service';
 import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
 import { monthKey, monthTitle, parseMonth, shiftMonth, weekdayLabels } from '@/features/calendar/utils/month';
-import { listClients } from '@/features/clients/services/clients.service';
+import { listClientsForContent } from '@/features/content/services/content-clients.service';
 import { listProjects } from '@/features/projects/services/projects.service';
 
 export const metadata: Metadata = { title: t('calendar.title') };
@@ -45,7 +45,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const selectedDay = dayParam && DAY_PARAM.test(dayParam) ? dayParam : undefined;
   const granted = await getPermissions();
   const canPlanShoot = granted.has(Permissions.PROJECTS_CREATE) && isLiveMode;
-  const canCreate = granted.has(Permissions.CALENDAR_CREATE) && isLiveMode;
+  const canCreatePost = granted.has(Permissions.CONTENT_CREATE);
+  const canCreateEvent = granted.has(Permissions.CALENDAR_CREATE) && isLiveMode;
   const days = monthGrid(year, month);
   const gridStart = days[0];
   const gridEnd = new Date(days[days.length - 1].getTime() + MS_PER_DAY);
@@ -54,9 +55,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
   const itemId = param(sp, 'item');
   const [allItems, clients, projects, googleConnection] = await Promise.all([
-    listCalendarItems({ from: rangeFrom, to: rangeTo, clientId }),
-    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
-    canPlanShoot || canCreate ? loadIf(Permissions.PROJECTS_VIEW, listProjects, []) : Promise.resolve([]),
+    listCalendarItems({ from: rangeFrom, to: rangeTo, clientId }).catch(() => []),
+    loadIfAny([Permissions.CLIENTS_VIEW, Permissions.CONTENT_VIEW], () => listClientsForContent(), []).catch(
+      () => [],
+    ),
+    canPlanShoot || canCreateEvent
+      ? loadIf(Permissions.PROJECTS_VIEW, listProjects, []).catch(() => [])
+      : Promise.resolve([]),
     getGoogleCalendarConnection().catch(() => null),
   ]);
 
@@ -111,12 +116,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 }
               />
             ) : null}
-            <Button variant="primary" asChild>
-              <Link href={clientId ? `/content?new=1&client=${clientId}` : '/content?new=1'}>
-                <Plus />
-                {t('content.new')}
-              </Link>
-            </Button>
+            {canCreatePost ? (
+              <Button variant="primary" asChild>
+                <Link href={clientId ? `/content?new=1&client=${clientId}` : '/content?new=1'}>
+                  <Plus />
+                  {t('content.new')}
+                </Link>
+              </Button>
+            ) : null}
           </>
         }
       />
@@ -216,7 +223,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           items={itemsByDay.get(selectedDay) ?? []}
           closeHref={link({ day: undefined })}
           clientId={clientId}
-          canCreate={canCreate}
+          canCreatePost={canCreatePost}
+          canCreateEvent={canCreateEvent}
           canPlanShoot={canPlanShoot}
           googleConnected={googleConnected}
           defaultSyncToGoogle={googleConnection?.defaultSyncNewEvents ?? false}
