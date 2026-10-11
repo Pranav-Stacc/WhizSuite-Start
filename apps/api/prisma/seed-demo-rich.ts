@@ -1,12 +1,59 @@
 import { randomUUID } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
+import type { DefaultRoleTemplate } from '@agency-os/contracts';
 import {
+  DEFAULT_MEMBERSHIP_ROLES,
   DEFAULT_ROLE_TEMPLATES,
   OWNER_MEMBERSHIP_ROLE,
   Permissions,
 } from '@agency-os/contracts';
 import type { PrismaClient } from '@prisma/client';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+
+const OWNER_ROLE_NAME = OWNER_MEMBERSHIP_ROLE?.name ?? 'Owner';
+
+type SeedRoleTemplate = {
+  name: string;
+  permissions: readonly string[];
+  kind: string;
+  defaultScopeTypes: readonly string[];
+};
+
+function normalizeRoleTemplate(template: DefaultRoleTemplate): SeedRoleTemplate {
+  return {
+    name: template.name,
+    permissions: template.permissions,
+    kind: template.kind ?? 'ACCESS',
+    defaultScopeTypes: template.defaultScopeTypes ?? ['ORGANIZATION'],
+  };
+}
+
+function accessRoleTemplates(): SeedRoleTemplate[] {
+  if (DEFAULT_ROLE_TEMPLATES?.length) {
+    return DEFAULT_ROLE_TEMPLATES.map(normalizeRoleTemplate);
+  }
+  const admin = DEFAULT_MEMBERSHIP_ROLES?.ADMIN;
+  const member = DEFAULT_MEMBERSHIP_ROLES?.MEMBER;
+  const fromMembership = [admin, member].filter(
+    (t): t is DefaultRoleTemplate => Boolean(t),
+  );
+  if (fromMembership.length > 0) return fromMembership.map(normalizeRoleTemplate);
+  const all = Object.values(Permissions);
+  return [
+    {
+      name: 'Admin',
+      permissions: all,
+      kind: 'ACCESS',
+      defaultScopeTypes: ['ORGANIZATION'],
+    },
+    {
+      name: 'Member',
+      permissions: all,
+      kind: 'ACCESS',
+      defaultScopeTypes: ['ORGANIZATION'],
+    },
+  ];
+}
 
 /** Login for local / staging demo (see apps/api/.env.example). */
 export const DEMO_ACCOUNT = {
@@ -113,7 +160,7 @@ async function ensureOwnerRole(
   organizationId: string,
 ): Promise<string> {
   const existing = await prisma.role.findFirst({
-    where: { organizationId, name: OWNER_MEMBERSHIP_ROLE.name, isSystem: true },
+    where: { organizationId, name: OWNER_ROLE_NAME, isSystem: true },
     select: { id: true },
   });
   if (existing) return existing.id;
@@ -125,7 +172,7 @@ async function ensureOwnerRole(
   const role = await prisma.role.create({
     data: {
       organizationId,
-      name: OWNER_MEMBERSHIP_ROLE.name,
+      name: OWNER_ROLE_NAME,
       isSystem: true,
       permissions: {
         create: perms.map((p) => ({ permissionId: p.id, effect: 'ALLOW' })),
@@ -143,7 +190,7 @@ async function ensureDefaultRoles(
     (await prisma.permission.findMany({ select: { id: true, key: true } })).map((p) => [p.key, p.id]),
   );
   const byName = new Map<string, string>();
-  for (const template of DEFAULT_ROLE_TEMPLATES) {
+  for (const template of accessRoleTemplates()) {
     const found = await prisma.role.findFirst({
       where: { organizationId, name: template.name, isSystem: false },
       select: { id: true },
@@ -464,7 +511,7 @@ export async function seedDemoRich(
           caption: `Growing with ${seed.name} — post ${p + 1} #demo`,
           contentType: p % 2 === 0 ? 'IMAGE' : 'CAROUSEL',
           status,
-          platforms: [PLATFORMS[p % PLATFORMS.length]],
+          platforms: [PLATFORMS[p % PLATFORMS.length] ?? 'instagram'],
           hashtags: ['demo', seed.industry.toLowerCase()],
           scheduledAt,
           createdById: ownerUser.id,
@@ -579,7 +626,8 @@ export async function seedDemoRich(
       data: {
         organizationId: org.id,
         clientId: client.id,
-        membershipId: membershipIds[1 + (index % (membershipIds.length - 1))],
+        membershipId:
+          membershipIds[1 + (index % (membershipIds.length - 1))] ?? ownerMembership.id,
         role: 'ACCOUNT_MANAGER',
       },
     });
