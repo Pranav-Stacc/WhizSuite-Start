@@ -12,6 +12,7 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { isOwnerRole } from '@/features/roles/config';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
 import { listMembers } from '@/features/team/services/members.service';
+import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 import { WorkflowCard } from '@/features/workflows/components/workflow-card';
 import { WorkflowDialog } from '@/features/workflows/components/workflow-dialog';
 import { listWorkflows } from '@/features/workflows/services/workflows.service';
@@ -35,6 +36,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
     loadIf(Permissions.MEMBERS_VIEW, listMembers, []),
     can(Permissions.ROLES_MANAGE),
   ]);
+  const scopeResources = canManageRoles ? await loadScopeResources() : undefined;
   const roleSummaries = roles.map(toRoleSummary);
   // Any non-owner role can be attached to a stage — no separate "workflow" role type.
   const workflowRoles = roleSummaries.filter((role) => !isOwnerRole(role));
@@ -51,6 +53,7 @@ export default async function WorkflowsPage({ searchParams }: { searchParams: Pr
     workflowRoles,
     members,
     assignableRoles,
+    scopeResources,
   };
 
   return (

@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import '../brand/app_brand.dart';
 import '../theme/app_tokens.dart';
 import 'app_logo.dart';
+import 'fade_slide_in.dart';
 
-/// Full-area brand loading animation using the official WhizSuite wordmark.
+/// Full-area brand loading animation using the official WhizSuite symbol.
 class BrandLoader extends StatefulWidget {
   const BrandLoader({super.key});
 
@@ -35,19 +36,23 @@ class _BrandLoaderState extends State<BrandLoader> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
-      child: ExcludeSemantics(
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              final pulse = 0.94 + 0.06 * math.sin(_controller.value * 2 * math.pi);
-              return Transform.scale(
-                scale: pulse,
-                child: const AppLogo.primary(height: AppBrand.primaryLogoHeight + 10),
-              );
-            },
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    return ColoredBox(
+      color: bg,
+      child: Semantics(
+        label: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
+        child: ExcludeSemantics(
+          child: Center(
+            child: FadeSlideIn(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: const AppLogo.symbol(size: AppBrand.splashSymbolSize),
+                builder: (context, child) {
+                  final pulse = 0.92 + 0.08 * math.sin(_controller.value * 2 * math.pi);
+                  return Transform.scale(scale: pulse, child: child);
+                },
+              ),
+            ),
           ),
         ),
       ),

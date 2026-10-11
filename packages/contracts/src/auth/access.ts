@@ -167,12 +167,20 @@ export const roleAssignmentScopeSchema = z.object({
 });
 export type RoleAssignmentScopeInput = z.infer<typeof roleAssignmentScopeSchema>;
 
+export const permissionScopeResourceBindingSchema = z.object({
+  scopeType: z.enum(ASSIGNABLE_SCOPE_TYPE_KEYS),
+  /** Empty means all records of this type in the organisation. */
+  resourceIds: z.array(z.string().uuid()).max(100).default([]),
+});
+export type PermissionScopeResourceBinding = z.infer<typeof permissionScopeResourceBindingSchema>;
+
 export const permissionScopeSchema = z.object({
   key: z.enum(PERMISSION_KEYS),
   scopeTypes: z
     .array(z.enum(ASSIGNABLE_SCOPE_TYPE_KEYS))
     .min(1)
     .max(ASSIGNABLE_SCOPE_TYPE_KEYS.length),
+  scopeResources: z.array(permissionScopeResourceBindingSchema).optional(),
 });
 export type PermissionScopeInput = z.infer<typeof permissionScopeSchema>;
 

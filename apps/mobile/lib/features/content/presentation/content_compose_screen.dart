@@ -43,7 +43,9 @@ class ContentComposeScreen extends ConsumerWidget {
     if (!ref.watch(accessPolicyProvider.select((p) => p.can(permission)))) {
       return PageScaffold(title: l10n.contentTitle, body: const ForbiddenState());
     }
-    if (id == null) return _Composer(initialClientId: initialClientId);
+    if (id == null) {
+      return _Composer(initialClientId: initialClientId, initialScheduledAt: initialScheduledAt);
+    }
     final item = ref.watch(contentItemProvider(id));
     return switch (item) {
       AsyncValue(:final value?) when !isContentEditable(value.status) => PageScaffold(

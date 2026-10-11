@@ -72,7 +72,7 @@ class PageScaffold extends StatelessWidget {
         actions: [...actions, if (includeShell) ...ShellActions.of(context)],
       ),
       floatingActionButton: floatingActionButton,
-      body: body,
+      body: ColoredBox(color: tokens.bg, child: body),
     );
   }
 }

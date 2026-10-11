@@ -51,6 +51,7 @@ class Role {
     this.kind = RoleKinds.access,
     this.defaultScopeTypes = const [ScopeTypes.organization],
     this.moduleScopes = const {},
+    this.moduleScopeResources = const {},
     this.memberCount = 0,
   });
 
@@ -66,6 +67,7 @@ class Role {
           for (final row in json.objects('permissions')) ?(row.object('permission') ?? row).strOrNull('key'),
         },
         moduleScopes: _moduleScopesFromPermissions(json),
+        moduleScopeResources: _moduleScopeResourcesFromPermissions(json),
         memberCount: json.integerOrNull('memberCount') ?? json.objects('assignments').length,
       );
 
@@ -78,6 +80,8 @@ class Role {
   final Set<String> permissionKeys;
   /// Union of per-permission scope types, grouped by module prefix.
   final Map<String, Set<String>> moduleScopes;
+  /// Per-module resource ids keyed by scope type (CLIENT, PROJECT, …).
+  final Map<String, Map<String, Set<String>>> moduleScopeResources;
   final int memberCount;
 
   RoleSummary get summary => RoleSummary(
@@ -92,8 +96,8 @@ class Role {
 
   bool get isWorkflow => kind == RoleKinds.workflow;
 
-  /// Only the Owner system role is read-only in the API.
-  bool get isEditable => !isSystem;
+  /// Only the Owner system role is fixed; other roles (including system templates) may be edited.
+  bool get isEditable => !isOwner;
 }
 
 Map<String, Set<String>> _moduleScopesFromPermissions(Json json) {
@@ -107,6 +111,26 @@ Map<String, Set<String>> _moduleScopesFromPermissions(Json json) {
     final types = conditions?.strings('scopeTypes') ?? const [];
     if (types.isEmpty) continue;
     map.putIfAbsent(module, () => {}).addAll(types);
+  }
+  return map;
+}
+
+Map<String, Map<String, Set<String>>> _moduleScopeResourcesFromPermissions(Json json) {
+  final map = <String, Map<String, Set<String>>>{};
+  for (final row in json.objects('permissions')) {
+    final perm = row.object('permission') ?? row;
+    final key = perm.strOrNull('key');
+    if (key == null) continue;
+    final module = moduleKeyForPermission(key);
+    final conditions = row.object('conditions');
+    final resources = conditions?.object('resources');
+    if (resources == null) continue;
+    for (final scopeType in resources.keys) {
+      final raw = resources[scopeType];
+      final ids = raw is List ? raw.whereType<String>().where((id) => id.isNotEmpty).toList() : const <String>[];
+      if (ids.isEmpty) continue;
+      map.putIfAbsent(module, () => {})[scopeType] = ids.toSet();
+    }
   }
   return map;
 }

@@ -6,6 +6,7 @@ import '../../../../core/contracts/contracts.g.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/avatar.dart';
 import '../../../../core/widgets/feedback.dart';
+import '../../../../core/widgets/keep_alive_tab.dart';
 import '../../../../core/widgets/page_scaffold.dart';
 import '../../../../core/widgets/resource_list.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -49,6 +50,27 @@ class AgencyScreen extends ConsumerStatefulWidget {
 class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProviderStateMixin {
   TabController? _tabs;
   List<_AgencyTab> _visibleTabs = const [];
+  bool _warmed = false;
+
+  static bool _tabsEqual(List<_AgencyTab> a, List<_AgencyTab> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  void _warmCaches(AccessPolicy policy) {
+    if (_warmed) return;
+    _warmed = true;
+    if (policy.can(Permissions.membersView)) ref.read(membersProvider.future);
+    if (policy.can(Permissions.orgView)) {
+      ref.read(departmentsProvider.future);
+      ref.read(articlesProvider.future);
+    }
+    if (policy.can(Permissions.rolesManage)) ref.read(rolesProvider.future);
+    if (policy.can(Permissions.membersInvite)) ref.read(invitationsProvider.future);
+  }
 
   @override
   void dispose() {
@@ -70,11 +92,16 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
 
   void _ensureTabs(AccessPolicy policy, bool canInvite) {
     final tabs = _tabsFor(policy, canInvite);
-    if (_tabs != null && _visibleTabs.length == tabs.length) return;
+    if (_tabs != null && _tabsEqual(_visibleTabs, tabs)) return;
+    final previousIndex = _tabs?.index ?? 0;
     _tabs?.removeListener(_onTabChanged);
     _tabs?.dispose();
     _visibleTabs = tabs;
-    _tabs = TabController(length: tabs.length, vsync: this);
+    _tabs = TabController(
+      length: tabs.length,
+      vsync: this,
+      initialIndex: previousIndex.clamp(0, tabs.length - 1),
+    );
     _tabs!.addListener(_onTabChanged);
   }
 
@@ -95,6 +122,7 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
     final policy = ref.watch(accessPolicyProvider);
     final canInvite = policy.can(Permissions.membersInvite);
     _ensureTabs(policy, canInvite);
+    _warmCaches(policy);
     final tabs = _visibleTabs;
     final controller = _tabs!;
 
@@ -170,20 +198,22 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
         controller: controller,
         children: [
           for (final tab in tabs)
-            switch (tab) {
-              _AgencyTab.overview => _OverviewTab(
-                  onSelectTab: (tab) => controller.animateTo(tabs.indexOf(tab)),
-                  onInvite: _invite,
-                ),
-              _AgencyTab.members => _MembersTab(onInvite: _invite),
-              _AgencyTab.departments => DepartmentTreeView(
-                  onTap: (node) => context.push(DepartmentsRoutes.detail(node.department.id)),
-                ),
-              _AgencyTab.roles => const _RolesTab(),
-              _AgencyTab.knowledge => const _KnowledgeTab(),
-              _AgencyTab.documents => const AgencyHrDocumentsTab(),
-              _AgencyTab.invitations => _InvitationsTab(onInvite: _invite),
-            },
+            KeepAliveTab(
+              child: switch (tab) {
+                _AgencyTab.overview => _OverviewTab(
+                    onSelectTab: (tab) => controller.animateTo(tabs.indexOf(tab)),
+                    onInvite: _invite,
+                  ),
+                _AgencyTab.members => _MembersTab(onInvite: _invite),
+                _AgencyTab.departments => DepartmentTreeView(
+                    onTap: (node) => context.push(DepartmentsRoutes.detail(node.department.id)),
+                  ),
+                _AgencyTab.roles => const _RolesTab(),
+                _AgencyTab.knowledge => const _KnowledgeTab(),
+                _AgencyTab.documents => const AgencyHrDocumentsTab(),
+                _AgencyTab.invitations => _InvitationsTab(onInvite: _invite),
+              },
+            ),
         ],
       ),
     );
@@ -212,6 +242,9 @@ class _OverviewTab extends ConsumerWidget {
         invitations.where((i) => i.effectiveStatus(DateTime.now()) == InvitationStatuses.pending).length;
     final unassigned = members.where((m) => m.positions.isEmpty && m.membershipType != MembershipTypes.client).toList();
 
+    final staff = members.where((m) => m.membershipType != MembershipTypes.client).length;
+    final clients = members.where((m) => m.membershipType == MembershipTypes.client).length;
+
     return RefreshIndicator(
       onRefresh: () async {
         final futures = <Future<void>>[];
@@ -225,15 +258,27 @@ class _OverviewTab extends ConsumerWidget {
       child: ListView(
         padding: EdgeInsets.all(tokens.lg),
         children: [
+          Text(l10n.agencyBoardEyebrow, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tokens.muted, letterSpacing: 1.2)),
+          SizedBox(height: tokens.xs),
+          Text(l10n.agencyBoardTitle, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          SizedBox(height: tokens.xs),
+          Text(l10n.agencyBoardSubtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.muted)),
+          SizedBox(height: tokens.lg),
           _HeroStats(
             members: members.length,
+            staff: staff,
+            clients: clients,
             departments: departments,
             roles: roles,
             articles: articles,
-            onMembers: policy.can(Permissions.membersView) ? () => onSelectTab(_AgencyTab.members) : null,
-            onDepartments: policy.can(Permissions.orgView) ? () => onSelectTab(_AgencyTab.departments) : null,
-            onRoles: policy.can(Permissions.rolesManage) ? () => onSelectTab(_AgencyTab.roles) : null,
-            onArticles: policy.can(Permissions.orgView) ? () => onSelectTab(_AgencyTab.knowledge) : null,
+            pendingInvites: pendingInvites,
+          ),
+          SizedBox(height: tokens.lg),
+          _AgencyNavGrid(
+            policy: policy,
+            canInvite: policy.can(Permissions.membersInvite),
+            onSelectTab: onSelectTab,
+            onInvite: onInvite,
           ),
           SizedBox(height: tokens.lg),
           if (unassigned.isNotEmpty) ...[
@@ -317,104 +362,149 @@ class _OverviewTab extends ConsumerWidget {
 class _HeroStats extends StatelessWidget {
   const _HeroStats({
     required this.members,
+    required this.staff,
+    required this.clients,
     required this.departments,
     required this.roles,
     required this.articles,
-    this.onMembers,
-    this.onDepartments,
-    this.onRoles,
-    this.onArticles,
+    required this.pendingInvites,
   });
 
   final int members;
+  final int staff;
+  final int clients;
   final int departments;
   final int roles;
   final int articles;
-  final VoidCallback? onMembers;
-  final VoidCallback? onDepartments;
-  final VoidCallback? onRoles;
-  final VoidCallback? onArticles;
+  final int pendingInvites;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: tokens.borderRadius,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(tokens.surface, tokens.primary, 0.08)!,
-            Color.lerp(tokens.surface, tokens.secondary, 0.06)!,
-          ],
-        ),
-        border: Border.all(color: tokens.border),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(tokens.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(l10n.agencyOverviewTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-            SizedBox(height: tokens.md),
-            Row(
-              children: [
-                if (onMembers != null)
-                  Expanded(child: _StatTile(label: l10n.teamStatMembers, value: '$members', onTap: onMembers)),
-                if (onMembers != null && onDepartments != null) SizedBox(width: tokens.sm),
-                if (onDepartments != null)
-                  Expanded(child: _StatTile(label: l10n.navDepartments, value: '$departments', onTap: onDepartments)),
-              ],
-            ),
-            if (onRoles != null || onArticles != null) ...[
-              SizedBox(height: tokens.sm),
-              Row(
-                children: [
-                  if (onRoles != null)
-                    Expanded(child: _StatTile(label: l10n.navRoles, value: '$roles', onTap: onRoles)),
-                  if (onRoles != null && onArticles != null) SizedBox(width: tokens.sm),
-                  if (onArticles != null)
-                    Expanded(child: _StatTile(label: l10n.knowledgeTitle, value: '$articles', onTap: onArticles)),
-                ],
-              ),
+    final text = Theme.of(context).textTheme;
+    return SurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.agencyBoardOnTheFloor, style: text.labelMedium?.copyWith(color: tokens.secondary)),
+          SizedBox(height: tokens.sm),
+          Wrap(
+            spacing: tokens.md,
+            runSpacing: tokens.sm,
+            children: [
+              _CompactStat(label: l10n.teamStatMembers, value: '$members'),
+              _CompactStat(label: l10n.teamStatStaff, value: '$staff'),
+              _CompactStat(label: l10n.teamStatClients, value: '$clients'),
+              _CompactStat(label: l10n.navDepartments, value: '$departments'),
+              _CompactStat(label: l10n.navRoles, value: '$roles'),
+              _CompactStat(label: l10n.knowledgeTitle, value: '$articles'),
+              if (pendingInvites > 0) _CompactStat(label: l10n.teamTabInvitations, value: '$pendingInvites'),
             ],
-          ],
-        ),
+          ),
+          SizedBox(height: tokens.sm),
+          Text(l10n.agencyBoardStaffLine(staff, clients), style: text.bodySmall?.copyWith(color: tokens.muted)),
+        ],
       ),
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value, this.onTap});
+class _CompactStat extends StatelessWidget {
+  const _CompactStat({required this.label, required this.value});
 
   final String label;
   final String value;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    return Material(
-      color: tokens.surface.withValues(alpha: 0.7),
-      borderRadius: tokens.borderRadius,
-      child: InkWell(
-        onTap: onTap,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        SizedBox(width: tokens.xs),
+        Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tokens.muted)),
+      ],
+    );
+  }
+}
+
+class _AgencyNavGrid extends StatelessWidget {
+  const _AgencyNavGrid({
+    required this.policy,
+    required this.canInvite,
+    required this.onSelectTab,
+    required this.onInvite,
+  });
+
+  final AccessPolicy policy;
+  final bool canInvite;
+  final ValueChanged<_AgencyTab> onSelectTab;
+  final VoidCallback onInvite;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = context.tokens;
+
+    Widget tile({required IconData icon, required String label, required VoidCallback onTap}) {
+      return Material(
+        color: tokens.subtle,
         borderRadius: tokens.borderRadius,
-        child: Padding(
-          padding: EdgeInsets.all(tokens.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tokens.muted)),
-              Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-            ],
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: tokens.borderRadius,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: tokens.md, vertical: tokens.lg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: tokens.primary),
+                SizedBox(height: tokens.sm),
+                Text(label, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelLarge),
+              ],
+            ),
           ),
         ),
-      ),
+      );
+    }
+
+    final cells = <Widget>[];
+    if (policy.can(Permissions.membersView)) {
+      cells.add(tile(icon: Icons.groups_outlined, label: l10n.agencyBoardPeople, onTap: () => onSelectTab(_AgencyTab.members)));
+    }
+    if (policy.can(Permissions.orgView)) {
+      cells.add(tile(icon: Icons.account_tree_outlined, label: l10n.agencyBoardStructure, onTap: () => onSelectTab(_AgencyTab.departments)));
+    }
+    if (policy.can(Permissions.rolesManage)) {
+      cells.add(tile(icon: Icons.admin_panel_settings_outlined, label: l10n.agencyBoardAccess, onTap: () => onSelectTab(_AgencyTab.roles)));
+    }
+    if (policy.can(Permissions.orgView)) {
+      cells.add(tile(icon: Icons.menu_book_outlined, label: l10n.agencyBoardPlaybook, onTap: () => onSelectTab(_AgencyTab.knowledge)));
+    }
+    if (policy.can(Permissions.orgSettingsManage)) {
+      cells.add(tile(icon: Icons.folder_shared_outlined, label: l10n.agencyTabHrDocuments, onTap: () => onSelectTab(_AgencyTab.documents)));
+    }
+    if (canInvite) {
+      cells.add(tile(icon: Icons.person_add_alt_1_outlined, label: l10n.teamInvite, onTap: onInvite));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.agencyBoardLaunchPad, style: Theme.of(context).textTheme.titleSmall),
+        SizedBox(height: tokens.sm),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: tokens.sm,
+          crossAxisSpacing: tokens.sm,
+          childAspectRatio: 1.45,
+          children: cells,
+        ),
+      ],
     );
   }
 }
@@ -603,7 +693,10 @@ class _RolesTab extends ConsumerWidget {
           ),
         ),
       ),
-      itemBuilder: (context, role) => RoleCard(role: role, onTap: () => context.push(RolesRoutes.detail(role.id))),
+      itemBuilder: (context, role) => RoleCard(
+        role: role,
+        onTap: () => context.push(role.isEditable ? RolesRoutes.edit(role.id) : RolesRoutes.detail(role.id)),
+      ),
     );
   }
 }

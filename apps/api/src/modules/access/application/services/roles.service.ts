@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   AssignableScopeTypes,
   ErrorCodes,
+  MEMBERSHIP_DEFAULT_ROLE_NAME,
   roleInputSchema,
   type RoleInput,
   type RoleKind,
@@ -78,7 +79,7 @@ export class RolesService {
     roleId: string,
     raw: Partial<RoleInput>,
   ) {
-    const before = await this.requireCustomRole(organizationId, roleId);
+    const before = await this.requireMutableRole(organizationId, roleId);
     // Validate the post-update shape so ACCESS roles cannot lose all permissions.
     parseRoleInput({
       name: raw.name ?? before.name,
@@ -163,6 +164,19 @@ export class RolesService {
   private async requireRole(organizationId: string, roleId: string) {
     const role = await this.repository.findRole(organizationId, roleId);
     if (!role) throw notFound();
+    return role;
+  }
+
+  private async requireMutableRole(organizationId: string, roleId: string) {
+    const role = await this.requireRole(organizationId, roleId);
+    if (role.isSystem && role.name === MEMBERSHIP_DEFAULT_ROLE_NAME.OWNER) {
+      throw problem(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        'Owner role cannot be modified',
+        ErrorCodes.VALIDATION_FAILED,
+        'The organisation owner role is fixed',
+      );
+    }
     return role;
   }
 

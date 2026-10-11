@@ -76,12 +76,9 @@ class _FadeSlideInState extends State<FadeSlideIn> with SingleTickerProviderStat
         animation: curve,
         child: widget.child,
         builder: (context, child) => ExcludeSemantics(
-          child: Opacity(
-            opacity: curve.value,
-            child: Transform.translate(
-              offset: Offset(0, (1 - curve.value) * widget.offset),
-              child: child,
-            ),
+          child: Transform.translate(
+            offset: Offset(0, (1 - curve.value) * widget.offset),
+            child: child,
           ),
         ),
       ),

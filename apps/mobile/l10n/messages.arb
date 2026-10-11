@@ -51,5 +51,14 @@
   "messagesClientConversation": "Client",
   "messagesContentConversation": "Content feedback",
   "messagesStatus": "{status, select, OPEN{Open} RESOLVED{Resolved} other{{status}}}",
-  "@messagesStatus": { "placeholders": { "status": { "type": "String" } } }
+  "@messagesStatus": { "placeholders": { "status": { "type": "String" } } },
+  "agentInsightsTitle": "Whiz summary",
+  "agentInsightsSubtitle": "Your schedule and what Whiz completed in this chat.",
+  "agentInsightsUpcoming": "Coming up",
+  "agentInsightsUpcomingEmpty": "Nothing on your calendar in the next few days.",
+  "agentInsightsSchedules": "Recurring Whiz schedules",
+  "agentInsightsSchedulesEmpty": "No recurring agent schedules yet.",
+  "agentInsightsCompleted": "Completed in this chat",
+  "agentInsightsCompletedEmpty": "Ask Whiz to create a reminder, task, or event — results appear here.",
+  "agentInsightsOpenCalendar": "Open full calendar"
 }

@@ -1,5 +1,12 @@
+import 'package:flutter/painting.dart';
+
 /// WhizSuite brand asset paths and layout constants from the official logo files.
 abstract final class AppBrand {
+  /// Native splash + in-app boot screen (matches logo chrome in [AppLogo]).
+  static const splashBackground = Color(0xFF050B16);
+
+  /// Standalone symbol size on splash / [BrandLoader].
+  static const splashSymbolSize = 72.0;
   /// `PRIMARY LOGO 2.png` — full wordmark (symbol + Whiz + suite).
   static const primaryLogo = 'assets/brand/logo-primary.png';
 

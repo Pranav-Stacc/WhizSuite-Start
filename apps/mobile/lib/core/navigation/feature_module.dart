@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'app_pages.dart';
 import '../../features/access/domain/access_policy.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -84,4 +85,8 @@ GoRoute destinationRoute(String path, Widget Function(GoRouterState state) build
 
 /// Nested detail/create/edit route. Always open with [GoRouter.push] (not [GoRouter.go]).
 GoRoute childRoute(String path, Widget Function(GoRouterState state) build, {List<RouteBase> routes = const []}) =>
-    GoRoute(path: path, builder: (context, state) => build(state), routes: routes);
+    GoRoute(
+      path: path,
+      pageBuilder: (context, state) => slidePushPage(key: state.pageKey, child: build(state)),
+      routes: routes,
+    );

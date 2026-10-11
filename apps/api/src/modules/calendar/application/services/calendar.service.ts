@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DomainEventTypes } from '@agency-os/contracts';
 import { randomUUID } from 'node:crypto';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { notFound } from '../../../../shared/errors/problem-details.exception';
+import { OutboxService } from '../../../../shared/events/outbox.service';
 import { TenantContext } from '../../../../shared/tenant/tenant.context';
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { CalendarRepository } from '../../infrastructure/repositories/calendar.repository';
@@ -13,6 +15,7 @@ import type {
 import { GoogleCalendarSyncService } from './google-calendar-sync.service';
 
 const ENTITY_TYPE = 'calendarItem';
+const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000000';
 
 const toDate = (value: string | null | undefined) =>
   value === undefined ? undefined : value === null ? null : new Date(value);
@@ -24,6 +27,7 @@ export class CalendarService {
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
     private readonly googleSync: GoogleCalendarSyncService,
+    private readonly outbox: OutboxService,
   ) {}
 
   list(organizationId: string) {
@@ -93,6 +97,24 @@ export class CalendarService {
       syncToGoogle,
       actorId,
     );
+
+    const recipientIds = reminderUserIdsFromMetadata(metadata);
+    if (recipientIds.length > 0) {
+      await this.outbox.write({
+        type: DomainEventTypes.CALENDAR_ITEM_CREATED,
+        version: 1,
+        organizationId,
+        payload: {
+          title: item.title,
+          startsAt: item.startsAt.toISOString(),
+          calendarItemId: item.id,
+          recipientIds,
+          reminderKey: `calendar.created:${item.id}`,
+        },
+        actor: { id: SYSTEM_ACTOR_ID, type: 'system' },
+      });
+    }
+
     return item;
   }
 

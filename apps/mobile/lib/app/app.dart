@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/config/app_config.dart';
 import '../core/formatting/formats.dart';
 import '../core/theme/app_theme.dart';
-import '../core/theme/app_tokens.dart';
 import '../core/theme/theme_controller.dart';
 import '../l10n/app_localizations.dart';
 import 'router/app_router.dart';
@@ -20,8 +19,7 @@ class AgencyOsApp extends ConsumerWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: theme,
-      themeAnimationDuration: AppMotion.medium,
-      themeAnimationCurve: AppMotion.standard,
+      themeAnimationDuration: Duration.zero,
       routerConfig: ref.watch(routerProvider),
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -30,10 +28,13 @@ class AgencyOsApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) => FormatDefaults(
-        currency: ref.watch(appConfigProvider).defaultCurrency,
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) {
+        final bg = Theme.of(context).scaffoldBackgroundColor;
+        return FormatDefaults(
+          currency: ref.watch(appConfigProvider).defaultCurrency,
+          child: ColoredBox(color: bg, child: child ?? const SizedBox.shrink()),
+        );
+      },
     );
   }
 }

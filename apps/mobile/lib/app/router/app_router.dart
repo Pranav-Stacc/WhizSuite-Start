@@ -19,6 +19,7 @@ import '../shell/app_shell.dart';
 import '../shell/home_screen.dart';
 import '../shell/more_screen.dart';
 import '../shell/splash_screen.dart';
+import '../../core/navigation/app_pages.dart';
 import 'oauth_deep_link.dart';
 
 GoRoute _page(String path, Widget screen, {List<RouteBase> routes = const []}) => GoRoute(
@@ -42,7 +43,11 @@ List<StatefulShellBranch> _shellBranches() {
     ..add(
       StatefulShellBranch(
         routes: [
-          GoRoute(path: AppRoutes.notifications, builder: (_, _) => const NotificationsScreen()),
+          GoRoute(
+            path: AppRoutes.notifications,
+            pageBuilder: (context, state) =>
+                slidePushPage(key: state.pageKey, child: const NotificationsScreen()),
+          ),
         ],
       ),
     )
@@ -51,19 +56,22 @@ List<StatefulShellBranch> _shellBranches() {
         routes: [
           GoRoute(
             path: AppRoutes.settings,
-            builder: (_, _) => const SettingsScreen(),
+            pageBuilder: (context, state) => slidePushPage(key: state.pageKey, child: const SettingsScreen()),
             routes: [
               GoRoute(
                 path: AppRoutes.appearance.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const AppearanceScreen(),
+                pageBuilder: (context, state) =>
+                    slidePushPage(key: state.pageKey, child: const AppearanceScreen()),
               ),
               GoRoute(
                 path: AppRoutes.notificationPreferences.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const NotificationPreferencesScreen(),
+                pageBuilder: (context, state) =>
+                    slidePushPage(key: state.pageKey, child: const NotificationPreferencesScreen()),
               ),
               GoRoute(
                 path: AppRoutes.storage.substring(AppRoutes.settings.length + 1),
-                builder: (_, _) => const StorageSettingsScreen(),
+                pageBuilder: (context, state) =>
+                    slidePushPage(key: state.pageKey, child: const StorageSettingsScreen()),
               ),
             ],
           ),

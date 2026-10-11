@@ -52,5 +52,10 @@
   "rolePermissionAction": "{action, select, k_view{View} k_create{Create} k_edit{Edit} k_delete{Delete} k_invite{Invite} k_deactivate{Deactivate} k_manage{Manage} k_settings_manage{Manage settings} k_billing_manage{Manage billing} k_branding_manage{Manage branding} k_convert{Convert} k_assign{Assign} k_transition{Change status} k_schedule{Schedule} k_publish{Publish} k_approve{Approve} k_resolve{Resolve} k_upload{Upload} k_reply{Reply} k_track{Track} other{{fallback}}}",
   "@rolePermissionAction": { "placeholders": { "action": { "type": "String" }, "fallback": { "type": "String" } } },
   "rolePermissionLabel": "{group} · {action}",
-  "@rolePermissionLabel": { "placeholders": { "group": { "type": "String" }, "action": { "type": "String" } } }
+  "@rolePermissionLabel": { "placeholders": { "group": { "type": "String" }, "action": { "type": "String" } } },
+  "roleNotFoundTitle": "Role not found",
+  "roleNotFoundBody": "This role may have been deleted or you no longer have access to it.",
+  "roleModuleScopesHeading": "Module data scopes",
+  "roleModuleScopesDetailHint": "Default scope limits for each permission module. Team assignments can narrow these further.",
+  "roleEditPermissions": "Edit permissions & scopes"
 }

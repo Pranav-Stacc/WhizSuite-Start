@@ -72,6 +72,7 @@ const SUBSCRIBED_EVENTS = [
   DomainEventTypes.INVOICE_PAID,
   DomainEventTypes.INVOICE_OVERDUE,
   DomainEventTypes.CALENDAR_REMINDER_DUE,
+  DomainEventTypes.CALENDAR_ITEM_CREATED,
 ] as const;
 
 function text(
@@ -330,6 +331,17 @@ function deliveriesFor(event: EventEnvelope): Delivery[] {
       return recipientIdsOf(payload).map((recipientId) => ({
         recipientId,
         typeKey: NotificationTypeKeys.CALENDAR_REMINDER,
+        data,
+      }));
+    }
+    case DomainEventTypes.CALENDAR_ITEM_CREATED: {
+      const data = baseData(payload, {
+        calendarItemId: text(payload, 'calendarItemId'),
+        startsAt: text(payload, 'startsAt'),
+      });
+      return recipientIdsOf(payload).map((recipientId) => ({
+        recipientId,
+        typeKey: NotificationTypeKeys.CALENDAR_ITEM_CREATED,
         data,
       }));
     }

@@ -11,6 +11,7 @@ import {
   type ApprovalStepRule,
 } from '@agency-os/contracts';
 import { AssignRolesDialog } from '@/features/team/components/assign-roles-dialog';
+import type { ScopeResourceOptions } from '@/features/team/components/scope-resource-fields';
 import type { Member } from '@/features/team/data/members.repository';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
@@ -29,6 +30,8 @@ interface WorkflowDialogProps {
   members?: Member[];
   /** Roles grantable when editing a member's access from a stage. */
   assignableRoles?: AccessRoleSummary[];
+  /** Department / team / client / project options for role-assignment scopes. */
+  scopeResources?: ScopeResourceOptions;
   trigger?: ReactNode;
   defaultOpen?: boolean;
 }
@@ -76,6 +79,7 @@ export function WorkflowDialog({
   workflowRoles,
   members = [],
   assignableRoles = [],
+  scopeResources,
   trigger,
   defaultOpen,
 }: WorkflowDialogProps) {
@@ -316,6 +320,7 @@ export function WorkflowDialog({
                               <AssignRolesDialog
                                 member={membersById.get(member.id) ?? member}
                                 assignable={assignableRoles}
+                                resources={scopeResources}
                                 trigger={
                                   <Button
                                     type="button"

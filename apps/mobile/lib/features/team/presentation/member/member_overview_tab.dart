@@ -73,6 +73,11 @@ class MemberOverviewTab extends ConsumerWidget {
     final manageable = protection == null && member.status == MemberStatuses.active;
     final canEditProfile = ref.watch(accessPolicyProvider).can(Permissions.membersEdit);
     final canManageRoles = ref.watch(accessPolicyProvider).can(Permissions.rolesManage);
+    final canEditRoles = canManageRoles &&
+        member.status == MemberStatuses.active &&
+        member.membershipType != MembershipTypes.owner &&
+        protection != MemberProtection.owner &&
+        protection != MemberProtection.self;
 
     return ListView(
       padding: EdgeInsets.all(tokens.lg),
@@ -155,29 +160,38 @@ class MemberOverviewTab extends ConsumerWidget {
                 SizedBox(height: tokens.lg),
                 SectionCard(
                   title: l10n.teamRoles,
-                  trailing: manageable && canManageRoles
+                  trailing: canEditRoles
                       ? TextButton.icon(
                           onPressed: () async {
                             final saved = await showMemberRolesForm(context, ref, member);
                             if (saved && context.mounted) showToast(context, l10n.savedToast);
                           },
                           icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: Text(l10n.edit),
+                          label: Text(l10n.memberEditRolesAndScopes),
                         )
                       : null,
-                  child: member.roles.isEmpty
-                      ? Text(l10n.teamRolesNone, style: text.bodyMedium?.copyWith(color: tokens.muted))
-                      : Wrap(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (canEditRoles)
+                        Text(l10n.memberRolesScopesHint, style: text.bodySmall?.copyWith(color: tokens.muted)),
+                      if (canEditRoles) SizedBox(height: tokens.sm),
+                      if (member.roles.isEmpty)
+                        Text(l10n.teamRolesNone, style: text.bodyMedium?.copyWith(color: tokens.muted))
+                      else
+                        Wrap(
                           spacing: tokens.sm,
                           runSpacing: tokens.sm,
                           children: [
                             for (final role in member.roles)
                               Chip(
-                                avatar: Icon(role.isSystem ? Icons.lock_outline : Icons.shield_outlined, size: 16),
+                                avatar: Icon(role.isSystem ? Icons.shield_outlined : Icons.shield_outlined, size: 16),
                                 label: Text(role.name),
                               ),
                           ],
                         ),
+                    ],
+                  ),
                 ),
                 if (canManageRoles) ...[
                   SizedBox(height: tokens.lg),
@@ -375,7 +389,7 @@ class _PermissionsSectionState extends ConsumerState<_PermissionsSection> {
               Text(l10n.memberPermissionsSummary(effective.length, overrides.length), style: Theme.of(context).textTheme.bodySmall),
               SizedBox(height: context.tokens.md),
               if (!widget.manageable)
-                Text(l10n.memberPermissionsReadOnly, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.tokens.muted)),
+                Text(l10n.memberPermissionOverridesReadOnly, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.tokens.muted)),
               for (final group in groups.asData?.value ?? const <PermissionGroup>[])
                 ExpansionTile(
                   title: Text(permissionGroupLabel(l10n, group.key)),

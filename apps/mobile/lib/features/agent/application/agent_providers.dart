@@ -14,3 +14,7 @@ final agentPendingProvider = FutureProvider.autoDispose<List<AgentPendingAction>
 final agentSessionProvider = FutureProvider.autoDispose.family<AgentSessionDetail, String>(
   (ref, sessionId) => ref.watch(agentRepositoryProvider).session(sessionId),
 );
+
+final agentSchedulesProvider = FutureProvider.autoDispose<List<AgentSchedule>>(
+  (ref) => ref.watch(agentRepositoryProvider).schedules(),
+);

@@ -62,6 +62,30 @@ class AgentSessionDetail {
   final DateTime updatedAt;
 }
 
+class AgentSchedule {
+  const AgentSchedule({
+    required this.id,
+    required this.prompt,
+    required this.cronExpression,
+    required this.status,
+    this.name,
+  });
+
+  factory AgentSchedule.fromJson(Json json) => AgentSchedule(
+        id: json.str('id'),
+        name: json.strOrNull('name'),
+        prompt: json.str('prompt'),
+        cronExpression: json.str('cron'),
+        status: json.str('status'),
+      );
+
+  final String id;
+  final String? name;
+  final String prompt;
+  final String cronExpression;
+  final String status;
+}
+
 class AgentPendingAction {
   const AgentPendingAction({
     required this.id,

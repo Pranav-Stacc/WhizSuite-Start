@@ -14,6 +14,7 @@ import { RoleDialog } from '@/features/roles/components/role-dialog';
 import type { AgencyRole } from '@/features/roles/data/roles.repository';
 import { listPermissionCatalog } from '@/features/roles/services/permissions.service';
 import { listRoles } from '@/features/roles/services/roles.service';
+import { loadScopeResources } from '@/features/team/services/scope-resources.service';
 
 const MODULES_SHOWN = 6;
 
@@ -38,13 +39,21 @@ const PERMISSIONS_SHOWN = 8;
 
 export default async function RolesPage() {
   await requirePermission(Permissions.ROLES_MANAGE);
-  const [roles, permissions] = await Promise.all([listRoles(), listPermissionCatalog()]);
+  const [roles, permissions, scopeResources] = await Promise.all([
+    listRoles(),
+    listPermissionCatalog(),
+    loadScopeResources(),
+  ]);
   const customCount = roles.filter((r) => !r.isSystem).length;
   const sorted = [...roles].sort((a, b) => Number(b.isSystem) - Number(a.isSystem) || a.name.localeCompare(b.name));
 
   return (
     <div>
-      <PageHeader title={t('roles.title')} description={t('roles.description')} actions={<RoleDialog permissions={permissions} />} />
+      <PageHeader
+        title={t('roles.title')}
+        description={t('roles.description')}
+        actions={<RoleDialog permissions={permissions} scopeResources={scopeResources} />}
+      />
       <StatGrid cols={3}>
         <StatCard label={t('roles.stat.total')} value={roles.length} icon={<Shield />} />
         <StatCard label={t('roles.stat.custom')} value={customCount} icon={<Shield />} />
@@ -107,7 +116,7 @@ export default async function RolesPage() {
                   </span>
                 ) : (
                   <>
-                    <RoleDialog permissions={permissions} role={role} />
+                    <RoleDialog permissions={permissions} role={role} scopeResources={scopeResources} />
                     {role.memberCount > 0 ? (
                       <span className="text-[11px] text-muted">{t('roles.inUse', { count: role.memberCount })}</span>
                     ) : (

@@ -96,7 +96,13 @@ function permissionConditions(
 ): Prisma.InputJsonValue {
   const row = input.permissionScopes?.find((scope) => scope.key === key);
   const scopeTypes = row?.scopeTypes ?? input.defaultScopeTypes;
-  return { scopeTypes };
+  const resources: Record<string, string[]> = {};
+  for (const binding of row?.scopeResources ?? []) {
+    if (binding.resourceIds.length > 0) {
+      resources[binding.scopeType] = [...binding.resourceIds];
+    }
+  }
+  return Object.keys(resources).length > 0 ? { scopeTypes, resources } : { scopeTypes };
 }
 
 function defaultAssignmentScopes(

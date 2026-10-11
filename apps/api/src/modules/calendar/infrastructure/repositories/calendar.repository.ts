@@ -42,7 +42,11 @@ export class CalendarRepository {
     return this.prisma.calendarItem.findMany({
       where: {
         organizationId,
-        ...(clientIds ? { clientId: { in: clientIds } } : {}),
+        ...(clientIds
+          ? {
+              OR: [{ clientId: { in: clientIds } }, { clientId: null }],
+            }
+          : {}),
         ...(range?.from || range?.to
           ? {
               startsAt: {

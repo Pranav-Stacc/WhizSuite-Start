@@ -9,7 +9,6 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../access/application/access_controller.dart';
 import '../../../access/domain/access_policy.dart';
 import '../../application/team_controller.dart';
-import '../../domain/member.dart';
 import 'member_content_tab.dart';
 import 'member_documents_tab.dart';
 import 'member_overview_tab.dart';

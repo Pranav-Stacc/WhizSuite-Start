@@ -8,6 +8,7 @@ import {
   AssignableScopeTypes,
   RoleKinds,
   allowedScopesForPermission,
+  isAssignableScopeType,
   moduleKeyForPermission,
   type AssignableScopeType,
   type Permission,
@@ -20,12 +21,26 @@ import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
 import { Field, Input, Textarea } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
+import {
+  optionsForScope,
+  scopeNeedsResource,
+  scopeResourceLabel,
+  type ScopeResourceOptions,
+} from '@/features/team/components/scope-resource-fields';
 import { createRoleAction, updateRoleAction } from '../actions/role.actions';
 import type { AgencyRole } from '../data/roles.repository';
 import type { PermissionRow } from '../services/permissions.service';
 
+const EMPTY_RESOURCES: ScopeResourceOptions = {
+  departments: [],
+  teams: [],
+  clients: [],
+  projects: [],
+};
+
 interface RoleDialogProps {
   permissions: PermissionRow[];
+  scopeResources?: ScopeResourceOptions;
   /** When given, the dialog edits this custom role instead of creating one. */
   role?: Pick<
     AgencyRole,
@@ -95,7 +110,32 @@ function defaultScopeFor(key: string): AssignableScopeType {
     : allowed[0] ?? AssignableScopeTypes.ORGANIZATION;
 }
 
-export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
+type ResourceMode = 'all' | 'specific';
+
+function initialModuleResources(role: RoleDialogProps['role']) {
+  const modes: Record<string, Partial<Record<AssignableScopeType, ResourceMode>>> = {};
+  const ids: Record<string, Partial<Record<AssignableScopeType, string[]>>> = {};
+  if (!role) return { modes, ids };
+  const rows: PermissionScopeInput[] =
+    role.permissionScopes.length > 0
+      ? role.permissionScopes
+      : role.permissionKeys.map((key) => ({
+          key: key as Permission,
+          scopeTypes: role.defaultScopeTypes.filter(isAssignableScopeType),
+        }));
+  for (const row of rows) {
+    const module = moduleKeyForPermission(row.key);
+    for (const binding of row.scopeResources ?? []) {
+      modes[module] = { ...modes[module], [binding.scopeType]: binding.resourceIds.length > 0 ? 'specific' : 'all' };
+      if (binding.resourceIds.length > 0) {
+        ids[module] = { ...ids[module], [binding.scopeType]: [...binding.resourceIds] };
+      }
+    }
+  }
+  return { modes, ids };
+}
+
+export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_RESOURCES }: RoleDialogProps) {
   const editing = role !== undefined;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(role?.name ?? '');
@@ -103,6 +143,9 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
   const [moduleScopes, setModuleScopes] = useState<Record<string, AssignableScopeType[]>>(() =>
     initialModuleScopes(role),
   );
+  const initialResources = initialModuleResources(role);
+  const [moduleResourceMode, setModuleResourceMode] = useState(initialResources.modes);
+  const [moduleResourceIds, setModuleResourceIds] = useState(initialResources.ids);
   const [selected, setSelected] = useState<Set<string>>(() => new Set(role?.permissionKeys ?? []));
   const [pending, startTransition] = useTransition();
 
@@ -162,6 +205,12 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
         if (current.size > 1) current.delete(scope);
       } else if (allowed.includes(scope)) {
         current.add(scope);
+        if (scopeNeedsResource(scope)) {
+          setModuleResourceMode((prevModes) => ({
+            ...prevModes,
+            [module]: { ...prevModes[module], [scope]: 'specific' },
+          }));
+        }
       }
       return { ...prev, [module]: [...current] };
     });
@@ -171,6 +220,9 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
     setName(role?.name ?? '');
     setDescription(role?.description ?? '');
     setModuleScopes(initialModuleScopes(role));
+    const resources = initialModuleResources(role);
+    setModuleResourceMode(resources.modes);
+    setModuleResourceIds(resources.ids);
     setSelected(new Set(role?.permissionKeys ?? []));
   };
 
@@ -185,7 +237,19 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
       );
       const scopeTypes = chosen.length > 0 ? chosen : [defaultScopeFor(key)];
       for (const scope of scopeTypes) scopeUnion.add(scope);
-      permissionScopes.push({ key: key as Permission, scopeTypes });
+      const scopeResources = scopeTypes
+        .filter((scopeType) => scopeNeedsResource(scopeType))
+        .flatMap((scopeType) => {
+          const mode = moduleResourceMode[module]?.[scopeType] ?? 'all';
+          if (mode === 'all') return [];
+          const resourceIds = moduleResourceIds[module]?.[scopeType] ?? [];
+          return resourceIds.length > 0 ? [{ scopeType, resourceIds }] : [];
+        });
+      permissionScopes.push({
+        key: key as Permission,
+        scopeTypes,
+        ...(scopeResources.length > 0 ? { scopeResources } : {}),
+      });
     }
     const defaultScopeTypes = [...scopeUnion];
     startTransition(async () => {
@@ -314,6 +378,85 @@ export function RoleDialog({ permissions, role, trigger }: RoleDialogProps) {
                         <p className="mt-1.5 text-[11px] text-muted">
                           {t('roles.scopes.selected', { count: chosen.size || 1 })}
                         </p>
+                        {[...chosen]
+                          .filter((scopeType): scopeType is AssignableScopeType => isAssignableScopeType(scopeType))
+                          .filter(scopeNeedsResource)
+                          .map((scopeType) => {
+                          const label = scopeResourceLabel(scopeType);
+                          const mode = moduleResourceMode[module]?.[scopeType] ?? 'all';
+                          const choices = optionsForScope(scopeType, scopeResources);
+                          const picked = new Set(moduleResourceIds[module]?.[scopeType] ?? []);
+                          return (
+                            <div key={scopeType} className="mt-3 space-y-2 border-t border-border-soft pt-2">
+                              <p className="text-[11px] font-medium">{label}</p>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    'rounded-full border px-2.5 py-1 text-[11px]',
+                                    mode === 'all' ? 'border-primary bg-primary/10' : 'border-border-soft',
+                                  )}
+                                  onClick={() =>
+                                    setModuleResourceMode((prev) => ({
+                                      ...prev,
+                                      [module]: { ...prev[module], [scopeType]: 'all' },
+                                    }))
+                                  }
+                                >
+                                  {t('team.roles.resource.all', { resource: label })}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    'rounded-full border px-2.5 py-1 text-[11px]',
+                                    mode === 'specific' ? 'border-primary bg-primary/10' : 'border-border-soft',
+                                  )}
+                                  onClick={() =>
+                                    setModuleResourceMode((prev) => ({
+                                      ...prev,
+                                      [module]: { ...prev[module], [scopeType]: 'specific' },
+                                    }))
+                                  }
+                                >
+                                  {t('team.roles.resource.choose')}
+                                </button>
+                              </div>
+                              {mode === 'specific' ? (
+                                <ul className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
+                                  {choices.length === 0 ? (
+                                    <li className="px-2 py-1 text-[11px] text-muted">{t('team.roles.resource.empty')}</li>
+                                  ) : (
+                                    choices.map((item) => (
+                                      <li key={item.id}>
+                                        <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-[11px] hover:bg-surface-2">
+                                          <input
+                                            type="checkbox"
+                                            className="size-3.5 accent-primary"
+                                            checked={picked.has(item.id)}
+                                            onChange={() => {
+                                              setModuleResourceIds((prev) => {
+                                                const current = new Set(prev[module]?.[scopeType] ?? []);
+                                                if (current.has(item.id)) current.delete(item.id);
+                                                else current.add(item.id);
+                                                return {
+                                                  ...prev,
+                                                  [module]: { ...prev[module], [scopeType]: [...current] },
+                                                };
+                                              });
+                                            }}
+                                          />
+                                          <span className="truncate">{item.label}</span>
+                                        </label>
+                                      </li>
+                                    ))
+                                  )}
+                                </ul>
+                              ) : (
+                                <p className="text-[11px] text-muted">{t('team.roles.resource.allHint')}</p>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     ) : null}
                   </section>

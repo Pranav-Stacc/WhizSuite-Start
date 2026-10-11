@@ -47,6 +47,7 @@ export const DomainEventTypes = {
   INVOICE_PAID: 'invoice.paid.v1',
   INVOICE_OVERDUE: 'invoice.overdue.v1',
   CALENDAR_REMINDER_DUE: 'calendar.reminder_due.v1',
+  CALENDAR_ITEM_CREATED: 'calendar.item_created.v1',
   AUDIT_RECORDED: 'audit.recorded.v1',
 } as const;
 

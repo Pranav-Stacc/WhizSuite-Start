@@ -1,0 +1,34 @@
+{
+  "navPulse": "Pulse",
+  "pulseEyebrow": "LIVE PULSE",
+  "pulseHeadline": "Your day across the workspace",
+  "pulseTodayTitle": "Happening today",
+  "pulseTodayEmpty": "Nothing scheduled for today — enjoy the breathing room.",
+  "pulseWeekTitle": "On the horizon",
+  "pulseWeekEmpty": "The next few days look open.",
+  "pulseInboxTitle": "Fresh signals",
+  "pulseAllClearTitle": "You are in flow",
+  "pulseAllClearBody": "No urgent items across your modules. Check back later or open the sidebar to explore.",
+  "pulseBriefTitle": "At a glance",
+  "pulseAiTitle": "AI pulse",
+  "pulseAiLoading": "Synthesizing your day…",
+  "pulseAiRefresh": "Refresh summary",
+  "pulseBriefClear": "Your slate is clear today. Deep work, creative time, or a well-earned pause.",
+  "pulseBriefBusy": "{today, plural, =0{Quiet day} =1{1 thing on your plate} other{{today} items today}}{urgent, plural, =0{} =1{ · 1 needs attention} other{ · {urgent} need attention}}{unread, plural, =0{} =1{ · 1 unread signal} other{ · {unread} unread signals}}",
+  "@pulseBriefBusy": {
+    "placeholders": {
+      "today": { "type": "int" },
+      "urgent": { "type": "int" },
+      "unread": { "type": "int" }
+    }
+  },
+  "pulseTodayCount": "{count, plural, =1{1 moment today} other{{count} moments today}}{urgent, plural, =0{} =1{ · 1 urgent} other{ · {urgent} urgent}}",
+  "@pulseTodayCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "urgent": { "type": "int" }
+    }
+  },
+  "pulseUrgent": "Urgent",
+  "pulseAnytime": "Anytime"
+}

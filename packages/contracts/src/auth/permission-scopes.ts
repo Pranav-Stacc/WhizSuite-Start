@@ -156,3 +156,19 @@ export function readPermissionScopeTypes(conditions: unknown): AssignableScopeTy
   const scopes = raw.filter((entry): entry is AssignableScopeType => typeof entry === 'string' && isAssignableScopeType(entry));
   return scopes.length > 0 ? scopes : null;
 }
+
+/** Optional per-scope-type resource ids stored on `RolePermission.conditions.resources`. */
+export function readPermissionScopeResources(
+  conditions: unknown,
+): Partial<Record<AssignableScopeType, readonly string[]>> {
+  if (!conditions || typeof conditions !== 'object') return {};
+  const raw = (conditions as { resources?: unknown }).resources;
+  if (!raw || typeof raw !== 'object') return {};
+  const out: Partial<Record<AssignableScopeType, readonly string[]>> = {};
+  for (const [scopeType, ids] of Object.entries(raw)) {
+    if (!isAssignableScopeType(scopeType) || !Array.isArray(ids)) continue;
+    const resourceIds = ids.filter((id): id is string => typeof id === 'string');
+    if (resourceIds.length > 0) out[scopeType] = resourceIds;
+  }
+  return out;
+}

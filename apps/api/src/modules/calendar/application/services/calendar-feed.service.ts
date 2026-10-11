@@ -32,7 +32,9 @@ function inClientFilter(
 ): boolean {
   if (filterClientId) return clientId === filterClientId;
   if (!scope) return true;
-  return !!clientId && scope.includes(clientId);
+  // Personal / org-wide items (no client) — e.g. agent one-off reminders.
+  if (!clientId) return true;
+  return scope.includes(clientId);
 }
 
 function dayStart(isoDateKey: string): string {

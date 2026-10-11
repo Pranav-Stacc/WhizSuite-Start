@@ -174,10 +174,23 @@ ThemeData buildAppTheme(ThemeSettings settings) {
       thumbColor: settings.primary,
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(color: settings.primary, linearTrackColor: settings.border),
+    splashFactory: InkRipple.splashFactory,
+    splashColor: settings.primary.withValues(alpha: 0.1),
+    highlightColor: settings.primary.withValues(alpha: 0.05),
+    iconButtonTheme: IconButtonThemeData(
+      style: ButtonStyle(
+        overlayColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.pressed) ? settings.primary.withValues(alpha: 0.1) : null,
+        ),
+      ),
+    ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
         TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
       },
     ),
   );

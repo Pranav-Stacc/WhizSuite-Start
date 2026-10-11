@@ -1,5 +1,5 @@
 import 'server-only';
-import { type ApiContentType, ArticleCategories, AutomationActions, AutomationTriggers, AssignableScopeTypes, ContentStatuses, type ContentType, ContentTypes, isAssignableScopeType, isPermission, LeadStages, MediaAssetStatuses, type NotificationData, type Platform, Platforms, readPermissionScopeTypes } from '@agency-os/contracts';
+import { type ApiContentType, ArticleCategories, AutomationActions, AutomationTriggers, AssignableScopeTypes, type AssignableScopeType, ContentStatuses, type ContentType, ContentTypes, isAssignableScopeType, isPermission, LeadStages, MediaAssetStatuses, type NotificationData, type Platform, Platforms, readPermissionScopeResources, readPermissionScopeTypes } from '@agency-os/contracts';
 import type { AuditEntry } from '@/features/audit/data/audit.repository';
 import type { Automation, AutomationRun } from '@/features/automations/data/automations.repository';
 import type { Client, BrandKit } from '@/features/clients/data/clients.repository';
@@ -587,7 +587,18 @@ export function roleFromApi(raw: Raw): AgencyRole {
     if (!isPermission(key)) return [];
     const stored = readPermissionScopeTypes(row.conditions);
     const scopeTypes = (stored ?? summary.defaultScopeTypes).filter(isAssignableScopeType);
-    return [{ key, scopeTypes: scopeTypes.length > 0 ? scopeTypes : [AssignableScopeTypes.ORGANIZATION] }];
+    const resources = readPermissionScopeResources(row.conditions);
+    const scopeResources = Object.entries(resources).map(([scopeType, resourceIds]) => ({
+      scopeType: scopeType as AssignableScopeType,
+      resourceIds: [...resourceIds],
+    }));
+    return [
+      {
+        key,
+        scopeTypes: scopeTypes.length > 0 ? scopeTypes : [AssignableScopeTypes.ORGANIZATION],
+        ...(scopeResources.length > 0 ? { scopeResources } : {}),
+      },
+    ];
   });
   return {
     id: summary.id,

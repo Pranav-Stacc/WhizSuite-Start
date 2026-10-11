@@ -51,6 +51,7 @@ export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOUR
     () => new Set([AssignableScopeTypes.ORGANIZATION]),
   );
   const [resourceIds, setResourceIds] = useState<Partial<Record<AssignableScopeType, string[]>>>({});
+  const [resourceMode, setResourceMode] = useState<Partial<Record<AssignableScopeType, 'all' | 'specific'>>>({});
   const [pending, startTransition] = useTransition();
 
   const offeredScopes = useMemo(() => {
@@ -81,6 +82,7 @@ export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOUR
     const next = [...offered];
     setCheckedScopes(new Set(next.length > 0 ? next : [AssignableScopeTypes.ORGANIZATION]));
     setResourceIds({});
+    setResourceMode({});
   };
 
   const toggle = (roleId: string) => {
@@ -92,9 +94,11 @@ export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOUR
     });
   };
 
-  const missingResource = activeScopes.some(
-    (scope) => scopeNeedsResource(scope) && (resourceIds[scope]?.length ?? 0) === 0,
-  );
+  const missingResource = activeScopes.some((scope) => {
+    if (!scopeNeedsResource(scope)) return false;
+    const mode = resourceMode[scope] ?? 'all';
+    return mode === 'specific' && (resourceIds[scope]?.length ?? 0) === 0;
+  });
   const canSubmit = selected.size > 0 && activeScopes.length > 0 && !missingResource;
 
   const toggleScope = (scope: AssignableScopeType) => {
@@ -112,6 +116,10 @@ export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOUR
         scopes: activeScopes.flatMap(
           (scopeType): { scopeType: AssignableScopeType; resourceId: string | null }[] => {
             if (!scopeNeedsResource(scopeType)) {
+              return [{ scopeType, resourceId: null }];
+            }
+            const mode = resourceMode[scopeType] ?? 'all';
+            if (mode === 'all') {
               return [{ scopeType, resourceId: null }];
             }
             const ids = resourceIds[scopeType] ?? [];
@@ -213,34 +221,72 @@ export function AssignRolesDialog({ member, assignable, resources = EMPTY_RESOUR
               {activeScopes.filter(scopeNeedsResource).map((scope) => {
                 const choices = optionsForScope(scope, resources);
                 const picked = new Set(resourceIds[scope] ?? []);
+                const pickedCount = picked.size;
+                const mode = resourceMode[scope] ?? 'all';
+                const label = scopeResourceLabel(scope);
                 return (
-                  <Field key={scope} label={scopeResourceLabel(scope)} htmlFor={`assign-${scope}`} hint={t('team.roles.resource.multiHint')}>
-                    <ul className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
-                      {choices.length === 0 ? (
-                        <li className="px-2 py-1 text-xs text-muted">{t('team.roles.resource.empty')}</li>
-                      ) : (
-                        choices.map((item) => (
-                          <li key={item.id}>
-                            <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-surface-2">
-                              <input
-                                type="checkbox"
-                                className="size-3.5 accent-primary"
-                                checked={picked.has(item.id)}
-                                onChange={() => {
-                                  setResourceIds((prev) => {
-                                    const current = new Set(prev[scope] ?? []);
-                                    if (current.has(item.id)) current.delete(item.id);
-                                    else current.add(item.id);
-                                    return { ...prev, [scope]: [...current] };
-                                  });
-                                }}
-                              />
-                              <span className="truncate">{item.label}</span>
-                            </label>
-                          </li>
-                        ))
-                      )}
-                    </ul>
+                  <Field
+                    key={scope}
+                    label={label}
+                    htmlFor={`assign-${scope}`}
+                    hint={
+                      mode === 'all'
+                        ? t('team.roles.resource.allHint')
+                        : pickedCount > 0
+                          ? t('team.roles.resource.selected', { count: pickedCount })
+                          : t('team.roles.resource.multiHint')
+                    }
+                  >
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={cn(
+                          'rounded-full border px-3 py-1 text-xs',
+                          mode === 'all' ? 'border-primary bg-primary/10' : 'border-border-soft',
+                        )}
+                        onClick={() => setResourceMode((prev) => ({ ...prev, [scope]: 'all' }))}
+                      >
+                        {t('team.roles.resource.all', { resource: label })}
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          'rounded-full border px-3 py-1 text-xs',
+                          mode === 'specific' ? 'border-primary bg-primary/10' : 'border-border-soft',
+                        )}
+                        onClick={() => setResourceMode((prev) => ({ ...prev, [scope]: 'specific' }))}
+                      >
+                        {t('team.roles.resource.choose')}
+                      </button>
+                    </div>
+                    {mode === 'specific' ? (
+                      <ul className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-border-soft p-2">
+                        {choices.length === 0 ? (
+                          <li className="px-2 py-1 text-xs text-muted">{t('team.roles.resource.empty')}</li>
+                        ) : (
+                          choices.map((item) => (
+                            <li key={item.id}>
+                              <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-surface-2">
+                                <input
+                                  type="checkbox"
+                                  className="size-3.5 accent-primary"
+                                  checked={picked.has(item.id)}
+                                  onChange={() => {
+                                    setResourceIds((prev) => {
+                                      const current = new Set(prev[scope] ?? []);
+                                      if (current.has(item.id)) current.delete(item.id);
+                                      else current.add(item.id);
+                                      return { ...prev, [scope]: [...current] };
+                                    });
+                                  }}
+                                />
+                                <span className="truncate">{item.label}</span>
+                              </label>
+                            </li>
+                          ))
+                        )}
+                      </ul>
+                    ) : null}
                   </Field>
                 );
               })}

@@ -12,8 +12,14 @@ final rolesProvider = FutureProvider.autoDispose<List<Role>>((ref) async {
   return roles..sort((a, b) => a.isSystem == b.isSystem ? a.name.compareTo(b.name) : (a.isSystem ? -1 : 1));
 });
 
-/// One role, resolved from the list (the API has no single-role endpoint).
+/// One role, resolved from the cached list when possible (the API has no single-role endpoint).
 final roleProvider = FutureProvider.autoDispose.family<Role, String>((ref, id) async {
+  final cached = ref.read(rolesProvider).value;
+  if (cached != null) {
+    for (final role in cached) {
+      if (role.id == id) return role;
+    }
+  }
   final roles = await ref.watch(rolesProvider.future);
   for (final role in roles) {
     if (role.id == id) return role;

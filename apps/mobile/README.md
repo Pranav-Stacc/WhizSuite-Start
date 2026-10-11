@@ -16,6 +16,11 @@ Flutter app for agency staff and client portal users.
 
 ## Localisation
 
+Feature strings live in `l10n/*.arb` (e.g. `l10n/pulse.arb`). They are **not** read directly by Flutter — merge them first:
+
 ```bash
+cd apps/mobile
 dart run tool/l10n.dart
 ```
+
+Run this after editing any `l10n/*.arb` file. `flutter gen-l10n` alone only reads `lib/l10n/app_en.arb` and will miss new keys until you merge.

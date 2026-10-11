@@ -45,6 +45,9 @@ class AgentRepository {
   Future<void> confirmPending(String pendingId) => _api.post<Object?>(_agent('pending/$pendingId/confirm'));
 
   Future<void> rejectPending(String pendingId) => _api.post<Object?>(_agent('pending/$pendingId/reject'));
+
+  Future<List<AgentSchedule>> schedules() async =>
+      jsonList(await _api.get<Object?>(_agent('schedules'))).map(AgentSchedule.fromJson).toList();
 }
 
 final agentRepositoryProvider = Provider<AgentRepository>(

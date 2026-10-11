@@ -25,6 +25,7 @@ export const NotificationTypeKeys = {
   INVOICE_OVERDUE: 'invoice.overdue',
   INVOICE_PAID: 'invoice.paid',
   CALENDAR_REMINDER: 'calendar.reminder',
+  CALENDAR_ITEM_CREATED: 'calendar.item_created',
 } as const;
 
 export type NotificationTypeKey =

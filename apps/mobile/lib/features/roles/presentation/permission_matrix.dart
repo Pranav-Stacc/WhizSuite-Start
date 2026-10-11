@@ -15,6 +15,7 @@ class PermissionGroupCard extends StatelessWidget {
     required this.onToggle,
     required this.onToggleGroup,
     this.readOnly = false,
+    this.scopeFooter,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class PermissionGroupCard extends StatelessWidget {
   final void Function(String key, bool granted) onToggle;
   final ValueChanged<bool> onToggleGroup;
   final bool readOnly;
+  final Widget? scopeFooter;
 
   @override
   Widget build(BuildContext context) {
@@ -77,24 +79,19 @@ class PermissionGroupCard extends StatelessWidget {
             ),
             ),
           ),
-          AnimatedSize(
-            duration: AppMotion.medium,
-            curve: AppMotion.standard,
-            alignment: Alignment.topCenter,
-            child: expanded
-                ? Column(
-                    children: [
-                      Divider(height: 1, color: tokens.border),
-                      for (final permission in group.permissions)
-                        _PermissionTile(
-                          permission: permission,
-                          granted: selected.contains(permission.key),
-                          onChanged: readOnly ? null : (value) => onToggle(permission.key, value),
-                        ),
-                    ],
-                  )
-                : const SizedBox(width: double.infinity),
-          ),
+          if (expanded)
+            Column(
+              children: [
+                Divider(height: 1, color: tokens.border),
+                for (final permission in group.permissions)
+                  _PermissionTile(
+                    permission: permission,
+                    granted: selected.contains(permission.key),
+                    onChanged: readOnly ? null : (value) => onToggle(permission.key, value),
+                  ),
+                if (scopeFooter != null) scopeFooter!,
+              ],
+            ),
         ],
       ),
     );

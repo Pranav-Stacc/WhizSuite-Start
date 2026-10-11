@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/contracts/contracts.g.dart';
 import '../../core/navigation/feature_module.dart';
+import 'presentation/role_detail_screen.dart';
 import 'presentation/role_editor_screen.dart';
 import 'presentation/roles_screen.dart';
 import 'roles_routes.dart';
@@ -29,7 +30,13 @@ final rolesModule = FeatureModule(
         ),
         childRoute(
           ':${RolesRoutes.detailParam}',
-          (state) => RoleEditorScreen(roleId: state.pathParameters[RolesRoutes.detailParam]),
+          (state) => RoleDetailScreen(roleId: state.pathParameters[RolesRoutes.detailParam]!),
+          routes: [
+            childRoute(
+              RolesRoutes.editSegment,
+              (state) => RoleEditorScreen(roleId: state.pathParameters[RolesRoutes.detailParam]),
+            ),
+          ],
         ),
       ],
     ),

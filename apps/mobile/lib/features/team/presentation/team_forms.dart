@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/contracts/contracts.g.dart';
 import '../../roles/application/roles_controller.dart';
-import '../domain/role_assignment_scope.dart';
+import '../domain/scope_assignment.dart';
 import 'scope_picker.dart';
 import '../../../core/formatting/formats.dart';
 import '../../../core/forms/validators.dart';
@@ -30,9 +30,17 @@ const _hoursPerDay = 24;
 /// Replace the full set of roles a member holds. Resolves to true when saved.
 Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member member) {
   final l10n = AppLocalizations.of(context);
+  final roles = ref.read(assignableRolesProvider).value ?? const [];
   var selected = member.roleIds;
-  var activeScopes = {AssignableScopeTypes.organization};
+  var activeScopes = resolveActiveScopes(
+    {AssignableScopeTypes.organization},
+    offeredScopesForRoles(roles, selected),
+  );
   final resourceIds = <String, Set<String>>{};
+  final resourceTargeting = <String, ScopeResourceTargeting>{
+    for (final scope in activeScopes)
+      if (scopeNeedsResource(scope)) scope: ScopeResourceTargeting.specific,
+  };
   return showFormSheet(
     context,
     title: l10n.teamRolesEdit(member.name),
@@ -42,32 +50,33 @@ Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member mem
     fields: (context, setState) {
       final roles = ref.watch(assignableRolesProvider).value ?? const [];
       return [
-        RolePickerField(selected: selected, onChanged: (value) => setState(() => selected = value)),
+        RolePickerField(
+          selected: selected,
+          onChanged: (value) => setState(() {
+            selected = value;
+            final currentRoles = ref.read(assignableRolesProvider).value ?? const [];
+            activeScopes = resolveActiveScopes(activeScopes, offeredScopesForRoles(currentRoles, value));
+          }),
+        ),
         MemberDataScopeField(
           roles: roles,
           selectedRoleIds: selected,
           activeScopes: activeScopes,
           resourceIds: resourceIds,
+          resourceTargeting: resourceTargeting,
           onActiveScopesChanged: (value) => setState(() => activeScopes = value),
           onResourceIdsChanged: (scope, ids) => setState(() => resourceIds[scope] = ids),
+          onResourceTargetingChanged: (scope, mode) => setState(() => resourceTargeting[scope] = mode),
         ),
       ];
     },
     onSubmit: () {
-      final scopes = <RoleAssignmentScope>[];
-      for (final scopeType in activeScopes) {
-        if (scopeNeedsResource(scopeType)) {
-          for (final id in resourceIds[scopeType] ?? const {}) {
-            scopes.add(RoleAssignmentScope(scopeType: scopeType, resourceId: id));
-          }
-        } else {
-          scopes.add(RoleAssignmentScope(scopeType: scopeType));
-        }
-      }
+      final currentRoles = ref.read(assignableRolesProvider).value ?? const [];
+      final scopesToApply = resolveActiveScopes(activeScopes, offeredScopesForRoles(currentRoles, selected));
       return ref.read(teamActionsProvider).assignRoles(
             member.userId,
             selected.toList(),
-            scopes: scopes,
+            scopes: buildAssignmentScopes(scopesToApply, resourceIds, targeting: resourceTargeting),
           );
     },
   );

@@ -12,9 +12,11 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../calendar/application/calendar_controller.dart';
 import '../../dashboard/application/dashboard_providers.dart';
+import '../../notifications/application/notifications_controller.dart';
 import '../application/agent_providers.dart';
 import '../data/agent_repository.dart';
 import '../domain/agent_models.dart';
+import 'agent_insights_panel.dart';
 import 'agent_markdown.dart';
 
 /// Chat thread for one agent session: pending confirmations, messages, streaming reply, composer.
@@ -69,6 +71,9 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
   _LiveReply? _live;
   StreamSubscription<AgentStreamEvent>? _subscription;
   var _calendarMutated = false;
+  var _workspaceMutated = false;
+  final _outcomes = <AgentToolOutcome>[];
+  final _insightsKey = GlobalKey<ScaffoldState>();
 
   bool get _streaming => _live != null;
 
@@ -105,6 +110,7 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
       _local.add(_message('user', text));
       _live = _LiveReply();
       _calendarMutated = false;
+      _workspaceMutated = false;
     });
     _scrollToEnd();
 
@@ -140,7 +146,22 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
         });
         _scrollToEnd();
       case AgentStreamToolResult(:final toolId, :final callId, :final ok, :final error, :final result):
-        if (ok == true && toolId.startsWith('calendar.')) _calendarMutated = true;
+        if (ok == true) {
+          if (toolId.startsWith('calendar.')) _calendarMutated = true;
+          if (toolId.startsWith('calendar.') ||
+              toolId.startsWith('tasks.') ||
+              toolId.startsWith('agents.schedules')) {
+            _workspaceMutated = true;
+          }
+          _outcomes.add(
+            AgentToolOutcome(
+              toolId: toolId,
+              ok: ok == true,
+              summary: _toolOutcomeSummary(result),
+              at: DateTime.now(),
+            ),
+          );
+        }
         setState(() {
           live.phase = AgentStreamPhase.working;
           final index = live.steps.lastIndexWhere(
@@ -198,11 +219,17 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
     });
     if (failed) {
       showToast(context, AppLocalizations.of(context).agentSendFailed);
-    } else if (_calendarMutated) {
+    } else if (_workspaceMutated) {
       ref
         ..invalidate(calendarFeedProvider)
-        ..invalidate(dashboardCalendarProvider);
-      showToast(context, AppLocalizations.of(context).agentCalendarUpdated);
+        ..invalidate(dashboardCalendarProvider)
+        ..invalidate(upcomingProvider)
+        ..invalidate(agentSchedulesProvider);
+      unawaited(refreshDashboard(ref));
+      unawaited(ref.read(notificationsProvider.notifier).reload());
+      if (_calendarMutated && mounted) {
+        showToast(context, AppLocalizations.of(context).agentCalendarUpdated);
+      }
     }
 
     ref
@@ -240,6 +267,18 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
     ref.invalidate(agentPendingProvider);
   }
 
+  String? _toolOutcomeSummary(Object? result) {
+    if (result is Map) {
+      final title = result['title'];
+      if (title is String && title.isNotEmpty) return title;
+      final name = result['name'];
+      if (name is String && name.isNotEmpty) return name;
+    }
+    return null;
+  }
+
+  void _openInsights() => _insightsKey.currentState?.openEndDrawer();
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -247,8 +286,30 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
     final detail = ref.watch(agentSessionProvider(widget.sessionId));
     final pending = ref.watch(agentPendingProvider);
 
-    return Column(
+    return Scaffold(
+      key: _insightsKey,
+      endDrawer: Drawer(
+        width: math.min(MediaQuery.sizeOf(context).width * 0.88, 400),
+        child: AgentInsightsPanel(outcomes: _outcomes),
+      ),
+      onEndDrawerChanged: (open) {
+        if (open) ref.invalidate(agentSchedulesProvider);
+      },
+      body: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity < -280) _openInsights();
+        },
+        child: Column(
       children: [
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _openInsights,
+            icon: const Icon(Icons.insights_outlined),
+            label: Text(l10n.agentInsightsTitle),
+          ),
+        ),
         if (pending case AsyncValue(value: final actions?) when actions.isNotEmpty)
           ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 168),
@@ -319,6 +380,8 @@ class _AgentSessionPaneState extends ConsumerState<AgentSessionPane> {
           ),
         ),
       ],
+        ),
+      ),
     );
   }
 }

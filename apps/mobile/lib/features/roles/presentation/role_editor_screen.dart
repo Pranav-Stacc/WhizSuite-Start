@@ -7,7 +7,6 @@ import '../../../core/contracts/contracts.g.dart';
 import '../../../core/forms/validators.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/async_value_view.dart';
-import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/page_scaffold.dart';
 import '../../../core/widgets/resource_list.dart';
@@ -19,8 +18,10 @@ import '../application/roles_controller.dart';
 import '../domain/permission_catalog.dart';
 import '../domain/role.dart';
 import '../roles_routes.dart';
+import '../../team/domain/scope_assignment.dart';
 import '../domain/permission_module_scopes.dart';
 import 'permission_labels.dart';
+import 'module_scope_section.dart';
 import 'permission_matrix.dart';
 import 'role_card.dart';
 
@@ -37,17 +38,20 @@ class RoleEditorScreen extends ConsumerWidget {
     final groups = ref.watch(permissionGroupsProvider);
     final id = roleId;
     final template = templateId;
-    final role = id == null ? null : ref.watch(roleProvider(id));
-    final source = template == null ? null : ref.watch(roleProvider(template));
+    final cachedRoles = ref.watch(rolesProvider).value;
+    final cachedRole = id == null ? null : cachedRoles?.where((r) => r.id == id).firstOrNull;
+    final cachedTemplate = template == null ? null : cachedRoles?.where((r) => r.id == template).firstOrNull;
+    final roleAsync = id == null ? null : ref.watch(roleProvider(id));
+    final sourceAsync = template == null ? null : ref.watch(roleProvider(template));
 
     final catalog = groups.value;
-    final loadedRole = role?.value;
-    final loadedSource = source?.value;
-    if (catalog != null && (role == null || loadedRole != null) && (source == null || loadedSource != null)) {
+    final loadedRole = roleAsync?.value ?? cachedRole;
+    final loadedSource = sourceAsync?.value ?? cachedTemplate;
+    if (catalog != null && (id == null || loadedRole != null) && (template == null || loadedSource != null)) {
       return _RoleEditor(key: ValueKey(id ?? template), groups: catalog, role: loadedRole, template: loadedSource);
     }
 
-    final failure = [groups, ?role, ?source].where((value) => value.hasError).firstOrNull;
+    final failure = [groups, ?roleAsync, ?sourceAsync].where((value) => value.hasError).firstOrNull;
     return PageScaffold(
       title: id == null ? l10n.roleNew : l10n.roleEdit,
       body: AsyncValueView<Object?>(
@@ -82,12 +86,14 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
   late String _initialDescription;
   late Set<String> _initialSelected;
   late Map<String, Set<String>> _moduleScopes;
+  final _moduleResources = <String, Map<String, Set<String>>>{};
+  final _moduleTargeting = <String, Map<String, ScopeResourceTargeting>>{};
   final _expanded = <String>{};
   String _query = '';
   bool _saving = false;
 
   Role? get _role => widget.role;
-  bool get _readOnly => !(_role?.isEditable ?? true);
+  bool get _readOnly => _role?.isOwner ?? false;
   Set<String> get _catalogKeys => {for (final group in widget.groups) ...group.keys};
 
   bool get _dirty =>
@@ -110,9 +116,23 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
       for (final entry in (role?.moduleScopes ?? const {}).entries)
         entry.key: Set<String>.from(entry.value),
     };
-    for (final key in _selected) {
-      final module = moduleKeyForPermission(key);
-      _moduleScopes.putIfAbsent(module, () => {ScopeTypes.organization});
+    for (final entry in (role?.moduleScopeResources ?? const {}).entries) {
+      _moduleResources[entry.key] = {
+        for (final e in entry.value.entries) e.key: Set<String>.from(e.value),
+      };
+      _moduleTargeting[entry.key] = {
+        for (final e in entry.value.entries)
+          e.key: e.value.isEmpty ? ScopeResourceTargeting.allInOrg : ScopeResourceTargeting.specific,
+      };
+    }
+    for (final group in widget.groups) {
+      final hasSelection = group.permissions.any((p) => _selected.contains(p.key));
+      if (!hasSelection) continue;
+      _moduleScopes.putIfAbsent(group.key, () {
+        final fromRole = role?.moduleScopes[group.key];
+        if (fromRole != null && fromRole.isNotEmpty) return Set<String>.from(fromRole);
+        return {ScopeTypes.organization};
+      });
     }
     _name = TextEditingController(text: role?.name ?? '');
     _description = TextEditingController(text: role?.description ?? template?.description ?? '');
@@ -140,10 +160,11 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
   void _onEdited() => setState(() {});
 
   void _toggle(String key, bool granted) => setState(() {
+        final groupKey = PermissionDef.groupOf(key);
         if (granted) {
           _selected.add(key);
-          final module = moduleKeyForPermission(key);
-          _moduleScopes.putIfAbsent(module, () => {ScopeTypes.organization});
+          _expanded.add(groupKey);
+          _moduleScopes.putIfAbsent(groupKey, () => {ScopeTypes.organization});
         } else {
           _selected.remove(key);
         }
@@ -152,6 +173,7 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
   void _toggleGroup(PermissionGroup group, bool grant) => setState(() {
         if (grant) {
           _selected.addAll(group.keys);
+          _expanded.add(group.key);
           _moduleScopes.putIfAbsent(group.key, () => {ScopeTypes.organization});
         } else {
           _selected.removeAll(group.keys);
@@ -162,7 +184,12 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final l10n = AppLocalizations.of(context);
     final existing = _role;
-    final permissionScopes = buildPermissionScopes(_selected, _moduleScopes);
+    final permissionScopes = buildPermissionScopes(
+      _selected,
+      _moduleScopes,
+      moduleResources: _moduleResources,
+      moduleTargeting: _moduleTargeting,
+    );
     final scopeUnion = permissionScopes
         .expand((row) => (row['scopeTypes'] as List<Object>).cast<String>())
         .toSet()
@@ -178,9 +205,17 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     final actions = ref.read(rolesActionsProvider);
     final role = _role;
     setState(() => _saving = true);
+    Role? saved;
     final ok = await runAction(
       context,
-      () => role == null ? actions.create(input) : actions.update(role.id, input),
+      () async {
+        if (role == null) {
+          saved = await actions.create(input);
+        } else {
+          await actions.update(role.id, input);
+          saved = role;
+        }
+      },
       success: role == null ? l10n.createdToast : l10n.savedToast,
     );
     if (!mounted) return;
@@ -189,7 +224,12 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     _initialName = input.name;
     _initialDescription = input.description;
     _initialSelected = {..._selected};
-    context.go(RolesRoutes.root);
+    final target = saved ?? role;
+    if (target == null) {
+      context.go(RolesRoutes.root);
+      return;
+    }
+    context.go(RolesRoutes.detail(target.id));
   }
 
   Future<void> _delete(Role role) async {
@@ -243,97 +283,27 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     final allExpanded = widget.groups.every((g) => _expanded.contains(g.key));
     final total = _catalogKeys.length;
 
-    final sections = <Widget>[
-      if (role != null && !role.isEditable)
-        _ReadOnlyBanner(onDuplicate: () => context.push(RolesRoutes.duplicate(role.id))),
-      SectionCard(
-        title: l10n.details,
-        trailing: role == null ? null : StatusBadge(label: l10n.roleKind(RoleOrigins.of(role)), tone: roleKindTone(role)),
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _name,
-              enabled: !_readOnly,
-              autofocus: role == null && widget.template == null,
-              decoration: InputDecoration(labelText: l10n.roleName, hintText: l10n.roleNameHint),
-              textInputAction: TextInputAction.next,
-              maxLength: roleNameMaxLength,
-              validator: Validators(l10n).minLength(resourceNameMinLength),
-            ),
-            SizedBox(height: tokens.sm),
-            TextFormField(
-              controller: _description,
-              enabled: !_readOnly,
-              decoration: InputDecoration(labelText: l10n.roleDescription, hintText: l10n.roleDescriptionHint),
-              minLines: 1,
-              maxLines: 3,
-              maxLength: roleDescriptionMaxLength,
-            ),
-            if (role != null) ...[
-              SizedBox(height: tokens.sm),
-              InfoRow(label: l10n.roleAssignedTo, icon: Icons.people_outline, value: Text(l10n.roleMembers(role.memberCount))),
-            ],
-          ],
-        ),
-      ),
-      SectionHeader(
-        title: l10n.rolePermissions,
-        trailing: TextButton(
-          onPressed: () => setState(() {
-            if (allExpanded) {
-              _expanded.clear();
-            } else {
-              _expanded.addAll(widget.groups.map((g) => g.key));
-            }
-          }),
-          child: Text(allExpanded ? l10n.roleCollapseAll : l10n.roleExpandAll),
-        ),
-      ),
-      SearchField(hint: l10n.rolePermissionsSearch, onChanged: (q) => setState(() => _query = q)),
-      FormField<Set<String>>(
-        validator: (_) {
-          final isWorkflow = (_role?.kind ?? RoleKinds.access) == RoleKinds.workflow;
-          if (isWorkflow || _selected.isNotEmpty) return null;
-          return l10n.rolePermissionsRequired;
-        },
-        builder: (state) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ProgressMeter(
-              value: total == 0 ? 0 : _selected.length / total,
-              label: l10n.rolePermissionsSelected(_selected.length, total),
-            ),
-            if (state.hasError) ...[
-              SizedBox(height: tokens.sm),
-              Text(state.errorText ?? '', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ],
-          ],
-        ),
-      ),
-      if (visible.isEmpty)
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: tokens.xl),
-          child: Text(l10n.rolePermissionsNoMatch, textAlign: TextAlign.center, style: TextStyle(color: tokens.muted)),
-        ),
-      for (final group in visible) ...[
-        PermissionGroupCard(
-          group: group,
-          selected: _selected,
-          readOnly: _readOnly,
-          expanded: searching || _expanded.contains(group.key),
-          onExpandedChanged: (open) => setState(() => open ? _expanded.add(group.key) : _expanded.remove(group.key)),
-          onToggle: _toggle,
-          onToggleGroup: (grant) => _toggleGroup(group, grant),
-        ),
-        if (!_readOnly && group.permissions.any((p) => _selected.contains(p.key)))
-          _ModuleScopeRow(
-            groupLabel: permissionGroupLabel(l10n, group.key),
-            moduleKey: group.key,
-            scopes: _moduleScopes[group.key] ?? {ScopeTypes.organization},
-            onChanged: (next) => setState(() => _moduleScopes[group.key] = next),
-          ),
-      ],
-    ];
+    Widget scopeFooter(PermissionGroup group) {
+      if (_readOnly || !group.permissions.any((p) => _selected.contains(p.key))) {
+        return const SizedBox.shrink();
+      }
+      final allowed = allowedScopesForGroup(group.key, group.keys);
+      return ModuleScopeEditor(
+        groupLabel: permissionGroupLabel(l10n, group.key),
+        moduleKey: group.key,
+        allowedScopes: allowed,
+        scopes: _moduleScopes[group.key] ?? {ScopeTypes.organization},
+        resourceIdsByScope: _moduleResources[group.key] ?? const {},
+        targetingByScope: _moduleTargeting[group.key] ?? const {},
+        onScopesChanged: (next) => setState(() => _moduleScopes[group.key] = next),
+        onResourceIdsChanged: (scopeType, ids) => setState(() {
+          (_moduleResources[group.key] ??= {})[scopeType] = ids;
+        }),
+        onTargetingChanged: (scopeType, mode) => setState(() {
+          (_moduleTargeting[group.key] ??= {})[scopeType] = mode;
+        }),
+      );
+    }
 
     return PopScope(
       canPop: !_dirty,
@@ -367,16 +337,141 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
           child: Column(
             children: [
               Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.xxl),
-                  itemCount: sections.length,
-                  separatorBuilder: (_, _) => SizedBox(height: tokens.md),
-                  itemBuilder: (context, index) => Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: ReadableBody.maxWidth),
-                      child: FadeSlideIn(index: index, child: sections[index]),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(tokens.lg, tokens.lg, tokens.lg, tokens.md),
+                      sliver: SliverToBoxAdapter(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: ReadableBody.maxWidth),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (role != null && role.isOwner)
+                                  _ReadOnlyBanner(onDuplicate: () => context.push(RolesRoutes.duplicate(role.id))),
+                                if (role != null && role.isOwner) SizedBox(height: tokens.md),
+                                SectionCard(
+                                  title: l10n.details,
+                                  trailing: role == null
+                                      ? null
+                                      : StatusBadge(label: l10n.roleKind(RoleOrigins.of(role)), tone: roleKindTone(role)),
+                                  child: Column(
+                                    children: [
+                                      TextFormField(
+                                        controller: _name,
+                                        enabled: !_readOnly,
+                                        autofocus: role == null && widget.template == null,
+                                        decoration: InputDecoration(labelText: l10n.roleName, hintText: l10n.roleNameHint),
+                                        textInputAction: TextInputAction.next,
+                                        maxLength: roleNameMaxLength,
+                                        validator: Validators(l10n).minLength(resourceNameMinLength),
+                                      ),
+                                      SizedBox(height: tokens.sm),
+                                      TextFormField(
+                                        controller: _description,
+                                        enabled: !_readOnly,
+                                        decoration: InputDecoration(
+                                          labelText: l10n.roleDescription,
+                                          hintText: l10n.roleDescriptionHint,
+                                        ),
+                                        minLines: 1,
+                                        maxLines: 3,
+                                        maxLength: roleDescriptionMaxLength,
+                                      ),
+                                      if (role != null) ...[
+                                        SizedBox(height: tokens.sm),
+                                        InfoRow(
+                                          label: l10n.roleAssignedTo,
+                                          icon: Icons.people_outline,
+                                          value: Text(l10n.roleMembers(role.memberCount)),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: tokens.md),
+                                SectionHeader(
+                                  title: l10n.rolePermissions,
+                                  trailing: TextButton(
+                                    onPressed: () => setState(() {
+                                      if (allExpanded) {
+                                        _expanded.clear();
+                                      } else {
+                                        _expanded.addAll(widget.groups.map((g) => g.key));
+                                      }
+                                    }),
+                                    child: Text(allExpanded ? l10n.roleCollapseAll : l10n.roleExpandAll),
+                                  ),
+                                ),
+                                SearchField(hint: l10n.rolePermissionsSearch, onChanged: (q) => setState(() => _query = q)),
+                                FormField<Set<String>>(
+                                  validator: (_) {
+                                    final isWorkflow = (_role?.kind ?? RoleKinds.access) == RoleKinds.workflow;
+                                    if (isWorkflow || _selected.isNotEmpty) return null;
+                                    return l10n.rolePermissionsRequired;
+                                  },
+                                  builder: (state) => Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      ProgressMeter(
+                                        value: total == 0 ? 0 : _selected.length / total,
+                                        label: l10n.rolePermissionsSelected(_selected.length, total),
+                                      ),
+                                      if (state.hasError) ...[
+                                        SizedBox(height: tokens.sm),
+                                        Text(
+                                          state.errorText ?? '',
+                                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                if (visible.isEmpty)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(vertical: tokens.xl),
+                                    child: Text(
+                                      l10n.rolePermissionsNoMatch,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(color: tokens.muted),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    SliverPadding(
+                      padding: EdgeInsets.fromLTRB(tokens.lg, 0, tokens.lg, tokens.xxl),
+                      sliver: SliverList.separated(
+                        itemCount: visible.length,
+                        separatorBuilder: (_, _) => SizedBox(height: tokens.sm),
+                        itemBuilder: (context, index) {
+                          final group = visible[index];
+                          return Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: ReadableBody.maxWidth),
+                              child: RepaintBoundary(
+                                child: PermissionGroupCard(
+                                  group: group,
+                                  selected: _selected,
+                                  readOnly: _readOnly,
+                                  expanded: searching || _expanded.contains(group.key),
+                                  onExpandedChanged: (open) =>
+                                      setState(() => open ? _expanded.add(group.key) : _expanded.remove(group.key)),
+                                  onToggle: _toggle,
+                                  onToggleGroup: (grant) => _toggleGroup(group, grant),
+                                  scopeFooter: scopeFooter(group),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (!_readOnly)
@@ -388,63 +483,6 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModuleScopeRow extends StatelessWidget {
-  const _ModuleScopeRow({
-    required this.groupLabel,
-    required this.moduleKey,
-    required this.scopes,
-    required this.onChanged,
-  });
-
-  final String groupLabel;
-  final String moduleKey;
-  final Set<String> scopes;
-  final ValueChanged<Set<String>> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final text = Theme.of(context).textTheme;
-    final l10n = AppLocalizations.of(context);
-    final sample = '$moduleKey.view';
-    final allowed = allowedScopesForPermission(sample);
-    return Padding(
-      padding: EdgeInsets.only(left: tokens.sm, right: tokens.sm, bottom: tokens.md),
-      child: SurfaceCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.roleModuleScopeTitle(groupLabel), style: text.titleSmall),
-            SizedBox(height: tokens.xs),
-            Text(l10n.roleModuleScopeHint, style: text.bodySmall?.copyWith(color: tokens.muted)),
-            SizedBox(height: tokens.sm),
-            Wrap(
-              spacing: tokens.xs,
-              runSpacing: tokens.xs,
-              children: [
-                for (final scope in allowed)
-                  FilterChip(
-                    label: Text(scopeTypeLabel(scope)),
-                    selected: scopes.contains(scope),
-                    onSelected: (on) {
-                      final next = Set<String>.from(scopes);
-                      if (on) {
-                        next.add(scope);
-                      } else if (next.length > 1) {
-                        next.remove(scope);
-                      }
-                      onChanged(next);
-                    },
-                  ),
-              ],
-            ),
-          ],
         ),
       ),
     );

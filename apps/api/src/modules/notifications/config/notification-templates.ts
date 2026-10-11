@@ -138,6 +138,11 @@ export const NOTIFICATION_TEMPLATES: Readonly<
     body: 'Reminder: "{title}" is starting soon.',
     actionLabel: 'Open calendar',
   },
+  [NotificationTypeKeys.CALENDAR_ITEM_CREATED]: {
+    subject: 'Added to your calendar',
+    body: '"{title}" is scheduled.',
+    actionLabel: 'Open calendar',
+  },
 };
 
 const PLACEHOLDER = /\{(\w+)\}/g;

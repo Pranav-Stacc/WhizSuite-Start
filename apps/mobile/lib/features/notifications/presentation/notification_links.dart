@@ -1,5 +1,6 @@
 import '../../../app/navigation/app_routes.dart';
 import '../../../core/data/json_read.dart';
+import '../../calendar/calendar_routes.dart';
 import '../../content/content_routes.dart';
 import '../../messages/messages_routes.dart';
 import '../../tasks/tasks_routes.dart';
@@ -15,5 +16,6 @@ String notificationLink(AppNotification notification) {
   if (contentId != null) return ContentRoutes.detail(contentId);
   final taskId = data.strOrNull('taskId');
   if (taskId != null) return TasksRoutes.detail(taskId);
+  if (data.strOrNull('calendarItemId') != null) return CalendarRoutes.root;
   return AppRoutes.notifications;
 }
