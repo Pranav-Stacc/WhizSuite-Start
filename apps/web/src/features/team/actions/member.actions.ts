@@ -207,7 +207,7 @@ export async function assignMemberRolesAction(id: string, raw: unknown): Promise
       summary: 'Updated assigned roles',
       diff: { roles: { from: names(before.roles), to: names(roles) } },
     });
-    await refreshData('team', 'roles');
+    await refreshData('team', 'roles', 'access');
     return succeed({}, t('team.roles.updated'));
   });
 }
@@ -305,7 +305,7 @@ export async function syncMemberExtraPermissionsAction(
       summary: 'Updated individual extra permissions',
       diff: { permissions: { to: permissionKeys.join(', ') } },
     });
-    await refreshData('team', 'roles');
+    await refreshData('team', 'roles', 'access');
     return succeed(undefined, t('team.detail.extras.saved'));
   });
 }

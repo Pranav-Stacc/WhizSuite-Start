@@ -15,6 +15,7 @@ import { AgentRepository } from '../../infrastructure/repositories/agent.reposit
 import { nextCronRun } from '../../../../shared/utils/cron.util';
 import { AgentOrchestratorService } from './agent-orchestrator.service';
 import { AgentSessionService } from './agent-session.service';
+import { buildAgentRuntimeContext } from '../utils/agent-runtime-context';
 
 /** Plain-text voice for @Whiz replies posted into team chat rooms. */
 const CHAT_ROOM_WHIZ_SUMMARY_PROMPT = `
@@ -163,6 +164,12 @@ export class AgentRunService {
     });
 
     const runToken = this.sessions.mintRunToken(user, run.id);
+    const orgTimezone =
+      (await this.repo.findOrganizationTimezone(organizationId)) ?? 'UTC';
+    const runtimeContext = buildAgentRuntimeContext(orgTimezone);
+    const mergedSystemPrompt = [definition?.systemPrompt, runtimeContext]
+      .filter((part): part is string => Boolean(part?.trim()))
+      .join('\n\n');
     return {
       run,
       sessionId,
@@ -172,7 +179,7 @@ export class AgentRunService {
         runId: run.id,
         message: input.message,
         multiAgent: input.multiAgent ?? true,
-        systemPrompt: definition?.systemPrompt,
+        systemPrompt: mergedSystemPrompt,
         subAgents:
           (definition?.subAgents as Array<{ name: string; role: string }>) ??
           undefined,

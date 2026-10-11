@@ -121,6 +121,11 @@ export class AuthService {
         lastName: result.user.lastName,
       },
       organization: result.organization,
+      defaultWorkspace: {
+        id: result.workspace.id,
+        name: result.workspace.name,
+        slug: result.workspace.slug,
+      },
       ...tokens,
     };
   }
@@ -283,6 +288,11 @@ export class AuthService {
         lastName: result.user.lastName,
       },
       organization: result.organization,
+      defaultWorkspace: {
+        id: result.workspace.id,
+        name: result.workspace.name,
+        slug: result.workspace.slug,
+      },
       ...tokens,
     };
   }

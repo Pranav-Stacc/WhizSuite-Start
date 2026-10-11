@@ -2128,6 +2128,12 @@ abstract class AppLocalizations {
   /// **'Could not save sync settings.'**
   String get calendarGoogleSettingsFailed;
 
+  /// No description provided for @calendarGoogleSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.'**
+  String get calendarGoogleSettingsHint;
+
   /// No description provided for @calendarGoogleSettingsSaved.
   ///
   /// In en, this message translates to:
@@ -2145,12 +2151,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only events you opt in are pushed to Google.'**
   String get calendarGoogleSyncEventHint;
-
-  /// No description provided for @calendarGoogleSettingsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.'**
-  String get calendarGoogleSettingsHint;
 
   /// No description provided for @calendarGoogleSyncMeetings.
   ///
@@ -7285,6 +7285,36 @@ abstract class AppLocalizations {
   /// **'Enable push'**
   String get notificationPushEnableAction;
 
+  /// No description provided for @notificationTypeApprovalCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval completed'**
+  String get notificationTypeApprovalCompleted;
+
+  /// No description provided for @notificationTypeApprovalRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval requested'**
+  String get notificationTypeApprovalRequested;
+
+  /// No description provided for @notificationTypeCalendarReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar reminder'**
+  String get notificationTypeCalendarReminder;
+
+  /// No description provided for @notificationTypeChatMention.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat mention'**
+  String get notificationTypeChatMention;
+
+  /// No description provided for @notificationTypeChatMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat message'**
+  String get notificationTypeChatMessage;
+
   /// No description provided for @notificationTypeContentApproved.
   ///
   /// In en, this message translates to:
@@ -7296,6 +7326,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Changes requested'**
   String get notificationTypeContentChangesRequested;
+
+  /// No description provided for @notificationTypeInvoiceOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice overdue'**
+  String get notificationTypeInvoiceOverdue;
 
   /// No description provided for @notificationTypeOther.
   ///
@@ -7435,6 +7471,24 @@ abstract class AppLocalizations {
   /// **'Files'**
   String get portalFilesTitle;
 
+  /// No description provided for @portalInviteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They will only see this client\'s content, approvals, files, invoices and reports.'**
+  String get portalInviteBody;
+
+  /// No description provided for @portalInviteHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite {client} to the portal'**
+  String portalInviteHeading(String client);
+
+  /// No description provided for @portalInviteOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite to portal'**
+  String get portalInviteOpen;
+
   /// No description provided for @portalInvoiceStatus.
   ///
   /// In en, this message translates to:
@@ -7542,6 +7596,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t load · tap to retry'**
   String get portalKpiRetry;
+
+  /// No description provided for @portalLinkAccessMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Access type'**
+  String get portalLinkAccessMode;
+
+  /// No description provided for @portalLinkAccessModeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary access expires; permanent requires a password on entry.'**
+  String get portalLinkAccessModeHint;
+
+  /// No description provided for @portalLinkBody.
+  ///
+  /// In en, this message translates to:
+  /// **'One link for web or the mobile app. Temporary access expires; permanent requires a password on entry.'**
+  String get portalLinkBody;
+
+  /// No description provided for @portalLinkCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create share link'**
+  String get portalLinkCreate;
+
+  /// No description provided for @portalLinkCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Portal link ready'**
+  String get portalLinkCreated;
+
+  /// No description provided for @portalLinkHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Shareable portal link for {client}'**
+  String portalLinkHeading(String client);
+
+  /// No description provided for @portalLinkMaxUses.
+  ///
+  /// In en, this message translates to:
+  /// **'Max uses (optional)'**
+  String get portalLinkMaxUses;
+
+  /// No description provided for @portalLinkMaxUsesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty for unlimited redemptions until the link expires.'**
+  String get portalLinkMaxUsesHint;
+
+  /// No description provided for @portalLinkMembershipTtl.
+  ///
+  /// In en, this message translates to:
+  /// **'Access length (hours)'**
+  String get portalLinkMembershipTtl;
+
+  /// No description provided for @portalLinkMembershipTtlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For temporary access (default 168 = 7 days).'**
+  String get portalLinkMembershipTtlHint;
+
+  /// No description provided for @portalLinkMode.
+  ///
+  /// In en, this message translates to:
+  /// **'{mode, select, TEMPORARY{Temporary access} PERMANENT{Permanent login} other{{mode}}}'**
+  String portalLinkMode(String mode);
+
+  /// No description provided for @portalLinkOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Share portal link'**
+  String get portalLinkOpen;
 
   /// No description provided for @portalMessageOpen.
   ///
@@ -7662,6 +7788,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled {when}'**
   String portalScheduled(String when);
+
+  /// No description provided for @portalShareMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Share portal access'**
+  String get portalShareMenu;
 
   /// No description provided for @portalSubtitle.
   ///
@@ -8909,12 +9041,6 @@ abstract class AppLocalizations {
   /// **'Clear selection'**
   String get storageClearSelection;
 
-  /// No description provided for @storageDriveConnected.
-  ///
-  /// In en, this message translates to:
-  /// **'Google Drive connected.'**
-  String get storageDriveConnected;
-
   /// No description provided for @storageDriveConnect.
   ///
   /// In en, this message translates to:
@@ -8926,6 +9052,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not start Google Drive connect.'**
   String get storageDriveConnectFailed;
+
+  /// No description provided for @storageDriveConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive connected.'**
+  String get storageDriveConnected;
 
   /// No description provided for @storageDriveDisconnect.
   ///
@@ -8950,6 +9082,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ask your platform admin to set Google Drive OAuth credentials.'**
   String get storageDriveNotConfigured;
+
+  /// No description provided for @storageDriveSharingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.'**
+  String get storageDriveSharingNote;
 
   /// No description provided for @storageDriveTransferAll.
   ///
@@ -8992,12 +9130,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Storage'**
   String get storageSettingsTitle;
-
-  /// No description provided for @storageDriveSharingNote.
-  ///
-  /// In en, this message translates to:
-  /// **'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.'**
-  String get storageDriveSharingNote;
 
   /// No description provided for @storageSourceDriveBody.
   ///

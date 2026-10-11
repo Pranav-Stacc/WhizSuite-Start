@@ -20,7 +20,8 @@ import { unreadChatCount } from '@/features/chat/services/chat.service';
 import { overdueTasks } from '@/features/tasks/services/tasks.service';
 import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
-import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
+import { DashboardHeader } from './dashboard-header';
+import { ListCard, RowLink } from './dashboard-parts';
 
 const GUIDE: GuideItem[] = [
   { title: t('dashboard.guide.kpi.title'), body: t('dashboard.guide.kpi.body') },

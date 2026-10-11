@@ -7,6 +7,7 @@ import '../domain/member.dart';
 import '../domain/member_access.dart';
 import '../domain/member_document.dart';
 import '../domain/member_position.dart';
+import '../domain/portal_access.dart';
 import '../domain/role_assignment_scope.dart';
 
 class TeamRepository {
@@ -74,6 +75,28 @@ class TeamRepository {
 
   Future<InvitationLink> invite(InvitationInput input) async =>
       InvitationLink.fromJson(jsonObject(await _api.post<Object?>(_invitations, body: input.toJson())));
+
+  Future<PortalAccessLink> createPortalAccessLink({
+    required String clientId,
+    String accessMode = PortalAccessModes.temporary,
+    int? linkExpiresInHours,
+    int? membershipTtlHours,
+    int? maxUses,
+  }) async =>
+      PortalAccessLink.fromJson(
+        jsonObject(
+          await _api.post<Object?>(
+            _api.org('portal-access-links'),
+            body: {
+              'clientId': clientId,
+              'accessMode': accessMode,
+              if (linkExpiresInHours != null) 'linkExpiresInHours': linkExpiresInHours,
+              if (membershipTtlHours != null) 'membershipTtlHours': membershipTtlHours,
+              if (maxUses != null) 'maxUses': maxUses,
+            },
+          ),
+        ),
+      );
 
   Future<void> revoke(String invitationId) => _api.delete<Object?>('$_invitations/$invitationId');
 

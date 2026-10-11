@@ -8,6 +8,8 @@ import type {
 
 export interface TenantContextData {
   organizationId: string;
+  /** System jobs (outbox relay, schedulers) bypass Prisma tenant filters and RLS session vars. */
+  skipPrismaTenantScope?: boolean;
   userId?: string;
   membershipId?: string;
   membershipType?: string;
@@ -46,6 +48,22 @@ export class TenantContext {
       throw new Error('Tenant context is required');
     }
     return ctx;
+  }
+
+  /** Run background/system work without org-scoped Prisma filters (still use explicit orgId in queries). */
+  static runSystem<T>(fn: () => T): T {
+    const parent = storage.getStore();
+    if (!parent) {
+      return storage.run(
+        {
+          organizationId: '',
+          correlationId: 'system',
+          skipPrismaTenantScope: true,
+        },
+        fn,
+      );
+    }
+    return storage.run({ ...parent, skipPrismaTenantScope: true }, fn);
   }
 
   static bindUser(user: {

@@ -43,6 +43,11 @@ export const chatMessages = {
   'chat.new.created': 'Conversation ready',
   'chat.link.open': 'Open link',
   'chat.openFull': 'Open in Chat',
+  'chat.group.detail': 'Group info',
+  'chat.group.back': 'Back to chat',
+  'chat.group.openChat': 'Open conversation',
+  'chat.group.members': 'Members',
+  'chat.group.members.empty': 'Member list will appear when the room loads from the server.',
   'notifications.event.chatMessage': 'New chat message',
   'notifications.event.chatMention': 'Mentioned in chat',
 } as const;

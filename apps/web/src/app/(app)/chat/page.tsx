@@ -1,6 +1,6 @@
 import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
-import { requirePermission, can } from '@/shared/auth/permissions';
+import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { PageHeader } from '@/shared/ui/page-header';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
@@ -34,7 +34,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
   const [rooms, membersMap, allMembers] = await Promise.all([
     listRooms(),
     membersById(),
-    listMembers(),
+    loadIf(Permissions.MEMBERS_VIEW, listMembers, []),
   ]);
 
   let whizProps = null;

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type {
   AgentDefinitionDto,
@@ -192,13 +193,23 @@ export function ChatWorkspace({
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
                 <RoomTypeIcon type={selected.type} />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h3 className="truncate font-semibold">{roomTitle(selected, titles)}</h3>
                 <p className="text-xs text-muted">
                   {selected.memberCount} {t('chat.members')}
                   {selected.description ? ` · ${selected.description}` : ''}
                 </p>
               </div>
+              {selected.type === 'GROUP' ? (
+                <Link
+                  href={`/chat/group/${selected.id}`}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-primary hover:bg-surface-2"
+                  aria-label={t('chat.group.detail')}
+                >
+                  <Info className="size-3.5" />
+                  {t('chat.group.detail')}
+                </Link>
+              ) : null}
             </header>
 
             <ChatRoomThread

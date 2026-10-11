@@ -10,6 +10,7 @@ import {
   type AuthenticatedUser,
 } from '../../../../../shared/auth/current-user.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
+import { AllowAuthenticated } from '../../../../../shared/auth/allow-authenticated.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { AuthorizationService } from '../../../application/services/authorization.service';
 import { AccessRepository } from '../../../infrastructure/repositories/access.repository';
@@ -22,6 +23,7 @@ function membershipTypeOf(
 
 @ApiTags('access')
 @ApiBearerAuth()
+@AllowAuthenticated()
 @Controller('v1/access')
 @UseGuards(JwtAuthGuard)
 export class AccessController {

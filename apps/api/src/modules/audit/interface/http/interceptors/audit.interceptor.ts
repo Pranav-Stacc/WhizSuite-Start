@@ -4,14 +4,22 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable, tap } from 'rxjs';
 import type { Request } from 'express';
+import {
+  AUDIT_ROUTE_KEY,
+  type AuditRouteMetadata,
+} from '../../../../../shared/auth/audit-route.decorator';
 import { AuditService } from '../../../application/services/audit.service';
 import { TenantContext } from '../../../../../shared/tenant/tenant.context';
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly audit: AuditService) {}
+  constructor(
+    private readonly audit: AuditService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request>();
@@ -23,6 +31,10 @@ export class AuditInterceptor implements NestInterceptor {
     const user = req.user;
     const routePath = (req.route as { path?: string } | undefined)?.path;
     const orgId = TenantContext.getOrganizationId() ?? user?.organizationId;
+    const custom = this.reflector.getAllAndOverride<AuditRouteMetadata>(
+      AUDIT_ROUTE_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     return next.handle().pipe(
       tap({
@@ -32,8 +44,8 @@ export class AuditInterceptor implements NestInterceptor {
             organizationId: orgId,
             actorId: user.userId,
             actorType: 'user',
-            action: `${method} ${routePath ?? req.path}`,
-            entityType: 'http_request',
+            action: custom?.action ?? `${method} ${routePath ?? req.path}`,
+            entityType: custom?.entityType ?? 'http_request',
             metadata: { path: req.path, method },
           });
         },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -14,7 +14,9 @@ import { GoogleSignInButton } from './google-sign-in-button';
 
 export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   const [formError, setFormError] = useState<string>();
+  const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
+  useEffect(() => setHydrated(true), []);
   const form = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: defaultEmail ?? '', password: '' } });
 
   const submit = form.handleSubmit((values) => {
@@ -28,7 +30,14 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
   return (
     <div className="space-y-4">
       <GoogleSignInButton mode="login" />
-      <form onSubmit={submit} noValidate className="space-y-4">
+      <form
+        noValidate
+        className="space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit(event);
+        }}
+      >
         <Field label={t('auth.login.email')} htmlFor="login-email" error={translateError(form.formState.errors.email?.message)}>
           <Input id="login-email" type="email" autoComplete="email" placeholder={t('auth.email.placeholder')} aria-invalid={Boolean(form.formState.errors.email)} {...form.register('email')} />
         </Field>
@@ -40,7 +49,7 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
             {formError}
           </p>
         ) : null}
-        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending}>
+        <Button type="submit" variant="primary" size="lg" className="w-full" disabled={pending || !hydrated}>
           {pending ? <Loader2 className="animate-spin" /> : null}
           {t('auth.login.submit')}
         </Button>

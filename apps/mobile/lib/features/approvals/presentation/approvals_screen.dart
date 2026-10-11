@@ -31,8 +31,11 @@ class ApprovalsScreen extends ConsumerStatefulWidget {
   ConsumerState<ApprovalsScreen> createState() => _ApprovalsScreenState();
 }
 
+enum _ApprovalsQuickFilter { all, pending, overdue, decided }
+
 class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
   String? _status;
+  _ApprovalsQuickFilter _quickFilter = _ApprovalsQuickFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +67,18 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
             subjectTitle: titles[approval.subjectId],
           );
         },
-        filter: (approval) => _status == null || approval.status == _status,
+        filter: (approval) {
+          switch (_quickFilter) {
+            case _ApprovalsQuickFilter.pending:
+              return approval.isPending;
+            case _ApprovalsQuickFilter.overdue:
+              return approval.isPending && approval.isOverdue();
+            case _ApprovalsQuickFilter.decided:
+              return !approval.isPending;
+            case _ApprovalsQuickFilter.all:
+              return _status == null || approval.status == _status;
+          }
+        },
         header: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -83,7 +97,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                       value: formats.number(pending),
                       caption: l10n.approvalsStatPendingHint,
                       tone: pending > 0 ? StatusTone.warning : StatusTone.neutral,
-                      onTap: () => setState(() => _status = ApprovalStatuses.pending),
+                      onTap: () => setState(() {
+                        _quickFilter = _ApprovalsQuickFilter.pending;
+                        _status = null;
+                      }),
                     ),
                     MetricTile(
                       label: l10n.approvalsStatOverdue,
@@ -91,7 +108,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                       value: formats.number(overdue),
                       caption: l10n.approvalsStatOverdueHint,
                       tone: overdue > 0 ? StatusTone.danger : StatusTone.neutral,
-                      onTap: () => setState(() => _status = ApprovalStatuses.pending),
+                      onTap: () => setState(() {
+                        _quickFilter = _ApprovalsQuickFilter.overdue;
+                        _status = null;
+                      }),
                     ),
                     MetricTile(
                       label: l10n.approvalsStatDone,
@@ -99,6 +119,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
                       value: formats.number(decided),
                       caption: l10n.approvalsStatDoneHint,
                       tone: StatusTone.success,
+                      onTap: () => setState(() {
+                        _quickFilter = _ApprovalsQuickFilter.decided;
+                        _status = null;
+                      }),
                     ),
                   ];
                   final columns = gridColumns(constraints.maxWidth, minTileWidth: ApprovalsScreen._minMetricWidth, max: 3);
@@ -117,7 +141,10 @@ class _ApprovalsScreenState extends ConsumerState<ApprovalsScreen> {
               selected: _status,
               labelOf: (status) => approvalStatusLabel(l10n, status),
               countOf: (status) => status == null ? items.length : items.where((a) => a.status == status).length,
-              onSelected: (status) => setState(() => _status = status),
+              onSelected: (status) => setState(() {
+                _status = status;
+                _quickFilter = _ApprovalsQuickFilter.all;
+              }),
             ),
           ],
         ),

@@ -1438,6 +1438,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarGoogleSettingsFailed => 'Could not save sync settings.';
 
   @override
+  String get calendarGoogleSettingsHint =>
+      'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.';
+
+  @override
   String get calendarGoogleSettingsSaved => 'Sync settings saved';
 
   @override
@@ -1446,10 +1450,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calendarGoogleSyncEventHint =>
       'Only events you opt in are pushed to Google.';
-
-  @override
-  String get calendarGoogleSettingsHint =>
-      'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.';
 
   @override
   String get calendarGoogleSyncMeetings =>
@@ -4918,10 +4918,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationPushEnableAction => 'Enable push';
 
   @override
+  String get notificationTypeApprovalCompleted => 'Approval completed';
+
+  @override
+  String get notificationTypeApprovalRequested => 'Approval requested';
+
+  @override
+  String get notificationTypeCalendarReminder => 'Calendar reminder';
+
+  @override
+  String get notificationTypeChatMention => 'Chat mention';
+
+  @override
+  String get notificationTypeChatMessage => 'Chat message';
+
+  @override
   String get notificationTypeContentApproved => 'Content approved';
 
   @override
   String get notificationTypeContentChangesRequested => 'Changes requested';
+
+  @override
+  String get notificationTypeInvoiceOverdue => 'Invoice overdue';
 
   @override
   String get notificationTypeOther => 'Update';
@@ -5010,6 +5028,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get portalFilesTitle => 'Files';
+
+  @override
+  String get portalInviteBody =>
+      'They will only see this client\'s content, approvals, files, invoices and reports.';
+
+  @override
+  String portalInviteHeading(String client) {
+    return 'Invite $client to the portal';
+  }
+
+  @override
+  String get portalInviteOpen => 'Invite to portal';
 
   @override
   String portalInvoiceStatus(String status) {
@@ -5121,6 +5151,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portalKpiRetry => 'Couldn\'t load · tap to retry';
 
   @override
+  String get portalLinkAccessMode => 'Access type';
+
+  @override
+  String get portalLinkAccessModeHint =>
+      'Temporary access expires; permanent requires a password on entry.';
+
+  @override
+  String get portalLinkBody =>
+      'One link for web or the mobile app. Temporary access expires; permanent requires a password on entry.';
+
+  @override
+  String get portalLinkCreate => 'Create share link';
+
+  @override
+  String get portalLinkCreated => 'Portal link ready';
+
+  @override
+  String portalLinkHeading(String client) {
+    return 'Shareable portal link for $client';
+  }
+
+  @override
+  String get portalLinkMaxUses => 'Max uses (optional)';
+
+  @override
+  String get portalLinkMaxUsesHint =>
+      'Leave empty for unlimited redemptions until the link expires.';
+
+  @override
+  String get portalLinkMembershipTtl => 'Access length (hours)';
+
+  @override
+  String get portalLinkMembershipTtlHint =>
+      'For temporary access (default 168 = 7 days).';
+
+  @override
+  String portalLinkMode(String mode) {
+    String _temp0 = intl.Intl.selectLogic(mode, {
+      'TEMPORARY': 'Temporary access',
+      'PERMANENT': 'Permanent login',
+      'other': '$mode',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get portalLinkOpen => 'Share portal link';
+
+  @override
   String get portalMessageOpen => 'Open';
 
   @override
@@ -5191,6 +5270,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String portalScheduled(String when) {
     return 'Scheduled $when';
   }
+
+  @override
+  String get portalShareMenu => 'Share portal access';
 
   @override
   String portalSubtitle(String name) {
@@ -6136,14 +6218,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageClearSelection => 'Clear selection';
 
   @override
-  String get storageDriveConnected => 'Google Drive connected.';
-
-  @override
   String get storageDriveConnect => 'Connect Google Drive';
 
   @override
   String get storageDriveConnectFailed =>
       'Could not start Google Drive connect.';
+
+  @override
+  String get storageDriveConnected => 'Google Drive connected.';
 
   @override
   String get storageDriveDisconnect => 'Disconnect';
@@ -6158,6 +6240,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storageDriveNotConfigured =>
       'Ask your platform admin to set Google Drive OAuth credentials.';
+
+  @override
+  String get storageDriveSharingNote =>
+      'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.';
 
   @override
   String get storageDriveTransferAll => 'Transfer all to Drive';
@@ -6190,10 +6276,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storageSettingsTitle => 'Storage';
-
-  @override
-  String get storageDriveSharingNote =>
-      'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.';
 
   @override
   String get storageSourceDriveBody =>

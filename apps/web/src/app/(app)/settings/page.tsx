@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { HardDrive, LogOut, Settings, Shield, User } from 'lucide-react';
 import { Permissions } from '@agency-os/contracts';
+import { getAccessCapabilities } from '@/shared/auth/access-capabilities';
+import { sessionAccessLabel } from '@/shared/auth/member-labels';
 import { getPermissions } from '@/shared/auth/permissions';
 import { requireSession } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
@@ -45,6 +47,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const tab = parseTab(param(sp, 'tab'));
   const granted = await getPermissions();
+  const access = await getAccessCapabilities();
+  const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
   const [profile, notificationPrefs, theme, storageUsage, dataSources, googleCalendar] =
     await Promise.all([
       getProfile(session),
@@ -95,7 +99,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <p className="text-sm text-muted">{profile.title || t('team.noTitle')}</p>
               <p className="mt-1 text-sm text-muted">{session.email}</p>
               <p className="text-xs text-muted">
-                {session.orgName} · {t(`shell.role.${session.role}`)}
+                {session.orgName} · {accessLabel}
               </p>
             </div>
           </CardBody>

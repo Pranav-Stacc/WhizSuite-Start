@@ -16,16 +16,56 @@ import '../infrastructure/notification_permission_store.dart';
 import '../infrastructure/push_messaging.dart';
 import 'notification_permission_primer.dart';
 
-class NotificationPreferencesScreen extends ConsumerWidget {
+class NotificationPreferencesScreen extends ConsumerStatefulWidget {
   const NotificationPreferencesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationPreferencesScreen> createState() => _NotificationPreferencesScreenState();
+}
+
+class _NotificationPreferencesScreenState extends ConsumerState<NotificationPreferencesScreen> {
+  var _pushAuthorized = true;
+  var _pushChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPushAuth();
+  }
+
+  Future<void> _refreshPushAuth() async {
+    final push = ref.read(pushMessagingProvider);
+    await push.prepare();
+    final authorized = await push.isAuthorized();
+    if (mounted) {
+      setState(() {
+        _pushChecked = true;
+        _pushAuthorized = authorized;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = context.tokens;
     final preferences = ref.watch(notificationPreferencesProvider);
 
     Future<void> toggle(String typeKey, String channel, bool enabled) async {
+      if (channel == NotificationChannels.push && enabled && !_pushAuthorized) {
+        final locale = Localizations.localeOf(context).toLanguageTag();
+        final enable = await showNotificationPermissionPrimer(context);
+        if (enable != true || !mounted) return;
+        await ref.read(notificationPermissionStoreProvider).markPrimerCompleted();
+        final granted = await ref.read(notificationDeliveryProvider).enablePush(locale: locale);
+        if (!mounted) return;
+        if (granted) {
+          showToast(context, l10n.notificationPrimerEnable);
+          await _refreshPushAuth();
+        } else {
+          return;
+        }
+      }
       try {
         await ref.read(notificationPreferencesProvider.notifier).setChannel(typeKey, channel, enabled);
       } on ApiException catch (error) {
@@ -45,7 +85,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
         data: (items) => ListView(
           padding: EdgeInsets.all(tokens.lg),
           children: [
-            if (push.isSupported) _PushPermissionBanner(),
+            if (push.isSupported) _PushPermissionBanner(onEnabled: _refreshPushAuth),
             Text(l10n.preferencesBody, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens.muted)),
             SizedBox(height: tokens.lg),
             for (final (index, preference) in items.indexed)
@@ -53,7 +93,11 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                 index: index,
                 child: Padding(
                   padding: EdgeInsets.only(bottom: tokens.md),
-                  child: _PreferenceCard(preference: preference, onChanged: toggle),
+                  child: _PreferenceCard(
+                    preference: preference,
+                    pushAuthorized: _pushChecked && _pushAuthorized,
+                    onChanged: toggle,
+                  ),
                 ),
               ),
           ],
@@ -64,7 +108,9 @@ class NotificationPreferencesScreen extends ConsumerWidget {
 }
 
 class _PushPermissionBanner extends ConsumerStatefulWidget {
-  const _PushPermissionBanner();
+  const _PushPermissionBanner({this.onEnabled});
+
+  final VoidCallback? onEnabled;
 
   @override
   ConsumerState<_PushPermissionBanner> createState() => _PushPermissionBannerState();
@@ -102,6 +148,7 @@ class _PushPermissionBannerState extends ConsumerState<_PushPermissionBanner> {
     if (!mounted) return;
     if (granted) {
       showToast(context, l10n.notificationPrimerEnable);
+      widget.onEnabled?.call();
     }
     await _refresh();
   }
@@ -136,9 +183,14 @@ class _PushPermissionBannerState extends ConsumerState<_PushPermissionBanner> {
 }
 
 class _PreferenceCard extends StatelessWidget {
-  const _PreferenceCard({required this.preference, required this.onChanged});
+  const _PreferenceCard({
+    required this.preference,
+    required this.onChanged,
+    required this.pushAuthorized,
+  });
 
   final NotificationPreference preference;
+  final bool pushAuthorized;
   final void Function(String typeKey, String channel, bool enabled) onChanged;
 
   String _channelLabel(AppLocalizations l10n, String channel) => switch (channel) {
@@ -168,6 +220,9 @@ class _PreferenceCard extends StatelessWidget {
             for (final channel in NotificationChannels.values)
               SwitchListTile(
                 title: Text(_channelLabel(l10n, channel)),
+                subtitle: channel == NotificationChannels.push && !pushAuthorized
+                    ? Text(l10n.notificationPushDisabledBody, style: Theme.of(context).textTheme.bodySmall)
+                    : null,
                 value: preference.isOn(channel),
                 onChanged: (enabled) => onChanged(preference.typeKey, channel, enabled),
               ),

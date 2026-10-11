@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ProblemDetailsException } from '../../../../../shared/errors/problem-details.exception';
 import { MetaOauthService } from '../../../application/services/meta-oauth.service';
+import { Public } from '../../../../../shared/auth/public-route.decorator';
 
 /**
  * Browser OAuth redirect target for Meta — no JWT.
@@ -10,6 +11,7 @@ import { MetaOauthService } from '../../../application/services/meta-oauth.servi
  * `{API}/api/platforms/callback` (global prefix `api` + controller `platforms`).
  */
 @ApiTags('integrations')
+@Public()
 @Controller('platforms')
 export class MetaOauthController {
   constructor(private readonly metaOauth: MetaOauthService) {}

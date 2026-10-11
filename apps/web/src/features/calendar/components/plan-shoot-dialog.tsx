@@ -76,6 +76,7 @@ export function PlanShootDialog({
 
   return (
     <FormDialog
+      size="sm"
       schema="shoot"
       title={t('calendar.shoot.heading')}
       description={t('calendar.shoot.desc')}

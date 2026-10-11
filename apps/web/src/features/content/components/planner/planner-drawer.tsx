@@ -77,6 +77,7 @@ export function PlannerDrawerProvider({ clientId, clients, assets, posts, locked
         onOpenChange={(open) => !open && setTarget(null)}
         stayOnSave
         uploadEnabled={uploadEnabled}
+        compact
       />
     </PlannerDrawerContext.Provider>
   );

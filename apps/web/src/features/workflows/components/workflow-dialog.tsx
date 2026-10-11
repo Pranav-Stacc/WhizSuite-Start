@@ -20,6 +20,7 @@ import { Field, Input, Select } from '@/shared/ui/field';
 import { Sheet } from '@/shared/ui/overlays';
 import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { createWorkflowAction, deleteWorkflowAction, updateWorkflowAction } from '../actions/workflow.actions';
+import { WorkflowShareButton } from './workflow-share-button';
 import type { Workflow, WorkflowStage } from '../data/workflows.repository';
 
 interface WorkflowDialogProps {
@@ -169,6 +170,7 @@ export function WorkflowDialog({
         onOpenChange={setOpen}
         title={editing ? t('workflows.edit') : t('workflows.create.title')}
         width="max-w-2xl"
+        footer={editing && workflow ? <WorkflowShareButton workflowId={workflow.id} /> : undefined}
       >
         <div className="space-y-4">
           <p className="text-sm text-muted">{editing ? t('workflows.edit.desc') : t('workflows.create.desc')}</p>

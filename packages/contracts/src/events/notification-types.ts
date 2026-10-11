@@ -48,4 +48,6 @@ export interface NotificationData {
   reminderKey?: string;
   calendarItemId?: string;
   startsAt?: string;
+  /** Optional deep link path (e.g. `/calendar?event=…`) when type-specific routing is not enough. */
+  href?: string;
 }

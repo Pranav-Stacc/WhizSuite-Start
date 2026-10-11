@@ -47,6 +47,7 @@ Future<bool> showPlanShootSheet(
   var allDay = true;
   var createFolders = true;
   final google = await ref.read(googleCalendarConnectionProvider.future);
+  if (!context.mounted) return false;
   final googleConnected = google.isConnected;
   final typeSyncAllowed = google.syncTypes.allowsSourceType('SHOOT');
   var syncToGoogle = googleConnected && google.defaultSyncNewEvents && typeSyncAllowed;

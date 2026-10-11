@@ -52,7 +52,11 @@ export default async function RolesPage() {
       <PageHeader
         title={t('roles.title')}
         description={t('roles.description')}
-        actions={<RoleDialog permissions={permissions} scopeResources={scopeResources} />}
+        actions={
+          <span data-tour="setup-roles">
+            <RoleDialog permissions={permissions} scopeResources={scopeResources} />
+          </span>
+        }
       />
       <StatGrid cols={3}>
         <StatCard label={t('roles.stat.total')} value={roles.length} icon={<Shield />} />

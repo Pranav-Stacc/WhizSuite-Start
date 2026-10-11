@@ -23,12 +23,12 @@ export default async function PortalAccessPage({ searchParams }: PortalAccessPag
       {preview ? (
         <>
           <header>
-            <h1 className="text-3xl font-semibold tracking-tight">
+            <h1 className="text-3xl font-semibold tracking-tight" suppressHydrationWarning>
               {t('auth.portalAccess.title', {
                 client: preview.clientName ?? preview.organizationName,
               })}
             </h1>
-            <p className="mt-2 text-muted">
+            <p className="mt-2 text-muted" suppressHydrationWarning>
               {t('auth.portalAccess.subtitle', { organization: preview.organizationName })}
             </p>
           </header>

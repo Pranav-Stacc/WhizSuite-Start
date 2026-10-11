@@ -29,6 +29,7 @@ import { requireOrganizationId } from '../../../../../shared/http/org-context';
 import { RolesService } from '../../../application/services/roles.service';
 import { AccessRepository } from '../../../infrastructure/repositories/access.repository';
 import { CreateRoleDto, UpdateRoleDto } from '../dto/role.dto';
+import { AllowAuthenticated } from '../../../../../shared/auth/allow-authenticated.decorator';
 
 @ApiTags('roles')
 @ApiBearerAuth()
@@ -96,6 +97,7 @@ export class RolesResourceController {
 
 @ApiTags('permissions')
 @ApiBearerAuth()
+@AllowAuthenticated()
 @Controller('v1/permissions')
 @UseGuards(JwtAuthGuard)
 export class PermissionsCatalogController {

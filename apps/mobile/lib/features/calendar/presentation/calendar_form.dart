@@ -49,6 +49,7 @@ Future<bool> showCalendarItemForm(BuildContext context, WidgetRef ref, {Calendar
   var client = item?.clientId;
   var project = item?.projectId;
   final google = await ref.read(googleCalendarConnectionProvider.future);
+  if (!context.mounted) return false;
   final googleConnected = google.isConnected;
   final typeForSync = item?.sourceType ?? CalendarSourceTypes.manual;
   final typeSyncAllowed = google.syncTypes.allowsSourceType(typeForSync);

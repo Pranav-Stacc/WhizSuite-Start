@@ -46,6 +46,8 @@ export const portalMessages = {
   'portal.messages.placeholder': 'Write a message to your agency team…',
   'portal.messages.sent': 'Message sent',
   'portal.messages.empty': 'No messages yet.',
+  'portal.messages.unavailable':
+    'Messages are temporarily unavailable. Try again in a moment or contact your account team.',
   'portal.messages.agencyPlaceholder': 'Reply to {client}…',
   'portal.messages.agencyDescription': 'Your conversation with this client. They see it in their portal.',
 } as const;

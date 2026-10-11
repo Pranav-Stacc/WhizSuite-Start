@@ -27,7 +27,7 @@ export default async function DepartmentsPage() {
           <CreateDepartmentDialog
             departments={departments}
             trigger={
-              <Button variant="primary">
+              <Button variant="primary" data-tour="setup-departments">
                 <Plus className="size-4" />
                 {t('departments.create')}
               </Button>

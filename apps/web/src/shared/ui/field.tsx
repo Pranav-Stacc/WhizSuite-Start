@@ -21,7 +21,7 @@ export function Select({ className, children, ...props }: ComponentProps<'select
 }
 
 export function Label({ className, ...props }: ComponentProps<'label'>) {
-  return <label className={cn('eyebrow mb-1.5 block', className)} {...props} />;
+  return <label suppressHydrationWarning className={cn('eyebrow mb-1.5 block', className)} {...props} />;
 }
 
 interface FieldProps {

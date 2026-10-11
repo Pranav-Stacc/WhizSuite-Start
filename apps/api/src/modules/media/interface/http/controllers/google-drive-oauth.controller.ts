@@ -5,9 +5,11 @@ import type { Response } from 'express';
 import type { AppConfig } from '../../../../../shared/config/app.config';
 import { googleDriveOAuthReturnUrl } from '../../../../../shared/integrations/oauth-return-url';
 import { MediaDataSourcesService } from '../../../application/services/media-data-sources.service';
+import { Public } from '../../../../../shared/auth/public-route.decorator';
 
 /** OAuth redirect target for Google Drive connect — no JWT (browser redirect). */
 @ApiTags('integrations')
+@Public()
 @Controller('v1/integrations/google-drive')
 export class GoogleDriveOauthController {
   constructor(

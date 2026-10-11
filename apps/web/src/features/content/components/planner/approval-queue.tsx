@@ -135,16 +135,16 @@ interface QueuePostPanelProps {
   headerAction?: ReactNode;
 }
 
-export function QueuePostPanel({ post, thread, actions, composer, headerAction }: QueuePostPanelProps) {
+export function QueuePostPanel({ post, thread, actions, composer, headerAction, compact = false }: QueuePostPanelProps & { compact?: boolean }) {
   return (
     <article className="border border-border bg-surface">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border-soft px-4 py-4 sm:px-6 sm:py-5">
+      <header className={cn('flex flex-wrap items-start justify-between gap-4 border-b border-border-soft', compact ? 'px-4 py-3' : 'px-4 py-4 sm:px-6 sm:py-5')}>
         <div className="min-w-0">
           <p className="eyebrow">
             {t(`type.content.${post.contentType}`)}
             {post.scheduledAt ? ` · ${formatDateTime(post.scheduledAt)}` : ''}
           </p>
-          <h2 className="display mt-2 text-xl sm:text-[24px]">{post.title}</h2>
+          <h2 className={cn('display mt-2', compact ? 'text-lg' : 'text-xl sm:text-[24px]')}>{post.title}</h2>
         </div>
         <div className="flex items-center gap-3">
           <StatusBadge kind="content" value={post.status} />
@@ -162,7 +162,7 @@ export function QueuePostPanel({ post, thread, actions, composer, headerAction }
         </ol>
       ) : null}
 
-      <div className="grid gap-px bg-border-soft md:grid-cols-2">
+      <div className={cn('grid gap-px bg-border-soft', compact ? 'grid-cols-1' : 'md:grid-cols-2')}>
         <section aria-labelledby="queue-caption" className="space-y-4 bg-surface px-6 py-5">
           <h3 id="queue-caption" className="eyebrow">
             {t('sheet.row.caption')}

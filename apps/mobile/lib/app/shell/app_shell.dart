@@ -126,8 +126,18 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   /// Tray taps carry the notification id; open its subject once the feed knows it.
   Future<void> _openFromTray(String? id) async {
-    final feed = id == null ? null : await ref.read(notificationsProvider.future);
-    final notification = feed?.where((n) => n.id == id).firstOrNull;
+    if (!mounted) return;
+    if (id == null) {
+      context.push(AppRoutes.notifications);
+      return;
+    }
+    var feed = await ref.read(notificationsProvider.future);
+    var notification = feed.where((n) => n.id == id).firstOrNull;
+    if (notification == null) {
+      await ref.read(notificationsProvider.notifier).reload();
+      feed = await ref.read(notificationsProvider.future);
+      notification = feed.where((n) => n.id == id).firstOrNull;
+    }
     if (!mounted) return;
     if (notification == null) {
       context.push(AppRoutes.notifications);

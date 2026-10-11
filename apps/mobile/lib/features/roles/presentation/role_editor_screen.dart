@@ -86,8 +86,11 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
   late String _initialDescription;
   late Set<String> _initialSelected;
   late Map<String, Set<String>> _moduleScopes;
+  late Map<String, Set<String>> _initialModuleScopes;
   final _moduleResources = <String, Map<String, Set<String>>>{};
   final _moduleTargeting = <String, Map<String, ScopeResourceTargeting>>{};
+  late Map<String, Map<String, Set<String>>> _initialModuleResources;
+  late Map<String, Map<String, ScopeResourceTargeting>> _initialModuleTargeting;
   final _expanded = <String>{};
   String _query = '';
   bool _saving = false;
@@ -100,7 +103,50 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
       !_readOnly &&
       (_name.text.trim() != _initialName ||
           _description.text.trim() != _initialDescription ||
-          !setEquals(_selected, _initialSelected));
+          !setEquals(_selected, _initialSelected) ||
+          !_moduleScopesEqual(_moduleScopes, _initialModuleScopes) ||
+          !_moduleResourcesEqual(_moduleResources, _initialModuleResources) ||
+          !_moduleTargetingEqual(_moduleTargeting, _initialModuleTargeting));
+
+  static bool _moduleScopesEqual(Map<String, Set<String>> a, Map<String, Set<String>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!setEquals(entry.value, b[entry.key] ?? const {})) return false;
+    }
+    return true;
+  }
+
+  static bool _moduleResourcesEqual(
+    Map<String, Map<String, Set<String>>> a,
+    Map<String, Map<String, Set<String>>> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final module in a.keys) {
+      final left = a[module] ?? const {};
+      final right = b[module] ?? const {};
+      if (left.length != right.length) return false;
+      for (final scope in left.keys) {
+        if (!setEquals(left[scope] ?? const {}, right[scope] ?? const {})) return false;
+      }
+    }
+    return true;
+  }
+
+  static bool _moduleTargetingEqual(
+    Map<String, Map<String, ScopeResourceTargeting>> a,
+    Map<String, Map<String, ScopeResourceTargeting>> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final module in a.keys) {
+      final left = a[module] ?? const {};
+      final right = b[module] ?? const {};
+      if (left.length != right.length) return false;
+      for (final scope in left.keys) {
+        if (left[scope] != right[scope]) return false;
+      }
+    }
+    return true;
+  }
 
   @override
   void initState() {
@@ -134,6 +180,16 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
         return {ScopeTypes.organization};
       });
     }
+    _initialModuleScopes = {
+      for (final entry in _moduleScopes.entries) entry.key: Set<String>.from(entry.value),
+    };
+    _initialModuleResources = {
+      for (final entry in _moduleResources.entries)
+        entry.key: {for (final e in entry.value.entries) e.key: Set<String>.from(e.value)},
+    };
+    _initialModuleTargeting = {
+      for (final entry in _moduleTargeting.entries) entry.key: Map<String, ScopeResourceTargeting>.from(entry.value),
+    };
     _name = TextEditingController(text: role?.name ?? '');
     _description = TextEditingController(text: role?.description ?? template?.description ?? '');
     _name.addListener(_onEdited);
@@ -224,6 +280,16 @@ class _RoleEditorState extends ConsumerState<_RoleEditor> {
     _initialName = input.name;
     _initialDescription = input.description;
     _initialSelected = {..._selected};
+    _initialModuleScopes = {
+      for (final entry in _moduleScopes.entries) entry.key: Set<String>.from(entry.value),
+    };
+    _initialModuleResources = {
+      for (final entry in _moduleResources.entries)
+        entry.key: {for (final e in entry.value.entries) e.key: Set<String>.from(e.value)},
+    };
+    _initialModuleTargeting = {
+      for (final entry in _moduleTargeting.entries) entry.key: Map<String, ScopeResourceTargeting>.from(entry.value),
+    };
     final target = saved ?? role;
     if (target == null) {
       context.go(RolesRoutes.root);

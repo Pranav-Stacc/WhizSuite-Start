@@ -50,6 +50,11 @@ export const work = {
   'tasks.view.board': 'Board',
   'tasks.view.list': 'List',
   'tasks.filters.label': 'Task filters',
+  'tasks.filters.sheet': 'Filters',
+  'tasks.filters.sheet.desc': 'Narrow the board without losing your place.',
+  'tasks.filters.scope': 'Show',
+  'tasks.filters.apply': 'Apply filters',
+  'calendar.item.open': 'Open item',
   'tasks.guide.create.body': 'Press the Create button in the top bar and choose New task from anywhere.',
   // Projects
   'projects.title': 'Projects',

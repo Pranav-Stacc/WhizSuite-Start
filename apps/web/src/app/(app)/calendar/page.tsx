@@ -2,7 +2,7 @@ import { Permissions, Platforms, type Platform } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, Plus } from 'lucide-react';
-import { getPermissions, requirePermission } from '@/shared/auth/permissions';
+import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
@@ -14,6 +14,7 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { Agenda, MonthGrid } from '@/features/calendar/components/calendar-views';
 import { DayPanel } from '@/features/calendar/components/day-panel';
+import { CalendarItemHost } from '@/features/calendar/components/calendar-item-host';
 import { PlanShootDialog } from '@/features/calendar/components/plan-shoot-dialog';
 import { groupByDay, listCalendarItems, monthGrid, type CalendarItem } from '@/features/calendar/services/calendar.service';
 import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
@@ -51,11 +52,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const rangeFrom = gridStart.toISOString();
   const rangeTo = gridEnd.toISOString();
 
+  const itemId = param(sp, 'item');
   const [allItems, clients, projects, googleConnection] = await Promise.all([
     listCalendarItems({ from: rangeFrom, to: rangeTo, clientId }),
-    listClients(),
-    canPlanShoot || canCreate ? listProjects() : Promise.resolve([]),
-    getGoogleCalendarConnection(),
+    loadIf(Permissions.CLIENTS_VIEW, listClients, []),
+    canPlanShoot || canCreate ? loadIf(Permissions.PROJECTS_VIEW, listProjects, []) : Promise.resolve([]),
+    getGoogleCalendarConnection().catch(() => null),
   ]);
 
   const inRange = (item: CalendarItem): boolean => {
@@ -75,7 +77,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const next = shiftMonth({ year, month }, 1);
   const now = new Date();
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, overrides);
-  const googleConnected = googleConnection.status === 'CONNECTED';
+  const googleConnected = googleConnection?.status === 'CONNECTED';
   const clientOptions = clients.map((c) => ({ id: c.id, name: c.name }));
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name, clientId: p.clientId }));
 
@@ -100,7 +102,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                 projects={projectOptions}
                 defaultClientId={clientId}
                 googleConnected={googleConnected}
-                defaultSyncToGoogle={googleConnection.defaultSyncNewEvents}
+                defaultSyncToGoogle={googleConnection?.defaultSyncNewEvents ?? false}
                 trigger={
                   <Button variant="secondary">
                     <Plus />
@@ -206,6 +208,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         <Agenda itemsByDay={itemsByDay} />
       )}
 
+      <CalendarItemHost items={items} itemId={itemId} />
+
       {selectedDay ? (
         <DayPanel
           day={selectedDay}
@@ -215,7 +219,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           canCreate={canCreate}
           canPlanShoot={canPlanShoot}
           googleConnected={googleConnected}
-          defaultSyncToGoogle={googleConnection.defaultSyncNewEvents}
+          defaultSyncToGoogle={googleConnection?.defaultSyncNewEvents ?? false}
           clients={clientOptions}
           projects={projectOptions}
         />

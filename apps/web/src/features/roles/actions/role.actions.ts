@@ -65,7 +65,7 @@ export async function updateRoleAction(id: string, raw: unknown): Promise<Action
         permissions: { from: before.permissionKeys.join(', '), to: parsed.data.permissionKeys.join(', ') },
       },
     });
-    await refreshData('roles', 'team');
+    await refreshData('roles', 'team', 'access');
     return succeed(undefined, t('roles.updated'));
   });
 }

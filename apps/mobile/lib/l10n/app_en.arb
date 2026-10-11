@@ -739,10 +739,10 @@
   "calendarGooglePullFailed": "Could not queue Google import.",
   "calendarGooglePullQueued": "Import from Google queued",
   "calendarGoogleSettingsFailed": "Could not save sync settings.",
+  "calendarGoogleSettingsHint": "Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.",
   "calendarGoogleSettingsSaved": "Sync settings saved",
   "calendarGoogleSyncEvent": "Sync to Google Calendar",
   "calendarGoogleSyncEventHint": "Only events you opt in are pushed to Google.",
-  "calendarGoogleSettingsHint": "Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.",
   "calendarGoogleSyncMeetings": "Meetings, deadlines & manual events",
   "calendarGoogleSyncPosts": "Scheduled posts",
   "calendarGoogleSyncShoots": "Shoot days",
@@ -2876,8 +2876,14 @@
   "notificationPushDisabledBody": "Enable push to get task, approval, and reminder alerts on this device.",
   "notificationPushDisabledTitle": "Push notifications are off",
   "notificationPushEnableAction": "Enable push",
+  "notificationTypeApprovalCompleted": "Approval completed",
+  "notificationTypeApprovalRequested": "Approval requested",
+  "notificationTypeCalendarReminder": "Calendar reminder",
+  "notificationTypeChatMention": "Chat mention",
+  "notificationTypeChatMessage": "Chat message",
   "notificationTypeContentApproved": "Content approved",
   "notificationTypeContentChangesRequested": "Changes requested",
+  "notificationTypeInvoiceOverdue": "Invoice overdue",
   "notificationTypeOther": "Update",
   "notificationTypeTaskAssigned": "Task assigned",
   "notificationsEmpty": "You are all caught up",
@@ -2922,6 +2928,16 @@
   "portalFilesCta": "Browse files",
   "portalFilesEmpty": "No files have been shared with you yet.",
   "portalFilesTitle": "Files",
+  "portalInviteBody": "They will only see this client's content, approvals, files, invoices and reports.",
+  "portalInviteHeading": "Invite {client} to the portal",
+  "@portalInviteHeading": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      }
+    }
+  },
+  "portalInviteOpen": "Invite to portal",
   "portalInvoiceStatus": "{status, select, DRAFT{Draft} SENT{Sent} PAID{Paid} OVERDUE{Overdue} VOID{Void} other{{status}}}",
   "@portalInvoiceStatus": {
     "placeholders": {
@@ -2982,6 +2998,32 @@
   "portalKpiReports": "Reach (30 days)",
   "portalKpiReportsCaption": "Across your connected channels",
   "portalKpiRetry": "Couldn't load · tap to retry",
+  "portalLinkAccessMode": "Access type",
+  "portalLinkAccessModeHint": "Temporary access expires; permanent requires a password on entry.",
+  "portalLinkBody": "One link for web or the mobile app. Temporary access expires; permanent requires a password on entry.",
+  "portalLinkCreate": "Create share link",
+  "portalLinkCreated": "Portal link ready",
+  "portalLinkHeading": "Shareable portal link for {client}",
+  "@portalLinkHeading": {
+    "placeholders": {
+      "client": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLinkMaxUses": "Max uses (optional)",
+  "portalLinkMaxUsesHint": "Leave empty for unlimited redemptions until the link expires.",
+  "portalLinkMembershipTtl": "Access length (hours)",
+  "portalLinkMembershipTtlHint": "For temporary access (default 168 = 7 days).",
+  "portalLinkMode": "{mode, select, TEMPORARY{Temporary access} PERMANENT{Permanent login} other{{mode}}}",
+  "@portalLinkMode": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "portalLinkOpen": "Share portal link",
   "portalMessageOpen": "Open",
   "portalMessageResolved": "Resolved",
   "portalMessagesCta": "Open messages",
@@ -3016,6 +3058,7 @@
       }
     }
   },
+  "portalShareMenu": "Share portal access",
   "portalSubtitle": "Welcome back, {name}. Here is what needs your attention.",
   "@portalSubtitle": {
     "placeholders": {
@@ -3606,13 +3649,14 @@
   "settingsSignOutConfirm": "Sign out of WhizSuite on this device?",
   "settingsTitle": "Settings",
   "storageClearSelection": "Clear selection",
-  "storageDriveConnected": "Google Drive connected.",
   "storageDriveConnect": "Connect Google Drive",
   "storageDriveConnectFailed": "Could not start Google Drive connect.",
+  "storageDriveConnected": "Google Drive connected.",
   "storageDriveDisconnect": "Disconnect",
   "storageDriveDisconnectFailed": "Could not disconnect Google Drive.",
   "storageDriveDisconnected": "Google Drive disconnected.",
   "storageDriveNotConfigured": "Ask your platform admin to set Google Drive OAuth credentials.",
+  "storageDriveSharingNote": "Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.",
   "storageDriveTransferAll": "Transfer all to Drive",
   "storageDriveTransferFailed": "Could not start the Drive transfer.",
   "storageDriveTransferStarted": "Drive transfer started.",
@@ -3634,7 +3678,6 @@
   },
   "storageSettingsBody": "Usage, data sources, and Google Drive",
   "storageSettingsTitle": "Storage",
-  "storageDriveSharingNote": "Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.",
   "storageSourceDriveBody": "Connect Google Drive to export copies of platform media assets.",
   "storageSourcePlatformBody": "Secure platform storage used across media, clients, and the portal.",
   "storageSourcesBody": "Connect external libraries and manage where agency files live.",

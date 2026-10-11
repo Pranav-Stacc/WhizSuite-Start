@@ -1,9 +1,9 @@
 import 'server-only';
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
-import { DEFAULT_MEMBERSHIP_ROLES, isPermission, type AccessCapabilities, type Permission } from '@agency-os/contracts';
-import { apiFetch } from '@/shared/api/api-client';
+import { DEFAULT_MEMBERSHIP_ROLES, isPermission, type Permission } from '@agency-os/contracts';
 import { isLiveMode } from '@/shared/config/env';
+import { getAccessCapabilities } from './access-capabilities';
 import { ROLE_TO_MEMBERSHIP, homeFor } from './roles';
 import { requireSession, type Session } from './session';
 
@@ -16,8 +16,9 @@ export class ForbiddenError extends Error {
 
 async function loadPermissions(session: Session): Promise<Permission[]> {
   if (!isLiveMode || session.demo) return [...DEFAULT_MEMBERSHIP_ROLES[ROLE_TO_MEMBERSHIP[session.role]].permissions];
-  const access = await apiFetch<AccessCapabilities>('v1/access/capabilities');
-  return access.permissions.filter(isPermission);
+  const access = await getAccessCapabilities();
+  if (access?.permissions?.length) return access.permissions.filter(isPermission);
+  return [...DEFAULT_MEMBERSHIP_ROLES[ROLE_TO_MEMBERSHIP[session.role]].permissions];
 }
 
 /**

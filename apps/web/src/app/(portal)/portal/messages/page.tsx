@@ -8,9 +8,19 @@ import { ChatRoomThread } from '@/features/chat/components/chat-room-thread';
 import { listMessages, openClientRoom } from '@/features/chat/services/chat.service';
 import { getClient } from '@/features/clients/services/clients.service';
 import { listMembers, membersById } from '@/features/team/services/members.service';
+import { ApiError } from '@/shared/api/api-client';
 import { Card, CardBody } from '@/shared/ui/card';
 
 export const metadata: Metadata = { title: t('portal.messages.title') };
+
+async function softFail<T>(load: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    if (error instanceof ApiError) return fallback;
+    throw error;
+  }
+}
 
 export default async function PortalMessagesPage() {
   const session = await requirePermission(Permissions.CHAT_VIEW);
@@ -22,7 +32,26 @@ export default async function PortalMessagesPage() {
   }
 
   const client = await getClient(clientId);
-  const room = await openClientRoom(clientId, client?.name ?? 'Client chat');
+  const room = await softFail(
+    () => openClientRoom(clientId, client?.name ?? 'Client chat'),
+    null,
+  );
+
+  if (!room) {
+    return (
+      <div>
+        <PageHeader
+          title={t('portal.messages.title')}
+          description={t('portal.messages.description')}
+          eyebrow={<MessageSquare className="inline size-3.5" />}
+        />
+        <Card>
+          <CardBody className="text-sm text-muted">{t('portal.messages.unavailable')}</CardBody>
+        </Card>
+      </div>
+    );
+  }
+
   const [page, members, allMembers] = await Promise.all([
     listMessages(room.id),
     membersById(),

@@ -282,7 +282,10 @@ async def run_agent(
 
         logger.exception("Agent graph failed run_id=%s org=%s", body.run_id, org_id)
 
-        raise HTTPException(status_code=502, detail=f"Agent graph failed: {exc}") from exc
+        raise HTTPException(
+            status_code=502,
+            detail="Agent graph failed. Please try again in a moment.",
+        ) from exc
 
 
 
@@ -328,7 +331,10 @@ async def run_agent_stream(
 
                 return
 
-            err = {"type": "error", "message": f"Agent graph failed: {exc}"}
+            err = {
+                "type": "error",
+                "message": "Agent graph failed. Please try again in a moment.",
+            }
 
             yield f"data: {json.dumps(err)}\n\n"
 
@@ -336,7 +342,10 @@ async def run_agent_stream(
 
             logger.exception("Agent stream failed run_id=%s org=%s", body.run_id, org_id)
 
-            err = {"type": "error", "message": f"Agent graph failed: {exc}"}
+            err = {
+                "type": "error",
+                "message": "Agent graph failed. Please try again in a moment.",
+            }
 
             yield f"data: {json.dumps(err)}\n\n"
 

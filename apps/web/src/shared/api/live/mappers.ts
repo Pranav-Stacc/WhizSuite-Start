@@ -352,13 +352,18 @@ export function invoiceToApi(input: Partial<Invoice>): Raw {
 export function notificationFromApi(raw: Raw, userId: string): Notification {
   const event = NOTIFICATION_EVENTS[str(raw, 'typeKey')];
   const data: NotificationData = raw.data && typeof raw.data === 'object' ? (raw.data as NotificationData) : {};
+  const apiTitle = str(raw, 'title');
+  const apiBody = str(raw, 'body');
+  const href =
+    event?.href(data) ??
+    (typeof data.href === 'string' && data.href.length > 0 ? data.href : NOTIFICATIONS_HREF);
   return {
     id: str(raw, 'id'),
     userId,
     kind: event?.kind ?? 'system',
-    title: event ? t(event.title) : str(raw, 'title'),
-    body: data.title ?? str(raw, 'body'),
-    href: event?.href(data) ?? NOTIFICATIONS_HREF,
+    title: event ? t(event.title) : apiTitle,
+    body: apiBody || (typeof data.title === 'string' ? data.title : ''),
+    href,
     read: Boolean(raw.readAt),
     at: iso(raw, 'createdAt'),
   };

@@ -12,7 +12,7 @@ import 'content_media.dart';
 class ContentCard extends StatelessWidget {
   const ContentCard({required this.content, required this.onTap, this.clientName, this.onMore, super.key});
 
-  static const _thumbSize = 88.0;
+  static const _thumbSize = 72.0;
   static const _maxPlatformChips = 3;
 
   final Content content;

@@ -23,7 +23,8 @@ import { listTasks, openHoursByAssignee, overdueTasks } from '@/features/tasks/s
 import { listMembers } from '@/features/team/services/members.service';
 import type { Member } from '@/features/team/data/members.repository';
 import type { Client } from '@/features/clients/data/clients.repository';
-import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
+import { DashboardHeader } from './dashboard-header';
+import { ListCard, RowLink } from './dashboard-parts';
 
 const REVENUE_MONTHS = 7;
 const MINOR_PER_MAJOR = 100;

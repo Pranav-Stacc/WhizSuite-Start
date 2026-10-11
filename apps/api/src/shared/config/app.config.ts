@@ -190,6 +190,9 @@ export const appConfigSchema = z
       .enum(['true', 'false'])
       .default('true')
       .transform((v) => v === 'true'),
+    OUTBOX_MAX_ATTEMPTS: z.coerce.number().int().positive().default(12),
+    OUTBOX_BACKOFF_BASE_MS: z.coerce.number().int().positive().default(1000),
+    OUTBOX_BACKOFF_MAX_MS: z.coerce.number().int().positive().default(300_000),
     NOTIFICATION_LIST_LIMIT: z.coerce.number().int().positive().default(50),
     /** Channels used when a user has no stored preference for a notification type. */
     NOTIFICATION_DEFAULT_CHANNELS: z

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Clock, Mail, UserMinus } from 'lucide-react';
 import { UserRoles, type AccessRoleSummary } from '@agency-os/contracts';
+import { memberAccessLabel } from '@/shared/auth/member-labels';
 import { t } from '@/shared/i18n/t';
 import { formatDate } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -46,7 +47,7 @@ export function MemberCard({ member, openHours, isSelf, assignableRoles, scopeRe
   const invited = member.status === 'INVITED';
   const ratio = member.capacityHours > 0 ? openHours / member.capacityHours : 0;
   const protectedMember = member.role === UserRoles.OWNER || isSelf;
-  const roleLabel = t(`shell.role.${member.role}`);
+  const roleLabel = memberAccessLabel(member);
   const canManageRoles = assignableRoles !== undefined && !protectedMember && !invited;
   const showRemove = canRemove && !protectedMember;
   const profileHref = `/team/${member.id}`;

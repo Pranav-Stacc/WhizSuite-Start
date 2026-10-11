@@ -31,6 +31,8 @@ import {
   RedeemInvitationDto,
   RedeemPortalAccessDto,
 } from '../dto/invitation.dto';
+import { Public } from '../../../../../shared/auth/public-route.decorator';
+import { AllowAuthenticated } from '../../../../../shared/auth/allow-authenticated.decorator';
 
 @ApiTags('invitations')
 @ApiBearerAuth()
@@ -129,16 +131,19 @@ export class PortalAccessLinksController {
 export class InvitationsPublicController {
   constructor(private readonly invitations: InvitationsService) {}
 
+  @Public()
   @Get('preview')
   preview(@Query() query: InvitationTokenQuery) {
     return this.invitations.preview(query.token);
   }
 
+  @Public()
   @Post('redeem')
   redeem(@Body() dto: RedeemInvitationDto) {
     return this.invitations.redeem(dto);
   }
 
+  @AllowAuthenticated()
   @Post('accept')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
@@ -155,16 +160,19 @@ export class InvitationsPublicController {
 export class PortalAccessPublicController {
   constructor(private readonly invitations: InvitationsService) {}
 
+  @Public()
   @Get('preview')
   preview(@Query() query: InvitationTokenQuery) {
     return this.invitations.previewPortalAccess(query.token);
   }
 
+  @Public()
   @Post('redeem')
   redeem(@Body() dto: RedeemPortalAccessDto) {
     return this.invitations.redeemPortalAccess(dto);
   }
 
+  @AllowAuthenticated()
   @Post('claim')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)

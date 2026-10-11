@@ -35,7 +35,7 @@ export interface ApiRequest {
 
 const RETRY_DELAY_MS = 200;
 /** Credential endpoints answer 401 for bad input, not for a dead session. */
-const CREDENTIAL_API_PREFIXES = ['v1/auth/', 'v1/invitations/'];
+const CREDENTIAL_API_PREFIXES = ['v1/auth/', 'v1/invitations/', 'v1/portal-access/'];
 
 function buildUrl(path: string, query?: ApiRequest['query']): string {
   const url = new URL(`${env.API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`);
@@ -51,11 +51,12 @@ function buildUrl(path: string, query?: ApiRequest['query']): string {
  */
 export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promise<T> {
   const session = await getSession();
-  const token = request.token ?? session?.accessToken;
-  const organizationId = request.organizationId ?? session?.orgId;
-  const method = request.method ?? 'GET';
   const normalizedPath = path.replace(/^\//, '');
-  const sessionBound = Boolean(token ?? session) && !CREDENTIAL_API_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
+  const credentialRoute = CREDENTIAL_API_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix));
+  const token = request.token ?? (credentialRoute ? undefined : session?.accessToken);
+  const organizationId = request.organizationId ?? (credentialRoute ? undefined : session?.orgId);
+  const method = request.method ?? 'GET';
+  const sessionBound = Boolean(token ?? session) && !credentialRoute;
   const attempts = (method === 'GET' ? (request.retries ?? 1) : 0) + 1;
 
   let lastError: unknown;
@@ -81,7 +82,9 @@ export async function apiFetch<T>(path: string, request: ApiRequest = {}): Promi
         throw new ApiError(response.status, problem.code, problem.detail ?? problem.title ?? response.statusText);
       }
       if (response.status === 204) return undefined as T;
-      return (await response.json()) as T;
+      const bodyText = await response.text();
+      if (!bodyText.trim()) return undefined as T;
+      return JSON.parse(bodyText) as T;
     } catch (error) {
       if (error instanceof ApiError) throw error;
       if (isRedirect(error)) throw error;

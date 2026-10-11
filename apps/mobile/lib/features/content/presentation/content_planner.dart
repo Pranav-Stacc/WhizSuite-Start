@@ -410,7 +410,7 @@ class _PendingStrip extends StatelessWidget {
           ),
           SizedBox(height: tokens.md),
           SizedBox(
-            height: 88,
+            height: 72,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: posts.length,
@@ -428,7 +428,7 @@ class _PendingStrip extends StatelessWidget {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(tokens.radius),
                           child: SizedBox.square(
-                            dimension: 56,
+                            dimension: 48,
                             child: ContentMediaThumb(media: post.cover, fallbackIcon: contentTypeIcon(post.contentType)),
                           ),
                         ),

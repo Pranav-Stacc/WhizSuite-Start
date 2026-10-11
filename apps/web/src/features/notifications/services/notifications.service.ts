@@ -12,8 +12,12 @@ export async function listForUser(userId: string): Promise<Notification[]> {
     const org = session?.orgId ?? '';
     if (!org) return [];
     const live = notificationsLive(userId);
-    const data = await apiFetch<unknown>(live.path(org), { tags: [`org:${org}:${live.tag}`] });
-    return unwrapList(data).map((raw) => live.fromApi(raw)).sort((a, b) => b.at.localeCompare(a.at));
+    try {
+      const data = await apiFetch<unknown>(live.path(org), { tags: [`org:${org}:${live.tag}`] });
+      return unwrapList(data).map((raw) => live.fromApi(raw)).sort((a, b) => b.at.localeCompare(a.at));
+    } catch {
+      return [];
+    }
   }
   const rows = await notificationsRepository.list();
   return rows.filter((n) => n.userId === userId).sort((a, b) => b.at.localeCompare(a.at));

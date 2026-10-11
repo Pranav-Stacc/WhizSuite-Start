@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Permissions } from '@agency-os/contracts';
+import { getAccessCapabilities } from '@/shared/auth/access-capabilities';
+import { sessionAccessLabel } from '@/shared/auth/member-labels';
 import { getPermissions } from '@/shared/auth/permissions';
 import type { Session } from '@/shared/auth/session';
 import { t } from '@/shared/i18n/t';
@@ -26,12 +28,14 @@ import { WorkspaceSwitcher } from './workspace-switcher';
 export async function AppShell({ session, children }: { session: Session; children: ReactNode }) {
   const granted = await getPermissions();
   const workspace = await getWorkspaceContext();
-  const [theme, notifications, approvals, chatUnread] = await Promise.all([
+  const [theme, notifications, approvals, chatUnread, access] = await Promise.all([
     getTheme(),
     listForUser(session.userId),
-    granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals() : [],
-    granted.has(Permissions.CHAT_VIEW) ? unreadChatCount() : 0,
+    granted.has(Permissions.APPROVALS_VIEW) ? pendingApprovals().catch(() => []) : [],
+    granted.has(Permissions.CHAT_VIEW) ? unreadChatCount().catch(() => 0) : 0,
+    getAccessCapabilities(),
   ]);
+  const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
   const badges: Record<string, number> = { '/approvals': approvals.length, '/chat': chatUnread };
   const permissions = [...granted];
   const home = homePathForModule(workspace.module);
@@ -68,7 +72,15 @@ export async function AppShell({ session, children }: { session: Session; childr
               unread={notifications.filter((n) => !n.read).length}
             />
             <ThemeCustomizer initial={theme} canSaveOrg={granted.has(Permissions.ORG_BRANDING_MANAGE)} />
-            <UserMenu name={session.name} email={session.email} role={session.role} orgName={session.orgName} demo={session.demo} settingsHref="/settings" />
+            <UserMenu
+              name={session.name}
+              email={session.email}
+              role={session.role}
+              accessLabel={accessLabel}
+              orgName={session.orgName}
+              demo={session.demo}
+              settingsHref="/settings"
+            />
           </div>
         </div>
       </header>

@@ -34,7 +34,7 @@ Rules:
 - You may emit multiple tool calls in one turn; independent reads run in parallel.
 - After tool results arrive, call more tools or answer the user — do not stop after one wave
   if the task is incomplete.
-- One-time reminders → calendar.create (ISO-8601 UTC). Recurring → agents.schedules.create (cron).
+- One-time reminders → calendar.create. Use startsAt/endsAt as ISO-8601 UTC after converting from the user's local time (see Runtime context in the system message). Recurring → agents.schedules.create (cron + timezone).
 - Use exact field names from each tool schema (e.g. clients.create needs displayName).
 - Prefer action over clarifying questions when intent is clear.
 - For demo / test-all requests: run representative reads then safe writes with demo data.

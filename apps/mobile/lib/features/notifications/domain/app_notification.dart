@@ -50,6 +50,12 @@ String notificationTypeLabel(AppLocalizations l10n, String typeKey) => switch (t
       NotificationTypeKeys.taskAssigned => l10n.notificationTypeTaskAssigned,
       NotificationTypeKeys.contentApproved => l10n.notificationTypeContentApproved,
       NotificationTypeKeys.contentChangesRequested => l10n.notificationTypeContentChangesRequested,
+      NotificationTypeKeys.approvalRequested => l10n.notificationTypeApprovalRequested,
+      NotificationTypeKeys.approvalCompleted => l10n.notificationTypeApprovalCompleted,
+      NotificationTypeKeys.chatMention => l10n.notificationTypeChatMention,
+      NotificationTypeKeys.chatMessage => l10n.notificationTypeChatMessage,
+      NotificationTypeKeys.calendarReminder => l10n.notificationTypeCalendarReminder,
+      NotificationTypeKeys.invoiceOverdue => l10n.notificationTypeInvoiceOverdue,
       _ => l10n.notificationTypeOther,
     };
 

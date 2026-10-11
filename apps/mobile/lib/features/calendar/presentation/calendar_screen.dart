@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/formatting/formats.dart';
 import '../../../core/theme/app_tokens.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/async_value_view.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/feedback.dart';
@@ -73,32 +74,61 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _pickCreateAction() async {
+    if (!mounted) return;
     final l10n = AppLocalizations.of(context);
-    final choice = await showModalBottomSheet<_CreateChoice>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.event_outlined),
-              title: Text(l10n.calendarNew),
-              subtitle: Text(l10n.calendarNewEventHint),
-              onTap: () => Navigator.pop(context, _CreateChoice.event),
+    final wide = MediaQuery.sizeOf(context).width >= _splitBreakpoint;
+    if (!context.mounted) return;
+    final choice = wide
+        ? await showAppDialog<_CreateChoice>(
+            context,
+            size: AppDialogSize.compact,
+            builder: (dialogContext) => AppDialog(
+              title: l10n.calendarNew,
+              size: AppDialogSize.compact,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.event_outlined),
+                    title: Text(l10n.calendarNew),
+                    subtitle: Text(l10n.calendarNewEventHint),
+                    onTap: () => Navigator.pop(dialogContext, _CreateChoice.event),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: Text(l10n.calendarPlanShoot),
+                    subtitle: Text(l10n.calendarPlanShootHint),
+                    onTap: () => Navigator.pop(dialogContext, _CreateChoice.shoot),
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_outlined),
-              title: Text(l10n.calendarPlanShoot),
-              subtitle: Text(l10n.calendarPlanShootHint),
-              onTap: () => Navigator.pop(context, _CreateChoice.shoot),
+          )
+        : await showModalBottomSheet<_CreateChoice>(
+            context: context,
+            showDragHandle: true,
+            builder: (context) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.event_outlined),
+                    title: Text(l10n.calendarNew),
+                    subtitle: Text(l10n.calendarNewEventHint),
+                    onTap: () => Navigator.pop(context, _CreateChoice.event),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined),
+                    title: Text(l10n.calendarPlanShoot),
+                    subtitle: Text(l10n.calendarPlanShootHint),
+                    onTap: () => Navigator.pop(context, _CreateChoice.shoot),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-    if (!mounted || choice == null) return;
+          );
+    if (!context.mounted || choice == null) return;
     switch (choice) {
       case _CreateChoice.event:
         await _createEvent();

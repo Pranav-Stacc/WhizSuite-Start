@@ -21,7 +21,8 @@ import { isOverdue, listTasks } from '@/features/tasks/services/tasks.service';
 import { DEFAULT_WEEKLY_CAPACITY_HOURS } from '@/features/team/config';
 import type { Member } from '@/features/team/data/members.repository';
 import { membersById } from '@/features/team/services/members.service';
-import { DashboardHeader, ListCard, RowLink } from './dashboard-parts';
+import { DashboardHeader } from './dashboard-header';
+import { ListCard, RowLink } from './dashboard-parts';
 
 const MINUTES_PER_HOUR = 60;
 

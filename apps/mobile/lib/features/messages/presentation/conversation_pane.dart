@@ -609,8 +609,13 @@ class _MentionTextState extends State<_MentionText> {
     var cursor = 0;
     final ordered = [...widget.mentions]..sort((a, b) => (a.startOffset ?? 0).compareTo(b.startOffset ?? 0));
     for (final mention in ordered) {
-      final start = mention.startOffset ?? widget.body.indexOf('@${mention.displayText}');
-      if (start < cursor || start < 0) continue;
+      var start = mention.startOffset;
+      if (start == null) {
+        final index = widget.body.indexOf('@${mention.displayText}');
+        if (index < 0) continue;
+        start = index;
+      }
+      if (start < cursor || start < 0 || start >= widget.body.length) continue;
       if (start > cursor) spans.add(TextSpan(text: widget.body.substring(cursor, start)));
       final end = mention.endOffset ?? start + mention.displayText.length + 1;
       final tappable = mention.type == ChatMentionTypes.user && widget.onMentionTap != null;

@@ -11,10 +11,11 @@ model OutboxEvent {
   actorType      String    @map("actor_type")
   status         String    @default("PENDING")
   attempts       Int       @default(0)
+  nextAttemptAt  DateTime  @default(now()) @map("next_attempt_at") @db.Timestamptz
   publishedAt    DateTime? @map("published_at") @db.Timestamptz
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  @@index([status, createdAt])
+  @@index([status, nextAttemptAt])
   @@index([organizationId, createdAt])
   @@map("outbox_events")
   @@schema("shared")

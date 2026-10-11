@@ -131,10 +131,14 @@ class PushMessaging {
   }
 
   void _showForeground(RemoteMessage message) {
+    final data = message.data;
+    final id = data[_notificationIdKey] as String? ?? message.messageId;
+    if (id == null) return;
     final notification = message.notification;
-    final id = message.data[_notificationIdKey] as String? ?? message.messageId;
-    if (notification == null || id == null) return;
-    _local.show(id: id, title: notification.title ?? '', body: notification.body ?? '');
+    final title = notification?.title ?? data['title'] as String? ?? '';
+    final body = notification?.body ?? data['body'] as String? ?? '';
+    if (title.isEmpty && body.isEmpty) return;
+    _local.show(id: id, title: title, body: body);
   }
 
   void dispose() {

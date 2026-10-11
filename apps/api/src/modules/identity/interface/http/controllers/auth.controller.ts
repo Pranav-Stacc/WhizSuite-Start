@@ -8,8 +8,10 @@ import {
   RefreshDto,
   RegisterDto,
 } from '../dto/auth.dto';
+import { Public } from '../../../../../shared/auth/public-route.decorator';
 
 @ApiTags('auth')
+@Public()
 @Controller('v1/auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}

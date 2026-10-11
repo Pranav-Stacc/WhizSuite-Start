@@ -30,6 +30,7 @@ import '../../projects/projects_routes.dart';
 import '../application/clients_controller.dart';
 import '../domain/client.dart';
 import 'agreements_tab.dart';
+import '../../team/presentation/portal_forms.dart';
 import 'client_forms.dart';
 import 'client_status.dart';
 
@@ -47,7 +48,26 @@ class ClientDetailScreen extends ConsumerWidget {
     return PageScaffold(
       title: loaded?.name ?? l10n.clientsTitle,
       actions: [
-        if (loaded != null)
+        if (loaded != null) ...[
+          PermissionGate(
+            anyOf: const [Permissions.membersInvite],
+            child: PopupMenuButton<String>(
+              tooltip: l10n.portalShareMenu,
+              icon: const Icon(Icons.share_outlined),
+              onSelected: (value) async {
+                switch (value) {
+                  case 'link':
+                    await showPortalAccessLinkForm(context, ref, clientId: loaded.id, clientName: loaded.name);
+                  case 'invite':
+                    await showPortalInviteForm(context, ref, clientId: loaded.id, clientName: loaded.name);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'link', child: Text(l10n.portalLinkOpen)),
+                PopupMenuItem(value: 'invite', child: Text(l10n.portalInviteOpen)),
+              ],
+            ),
+          ),
           PermissionGate(
             anyOf: const [Permissions.clientsEdit],
             child: IconButton(
@@ -59,6 +79,7 @@ class ClientDetailScreen extends ConsumerWidget {
               },
             ),
           ),
+        ],
       ],
       body: AsyncValueView<Client>(
         value: client,

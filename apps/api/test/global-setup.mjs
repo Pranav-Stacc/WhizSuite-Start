@@ -7,6 +7,29 @@ const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, '..');
 const flagFile = path.join(testDir, '.e2e-db-unavailable');
 
+function prismaClientLooksReady() {
+  const candidates = [
+    path.join(apiRoot, 'node_modules', '@prisma', 'client', 'default.js'),
+    path.join(apiRoot, '..', '..', 'node_modules', '@prisma', 'client', 'default.js'),
+  ];
+  return candidates.some((file) => fs.existsSync(file));
+}
+
+function runPrismaGenerate() {
+  try {
+    execSync('npx prisma generate', { cwd: apiRoot, stdio: 'inherit', env: process.env });
+  } catch (error) {
+    if (prismaClientLooksReady()) {
+      console.warn(
+        'prisma generate failed; continuing with existing client (stop the API/dev process if tests behave oddly).',
+        error?.message ?? error,
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
 export default async function globalSetup() {
   process.env.NODE_ENV = 'test';
   process.env.OUTBOX_RELAY_ENABLED = 'false';
@@ -22,7 +45,7 @@ export default async function globalSetup() {
       stdio: 'inherit',
       env: process.env,
     });
-    execSync('npx prisma generate', { cwd: apiRoot, stdio: 'inherit', env: process.env });
+    runPrismaGenerate();
     execSync('npx prisma db push --accept-data-loss --skip-generate', {
       cwd: apiRoot,
       stdio: 'inherit',

@@ -65,6 +65,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
     >
       {selected ? (
         <QueuePostPanel
+          compact
           post={selected}
           thread={thread}
           headerAction={

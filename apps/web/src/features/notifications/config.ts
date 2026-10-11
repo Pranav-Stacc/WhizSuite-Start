@@ -8,7 +8,7 @@ interface NotificationEventConfig {
   href: (data: NotificationData) => string;
 }
 
-const TASKS_HREF = '/tasks';
+const taskHref = (data: NotificationData) => (data.taskId ? `/tasks?task=${data.taskId}` : '/tasks');
 const APPROVALS_HREF = '/approvals';
 const contentHref = (data: NotificationData) => (data.contentId ? `/content/${data.contentId}` : '/content');
 const approvalHref = (data: NotificationData) =>
@@ -18,11 +18,11 @@ const invoiceHref = (data: NotificationData) =>
 
 /** Presentation for API notification `typeKey`s. */
 export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
-  [NotificationTypeKeys.TASK_ASSIGNED]: { kind: 'task', title: 'notifications.event.taskAssigned', href: () => TASKS_HREF },
-  [NotificationTypeKeys.TASK_STATE_CHANGED]: { kind: 'task', title: 'notifications.event.taskStateChanged', href: () => TASKS_HREF },
-  [NotificationTypeKeys.TASK_COMMENTED]: { kind: 'task', title: 'notifications.event.taskCommented', href: () => TASKS_HREF },
-  [NotificationTypeKeys.TASK_DUE_SOON]: { kind: 'task', title: 'notifications.event.taskDueSoon', href: () => TASKS_HREF },
-  [NotificationTypeKeys.TASK_OVERDUE]: { kind: 'task', title: 'notifications.event.taskOverdue', href: () => TASKS_HREF },
+  [NotificationTypeKeys.TASK_ASSIGNED]: { kind: 'task', title: 'notifications.event.taskAssigned', href: taskHref },
+  [NotificationTypeKeys.TASK_STATE_CHANGED]: { kind: 'task', title: 'notifications.event.taskStateChanged', href: taskHref },
+  [NotificationTypeKeys.TASK_COMMENTED]: { kind: 'task', title: 'notifications.event.taskCommented', href: taskHref },
+  [NotificationTypeKeys.TASK_DUE_SOON]: { kind: 'task', title: 'notifications.event.taskDueSoon', href: taskHref },
+  [NotificationTypeKeys.TASK_OVERDUE]: { kind: 'task', title: 'notifications.event.taskOverdue', href: taskHref },
   [NotificationTypeKeys.CONTENT_APPROVED]: { kind: 'approval', title: 'notifications.event.contentApproved', href: contentHref },
   [NotificationTypeKeys.CONTENT_CHANGES_REQUESTED]: { kind: 'approval', title: 'notifications.event.changesRequested', href: contentHref },
   [NotificationTypeKeys.CONTENT_REJECTED]: { kind: 'approval', title: 'notifications.event.contentRejected', href: contentHref },
@@ -81,6 +81,18 @@ export const NOTIFICATION_EVENTS: Record<string, NotificationEventConfig> = {
     kind: 'invoice',
     title: 'notifications.event.invoicePaid',
     href: invoiceHref,
+  },
+  [NotificationTypeKeys.CALENDAR_REMINDER]: {
+    kind: 'system',
+    title: 'notifications.event.calendarReminder',
+    href: (data) =>
+      data.calendarItemId ? `/calendar?item=${data.calendarItemId}` : '/calendar',
+  },
+  [NotificationTypeKeys.CALENDAR_ITEM_CREATED]: {
+    kind: 'system',
+    title: 'notifications.event.calendarItemCreated',
+    href: (data) =>
+      data.calendarItemId ? `/calendar?item=${data.calendarItemId}` : '/calendar',
   },
 };
 

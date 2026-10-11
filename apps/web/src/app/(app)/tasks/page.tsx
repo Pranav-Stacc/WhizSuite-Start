@@ -20,6 +20,7 @@ import { moveTaskAction } from '@/features/tasks/actions/task.actions';
 import { TaskCardContent } from '@/features/tasks/components/task-card';
 import { TaskDialog } from '@/features/tasks/components/task-dialog';
 import { TaskList } from '@/features/tasks/components/task-list';
+import { TasksFilterSheet } from '@/features/tasks/components/tasks-filter-sheet';
 import { isOverdue, listTasks } from '@/features/tasks/services/tasks.service';
 
 export const metadata: Metadata = { title: t('tasks.title') };
@@ -64,7 +65,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const tasks = scoped.filter(predicates[filter]);
 
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, edit: undefined, ...overrides });
-  const editTask = param(sp, 'edit') ? allTasks.find((task) => task.id === param(sp, 'edit')) : undefined;
+  const editId = param(sp, 'edit') ?? param(sp, 'task');
+  const editTask = editId ? allTasks.find((task) => task.id === editId) : undefined;
   const hasFilters = filter !== 'all' || Boolean(clientId) || Boolean(query);
 
   const projectOptions = projects.map((p) => ({ id: p.id, name: p.name, clientName: clients.get(p.clientId)?.name }));
@@ -123,7 +125,13 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
       <div role="search" aria-label={t('tasks.filters.label')} className="mb-5 flex flex-wrap items-center gap-3">
         <SearchInput placeholder={t('tasks.search')} className="max-w-64" />
+        <TasksFilterSheet
+          filter={filter}
+          clientId={clientId}
+          clients={[...clients.values()].map((c) => ({ id: c.id, name: c.name }))}
+        />
         <FilterChips
+          className="hidden lg:flex"
           items={FILTERS.map((f) => ({
             href: link({ f: f === 'all' ? undefined : f }),
             label: filterLabels[f],
@@ -137,7 +145,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           label={t('tasks.filter.client')}
           allLabel={t('tasks.filter.client')}
           options={[...clients.values()].map((c) => ({ value: c.id, label: c.name }))}
-          className="ml-auto"
+          className="ml-auto hidden lg:flex"
         />
       </div>
 

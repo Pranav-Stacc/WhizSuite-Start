@@ -45,7 +45,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
   const link = (overrides: Record<string, string | undefined>) => withQuery(BASE, sp, { new: undefined, ...overrides });
 
   const addButton = (
-    <Button variant="primary">
+    <Button variant="primary" data-tour="setup-client">
       <Plus />
       {t('clients.new')}
     </Button>

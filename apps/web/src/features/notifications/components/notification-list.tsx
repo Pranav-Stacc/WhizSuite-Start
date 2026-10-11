@@ -48,7 +48,7 @@ export function NotificationList({ items, unread }: NotificationListProps) {
           items.map((item) => (
             <li key={item.id}>
               <Link
-                href={item.href}
+                href={item.href?.trim() && item.href !== '#' ? item.href : '/notifications'}
                 onClick={() => {
                   if (!item.read) startTransition(() => void markReadAction(item.id));
                 }}

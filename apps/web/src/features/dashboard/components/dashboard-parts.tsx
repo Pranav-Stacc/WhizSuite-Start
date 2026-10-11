@@ -3,33 +3,12 @@ import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
-import { formatDate } from '@/shared/lib/format';
 import { Card, CardBody, CardHeader } from '@/shared/ui/card';
-import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
-import { PageHeader } from '@/shared/ui/page-header';
-
 export function greetingKey(date: Date = new Date()): MessageKey {
   const hour = date.getHours();
   if (hour < 12) return 'dashboard.greeting.morning';
   if (hour < 18) return 'dashboard.greeting.afternoon';
   return 'dashboard.greeting.evening';
-}
-
-export function DashboardHeader({ name, subtitle, actions, guide }: { name: string; subtitle: string; actions?: ReactNode; guide: GuideItem[] }) {
-  const first = name.split(' ')[0] ?? name;
-  return (
-    <PageHeader
-      title={t(greetingKey(), { name: first })}
-      description={subtitle}
-      eyebrow={formatDate(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
-      actions={
-        <>
-          <PageGuide items={guide} />
-          {actions}
-        </>
-      }
-    />
-  );
 }
 
 interface ListCardProps {

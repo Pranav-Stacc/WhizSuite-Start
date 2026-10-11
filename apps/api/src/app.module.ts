@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { DataScopeInterceptor } from './modules/access/interface/http/data-scope.interceptor';
+import { GlobalJwtAuthGuard } from './shared/auth/global-jwt-auth.guard';
+import { StrictPermissionsGuard } from './shared/auth/strict-permissions.guard';
 import { TerminusModule } from '@nestjs/terminus';
 import { LoggerModule } from 'nestjs-pino';
 import type { AppConfig } from './shared/config/app.config';
@@ -99,6 +101,8 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
   ],
   controllers: [HealthController],
   providers: [
+    { provide: APP_GUARD, useClass: GlobalJwtAuthGuard },
+    { provide: APP_GUARD, useClass: StrictPermissionsGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: DataScopeInterceptor },
   ],

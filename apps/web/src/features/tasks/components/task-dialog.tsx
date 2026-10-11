@@ -69,6 +69,7 @@ export function TaskDialog({ projects, members, task, trigger, defaultOpen, defa
   return (
     <FormDialog
       key={task?.id ?? 'new'}
+      size="sm"
       schema="task"
       title={task ? t('tasks.edit') : t('tasks.create.title')}
       description={task ? t('tasks.edit.desc') : t('tasks.create.desc')}

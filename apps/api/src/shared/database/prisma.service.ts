@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { TenantContext } from '../tenant/tenant.context';
 import type { AppConfig } from '../config/app.config';
+import { prismaTenantExtension } from './prisma-tenant.extension';
 
 @Injectable()
 export class PrismaService
@@ -28,7 +29,10 @@ export class PrismaService
 
   async onModuleInit(): Promise<void> {
     await this.$connect();
-    this.logger.log('Database connected');
+    const baseClient = this as PrismaClient;
+    const extended = baseClient.$extends(prismaTenantExtension(baseClient));
+    Object.assign(this, extended);
+    this.logger.log('Database connected (tenant extension active)');
   }
 
   async onModuleDestroy(): Promise<void> {

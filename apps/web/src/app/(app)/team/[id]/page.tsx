@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Mail, Shield, UserMinus } from 'lucide-react';
+import { memberAccessLabel } from '@/shared/auth/member-labels';
 import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { formatDate, humanizeKey } from '@/shared/lib/format';
@@ -113,7 +114,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                 {invited ? (
                   <Badge tone="warning">{t('team.status.invited')}</Badge>
                 ) : (
-                  <Badge tone="info">{t(`shell.role.${member.role}`)}</Badge>
+                  <Badge tone="info">{memberAccessLabel(member)}</Badge>
                 )}
               </dd>
             </div>

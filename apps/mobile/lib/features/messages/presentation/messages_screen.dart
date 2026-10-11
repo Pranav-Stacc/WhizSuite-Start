@@ -51,6 +51,17 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       _openWhiz(wide: wide);
       return;
     }
+    final threadId = uri.queryParameters['threadId'];
+    if (threadId != null && threadId.isNotEmpty) {
+      if (!mounted) return;
+      final wide = MediaQuery.sizeOf(context).width >= messagesSplitBreakpoint;
+      if (wide) {
+        setState(() => _selectedId = threadId);
+      } else {
+        await context.push(MessagesRoutes.detail(threadId));
+      }
+      return;
+    }
     final clientId = uri.queryParameters['clientId'];
     if (clientId == null || clientId.isEmpty) return;
     try {

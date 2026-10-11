@@ -267,4 +267,13 @@ export class AgentRepository {
       take: limit,
     });
   }
+
+  findOrganizationTimezone(organizationId: string): Promise<string | null> {
+    return this.prisma.organization
+      .findUnique({
+        where: { id: organizationId },
+        select: { timezone: true },
+      })
+      .then((row) => row?.timezone ?? null);
+  }
 }

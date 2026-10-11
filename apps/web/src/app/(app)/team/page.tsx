@@ -19,6 +19,7 @@ import { loadScopeResources } from '@/features/team/services/scope-resources.ser
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 import { isOwnerRole } from '@/features/roles/config';
 import { listRoles, toRoleSummary } from '@/features/roles/services/roles.service';
+import { listInviteMembershipOptions } from '@/features/team/services/invite-options.service';
 
 export const metadata: Metadata = { title: t('team.title') };
 
@@ -54,11 +55,12 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     can(Permissions.MEMBERS_INVITE),
     can(Permissions.MEMBERS_DEACTIVATE),
   ]);
-  const [members, tasks, roles, scopeResources] = await Promise.all([
+  const [members, tasks, roles, scopeResources, membershipOptions] = await Promise.all([
     listMembers(),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
     canManageRoles ? loadScopeResources() : Promise.resolve(undefined),
+    canInvite ? listInviteMembershipOptions() : Promise.resolve([]),
   ]);
   const assignableRoles = canManageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : undefined;
   const customRoles = canManageRoles ? roles.filter((role) => !role.isSystem).map(toRoleSummary) : [];
@@ -91,10 +93,11 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             <PageGuide items={GUIDE} />
             {canInvite ? (
               <InviteDialog
-                defaultOpen={param(sp, 'new') === '1'}
+                defaultOpen={param(sp, 'new') === '1' || param(sp, 'invite') === '1'}
+                membershipOptions={membershipOptions}
                 customRoles={customRoles}
                 trigger={
-                  <Button variant="primary">
+                  <Button variant="primary" data-tour="setup-invite">
                     <UserPlus />
                     {t('team.invite')}
                   </Button>

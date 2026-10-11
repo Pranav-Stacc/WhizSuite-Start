@@ -122,6 +122,8 @@ export const automationMessages = {
   'workflows.updated': 'Workflow updated',
   'workflows.deleted': 'Workflow deleted',
   'workflows.delete': 'Delete workflow',
+  'workflows.share': 'Copy link',
+  'workflows.share.copied': 'Link copied',
   'workflows.activated': 'Workflow activated',
   'workflows.deactivated': 'Workflow deactivated',
   'workflows.toggle': 'Turn {name} on or off',

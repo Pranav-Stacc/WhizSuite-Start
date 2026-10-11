@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react';
-import type { AccessRoleSummary } from '@agency-os/contracts';
-import { t, type MessageKey } from '@/shared/i18n/t';
+import type { AccessRoleSummary, MembershipType } from '@agency-os/contracts';
+import { t } from '@/shared/i18n/t';
 import { FormDialog, type FieldDef } from '@/shared/forms/form-dialog';
 import { inviteMemberAction } from '../actions/member.actions';
-import { INVITABLE_MEMBERSHIPS } from '../config';
 
 interface InviteDialogProps {
   trigger?: ReactNode;
   defaultOpen?: boolean;
   /** Custom roles the inviter may grant up front; omitted when they cannot manage roles. */
   customRoles?: AccessRoleSummary[];
+  membershipOptions: Array<{ value: MembershipType; label: string }>;
 }
 
-export function InviteDialog({ trigger, defaultOpen, customRoles = [] }: InviteDialogProps) {
+export function InviteDialog({ trigger, defaultOpen, customRoles = [], membershipOptions }: InviteDialogProps) {
   const fields: FieldDef[] = [
     { name: 'email', label: t('team.invite.email'), type: 'email', placeholder: t('team.invite.email.placeholder'), required: true, span: 2 },
     {
@@ -21,7 +21,7 @@ export function InviteDialog({ trigger, defaultOpen, customRoles = [] }: InviteD
       type: 'select',
       required: true,
       hint: t('team.invite.access.hint'),
-      options: INVITABLE_MEMBERSHIPS.map((value) => ({ value, label: t(`team.access.${value}` as MessageKey) })),
+      options: membershipOptions.map((option) => ({ value: option.value, label: option.label })),
     },
     { name: 'note', label: t('team.invite.title'), placeholder: t('team.invite.title.placeholder') },
     ...(customRoles.length > 0

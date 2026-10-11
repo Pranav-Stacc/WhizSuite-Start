@@ -24,7 +24,7 @@ import {
   type ChatRoomType,
   type CursorPage,
 } from '@agency-os/contracts';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
 import {
@@ -447,12 +447,35 @@ export class ChatService {
       }
       return this.getRoom(organizationId, actorId, existing.id);
     }
-    return this.createGroup(organizationId, actorId, {
-      type: 'CLIENT',
-      name,
-      clientId,
-      memberUserIds: [actorId],
-    });
+    try {
+      return await this.createGroup(organizationId, actorId, {
+        type: 'CLIENT',
+        name,
+        clientId,
+        memberUserIds: [actorId],
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const raced = await this.repository.findClientRoom(organizationId, clientId);
+        if (raced) {
+          const membership = await this.repository.findMembership(
+            organizationId,
+            raced.id,
+            actorId,
+          );
+          if (!membership) {
+            await this.repository.addMembers(organizationId, raced.id, [
+              { userId: actorId, role: 'MEMBER', ...capabilitiesFor('MEMBER') },
+            ]);
+          }
+          return this.getRoom(organizationId, actorId, raced.id);
+        }
+      }
+      throw error;
+    }
   }
 
   async updateRoom(

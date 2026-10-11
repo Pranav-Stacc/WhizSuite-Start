@@ -101,6 +101,8 @@ jobs:
       - run: pnpm --filter @agency-os/api exec prisma generate
       - name: Typecheck
         run: pnpm turbo run typecheck
+      - name: API route permission guard
+        run: pnpm check:api-security
       - name: Unit tests
         run: pnpm --filter @agency-os/api exec jest --passWithNoTests
       - name: Build

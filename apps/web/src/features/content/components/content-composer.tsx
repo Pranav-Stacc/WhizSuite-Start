@@ -80,6 +80,8 @@ interface ContentComposerProps {
   stayOnSave?: boolean;
   /** Live storage must be available for direct uploads from the composer. */
   uploadEnabled?: boolean;
+  /** Tighter drawer for approvals and calendar quick-create flows. */
+  compact?: boolean;
 }
 
 const DATE_TIME_SEPARATOR = 'T';
@@ -104,6 +106,7 @@ export function ContentComposer({
   onOpenChange,
   stayOnSave = false,
   uploadEnabled = true,
+  compact = false,
 }: ContentComposerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -208,7 +211,7 @@ export function ContentComposer({
       <Sheet
         open={open}
         onOpenChange={close}
-        width="max-w-2xl"
+        width={compact ? 'max-w-lg' : 'max-w-2xl'}
         title={post ? t('content.composer.edit') : t('content.composer.title')}
         description={post?.resetsApproval ? t('content.composer.edit.desc') : t('content.composer.desc')}
         footer={

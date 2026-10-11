@@ -18,6 +18,7 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from '../../../../../shared/auth/current-user.decorator';
+import { AllowAuthenticated } from '../../../../../shared/auth/allow-authenticated.decorator';
 import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
@@ -33,11 +34,23 @@ import { CreateWorkspaceDto } from '../dto/workspace.dto';
 export class OrganizationsController {
   constructor(private readonly tenancy: TenancyService) {}
 
+  /** Basic org profile for session bootstrap — any authenticated member of the org. */
   @Get('current')
-  @RequirePermissions(Permissions.ORG_VIEW)
-  getCurrent(@Headers('x-organization-id') orgHeader?: string) {
-    const orgId = orgHeader ?? TenantContext.getOrganizationId() ?? undefined;
+  @AllowAuthenticated()
+  getCurrent(
+    @CurrentUser() user: AuthenticatedUser,
+    @Headers('x-organization-id') orgHeader?: string,
+  ) {
+    const orgId =
+      orgHeader ??
+      TenantContext.getOrganizationId() ??
+      user.organizationId ??
+      undefined;
     if (!orgId) return this.tenancy.requireOrgFromContext();
+    requireOrganizationId(orgId);
+    if (user.organizationId && user.organizationId !== orgId) {
+      return this.tenancy.getOrganization(user.organizationId);
+    }
     return this.tenancy.getOrganization(orgId);
   }
 

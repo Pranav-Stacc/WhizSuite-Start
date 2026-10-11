@@ -59,7 +59,14 @@ export function PortalAccessForm({
   });
 
   return (
-    <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
+    <form
+      noValidate
+      className="grid gap-4 sm:grid-cols-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit(event);
+      }}
+    >
       <p className="rounded-md border border-border-soft bg-surface-2 px-3 py-2 text-sm text-muted sm:col-span-2">
         {accessMode === 'TEMPORARY'
           ? t('auth.portalAccess.temporaryNote', {

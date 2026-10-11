@@ -11,6 +11,7 @@ import '../domain/invitation.dart';
 import '../domain/member.dart';
 import '../domain/member_access.dart';
 import '../domain/member_document.dart';
+import '../domain/portal_access.dart';
 import '../domain/role_assignment_scope.dart';
 
 const _typeOrder = [MembershipTypes.owner, MembershipTypes.admin, MembershipTypes.member, MembershipTypes.client];
@@ -112,6 +113,21 @@ class TeamActions {
     _ref.invalidate(invitationsProvider);
     return link;
   }
+
+  Future<PortalAccessLink> createPortalAccessLink({
+    required String clientId,
+    required String accessMode,
+    int? linkExpiresInHours,
+    int? membershipTtlHours,
+    int? maxUses,
+  }) =>
+      _repo.createPortalAccessLink(
+        clientId: clientId,
+        accessMode: accessMode,
+        linkExpiresInHours: linkExpiresInHours,
+        membershipTtlHours: membershipTtlHours,
+        maxUses: maxUses,
+      );
 
   Future<void> revoke(String invitationId) async {
     await _repo.revoke(invitationId);

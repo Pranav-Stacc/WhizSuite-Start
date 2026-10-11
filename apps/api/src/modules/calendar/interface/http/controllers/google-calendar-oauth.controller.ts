@@ -5,9 +5,11 @@ import type { Response } from 'express';
 import type { AppConfig } from '../../../../../shared/config/app.config';
 import { googleCalendarOAuthReturnUrl } from '../../../../../shared/integrations/oauth-return-url';
 import { GoogleCalendarSyncService } from '../../../application/services/google-calendar-sync.service';
+import { Public } from '../../../../../shared/auth/public-route.decorator';
 
 /** OAuth redirect target for Google Calendar connect — no JWT (browser redirect). */
 @ApiTags('integrations')
+@Public()
 @Controller('v1/integrations/google-calendar')
 export class GoogleCalendarOauthController {
   constructor(

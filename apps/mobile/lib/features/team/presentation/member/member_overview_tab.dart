@@ -195,6 +195,22 @@ class MemberOverviewTab extends ConsumerWidget {
                 ),
                 if (canManageRoles) ...[
                   SizedBox(height: tokens.lg),
+                  if (canEditRoles)
+                    SectionCard(
+                      title: l10n.teamDataScopeTitle,
+                      trailing: TextButton(
+                        onPressed: () async {
+                          final saved = await showMemberRolesForm(context, ref, member);
+                          if (saved && context.mounted) showToast(context, l10n.savedToast);
+                        },
+                        child: Text(l10n.memberEditRolesAndScopes),
+                      ),
+                      child: Text(
+                        l10n.memberRolesScopesHint,
+                        style: text.bodySmall?.copyWith(color: tokens.muted),
+                      ),
+                    ),
+                  if (canEditRoles) SizedBox(height: tokens.lg),
                   _PermissionsSection(member: member, manageable: manageable),
                 ],
                 if (manageable) ...[
@@ -308,6 +324,7 @@ class _PositionsSection extends ConsumerWidget {
       if (context.mounted) showToast(context, l10n.departmentsEmpty);
       return;
     }
+    if (!context.mounted) return;
     final department = await showPickerDialog<DepartmentNode>(
       context,
       title: l10n.memberPickDepartment,
@@ -438,6 +455,7 @@ class _PermissionsSectionState extends ConsumerState<_PermissionsSection> {
       }
     }
     final overrides = merged.entries.map((e) => PermissionOverride(key: e.key, effect: e.value)).toList();
+    if (!context.mounted) return;
     final ok = await runAction(
       context,
       () => ref.read(teamActionsProvider).setPermissions(widget.member.userId, overrides),

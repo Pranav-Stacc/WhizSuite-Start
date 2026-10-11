@@ -28,8 +28,9 @@ const _expiryOptions = [24, 72, 168, 720];
 const _hoursPerDay = 24;
 
 /// Replace the full set of roles a member holds. Resolves to true when saved.
-Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member member) {
+Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member member) async {
   final l10n = AppLocalizations.of(context);
+  await ref.read(assignableRolesProvider.future);
   final roles = ref.read(assignableRolesProvider).value ?? const [];
   var selected = member.roleIds;
   var activeScopes = resolveActiveScopes(
@@ -41,6 +42,7 @@ Future<bool> showMemberRolesForm(BuildContext context, WidgetRef ref, Member mem
     for (final scope in activeScopes)
       if (scopeNeedsResource(scope)) scope: ScopeResourceTargeting.specific,
   };
+  if (!context.mounted) return false;
   return showFormSheet(
     context,
     title: l10n.teamRolesEdit(member.name),

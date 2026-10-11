@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { AppConfig } from '../../../../shared/config/app.config';
 import { AuthorizationService } from '../../../access/application/services/authorization.service';
 import type { Permission } from '@agency-os/contracts';
+import { TenantContext } from '../../../../shared/tenant/tenant.context';
 
 export interface JwtPayload {
   sub: string;
@@ -17,6 +19,8 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     config: ConfigService<AppConfig, true>,
     private readonly authorization: AuthorizationService,
@@ -29,22 +33,45 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    let permissions: Permission[] = [];
-    if (payload.organizationId && payload.membershipId) {
-      permissions = await this.authorization.getEffectivePermissions(
-        payload.organizationId,
-        payload.membershipId,
-      );
-    }
+    const buildUser = async () => {
+      let permissions: Permission[] = [];
+      if (payload.organizationId && payload.membershipId) {
+        try {
+          permissions = await this.authorization.getEffectivePermissions(
+            payload.organizationId,
+            payload.membershipId,
+          );
+        } catch (error) {
+          this.logger.warn(
+            `Permission resolution failed during authentication for ${payload.sub}; failing closed`,
+            error instanceof Error ? error.message : String(error),
+          );
+        }
+      }
 
-    return {
-      userId: payload.sub,
-      email: payload.email,
-      organizationId: payload.organizationId,
-      membershipId: payload.membershipId,
-      membershipType: payload.membershipType,
-      clientId: payload.clientId,
-      permissions,
+      return {
+        userId: payload.sub,
+        email: payload.email,
+        organizationId: payload.organizationId,
+        membershipId: payload.membershipId,
+        membershipType: payload.membershipType,
+        clientId: payload.clientId,
+        permissions,
+      };
     };
+
+    if (!payload.organizationId) return buildUser();
+
+    return TenantContext.run(
+      {
+        organizationId: payload.organizationId,
+        userId: payload.sub,
+        membershipId: payload.membershipId,
+        membershipType: payload.membershipType,
+        clientId: payload.clientId,
+        correlationId: randomUUID(),
+      },
+      buildUser,
+    );
   }
 }

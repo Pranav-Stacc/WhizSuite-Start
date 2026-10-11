@@ -87,8 +87,10 @@ export function NotificationsBell({ items, unread }: { items: NotificationView[]
               <button
                 type="button"
                 onClick={() => {
+                  const target = n.href?.trim();
+                  if (!target || target === '#') return;
                   startTransition(() => void markReadAction(n.id));
-                  router.push(n.href);
+                  router.push(target);
                 }}
                 className={cn('flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2', !n.read && 'bg-primary/5')}
               >
@@ -110,7 +112,23 @@ export function NotificationsBell({ items, unread }: { items: NotificationView[]
   );
 }
 
-export function UserMenu({ name, email, role, orgName, demo, settingsHref }: { name: string; email: string; role: UserRole; orgName: string; demo: boolean; settingsHref?: string }) {
+export function UserMenu({
+  name,
+  email,
+  role,
+  accessLabel,
+  orgName,
+  demo,
+  settingsHref,
+}: {
+  name: string;
+  email: string;
+  role: UserRole;
+  accessLabel?: string;
+  orgName: string;
+  demo: boolean;
+  settingsHref?: string;
+}) {
   const [, startTransition] = useTransition();
   return (
     <Menu.Root>
@@ -126,7 +144,7 @@ export function UserMenu({ name, email, role, orgName, demo, settingsHref }: { n
             <p className="truncate text-sm font-semibold">{name}</p>
             <p className="truncate text-xs text-muted">{email}</p>
             <p className="mt-0.5 truncate text-[11px] text-primary">
-              {t(`shell.role.${role}` as MessageKey)} · {orgName}
+              {accessLabel ?? t(`shell.role.${role}` as MessageKey)} · {orgName}
             </p>
           </div>
         </div>

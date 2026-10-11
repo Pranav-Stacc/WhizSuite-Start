@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/navigation/app_routes.dart';
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/feedback.dart';
@@ -105,6 +106,14 @@ class _MediaScreenState extends ConsumerState<MediaScreen> {
     return PageScaffold(
       title: l10n.mediaTitle,
       actions: [
+        PermissionGate(
+          anyOf: const [Permissions.integrationsManage, Permissions.filesUpload],
+          child: IconButton(
+            tooltip: l10n.storageSettingsTitle,
+            onPressed: () => context.push(AppRoutes.storage),
+            icon: const Icon(Icons.cloud_outlined),
+          ),
+        ),
         PermissionGate(
           anyOf: const [Permissions.filesView],
           child: IconButton(
