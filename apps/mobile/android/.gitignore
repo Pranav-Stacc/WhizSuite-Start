@@ -13,3 +13,5 @@ key.properties
 keystore-credentials.txt
 **/*.keystore
 **/*.jks
+*.pem
+*.json

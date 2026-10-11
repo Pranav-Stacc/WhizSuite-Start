@@ -310,7 +310,10 @@ export class MembersService {
     userId: string,
     employmentType: string | null,
   ) {
-    const membership = await this.requireActiveNonClient(organizationId, userId);
+    const membership = await this.requireActiveNonClient(
+      organizationId,
+      userId,
+    );
     const updated = await this.access.updateEmploymentType(
       organizationId,
       membership.id,
@@ -330,11 +333,17 @@ export class MembersService {
   }
 
   async listDocuments(organizationId: string, userId: string) {
-    const membership = await this.identity.findMembershipOfUser(organizationId, userId);
+    const membership = await this.identity.findMembershipOfUser(
+      organizationId,
+      userId,
+    );
     if (!membership) {
       throw problem(HttpStatus.NOT_FOUND, 'Not Found', ErrorCodes.NOT_FOUND);
     }
-    const rows = await this.access.listMemberDocuments(organizationId, membership.id);
+    const rows = await this.access.listMemberDocuments(
+      organizationId,
+      membership.id,
+    );
     return rows.map((row) => ({
       id: row.id,
       type: row.type,
@@ -352,7 +361,10 @@ export class MembersService {
     userId: string,
     input: { type: string; title: string; templateId?: string | null },
   ) {
-    const membership = await this.requireActiveNonClient(organizationId, userId);
+    const membership = await this.requireActiveNonClient(
+      organizationId,
+      userId,
+    );
     const row = await this.access.createMemberDocument({
       organizationId,
       membershipId: membership.id,

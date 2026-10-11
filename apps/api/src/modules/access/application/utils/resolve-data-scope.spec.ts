@@ -119,16 +119,14 @@ describe('scopesApplicableToPermissions', () => {
 describe('permissionPrefixForPath', () => {
   it('maps content and media routes to their permission modules', () => {
     expect(
-      permissionPrefixForPath(
-        '/v1/organizations/org/content/abc?status=DRAFT',
-      ),
+      permissionPrefixForPath('/v1/organizations/org/content/abc?status=DRAFT'),
     ).toBe('content');
-    expect(
-      permissionPrefixForPath('/v1/organizations/org/media/assets'),
-    ).toBe('files');
-    expect(
-      permissionPrefixForPath('/v1/organizations/org/projects'),
-    ).toBe('projects');
+    expect(permissionPrefixForPath('/v1/organizations/org/media/assets')).toBe(
+      'files',
+    );
+    expect(permissionPrefixForPath('/v1/organizations/org/projects')).toBe(
+      'projects',
+    );
     expect(permissionPrefixForPath('/v1/access/capabilities')).toBeUndefined();
   });
 });

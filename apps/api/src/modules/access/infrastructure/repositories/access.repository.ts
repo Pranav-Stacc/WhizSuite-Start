@@ -102,7 +102,9 @@ function permissionConditions(
       resources[binding.scopeType] = [...binding.resourceIds];
     }
   }
-  return Object.keys(resources).length > 0 ? { scopeTypes, resources } : { scopeTypes };
+  return Object.keys(resources).length > 0
+    ? { scopeTypes, resources }
+    : { scopeTypes };
 }
 
 function defaultAssignmentScopes(
@@ -669,7 +671,9 @@ export class AccessRepository {
       if (existing) continue;
       const defaultScopeTypes: AssignableScopeType[] = (
         template.defaultScopeTypes ?? [AssignableScopeTypes.ORGANIZATION]
-      ).filter((scope): scope is AssignableScopeType => isAssignableScopeType(scope));
+      ).filter((scope): scope is AssignableScopeType =>
+        isAssignableScopeType(scope),
+      );
       await this.createRole(organizationId, {
         name: template.name,
         description: undefined,
@@ -678,8 +682,9 @@ export class AccessRepository {
         defaultScopeTypes,
         permissionScopes: template.permissions.map((key) => {
           const allowed = allowedScopesForPermission(key);
-          const assignableAllowed = allowed.filter((scope): scope is AssignableScopeType =>
-            isAssignableScopeType(scope),
+          const assignableAllowed = allowed.filter(
+            (scope): scope is AssignableScopeType =>
+              isAssignableScopeType(scope),
           );
           const scopeTypes = defaultScopeTypes.filter((scope) =>
             assignableAllowed.includes(scope),

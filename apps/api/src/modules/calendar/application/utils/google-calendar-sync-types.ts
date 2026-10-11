@@ -4,7 +4,8 @@ import {
 } from '@agency-os/contracts';
 
 export function parseSyncTypes(raw: unknown): GoogleCalendarSyncTypes {
-  if (!raw || typeof raw !== 'object') return DEFAULT_GOOGLE_CALENDAR_SYNC_TYPES;
+  if (!raw || typeof raw !== 'object')
+    return DEFAULT_GOOGLE_CALENDAR_SYNC_TYPES;
   const o = raw as Record<string, unknown>;
   return {
     meetings: o.meetings === true,

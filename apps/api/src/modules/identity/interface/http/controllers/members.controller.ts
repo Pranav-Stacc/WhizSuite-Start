@@ -105,7 +105,10 @@ export class MembersController {
     @Param('organizationId') organizationId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
-    return this.members.listDocuments(requireOrganizationId(organizationId), userId);
+    return this.members.listDocuments(
+      requireOrganizationId(organizationId),
+      userId,
+    );
   }
 
   @Post(':userId/documents')
@@ -133,7 +136,9 @@ export class MembersController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     const employmentType =
-      dto.employmentType === undefined ? undefined : dto.employmentType ?? null;
+      dto.employmentType === undefined
+        ? undefined
+        : (dto.employmentType ?? null);
     if (employmentType === undefined) {
       return { id: userId };
     }

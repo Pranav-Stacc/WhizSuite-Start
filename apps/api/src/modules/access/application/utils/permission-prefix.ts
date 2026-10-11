@@ -30,8 +30,6 @@ const SEGMENT_PREFIX: Record<string, string> = {
   knowledge: 'org',
   billing: 'org',
   organizations: 'org',
-  access: 'org',
-  capabilities: 'org',
   designations: 'members',
   departments: 'members',
   teams: 'members',

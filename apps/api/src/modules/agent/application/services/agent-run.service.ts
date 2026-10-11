@@ -223,7 +223,8 @@ export class AgentRunService {
       status,
       response: result.response,
       error: failed ? result.response : undefined,
-      completedAt: status === 'COMPLETED' || status === 'FAILED' ? new Date() : undefined,
+      completedAt:
+        status === 'COMPLETED' || status === 'FAILED' ? new Date() : undefined,
     });
 
     await this.repo.addMessage(

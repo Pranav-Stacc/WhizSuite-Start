@@ -107,7 +107,9 @@ export class TenantContext {
 
   static selfOnly(): boolean {
     const ctx = storage.getStore();
-    return ctx?.membershipType !== CLIENT_MEMBERSHIP && ctx?.staffSelfOnly === true;
+    return (
+      ctx?.membershipType !== CLIENT_MEMBERSHIP && ctx?.staffSelfOnly === true
+    );
   }
 
   static taskScope(): StaffTaskScope | undefined {
@@ -116,11 +118,7 @@ export class TenantContext {
     const clientIds = ctx.staffClientIds;
     const projectIds = ctx.staffProjectIds;
     const selfOnly = ctx.staffSelfOnly === true;
-    if (
-      clientIds === undefined &&
-      projectIds === undefined &&
-      !selfOnly
-    ) {
+    if (clientIds === undefined && projectIds === undefined && !selfOnly) {
       return undefined;
     }
     return {
@@ -132,7 +130,8 @@ export class TenantContext {
     };
   }
 
-  static leadScope(): { selfOnly?: boolean; userId?: string; clientIds?: string[] } | undefined {
+  static leadScope():
+    { selfOnly?: boolean; userId?: string; clientIds?: string[] } | undefined {
     const ctx = storage.getStore();
     if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
     const clientIds = ctx.staffClientIds;
@@ -141,12 +140,14 @@ export class TenantContext {
     return { clientIds, selfOnly, userId: ctx.userId };
   }
 
-  static timeEntryScope(): {
-    clientIds?: string[];
-    projectIds?: string[];
-    selfOnly?: boolean;
-    membershipId?: string;
-  } | undefined {
+  static timeEntryScope():
+    | {
+        clientIds?: string[];
+        projectIds?: string[];
+        selfOnly?: boolean;
+        membershipId?: string;
+      }
+    | undefined {
     const ctx = storage.getStore();
     if (!ctx || ctx.membershipType === CLIENT_MEMBERSHIP) return undefined;
     const clientIds = ctx.staffClientIds;
@@ -193,11 +194,7 @@ export class TenantContext {
     const clientIds = ctx.staffClientIds;
     const projectIds = ctx.staffProjectIds;
     const selfOnly = ctx.staffSelfOnly === true;
-    if (
-      clientIds === undefined &&
-      projectIds === undefined &&
-      !selfOnly
-    ) {
+    if (clientIds === undefined && projectIds === undefined && !selfOnly) {
       return undefined;
     }
     return {

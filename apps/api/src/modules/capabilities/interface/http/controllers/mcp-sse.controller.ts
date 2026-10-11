@@ -18,7 +18,10 @@ import { JwtAuthGuard } from '../../../../../shared/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../../../../../shared/auth/permissions.guard';
 import { RequirePermissions } from '../../../../../shared/auth/permissions.decorator';
 import { requireOrganizationId } from '../../../../../shared/http/org-context';
-import { McpRpcService, type McpJsonRpcRequest } from '../../../application/services/mcp-rpc.service';
+import {
+  McpRpcService,
+  type McpJsonRpcRequest,
+} from '../../../application/services/mcp-rpc.service';
 import { McpSseService } from '../../../application/services/mcp-sse.service';
 import { Permissions } from '@agency-os/contracts';
 

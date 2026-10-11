@@ -165,5 +165,7 @@ function reminderUserIdsFromMetadata(metadata: unknown): string[] {
   if (!metadata || typeof metadata !== 'object') return [];
   const raw = (metadata as { reminderUserIds?: unknown }).reminderUserIds;
   if (!Array.isArray(raw)) return [];
-  return raw.filter((id): id is string => typeof id === 'string' && id.length > 0);
+  return raw.filter(
+    (id): id is string => typeof id === 'string' && id.length > 0,
+  );
 }

@@ -25,7 +25,9 @@ function reminderUserIds(metadata: unknown): string[] {
 }
 
 @Injectable()
-export class CalendarReminderScheduler implements OnModuleInit, OnModuleDestroy {
+export class CalendarReminderScheduler
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(CalendarReminderScheduler.name);
   private timer?: NodeJS.Timeout;
   private running = false;

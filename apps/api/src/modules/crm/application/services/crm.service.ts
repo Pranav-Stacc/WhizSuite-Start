@@ -140,10 +140,7 @@ export class CrmService {
     id: string,
   ): Promise<LeadRecord> {
     const record = await this.repository.findById(organizationId, id);
-    if (
-      !record ||
-      !leadMatchesScope(record, TenantContext.leadScope() ?? {})
-    ) {
+    if (!record || !leadMatchesScope(record, TenantContext.leadScope() ?? {})) {
       throw problem(
         HttpStatus.NOT_FOUND,
         'Not Found',

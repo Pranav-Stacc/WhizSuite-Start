@@ -151,7 +151,9 @@ export class CapabilityExecutorService {
       error?: string;
     }>
   > {
-    const maxSize = this.config.get('CAPABILITY_BATCH_MAX_SIZE', { infer: true });
+    const maxSize = this.config.get('CAPABILITY_BATCH_MAX_SIZE', {
+      infer: true,
+    });
     const concurrency = this.config.get('CAPABILITY_BATCH_CONCURRENCY', {
       infer: true,
     });

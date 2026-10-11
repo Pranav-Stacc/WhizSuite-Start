@@ -5,8 +5,6 @@ import {
   projectMatchesScope,
   taskMatchesScope,
   type StaffContentScope,
-  type StaffProjectScope,
-  type StaffTaskScope,
 } from './scope-filters';
 import { TenantContext } from './tenant.context';
 
@@ -189,7 +187,10 @@ export class SubjectScopeService {
       select: { id: true, clientId: true, ownerId: true },
     });
     if (!record) return false;
-    return projectMatchesScope(record, TenantContext.projectScopeFilter() ?? {});
+    return projectMatchesScope(
+      record,
+      TenantContext.projectScopeFilter() ?? {},
+    );
   }
 
   private async canAccessTask(

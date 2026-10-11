@@ -49,7 +49,11 @@ function setup() {
   };
   const subjectScope = {
     canAccessSubject: jest.fn().mockResolvedValue(true),
-    filterSubjects: jest.fn().mockImplementation(async (_org, items) => items),
+    filterSubjects: jest
+      .fn()
+      .mockImplementation((_org: unknown, items: unknown) =>
+        Promise.resolve(items),
+      ),
   };
   const service = new FeedbackService(
     repository as unknown as FeedbackRepository,

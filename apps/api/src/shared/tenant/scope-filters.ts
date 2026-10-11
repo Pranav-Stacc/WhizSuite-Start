@@ -20,10 +20,7 @@ function selfTaskFilter(
   userId: string,
 ): Prisma.TaskWhereInput {
   return {
-    OR: [
-      { createdById: userId },
-      { assignees: { some: { membershipId } } },
-    ],
+    OR: [{ createdById: userId }, { assignees: { some: { membershipId } } }],
   };
 }
 
@@ -189,9 +186,7 @@ export function leadMatchesScope(
   scope: StaffLeadScope,
 ): boolean {
   const selfOk =
-    !scope.selfOnly ||
-    !scope.userId ||
-    lead.ownerId === scope.userId;
+    !scope.selfOnly || !scope.userId || lead.ownerId === scope.userId;
   const clientOk =
     !scope.clientIds?.length ||
     (!!lead.convertedClientId &&

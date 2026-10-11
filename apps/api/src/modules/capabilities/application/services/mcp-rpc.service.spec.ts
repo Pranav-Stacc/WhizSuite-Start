@@ -10,8 +10,12 @@ describe('McpRpcService', () => {
     permissions: ['ai.chat'],
   };
 
-  let registry: jest.Mocked<Pick<CapabilityRegistryService, 'listForUserCached'>>;
-  let executor: jest.Mocked<Pick<CapabilityExecutorService, 'execute' | 'executeBatch'>>;
+  let registry: jest.Mocked<
+    Pick<CapabilityRegistryService, 'listForUserCached'>
+  >;
+  let executor: jest.Mocked<
+    Pick<CapabilityExecutorService, 'execute' | 'executeBatch'>
+  >;
   let service: McpRpcService;
 
   beforeEach(() => {
@@ -59,7 +63,9 @@ describe('McpRpcService', () => {
       method: 'tools/list',
     });
 
-    expect(registry.listForUserCached).toHaveBeenCalledWith('org-1', 'user-1', ['ai.chat']);
+    expect(registry.listForUserCached).toHaveBeenCalledWith('org-1', 'user-1', [
+      'ai.chat',
+    ]);
     expect(res.result).toMatchObject({
       tools: [{ name: 'clients.create' }],
     });
@@ -85,7 +91,12 @@ describe('McpRpcService', () => {
       runId: 'run-1',
     });
     expect(res.result).toMatchObject({
-      content: [{ type: 'text', text: JSON.stringify({ status: 'ok', output: { id: 'c1' } }) }],
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({ status: 'ok', output: { id: 'c1' } }),
+        },
+      ],
     });
   });
 

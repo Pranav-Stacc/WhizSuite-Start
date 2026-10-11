@@ -312,27 +312,15 @@ export const appConfigSchema = z
       .int()
       .positive()
       .default(600_000),
-    AGENT_RUN_QUEUE_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(5),
+    AGENT_RUN_QUEUE_CONCURRENCY: z.coerce.number().int().positive().default(5),
     CAPABILITIES_CACHE_TTL_SECONDS: z.coerce
       .number()
       .int()
       .positive()
       .default(90),
     /** Parallel tool executions per MCP batch request from the agent runtime. */
-    CAPABILITY_BATCH_CONCURRENCY: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(8),
-    CAPABILITY_BATCH_MAX_SIZE: z.coerce
-      .number()
-      .int()
-      .positive()
-      .default(24),
+    CAPABILITY_BATCH_CONCURRENCY: z.coerce.number().int().positive().default(8),
+    CAPABILITY_BATCH_MAX_SIZE: z.coerce.number().int().positive().default(24),
     AGENT_RUN_TOKEN_TTL_SECONDS: z.coerce
       .number()
       .int()

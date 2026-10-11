@@ -568,10 +568,7 @@ export class WorkService {
 
   private async requireTask(organizationId: string, taskId: string) {
     const task = await this.repository.findTask(organizationId, taskId);
-    if (
-      !task ||
-      !taskMatchesScope(task, TenantContext.taskScope() ?? {})
-    ) {
+    if (!task || !taskMatchesScope(task, TenantContext.taskScope() ?? {})) {
       throw new ProblemDetailsException(
         {
           type: 'about:blank',

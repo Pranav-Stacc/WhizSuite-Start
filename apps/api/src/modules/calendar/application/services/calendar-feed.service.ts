@@ -91,7 +91,7 @@ export class CalendarFeedService {
         ? this.milestones(organizationId, range, clientIds)
         : Promise.resolve([] as CalendarFeedItem[]),
       wanted.has('APPROVAL') && range
-        ? this.pendingApprovals(organizationId, range, clientIds)
+        ? this.pendingApprovals(organizationId, range)
         : Promise.resolve([] as CalendarFeedItem[]),
       wanted.has('CAMPAIGN')
         ? this.campaigns(organizationId, query.clientId, range, clientIds)
@@ -249,7 +249,6 @@ export class CalendarFeedService {
   private async pendingApprovals(
     organizationId: string,
     range: { from: Date; to: Date },
-    clientIds: string[] | undefined,
   ): Promise<CalendarFeedItem[]> {
     try {
       const rows = await this.approvals.listPendingInRange(

@@ -23,7 +23,9 @@ export class DefaultRolesService {
     const roleName = MEMBERSHIP_DEFAULT_ROLE_NAME[membershipType];
     const role = await this.repository.findRoleByName(organizationId, roleName);
     if (!role) {
-      throw new Error(`Default role "${roleName}" is missing for organisation ${organizationId}`);
+      throw new Error(
+        `Default role "${roleName}" is missing for organisation ${organizationId}`,
+      );
     }
     return role.id;
   }

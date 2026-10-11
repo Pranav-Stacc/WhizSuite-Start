@@ -84,7 +84,9 @@ export class AuthService {
       organizationSlug: input.organizationSlug.toLowerCase(),
     });
 
-    await this.defaultRoles.provisionDefaultRoleTemplates(result.organization.id);
+    await this.defaultRoles.provisionDefaultRoleTemplates(
+      result.organization.id,
+    );
 
     await this.outbox.write({
       type: DomainEventTypes.ORGANIZATION_CREATED,
@@ -229,7 +231,9 @@ export class AuthService {
       providerUserId: identity.providerUserId,
     });
 
-    await this.defaultRoles.provisionDefaultRoleTemplates(result.organization.id);
+    await this.defaultRoles.provisionDefaultRoleTemplates(
+      result.organization.id,
+    );
 
     await this.outbox.write({
       type: DomainEventTypes.ORGANIZATION_CREATED,

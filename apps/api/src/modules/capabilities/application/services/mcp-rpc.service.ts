@@ -3,10 +3,7 @@ import { Permissions } from '@agency-os/contracts';
 import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
 import { CapabilityExecutorService } from './capability-executor.service';
 import { CapabilityRegistryService } from './capability-registry.service';
-import {
-  MCP_PROTOCOL_VERSION,
-  toMcpTools,
-} from '../utils/mcp-tool-mapper';
+import { MCP_PROTOCOL_VERSION, toMcpTools } from '../utils/mcp-tool-mapper';
 
 export interface McpJsonRpcRequest {
   jsonrpc: '2.0';
@@ -92,15 +89,22 @@ export class McpRpcService {
         const rawCalls = body.params?.calls;
         const calls = Array.isArray(rawCalls)
           ? rawCalls
-              .filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+              .filter(
+                (row): row is Record<string, unknown> =>
+                  !!row && typeof row === 'object',
+              )
               .map((row) => ({
-                toolId: String(row.name ?? ''),
+                toolId: typeof row.name === 'string' ? row.name : '',
                 input: (row.arguments ?? {}) as Record<string, unknown>,
                 runId,
               }))
               .filter((call) => call.toolId.length > 0)
           : [];
-        const results = await this.executor.executeBatch(organizationId, user, calls);
+        const results = await this.executor.executeBatch(
+          organizationId,
+          user,
+          calls,
+        );
         return {
           jsonrpc: '2.0',
           id: body.id,

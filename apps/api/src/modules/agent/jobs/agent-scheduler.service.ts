@@ -36,11 +36,7 @@ export class AgentSchedulerService implements OnModuleInit {
         prompt: schedule.prompt,
         agentDefinitionId: schedule.agentDefinitionId,
       });
-      const next = nextCronRun(
-        schedule.cron,
-        schedule.timezone,
-        new Date(),
-      );
+      const next = nextCronRun(schedule.cron, schedule.timezone, new Date());
       await this.repo.updateSchedule(schedule.id, {
         lastRunAt: new Date(),
         nextRunAt: next,

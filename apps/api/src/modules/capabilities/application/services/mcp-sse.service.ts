@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleDestroy,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import type { AuthenticatedUser } from '../../../../shared/auth/current-user.decorator';
@@ -82,7 +88,10 @@ export class McpSseService implements OnModuleDestroy {
     if (!session) {
       throw new NotFoundException('MCP SSE session not found or expired');
     }
-    if (session.organizationId !== organizationId || session.userId !== user.userId) {
+    if (
+      session.organizationId !== organizationId ||
+      session.userId !== user.userId
+    ) {
       throw new BadRequestException('MCP SSE session scope mismatch');
     }
 
@@ -91,7 +100,11 @@ export class McpSseService implements OnModuleDestroy {
     return { accepted: true };
   }
 
-  private writeSse(res: Response, event: string, data: string | McpJsonRpcResponse | Record<string, unknown>): void {
+  private writeSse(
+    res: Response,
+    event: string,
+    data: string | McpJsonRpcResponse | Record<string, unknown>,
+  ): void {
     const payload = typeof data === 'string' ? data : JSON.stringify(data);
     res.write(`event: ${event}\n`);
     res.write(`data: ${payload}\n\n`);

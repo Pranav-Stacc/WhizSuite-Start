@@ -78,9 +78,7 @@ export class GoogleDriveClient {
     return this.toTokens(json);
   }
 
-  async refreshAccessToken(
-    refreshToken: string,
-  ): Promise<GoogleDriveTokens> {
+  async refreshAccessToken(refreshToken: string): Promise<GoogleDriveTokens> {
     const body = new URLSearchParams({
       refresh_token: refreshToken,
       client_id: this.config.get('GOOGLE_DRIVE_CLIENT_ID', { infer: true }),
