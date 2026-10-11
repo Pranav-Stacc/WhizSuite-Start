@@ -41,6 +41,12 @@ export async function updateGoogleCalendarSettingsAction(input: {
   defaultSyncNewEvents?: boolean;
   syncDirection?: 'OUT' | 'IN' | 'BOTH';
   externalCalendarId?: string;
+  syncTypes?: {
+    meetings: boolean;
+    shoots: boolean;
+    tasks: boolean;
+    posts: boolean;
+  };
 }): Promise<ActionResult> {
   return guarded(async () => {
     await authorize(Permissions.CALENDAR_SYNC);

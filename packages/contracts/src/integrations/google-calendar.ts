@@ -13,6 +13,20 @@ export type GoogleCalendarConnectionStatus =
   | 'ERROR'
   | 'DISABLED';
 
+export type GoogleCalendarSyncTypes = {
+  meetings: boolean;
+  shoots: boolean;
+  tasks: boolean;
+  posts: boolean;
+};
+
+export const DEFAULT_GOOGLE_CALENDAR_SYNC_TYPES: GoogleCalendarSyncTypes = {
+  meetings: true,
+  shoots: true,
+  tasks: false,
+  posts: false,
+};
+
 export type GoogleCalendarConnectionDto = {
   id: string;
   status: GoogleCalendarConnectionStatus;
@@ -21,6 +35,7 @@ export type GoogleCalendarConnectionDto = {
   syncDirection: CalendarSyncDirection;
   /** When true, newly created calendar items default to syncToGoogle. */
   defaultSyncNewEvents: boolean;
+  syncTypes: GoogleCalendarSyncTypes;
   connectedAt: string | null;
   lastSyncedAt: string | null;
   oauthConfigured: boolean;

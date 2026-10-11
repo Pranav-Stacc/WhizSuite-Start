@@ -4,6 +4,8 @@ import '../../../core/data/json_read.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/calendar_entry.dart';
 import '../domain/calendar_item.dart';
+import '../domain/google_calendar_connection.dart';
+import '../domain/google_calendar_sync_types.dart';
 
 class CalendarRepository {
   CalendarRepository(this._api);
@@ -13,6 +15,7 @@ class CalendarRepository {
   String get _base => _api.org('calendar/items');
   String get _feed => _api.org('calendar/feed');
   String get _shoots => _api.org('calendar/shoots');
+  String get _google => _api.org('calendar/google');
 
   Future<List<CalendarItem>> list() async =>
       jsonList(await _api.get<Object?>(_base)).map(CalendarItem.fromJson).toList();
@@ -45,6 +48,46 @@ class CalendarRepository {
   /// Plans a shoot day (`POST calendar/shoots`, needs `projects.create`).
   Future<CalendarItem> createShoot(CreateShootInput input) async =>
       CalendarItem.fromJson(jsonObject(await _api.post<Object?>(_shoots, body: input.toJson())));
+
+  Future<GoogleCalendarConnection> googleConnection() async {
+    try {
+      return GoogleCalendarConnection.fromJson(jsonObject(await _api.get<Object?>(_google)));
+    } catch (_) {
+      return GoogleCalendarConnection.disabled;
+    }
+  }
+
+  Future<String> beginGoogleCalendarConnect({bool mobileReturn = true}) async => jsonObject(
+        await _api.post<Object?>(
+          '$_google/connect',
+          body: mobileReturn ? {'returnTo': 'mobile'} : null,
+        ),
+      ).str('authorizeUrl');
+
+  Future<void> disconnectGoogleCalendar(String connectionId) =>
+      _api.post<Object?>('$_google/$connectionId/disconnect');
+
+  Future<GoogleCalendarConnection> updateGoogleCalendarSettings({
+    bool? defaultSyncNewEvents,
+    String? syncDirection,
+    GoogleCalendarSyncTypes? syncTypes,
+  }) async {
+    final body = <String, Object?>{};
+    if (defaultSyncNewEvents != null) body['defaultSyncNewEvents'] = defaultSyncNewEvents;
+    if (syncDirection != null) body['syncDirection'] = syncDirection;
+    if (syncTypes != null) body['syncTypes'] = syncTypes.toJson();
+    return GoogleCalendarConnection.fromJson(
+      jsonObject(await _api.patch<Object?>('$_google/settings', body: body)),
+    );
+  }
+
+  Future<void> pullGoogleCalendar({required DateTime from, required DateTime to}) => _api.post<Object?>(
+        '$_google/pull',
+        body: {
+          'from': from.toUtc().toIso8601String(),
+          'to': to.toUtc().toIso8601String(),
+        },
+      );
 }
 
 /// Body for `POST …/calendar/shoots` (matches createShootSchema).

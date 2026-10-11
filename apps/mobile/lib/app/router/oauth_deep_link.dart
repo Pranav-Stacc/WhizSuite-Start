@@ -1,14 +1,31 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/integrations/integrations_routes.dart';
+import '../navigation/app_routes.dart';
 
-/// Maps `whizsuite://oauth?meta=…` (Meta mobile OAuth) to the integrations screen.
+/// Maps `whizsuite://oauth?…` (Meta / Drive / Calendar mobile OAuth) to in-app routes.
 ///
 /// Android also delivers this URI to [GoRouter] after [FlutterWebAuth2] completes;
 /// without a redirect, GoRouter throws "no route for location".
 String? redirectMetaOAuthDeepLink(GoRouterState state, {required String scheme}) {
   final uri = _oauthCallbackUri(state, scheme);
   if (uri == null) return null;
+
+  final drive = uri.queryParameters['drive'];
+  if (drive != null && drive.isNotEmpty) {
+    return Uri(
+      path: AppRoutes.storage,
+      queryParameters: {'drive': drive},
+    ).toString();
+  }
+
+  final gcal = uri.queryParameters['gcal'];
+  if (gcal != null && gcal.isNotEmpty) {
+    return Uri(
+      path: AppRoutes.storage,
+      queryParameters: {'gcal': gcal},
+    ).toString();
+  }
 
   final meta = uri.queryParameters['meta'];
   final client = uri.queryParameters['client'];

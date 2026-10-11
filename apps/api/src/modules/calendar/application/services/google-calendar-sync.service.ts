@@ -19,6 +19,12 @@ import { GoogleCalendarClient } from '../../../integrations/providers/google-cal
 import { CalendarConnectionRepository } from '../../infrastructure/repositories/calendar-connection.repository';
 import { CalendarRepository } from '../../infrastructure/repositories/calendar.repository';
 import { CalendarSyncQueue } from '../../jobs/calendar-sync.queue';
+import type { OAuthReturnTo } from '../../../../shared/integrations/oauth-return-url';
+import {
+  isSourceTypeSyncEnabled,
+  parseSyncTypes,
+} from '../utils/google-calendar-sync-types';
+import type { GoogleCalendarSyncTypes } from '@agency-os/contracts';
 
 @Injectable()
 export class GoogleCalendarSyncService {
@@ -60,6 +66,7 @@ export class GoogleCalendarSyncService {
       externalCalendarId: link?.externalCalendarId ?? 'primary',
       syncDirection: (link?.syncDirection as CalendarSyncDirection) ?? 'OUT',
       defaultSyncNewEvents: link?.defaultSyncNewEvents ?? false,
+      syncTypes: parseSyncTypes(link?.syncTypes),
       connectedAt: integration?.createdAt?.toISOString() ?? null,
       lastSyncedAt: link?.lastSyncedAt?.toISOString() ?? null,
       oauthConfigured,
@@ -69,6 +76,7 @@ export class GoogleCalendarSyncService {
   async beginConnect(
     organizationId: string,
     actorId: string,
+    returnTo: OAuthReturnTo = 'web',
   ): Promise<{ authorizeUrl: string }> {
     if (!this.google.isConfigured()) {
       throw problem(
@@ -105,7 +113,13 @@ export class GoogleCalendarSyncService {
 
     const nonce = randomBytes(16).toString('hex');
     const state = Buffer.from(
-      JSON.stringify({ organizationId, connectionId, actorId, nonce }),
+      JSON.stringify({
+        organizationId,
+        connectionId,
+        actorId,
+        nonce,
+        returnTo,
+      }),
     ).toString('base64url');
 
     await this.audit.record({
@@ -191,6 +205,7 @@ export class GoogleCalendarSyncService {
       externalCalendarId?: string;
       syncDirection?: CalendarSyncDirection;
       defaultSyncNewEvents?: boolean;
+      syncTypes?: GoogleCalendarSyncTypes;
     },
   ) {
     const link = await this.connections.findByOrganization(organizationId);
@@ -213,6 +228,29 @@ export class GoogleCalendarSyncService {
       after: { ...input },
     });
     return this.getConnection(organizationId);
+  }
+
+  /** Whether this source type is allowed to sync per org settings. */
+  isTypeSyncEnabled(
+    connection: GoogleCalendarConnectionDto,
+    sourceType: string,
+  ): boolean {
+    return isSourceTypeSyncEnabled(sourceType, connection.syncTypes);
+  }
+
+  resolveSyncToGoogle(
+    connection: GoogleCalendarConnectionDto,
+    sourceType: string,
+    explicit?: boolean,
+  ): boolean {
+    if (explicit === true) {
+      return this.isTypeSyncEnabled(connection, sourceType);
+    }
+    if (explicit === false) return false;
+    return (
+      connection.defaultSyncNewEvents &&
+      this.isTypeSyncEnabled(connection, sourceType)
+    );
   }
 
   /** Enqueue outbound sync when the item is marked for Google. */
@@ -264,6 +302,8 @@ export class GoogleCalendarSyncService {
   ): Promise<void> {
     const item = await this.calendar.findById(organizationId, calendarItemId);
     if (!item || !item.syncToGoogle) return;
+    const connectionDto = await this.getConnection(organizationId);
+    if (!this.isTypeSyncEnabled(connectionDto, item.sourceType)) return;
     if (!TenantContext.canAccessClient(item.clientId)) {
       this.logger.warn(
         `Skipping Google sync for ${calendarItemId}: client out of scope`,

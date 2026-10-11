@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import type { AppConfig } from '../../../../../shared/config/app.config';
+import { googleDriveOAuthReturnUrl } from '../../../../../shared/integrations/oauth-return-url';
 import { MediaDataSourcesService } from '../../../application/services/media-data-sources.service';
 
 /** OAuth redirect target for Google Drive connect — no JWT (browser redirect). */
@@ -21,18 +22,20 @@ export class GoogleDriveOauthController {
     @Query('error') error: string | undefined,
     @Res() res: Response,
   ) {
-    const webOrigin = this.config.get('WEB_APP_URL', { infer: true });
-    const successPath = `${webOrigin}/settings?tab=storage&drive=connected`;
-    const failurePath = `${webOrigin}/settings?tab=storage&drive=error`;
-
     if (error || !code || !state) {
-      return res.redirect(failurePath);
+      return res.redirect(
+        googleDriveOAuthReturnUrl(this.config, state, 'error'),
+      );
     }
     try {
       await this.dataSources.completeGoogleDriveConnect({ code, state });
-      return res.redirect(successPath);
+      return res.redirect(
+        googleDriveOAuthReturnUrl(this.config, state, 'connected'),
+      );
     } catch {
-      return res.redirect(failurePath);
+      return res.redirect(
+        googleDriveOAuthReturnUrl(this.config, state, 'error'),
+      );
     }
   }
 }

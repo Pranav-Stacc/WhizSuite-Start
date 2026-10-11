@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
-
+import '../../../core/config/app_config.dart';
 import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/feedback.dart';
@@ -9,6 +8,7 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../access/presentation/permission_gate.dart';
 import '../application/storage_providers.dart';
+import '../../integrations/presentation/integration_oauth.dart';
 import '../data/storage_repository.dart';
 import '../domain/storage_models.dart';
 
@@ -50,9 +50,17 @@ class _DataSourceCardState extends ConsumerState<DataSourceCard> {
     final l10n = AppLocalizations.of(context);
     try {
       final url = await ref.read(storageRepositoryProvider).beginGoogleDriveConnect();
-      final uri = Uri.tryParse(url);
-      if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        if (mounted) showToast(context, l10n.storageDriveConnectFailed);
+      final scheme = ref.read(appConfigProvider).deepLinkScheme;
+      final result = await launchIntegrationOAuth(
+        context,
+        authorizeUrl: url,
+        callbackScheme: scheme,
+      );
+      if (result?.success == true) {
+        ref.invalidate(dataSourcesProvider);
+        if (mounted) showToast(context, l10n.storageDriveConnected);
+      } else if (result != null && !result.success && mounted) {
+        showToast(context, l10n.storageDriveConnectFailed);
       }
     } catch (_) {
       if (mounted) showToast(context, l10n.storageDriveConnectFailed);

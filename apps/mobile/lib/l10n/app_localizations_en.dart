@@ -1393,6 +1393,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarFiltersClear => 'Clear filters';
 
   @override
+  String get calendarGoogleConnect => 'Connect Google Calendar';
+
+  @override
+  String get calendarGoogleConnectFailed =>
+      'Could not start Google Calendar connect.';
+
+  @override
+  String get calendarGoogleConnected => 'Connected';
+
+  @override
+  String get calendarGoogleConnectedToast => 'Google Calendar connected.';
+
+  @override
+  String get calendarGoogleDefaultNew => 'Sync new events by default';
+
+  @override
+  String get calendarGoogleDisconnect => 'Disconnect';
+
+  @override
+  String get calendarGoogleDisconnectFailed =>
+      'Could not disconnect Google Calendar.';
+
+  @override
+  String get calendarGoogleDisconnected => 'Google Calendar disconnected.';
+
+  @override
+  String get calendarGoogleDisconnectedLabel => 'Not connected';
+
+  @override
+  String get calendarGoogleNotConfigured =>
+      'Ask your platform admin to set Google Calendar OAuth credentials.';
+
+  @override
+  String get calendarGooglePull => 'Pull Google events';
+
+  @override
+  String get calendarGooglePullFailed => 'Could not queue Google import.';
+
+  @override
+  String get calendarGooglePullQueued => 'Import from Google queued';
+
+  @override
+  String get calendarGoogleSettingsFailed => 'Could not save sync settings.';
+
+  @override
+  String get calendarGoogleSettingsSaved => 'Sync settings saved';
+
+  @override
+  String get calendarGoogleSyncEvent => 'Sync to Google Calendar';
+
+  @override
+  String get calendarGoogleSyncEventHint =>
+      'Only events you opt in are pushed to Google.';
+
+  @override
+  String get calendarGoogleSettingsHint =>
+      'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.';
+
+  @override
+  String get calendarGoogleSyncMeetings =>
+      'Meetings, deadlines & manual events';
+
+  @override
+  String get calendarGoogleSyncPosts => 'Scheduled posts';
+
+  @override
+  String get calendarGoogleSyncShoots => 'Shoot days';
+
+  @override
+  String get calendarGoogleSyncTasks => 'Task due dates';
+
+  @override
+  String get calendarGoogleSyncTypesHeading => 'Sync to Google Calendar';
+
+  @override
+  String get calendarGoogleTitle => 'Google Calendar';
+
+  @override
   String get calendarItemDetails => 'Event details';
 
   @override
@@ -6058,6 +6136,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageClearSelection => 'Clear selection';
 
   @override
+  String get storageDriveConnected => 'Google Drive connected.';
+
+  @override
   String get storageDriveConnect => 'Connect Google Drive';
 
   @override
@@ -6111,8 +6192,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storageSettingsTitle => 'Storage';
 
   @override
+  String get storageDriveSharingNote =>
+      'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.';
+
+  @override
   String get storageSourceDriveBody =>
-      'Connect Google Drive to import files or transfer copies out.';
+      'Connect Google Drive to export copies of platform media assets.';
 
   @override
   String get storageSourcePlatformBody =>

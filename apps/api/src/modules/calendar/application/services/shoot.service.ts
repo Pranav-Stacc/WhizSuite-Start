@@ -34,7 +34,12 @@ export class ShootService {
     }
 
     const id = randomUUID();
-    const syncToGoogle = input.syncToGoogle === true;
+    const connection = await this.googleSync.getConnection(organizationId);
+    const syncToGoogle = this.googleSync.resolveSyncToGoogle(
+      connection,
+      'SHOOT',
+      input.syncToGoogle,
+    );
     const item = await this.calendar.create(organizationId, {
       id,
       sourceType: 'SHOOT',

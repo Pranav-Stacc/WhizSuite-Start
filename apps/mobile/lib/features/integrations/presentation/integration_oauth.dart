@@ -19,6 +19,20 @@ class IntegrationOAuthResult {
 
   factory IntegrationOAuthResult.fromUri(Uri uri) {
     final meta = uri.queryParameters['meta'];
+    final drive = uri.queryParameters['drive'];
+    final gcal = uri.queryParameters['gcal'];
+    if (drive != null) {
+      return IntegrationOAuthResult(
+        success: drive == 'connected',
+        reason: drive == 'error' ? uri.queryParameters['reason'] : null,
+      );
+    }
+    if (gcal != null) {
+      return IntegrationOAuthResult(
+        success: gcal == 'connected',
+        reason: gcal == 'error' ? uri.queryParameters['reason'] : null,
+      );
+    }
     return IntegrationOAuthResult(
       success: meta == 'connected',
       clientId: uri.queryParameters['client'],
@@ -26,6 +40,14 @@ class IntegrationOAuthResult {
     );
   }
 }
+
+/// Opens an OAuth URL and waits for `scheme://oauth?...` (Drive, Calendar, Meta, …).
+Future<IntegrationOAuthResult?> launchIntegrationOAuth(
+  BuildContext context, {
+  required String authorizeUrl,
+  required String callbackScheme,
+}) =>
+    launchMetaOAuth(context, authorizeUrl: authorizeUrl, callbackScheme: callbackScheme);
 
 /// Opens Meta OAuth in a secure browser tab and waits for the mobile deep-link callback.
 Future<IntegrationOAuthResult?> launchMetaOAuth(

@@ -10,7 +10,24 @@ import {
 import {
   CalendarSyncDirections,
   type CalendarSyncDirection,
+  type GoogleCalendarSyncTypes,
 } from '@agency-os/contracts';
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
+
+class GoogleCalendarSyncTypesDto implements GoogleCalendarSyncTypes {
+  @IsBoolean()
+  meetings!: boolean;
+
+  @IsBoolean()
+  shoots!: boolean;
+
+  @IsBoolean()
+  tasks!: boolean;
+
+  @IsBoolean()
+  posts!: boolean;
+}
 
 export class UpdateGoogleCalendarSettingsDto {
   @ApiProperty({ required: false })
@@ -28,6 +45,19 @@ export class UpdateGoogleCalendarSettingsDto {
   @IsOptional()
   @IsBoolean()
   defaultSyncNewEvents?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GoogleCalendarSyncTypesDto)
+  syncTypes?: GoogleCalendarSyncTypesDto;
+}
+
+export class BeginGoogleCalendarConnectDto {
+  @ApiProperty({ required: false, enum: ['mobile', 'web'] })
+  @IsOptional()
+  @IsIn(['mobile', 'web'])
+  returnTo?: 'mobile' | 'web';
 }
 
 export class PullGoogleCalendarDto {

@@ -75,13 +75,37 @@ export class GoogleDriveClient {
       refresh_token?: string;
       expires_in?: number;
     };
-    return {
-      accessToken: json.access_token,
-      refreshToken: json.refresh_token ?? null,
-      expiresAt: json.expires_in
-        ? new Date(Date.now() + json.expires_in * 1000).toISOString()
-        : null,
+    return this.toTokens(json);
+  }
+
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<GoogleDriveTokens> {
+    const body = new URLSearchParams({
+      refresh_token: refreshToken,
+      client_id: this.config.get('GOOGLE_DRIVE_CLIENT_ID', { infer: true }),
+      client_secret: this.config.get('GOOGLE_DRIVE_CLIENT_SECRET', {
+        infer: true,
+      }),
+      grant_type: 'refresh_token',
+    });
+    const response = await fetch(OAUTH_TOKEN, {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      this.logger.warn(`Drive token refresh failed: ${text}`);
+      throw new Error('Google Drive token refresh failed');
+    }
+    const json = (await response.json()) as {
+      access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
     };
+    const tokens = this.toTokens(json);
+    return { ...tokens, refreshToken: tokens.refreshToken ?? refreshToken };
   }
 
   async uploadFile(input: {
@@ -117,5 +141,19 @@ export class GoogleDriveClient {
       const text = await response.text();
       throw new Error(`Drive upload failed: ${text.slice(0, 200)}`);
     }
+  }
+
+  private toTokens(json: {
+    access_token: string;
+    refresh_token?: string;
+    expires_in?: number;
+  }): GoogleDriveTokens {
+    return {
+      accessToken: json.access_token,
+      refreshToken: json.refresh_token ?? null,
+      expiresAt: json.expires_in
+        ? new Date(Date.now() + json.expires_in * 1000).toISOString()
+        : null,
+    };
   }
 }

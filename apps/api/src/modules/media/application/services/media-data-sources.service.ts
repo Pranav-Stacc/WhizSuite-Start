@@ -14,6 +14,7 @@ import {
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { IntegrationsRepository } from '../../../integrations/infrastructure/repositories/integrations.repository';
 import { GoogleDriveClient } from '../../../integrations/providers/google-drive.client';
+import type { OAuthReturnTo } from '../../../../shared/integrations/oauth-return-url';
 
 @Injectable()
 export class MediaDataSourcesService {
@@ -63,6 +64,7 @@ export class MediaDataSourcesService {
   async beginGoogleDriveConnect(
     organizationId: string,
     actorId: string,
+    returnTo: OAuthReturnTo = 'web',
   ): Promise<{ authorizeUrl: string }> {
     if (!this.drive.isConfigured()) {
       throw problem(
@@ -104,6 +106,7 @@ export class MediaDataSourcesService {
         connectionId,
         actorId,
         nonce,
+        returnTo,
       }),
     ).toString('base64url');
 

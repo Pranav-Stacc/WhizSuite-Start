@@ -1,3 +1,4 @@
+import * as bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import {
   DEFAULT_MEMBERSHIP_ROLES,
@@ -5,6 +6,7 @@ import {
   OWNER_MEMBERSHIP_ROLE,
   Permissions,
 } from '@agency-os/contracts';
+import { DEMO_ACCOUNT, seedDemoRich } from './seed-demo-rich';
 
 const prisma = new PrismaClient();
 
@@ -167,7 +169,7 @@ async function main() {
     const user = await prisma.user.create({
       data: {
         email: 'owner@demo.agency',
-        passwordHash: '$2b$12$placeholder', // login via register in dev
+        passwordHash: await bcrypt.hash(DEMO_ACCOUNT.password, 12),
         firstName: 'Demo',
         lastName: 'Owner',
       },
@@ -224,8 +226,19 @@ async function main() {
         trialEndsAt: new Date(Date.now() + 14 * 86400000),
       },
     });
-    console.log(`Created demo org: ${demoSlug}`);
+    console.log(`Created demo org: ${demoSlug} (owner@demo.agency / ${DEMO_ACCOUNT.password})`);
+  } else {
+    const legacyOwner = await prisma.user.findUnique({ where: { email: 'owner@demo.agency' } });
+    if (legacyOwner?.passwordHash?.includes('placeholder')) {
+      await prisma.user.update({
+        where: { id: legacyOwner.id },
+        data: { passwordHash: await bcrypt.hash(DEMO_ACCOUNT.password, 12) },
+      });
+      console.log(`Updated legacy demo password for owner@demo.agency`);
+    }
   }
+
+  await seedDemoRich(prisma, planVersion.id);
 }
 
 main()

@@ -1,5 +1,8 @@
 import 'server-only';
-import type { GoogleCalendarConnectionDto } from '@agency-os/contracts';
+import {
+  DEFAULT_GOOGLE_CALENDAR_SYNC_TYPES,
+  type GoogleCalendarConnectionDto,
+} from '@agency-os/contracts';
 import { apiFetch } from '@/shared/api/api-client';
 import { orgPath } from '@/shared/api/live/utils';
 import { getSession } from '@/shared/auth/session';
@@ -12,6 +15,7 @@ const DISABLED: GoogleCalendarConnectionDto = {
   externalCalendarId: 'primary',
   syncDirection: 'OUT',
   defaultSyncNewEvents: false,
+  syncTypes: DEFAULT_GOOGLE_CALENDAR_SYNC_TYPES,
   connectedAt: null,
   lastSyncedAt: null,
   oauthConfigured: false,
@@ -52,6 +56,7 @@ export async function updateGoogleCalendarSettings(input: {
   defaultSyncNewEvents?: boolean;
   syncDirection?: 'OUT' | 'IN' | 'BOTH';
   externalCalendarId?: string;
+  syncTypes?: GoogleCalendarConnectionDto['syncTypes'];
 }): Promise<GoogleCalendarConnectionDto> {
   const session = await getSession();
   if (!session?.orgId) throw new Error('No session');

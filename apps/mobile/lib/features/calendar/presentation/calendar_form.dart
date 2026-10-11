@@ -11,6 +11,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../application/calendar_controller.dart';
+import '../application/google_calendar_providers.dart';
 import '../domain/calendar_entry.dart';
 import '../domain/calendar_item.dart';
 import 'calendar_source.dart';
@@ -47,6 +48,12 @@ Future<bool> showCalendarItemForm(BuildContext context, WidgetRef ref, {Calendar
   var visibility = item?.visibility ?? Visibilities.internal;
   var client = item?.clientId;
   var project = item?.projectId;
+  final google = await ref.read(googleCalendarConnectionProvider.future);
+  final googleConnected = google.isConnected;
+  final typeForSync = item?.sourceType ?? CalendarSourceTypes.manual;
+  final typeSyncAllowed = google.syncTypes.allowsSourceType(typeForSync);
+  var syncToGoogle = item?.syncToGoogle ??
+      (googleConnected && google.defaultSyncNewEvents && typeSyncAllowed);
 
   final clientOptions = clients.entries.map((c) => c.id).toList()
     ..sort((a, b) => (clients.nameOf(a) ?? '').compareTo(clients.nameOf(b) ?? ''));
@@ -170,6 +177,14 @@ Future<bool> showCalendarItemForm(BuildContext context, WidgetRef ref, {Calendar
           if (item == null && owner != null) client = owner;
         }),
       ),
+      if (googleConnected && typeSyncAllowed)
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.calendarGoogleSyncEvent),
+          subtitle: Text(l10n.calendarGoogleSyncEventHint, style: Theme.of(context).textTheme.bodySmall),
+          value: syncToGoogle,
+          onChanged: (value) => setState(() => syncToGoogle = value),
+        ),
     ],
     onSubmit: () async {
       final from = start;
@@ -184,6 +199,7 @@ Future<bool> showCalendarItemForm(BuildContext context, WidgetRef ref, {Calendar
         visibility: visibility,
         clientId: item == null ? client : null,
         projectId: project,
+        syncToGoogle: googleConnected && typeSyncAllowed ? syncToGoogle : false,
       );
       if (item == null) {
         await actions.create(input);

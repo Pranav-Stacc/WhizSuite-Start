@@ -3,6 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import type { AppConfig } from '../../../../../shared/config/app.config';
+import { googleCalendarOAuthReturnUrl } from '../../../../../shared/integrations/oauth-return-url';
 import { GoogleCalendarSyncService } from '../../../application/services/google-calendar-sync.service';
 
 /** OAuth redirect target for Google Calendar connect — no JWT (browser redirect). */
@@ -21,18 +22,20 @@ export class GoogleCalendarOauthController {
     @Query('error') error: string | undefined,
     @Res() res: Response,
   ) {
-    const webOrigin = this.config.get('WEB_APP_URL', { infer: true });
-    const successPath = `${webOrigin}/calendar?gcal=connected`;
-    const failurePath = `${webOrigin}/calendar?gcal=error`;
-
     if (error || !code || !state) {
-      return res.redirect(failurePath);
+      return res.redirect(
+        googleCalendarOAuthReturnUrl(this.config, state, 'error'),
+      );
     }
     try {
       await this.sync.completeConnect({ code, state });
-      return res.redirect(successPath);
+      return res.redirect(
+        googleCalendarOAuthReturnUrl(this.config, state, 'connected'),
+      );
     } catch {
-      return res.redirect(failurePath);
+      return res.redirect(
+        googleCalendarOAuthReturnUrl(this.config, state, 'error'),
+      );
     }
   }
 }

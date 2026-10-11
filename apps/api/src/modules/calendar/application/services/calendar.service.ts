@@ -55,8 +55,11 @@ export class CalendarService {
     }
 
     const connection = await this.googleSync.getConnection(organizationId);
-    const syncToGoogle =
-      input.syncToGoogle ?? connection.defaultSyncNewEvents ?? false;
+    const syncToGoogle = this.googleSync.resolveSyncToGoogle(
+      connection,
+      input.sourceType,
+      input.syncToGoogle,
+    );
 
     const sourceId = input.sourceId ?? randomUUID();
     const metadata = {

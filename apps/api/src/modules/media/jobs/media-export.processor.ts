@@ -127,8 +127,11 @@ export class MediaExportProcessor extends WorkerHost {
         transferred: 0,
       };
     }
-    const credential = await this.integrations.findCredential(connection.id);
-    if (!credential) {
+    const accessToken = await this.resolveDriveAccessToken(
+      data.organizationId,
+      connection.id,
+    );
+    if (!accessToken) {
       return {
         downloadUrl: null,
         error: 'Missing Drive credentials',
@@ -155,7 +158,7 @@ export class MediaExportProcessor extends WorkerHost {
       if (!key) continue;
       const bytes = await this.storage.getObjectBytes(key);
       await this.drive.uploadFile({
-        accessToken: credential.accessToken,
+        accessToken,
         name: asset.name,
         mimeType: asset.mimeType,
         body: bytes,
@@ -167,6 +170,38 @@ export class MediaExportProcessor extends WorkerHost {
       );
     }
     return { downloadUrl: null, error: null, transferred };
+  }
+
+  private async resolveDriveAccessToken(
+    organizationId: string,
+    connectionId: string,
+  ): Promise<string | null> {
+    const creds = await this.integrations.findCredential(connectionId);
+    if (!creds) return null;
+
+    if (creds.refreshToken) {
+      try {
+        const refreshed = await this.drive.refreshAccessToken(
+          creds.refreshToken,
+        );
+        const encryptedData = JSON.stringify({
+          accessToken: refreshed.accessToken,
+          refreshToken: refreshed.refreshToken ?? creds.refreshToken,
+        });
+        await this.integrations.upsertCredential(
+          organizationId,
+          connectionId,
+          encryptedData,
+          refreshed.expiresAt ? new Date(refreshed.expiresAt) : null,
+        );
+        return refreshed.accessToken;
+      } catch (error) {
+        this.logger.warn(
+          `Drive token refresh failed, using stored access token: ${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      }
+    }
+    return creds.accessToken;
   }
 }
 

@@ -20,6 +20,9 @@ import { ProfileForm } from '@/features/settings/components/profile-form';
 import { DataSourcesPanel } from '@/features/media/components/data-sources-panel';
 import { StorageUsageCard } from '@/features/media/components/storage-usage-card';
 import { listDataSources, getStorageUsage } from '@/features/media/services/storage.service';
+import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
+import { GoogleCalendarSettings } from '@/features/settings/components/google-calendar-settings';
+import { isLiveMode } from '@/shared/config/env';
 
 export const metadata: Metadata = { title: t('settings.title') };
 
@@ -42,15 +45,19 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const sp = await searchParams;
   const tab = parseTab(param(sp, 'tab'));
   const granted = await getPermissions();
-  const [profile, notificationPrefs, theme, storageUsage, dataSources] = await Promise.all([
-    getProfile(session),
-    tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
-    getTheme(),
-    tab === 'storage' ? getStorageUsage() : Promise.resolve(null),
-    tab === 'storage' ? listDataSources() : Promise.resolve([]),
-  ]);
+  const [profile, notificationPrefs, theme, storageUsage, dataSources, googleCalendar] =
+    await Promise.all([
+      getProfile(session),
+      tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
+      getTheme(),
+      tab === 'storage' ? getStorageUsage() : Promise.resolve(null),
+      tab === 'storage' ? listDataSources() : Promise.resolve([]),
+      tab === 'storage' ? getGoogleCalendarConnection() : Promise.resolve(null),
+    ]);
   const displayName = profile.name;
   const driveFlash = param(sp, 'drive');
+  const gcalFlash = param(sp, 'gcal');
+  const canCalendarSync = granted.has(Permissions.CALENDAR_SYNC) && isLiveMode;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -58,7 +65,11 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <TabLinks
         items={TABS.map((value) => ({
-          href: withQuery(BASE, sp, { tab: value === 'profile' ? undefined : value, drive: undefined }),
+          href: withQuery(BASE, sp, {
+            tab: value === 'profile' ? undefined : value,
+            drive: undefined,
+            gcal: undefined,
+          }),
           label: t(`settings.tab.${value}`),
           active: tab === value,
           icon:
@@ -123,10 +134,23 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               {t('media.storage.drive.error')}
             </p>
           ) : null}
+          {gcalFlash === 'error' ? (
+            <p role="alert" className="rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+              {t('calendar.sync.error')}
+            </p>
+          ) : null}
           <StorageUsageCard usage={storageUsage} />
+          {googleCalendar ? (
+            <GoogleCalendarSettings
+              connection={googleCalendar}
+              canManage={canCalendarSync}
+              toastStatus={gcalFlash}
+            />
+          ) : null}
           <div>
             <h2 className="mb-3 text-sm font-semibold">{t('media.sources.title')}</h2>
             <p className="mb-4 text-[13px] text-muted">{t('media.sources.description')}</p>
+            <p className="mb-4 text-[13px] text-muted">{t('settings.storage.driveSharingNote')}</p>
             <DataSourcesPanel
               sources={dataSources}
               canManage={granted.has(Permissions.INTEGRATIONS_MANAGE)}

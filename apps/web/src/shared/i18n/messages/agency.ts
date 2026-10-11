@@ -234,6 +234,10 @@ export const agencyMessages = {
   'settings.tab.notifications': 'Notifications',
   'settings.tab.security': 'Security',
   'settings.tab.storage': 'Storage',
+  'settings.storage.calendar.desc':
+    'Connect once per workspace. Control which event types can sync to Google and pull imports from Settings — not from the calendar page.',
+  'settings.storage.driveSharingNote':
+    'Platform storage is org-scoped and permission-controlled. Google Drive connects for export copies of media assets; sharing with clients uses portal and media permissions — Drive does not auto-sync every file both ways.',
   'settings.profile.heading': 'Your profile',
   'settings.profile.edit': 'Edit profile',
   'settings.profile.edit.desc': 'How your name appears to teammates and clients.',

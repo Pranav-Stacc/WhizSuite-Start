@@ -115,6 +115,8 @@ model CalendarConnection {
   externalCalendarId      String    @default("primary") @map("external_calendar_id")
   syncDirection           String    @default("OUT") @map("sync_direction")
   defaultSyncNewEvents    Boolean   @default(false) @map("default_sync_new_events")
+  /** Which calendar source kinds may sync to Google when opted in (meetings, shoots, tasks, posts). */
+  syncTypes               Json      @default("{\"meetings\":true,\"shoots\":true,\"tasks\":false,\"posts\":false}") @map("sync_types")
   lastSyncedAt            DateTime? @map("last_synced_at") @db.Timestamptz
   createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz

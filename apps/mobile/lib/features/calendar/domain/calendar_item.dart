@@ -24,6 +24,7 @@ class CalendarItem {
     this.allDay = false,
     this.clientId,
     this.metadata = const {},
+    this.syncToGoogle = false,
   });
 
   factory CalendarItem.fromJson(Json json) {
@@ -38,6 +39,7 @@ class CalendarItem {
       allDay: json.flag('allDay'),
       clientId: json.strOrNull('clientId'),
       metadata: json.object('metadata') ?? const {},
+      syncToGoogle: json.flag('syncToGoogle'),
     );
   }
 
@@ -72,6 +74,7 @@ class CalendarItem {
   final bool allDay;
   final String? clientId;
   final Json metadata;
+  final bool syncToGoogle;
 
   String get visibility {
     final value = metadata.str(visibilityKey);
@@ -92,6 +95,7 @@ class CalendarItemInput {
     this.endsAt,
     this.clientId,
     this.projectId,
+    this.syncToGoogle = false,
   });
 
   final String title;
@@ -102,6 +106,7 @@ class CalendarItemInput {
   final String visibility;
   final String? clientId;
   final String? projectId;
+  final bool syncToGoogle;
 
   Json _metadata(Json base) => {
         ...base,
@@ -118,6 +123,7 @@ class CalendarItemInput {
         'endsAt': ?endsAt?.toUtc().toIso8601String(),
         'allDay': allDay,
         'clientId': ?clientId,
+        'syncToGoogle': syncToGoogle,
         'metadata': _metadata(const {}),
       };
 
@@ -127,6 +133,7 @@ class CalendarItemInput {
         'startsAt': startsAt.toUtc().toIso8601String(),
         'endsAt': endsAt?.toUtc().toIso8601String(),
         'allDay': allDay,
+        'syncToGoogle': syncToGoogle,
         'metadata': _metadata(item.metadata),
       };
 }

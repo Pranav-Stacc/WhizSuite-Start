@@ -11,6 +11,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../application/calendar_controller.dart';
+import '../application/google_calendar_providers.dart';
 import '../data/calendar_repository.dart';
 import '../domain/calendar_entry.dart';
 
@@ -45,6 +46,10 @@ Future<bool> showPlanShootSheet(
 
   var allDay = true;
   var createFolders = true;
+  final google = await ref.read(googleCalendarConnectionProvider.future);
+  final googleConnected = google.isConnected;
+  final typeSyncAllowed = google.syncTypes.allowsSourceType('SHOOT');
+  var syncToGoogle = googleConnected && google.defaultSyncNewEvents && typeSyncAllowed;
   DateTime? start = DateTime(initialDay.year, initialDay.month, initialDay.day, _defaultStartHour);
   DateTime? end;
   String? client = clientId ?? (clients.entries.isEmpty ? null : clients.entries.first.id);
@@ -162,6 +167,14 @@ Future<bool> showPlanShootSheet(
         value: createFolders,
         onChanged: (value) => setState(() => createFolders = value),
       ),
+      if (googleConnected && typeSyncAllowed)
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.calendarGoogleSyncEvent),
+          subtitle: Text(l10n.calendarGoogleSyncEventHint, style: Theme.of(context).textTheme.bodySmall),
+          value: syncToGoogle,
+          onChanged: (value) => setState(() => syncToGoogle = value),
+        ),
       TextFormField(
         controller: tasks,
         minLines: 3,
@@ -195,6 +208,7 @@ Future<bool> showPlanShootSheet(
           projectId: project,
           createFolders: createFolders,
           taskTitles: taskTitles,
+          syncToGoogle: googleConnected && typeSyncAllowed ? syncToGoogle : false,
         ),
       );
     },

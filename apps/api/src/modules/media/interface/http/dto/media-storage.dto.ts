@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
+  IsIn,
   IsOptional,
   IsString,
   IsUUID,
@@ -14,6 +15,13 @@ import type {
   CreateMediaDriveTransferInput,
   CreateMediaZipExportInput,
 } from '@agency-os/contracts';
+
+export class BeginGoogleDriveConnectDto {
+  @ApiProperty({ required: false, enum: ['mobile', 'web'] })
+  @IsOptional()
+  @IsIn(['mobile', 'web'])
+  returnTo?: 'mobile' | 'web';
+}
 
 export class CreateMediaZipExportDto implements CreateMediaZipExportInput {
   @ApiProperty({ type: [String] })

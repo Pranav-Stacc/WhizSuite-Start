@@ -8,17 +8,17 @@ enum AppLogoVariant { primary, symbol, withName }
 class AppLogo extends StatelessWidget {
   const AppLogo({
     super.key,
-    this.variant = AppLogoVariant.primary,
+    this.variant = AppLogoVariant.symbol,
     this.height = AppBrand.primaryLogoHeight,
     this.size = AppBrand.symbolLogoSize,
     this.name,
     this.semanticLabel,
   });
 
-  const AppLogo.primary({super.key, double height = AppBrand.primaryLogoHeight, String? semanticLabel})
-      : variant = AppLogoVariant.primary,
-        height = height,
-        size = AppBrand.symbolLogoSize,
+  const AppLogo.primary({super.key, double size = AppBrand.symbolLogoSize, String? semanticLabel})
+      : variant = AppLogoVariant.symbol,
+        height = AppBrand.primaryLogoHeight,
+        size = size,
         name = null,
         semanticLabel = semanticLabel;
 
@@ -48,7 +48,7 @@ class AppLogo extends StatelessWidget {
       label: semanticLabel,
       image: true,
       child: switch (variant) {
-        AppLogoVariant.primary => _PrimaryLogo(height: height),
+        AppLogoVariant.primary => _SymbolLogo(size: size),
         AppLogoVariant.symbol => _SymbolLogo(size: size),
         AppLogoVariant.withName => _LogoWithName(name: name ?? '', size: size),
       },
@@ -57,10 +57,9 @@ class AppLogo extends StatelessWidget {
 }
 
 class _BrandFrame extends StatelessWidget {
-  const _BrandFrame({required this.child, this.padding = const EdgeInsets.all(4)});
+  const _BrandFrame({required this.child});
 
   final Widget child;
-  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
@@ -69,28 +68,7 @@ class _BrandFrame extends StatelessWidget {
         color: const Color(0xFF050B16),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Padding(padding: padding, child: child),
-    );
-  }
-}
-
-class _PrimaryLogo extends StatelessWidget {
-  const _PrimaryLogo({required this.height});
-
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final width = height * AppBrand.primaryAspectRatio;
-    return _BrandFrame(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Image.asset(
-        AppBrand.primaryLogo,
-        height: height,
-        width: width,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-      ),
+      child: Padding(padding: const EdgeInsets.all(4), child: child),
     );
   }
 }

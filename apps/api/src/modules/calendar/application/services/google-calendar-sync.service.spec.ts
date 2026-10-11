@@ -77,6 +77,7 @@ describe('GoogleCalendarSyncService', () => {
       externalCalendarId: 'primary',
       syncDirection: 'OUT',
       defaultSyncNewEvents: false,
+      syncTypes: { meetings: true, shoots: true, tasks: false, posts: false },
       lastSyncedAt: null,
     });
 

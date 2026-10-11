@@ -2044,6 +2044,150 @@ abstract class AppLocalizations {
   /// **'Clear filters'**
   String get calendarFiltersClear;
 
+  /// No description provided for @calendarGoogleConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google Calendar'**
+  String get calendarGoogleConnect;
+
+  /// No description provided for @calendarGoogleConnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Google Calendar connect.'**
+  String get calendarGoogleConnectFailed;
+
+  /// No description provided for @calendarGoogleConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get calendarGoogleConnected;
+
+  /// No description provided for @calendarGoogleConnectedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar connected.'**
+  String get calendarGoogleConnectedToast;
+
+  /// No description provided for @calendarGoogleDefaultNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync new events by default'**
+  String get calendarGoogleDefaultNew;
+
+  /// No description provided for @calendarGoogleDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get calendarGoogleDisconnect;
+
+  /// No description provided for @calendarGoogleDisconnectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not disconnect Google Calendar.'**
+  String get calendarGoogleDisconnectFailed;
+
+  /// No description provided for @calendarGoogleDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar disconnected.'**
+  String get calendarGoogleDisconnected;
+
+  /// No description provided for @calendarGoogleDisconnectedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get calendarGoogleDisconnectedLabel;
+
+  /// No description provided for @calendarGoogleNotConfigured.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask your platform admin to set Google Calendar OAuth credentials.'**
+  String get calendarGoogleNotConfigured;
+
+  /// No description provided for @calendarGooglePull.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull Google events'**
+  String get calendarGooglePull;
+
+  /// No description provided for @calendarGooglePullFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not queue Google import.'**
+  String get calendarGooglePullFailed;
+
+  /// No description provided for @calendarGooglePullQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Google queued'**
+  String get calendarGooglePullQueued;
+
+  /// No description provided for @calendarGoogleSettingsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save sync settings.'**
+  String get calendarGoogleSettingsFailed;
+
+  /// No description provided for @calendarGoogleSettingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync settings saved'**
+  String get calendarGoogleSettingsSaved;
+
+  /// No description provided for @calendarGoogleSyncEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync to Google Calendar'**
+  String get calendarGoogleSyncEvent;
+
+  /// No description provided for @calendarGoogleSyncEventHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only events you opt in are pushed to Google.'**
+  String get calendarGoogleSyncEventHint;
+
+  /// No description provided for @calendarGoogleSettingsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect and choose which event types may sync to Google. Manage this here, not on the calendar tab.'**
+  String get calendarGoogleSettingsHint;
+
+  /// No description provided for @calendarGoogleSyncMeetings.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetings, deadlines & manual events'**
+  String get calendarGoogleSyncMeetings;
+
+  /// No description provided for @calendarGoogleSyncPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled posts'**
+  String get calendarGoogleSyncPosts;
+
+  /// No description provided for @calendarGoogleSyncShoots.
+  ///
+  /// In en, this message translates to:
+  /// **'Shoot days'**
+  String get calendarGoogleSyncShoots;
+
+  /// No description provided for @calendarGoogleSyncTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Task due dates'**
+  String get calendarGoogleSyncTasks;
+
+  /// No description provided for @calendarGoogleSyncTypesHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync to Google Calendar'**
+  String get calendarGoogleSyncTypesHeading;
+
+  /// No description provided for @calendarGoogleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Calendar'**
+  String get calendarGoogleTitle;
+
   /// No description provided for @calendarItemDetails.
   ///
   /// In en, this message translates to:
@@ -8765,6 +8909,12 @@ abstract class AppLocalizations {
   /// **'Clear selection'**
   String get storageClearSelection;
 
+  /// No description provided for @storageDriveConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Drive connected.'**
+  String get storageDriveConnected;
+
   /// No description provided for @storageDriveConnect.
   ///
   /// In en, this message translates to:
@@ -8843,10 +8993,16 @@ abstract class AppLocalizations {
   /// **'Storage'**
   String get storageSettingsTitle;
 
+  /// No description provided for @storageDriveSharingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform files stay org-scoped. Drive connects for exporting media copies; client sharing uses portal and media permissions.'**
+  String get storageDriveSharingNote;
+
   /// No description provided for @storageSourceDriveBody.
   ///
   /// In en, this message translates to:
-  /// **'Connect Google Drive to import files or transfer copies out.'**
+  /// **'Connect Google Drive to export copies of platform media assets.'**
   String get storageSourceDriveBody;
 
   /// No description provided for @storageSourcePlatformBody.

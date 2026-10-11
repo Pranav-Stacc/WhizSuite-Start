@@ -28,6 +28,7 @@ export class CalendarConnectionRepository {
       externalCalendarId?: string;
       syncDirection?: string;
       defaultSyncNewEvents?: boolean;
+      syncTypes?: object;
     },
   ) {
     return this.prisma.calendarConnection.upsert({
@@ -38,11 +39,13 @@ export class CalendarConnectionRepository {
         externalCalendarId: input.externalCalendarId ?? 'primary',
         syncDirection: input.syncDirection ?? 'OUT',
         defaultSyncNewEvents: input.defaultSyncNewEvents ?? false,
+        syncTypes: input.syncTypes ?? undefined,
       },
       update: {
         externalCalendarId: input.externalCalendarId,
         syncDirection: input.syncDirection,
         defaultSyncNewEvents: input.defaultSyncNewEvents,
+        syncTypes: input.syncTypes,
       },
     });
   }
@@ -54,6 +57,7 @@ export class CalendarConnectionRepository {
       externalCalendarId?: string;
       syncDirection?: string;
       defaultSyncNewEvents?: boolean;
+      syncTypes?: object;
       lastSyncedAt?: Date | null;
     },
   ) {

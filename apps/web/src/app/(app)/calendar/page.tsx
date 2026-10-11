@@ -14,7 +14,6 @@ import { PageHeader } from '@/shared/ui/page-header';
 import { PLATFORM_META } from '@/shared/ui/platform';
 import { Agenda, MonthGrid } from '@/features/calendar/components/calendar-views';
 import { DayPanel } from '@/features/calendar/components/day-panel';
-import { GoogleCalendarPanel } from '@/features/calendar/components/google-calendar-panel';
 import { PlanShootDialog } from '@/features/calendar/components/plan-shoot-dialog';
 import { groupByDay, listCalendarItems, monthGrid, type CalendarItem } from '@/features/calendar/services/calendar.service';
 import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
@@ -43,12 +42,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const platform = Platforms.find((p) => p === param(sp, 'platform')) as Platform | undefined;
   const dayParam = param(sp, 'day');
   const selectedDay = dayParam && DAY_PARAM.test(dayParam) ? dayParam : undefined;
-  const gcalToast = param(sp, 'gcal');
-
   const granted = await getPermissions();
   const canPlanShoot = granted.has(Permissions.PROJECTS_CREATE) && isLiveMode;
   const canCreate = granted.has(Permissions.CALENDAR_CREATE) && isLiveMode;
-  const canSync = granted.has(Permissions.CALENDAR_SYNC) && isLiveMode;
   const days = monthGrid(year, month);
   const gridStart = days[0];
   const gridEnd = new Date(days[days.length - 1].getTime() + MS_PER_DAY);
@@ -122,16 +118,6 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
           </>
         }
       />
-
-      <div className="mb-4">
-        <GoogleCalendarPanel
-          connection={googleConnection}
-          canManage={canSync}
-          rangeFrom={rangeFrom}
-          rangeTo={rangeTo}
-          toastStatus={gcalToast}
-        />
-      </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1" role="group" aria-label={t('calendar.title')}>

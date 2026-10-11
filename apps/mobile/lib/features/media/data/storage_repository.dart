@@ -17,8 +17,12 @@ class StorageRepository {
   Future<List<MediaDataSource>> dataSources() async =>
       jsonList(await _api.get<Object?>(_media('data-sources'))).map(MediaDataSource.fromJson).toList();
 
-  Future<String> beginGoogleDriveConnect() async =>
-      jsonObject(await _api.post<Object?>(_media('data-sources/google-drive/connect'))).str('authorizeUrl');
+  Future<String> beginGoogleDriveConnect({bool mobileReturn = true}) async => jsonObject(
+        await _api.post<Object?>(
+          _media('data-sources/google-drive/connect'),
+          body: mobileReturn ? {'returnTo': 'mobile'} : null,
+        ),
+      ).str('authorizeUrl');
 
   Future<void> disconnectGoogleDrive(String connectionId) =>
       _api.post<Object?>('${_media('data-sources/google-drive')}/$connectionId/disconnect');

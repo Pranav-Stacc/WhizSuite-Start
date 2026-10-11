@@ -29,6 +29,7 @@ import {
   UpdateCalendarItemDto,
 } from '../dto/calendar-item.dto';
 import {
+  BeginGoogleCalendarConnectDto,
   PullGoogleCalendarDto,
   UpdateGoogleCalendarSettingsDto,
 } from '../dto/google-calendar.dto';
@@ -134,11 +135,13 @@ export class GoogleCalendarController {
   @RequirePermissions(Permissions.CALENDAR_SYNC)
   connect(
     @Param('organizationId') organizationId: string,
+    @Body() body: BeginGoogleCalendarConnectDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.sync.beginConnect(
       requireOrganizationId(organizationId),
       user.userId,
+      body.returnTo ?? 'web',
     );
   }
 

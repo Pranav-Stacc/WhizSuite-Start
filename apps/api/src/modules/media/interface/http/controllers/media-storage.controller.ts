@@ -21,6 +21,7 @@ import { MediaDataSourcesService } from '../../../application/services/media-dat
 import { MediaExportService } from '../../../application/services/media-export.service';
 import { MediaStorageService } from '../../../application/services/media-storage.service';
 import {
+  BeginGoogleDriveConnectDto,
   CreateMediaDriveTransferDto,
   CreateMediaZipExportDto,
 } from '../dto/media-storage.dto';
@@ -52,11 +53,13 @@ export class MediaStorageController {
   @RequirePermissions(Permissions.INTEGRATIONS_MANAGE)
   connectDrive(
     @Param('organizationId') organizationId: string,
+    @Body() body: BeginGoogleDriveConnectDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.dataSources.beginGoogleDriveConnect(
       requireOrganizationId(organizationId),
       user.userId,
+      body.returnTo ?? 'web',
     );
   }
 
