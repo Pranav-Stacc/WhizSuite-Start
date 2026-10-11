@@ -3,40 +3,57 @@
 import { useMemo, useState, useTransition } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AccessRoleSummary } from '@agency-os/contracts';
+import {
+  PermissionEffects,
+  type MemberAccess,
+  type MemberPermissionOverride,
+  type Permission,
+} from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
 import type { PermissionRow } from '@/features/roles/services/permissions.service';
-import { syncMemberExtraPermissionsAction } from '../actions/member.actions';
-import { PERSONAL_ACCESS_PREFIX } from '../config';
+import { setMemberPermissionOverridesAction } from '../actions/member.actions';
 
-interface MemberExtrasPanelProps {
+interface MemberPermissionsPanelProps {
   memberId: string;
-  memberName: string;
-  assignedRoleIds: string[];
-  /** Permission keys granted by non-personal roles (locked on). */
-  lockedKeys: string[];
-  /** Permission keys currently on the personal extras role. */
-  extraKeys: string[];
+  overrides: MemberAccess['overrides'];
+  roleGrantedKeys: string[];
   catalog: PermissionRow[];
-  assignable: AccessRoleSummary[];
 }
 
-/** Toggle individual extra permissions on top of the member's assigned roles. */
-export function MemberExtrasPanel({
-  memberId,
-  memberName,
-  assignedRoleIds,
-  lockedKeys,
-  extraKeys,
-  catalog,
-  assignable,
-}: MemberExtrasPanelProps) {
-  const locked = useMemo(() => new Set(lockedKeys), [lockedKeys]);
-  const [extras, setExtras] = useState<Set<string>>(() => new Set(extraKeys));
-  const [pending, startTransition] = useTransition();
+function overridesMap(overrides: readonly MemberPermissionOverride[]): Map<string, MemberPermissionOverride['effect']> {
+  return new Map(overrides.map((row) => [row.key, row.effect]));
+}
+
+function effectiveKeys(roleKeys: Set<string>, overrides: Map<string, MemberPermissionOverride['effect']>): Set<string> {
+  const out = new Set(roleKeys);
+  for (const [key, effect] of overrides) {
+    if (effect === PermissionEffects.DENY) out.delete(key);
+    else out.add(key);
+  }
+  return out;
+}
+
+/** Toggle ALLOW/DENY overrides on top of assigned roles (same model as mobile). */
+export function MemberExtrasPanel({ memberId, overrides, roleGrantedKeys, catalog }: MemberPermissionsPanelProps) {
+  const roleKeys = useMemo(() => new Set(roleGrantedKeys), [roleGrantedKeys]);
+  const baseline = useMemo(() => overridesMap(overrides), [overrides]);
+  const [pending, setPending] = useState<Map<string, MemberPermissionOverride['effect'] | null>>(new Map());
+  const [saving, startTransition] = useTransition();
+
+  const merged = useMemo(() => {
+    const map = new Map(baseline);
+    for (const [key, effect] of pending) {
+      if (effect === null) map.delete(key);
+      else map.set(key, effect);
+    }
+    return map;
+  }, [baseline, pending]);
+
+  const effective = useMemo(() => effectiveKeys(roleKeys, merged), [roleKeys, merged]);
+  const dirty = pending.size > 0;
 
   const grouped = useMemo(() => {
     const map = new Map<string, PermissionRow[]>();
@@ -48,31 +65,30 @@ export function MemberExtrasPanel({
     return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
   }, [catalog]);
 
-  const baseline = useMemo(() => new Set(extraKeys), [extraKeys]);
-  const dirty = extras.size !== baseline.size || [...extras].some((key) => !baseline.has(key));
-
-  const toggle = (key: string) => {
-    if (locked.has(key)) return;
-    setExtras((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+  const toggle = (key: Permission, granted: boolean) => {
+    setPending((prev) => {
+      const next = new Map(prev);
+      next.set(key, granted ? PermissionEffects.ALLOW : PermissionEffects.DENY);
       return next;
     });
   };
 
   const save = () => {
     startTransition(async () => {
-      const result = await syncMemberExtraPermissionsAction(memberId, {
-        memberName,
-        roleIds: assignedRoleIds.filter((id) => {
-          const role = assignable.find((r) => r.id === id);
-          return !role?.name.startsWith(PERSONAL_ACCESS_PREFIX);
-        }),
-        permissionKeys: [...extras],
-      });
-      if (result.ok) toast.success(result.message);
-      else toast.error(result.message);
+      const mergedOverrides = new Map(baseline);
+      for (const [key, effect] of pending) {
+        if (effect === null) mergedOverrides.delete(key);
+        else mergedOverrides.set(key, effect);
+      }
+      const overrides: MemberPermissionOverride[] = [...mergedOverrides.entries()].map(([key, effect]) => ({
+        key: key as Permission,
+        effect,
+      }));
+      const result = await setMemberPermissionOverridesAction(memberId, { overrides });
+      if (result.ok) {
+        toast.success(result.message);
+        setPending(new Map());
+      } else toast.error(result.message);
     });
   };
 
@@ -87,25 +103,34 @@ export function MemberExtrasPanel({
             <h4 className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{humanizeKey(category)}</h4>
             <ul className="grid gap-1 sm:grid-cols-2">
               {perms.map((perm) => {
-                const isLocked = locked.has(perm.key);
-                const checked = isLocked || extras.has(perm.key);
+                const on = effective.has(perm.key);
+                const fromRole = roleKeys.has(perm.key);
+                const override = merged.get(perm.key);
                 return (
                   <li key={perm.key}>
                     <label
                       className={cn(
-                        'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs',
-                        isLocked ? 'cursor-default opacity-70' : 'cursor-pointer hover:bg-surface-2',
-                        checked && 'bg-primary/10',
+                        'flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs cursor-pointer hover:bg-surface-2',
+                        on && 'bg-primary/10',
                       )}
                     >
                       <input
                         type="checkbox"
-                        checked={checked}
-                        disabled={isLocked}
-                        onChange={() => toggle(perm.key)}
+                        checked={on}
+                        onChange={(e) => toggle(perm.key as Permission, e.target.checked)}
                         className="size-3.5 accent-primary"
                       />
-                      <span className="truncate">{humanizeKey(perm.key)}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {humanizeKey(perm.key)}
+                        {fromRole ? (
+                          <span className="ml-1 text-[10px] text-muted">({t('team.detail.extras.fromRole')})</span>
+                        ) : null}
+                        {override ? (
+                          <span className="ml-1 text-[10px] text-primary">
+                            {override === PermissionEffects.DENY ? t('team.detail.extras.denied') : t('team.detail.extras.extra')}
+                          </span>
+                        ) : null}
+                      </span>
                     </label>
                   </li>
                 );
@@ -114,8 +139,8 @@ export function MemberExtrasPanel({
           </section>
         ))}
       </div>
-      <Button variant="primary" size="sm" disabled={pending || !dirty} onClick={save}>
-        {pending ? <Loader2 className="animate-spin" /> : null}
+      <Button variant="primary" size="sm" disabled={saving || !dirty} onClick={save}>
+        {saving ? <Loader2 className="animate-spin" /> : null}
         {t('team.detail.extras.save')}
       </Button>
     </div>

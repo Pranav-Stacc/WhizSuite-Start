@@ -42,7 +42,7 @@ export function MemberProfileTabs({
             type="button"
             onClick={() => setTab(item.id)}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              tab === item.id ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-muted hover:text-foreground'
+              tab === item.id ? 'bg-primary text-primary-contrast' : 'bg-surface-2 text-muted hover:text-foreground'
             }`}
           >
             {item.label}

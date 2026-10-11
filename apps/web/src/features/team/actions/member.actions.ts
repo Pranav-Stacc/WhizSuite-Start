@@ -5,6 +5,7 @@ import {
   assignMemberRolesSchema,
   createPortalAccessLinkSchema,
   inviteMemberSchema,
+  setMemberPermissionsSchema,
   invitePortalUserSchema,
   RoleKinds,
   isPermission,
@@ -26,6 +27,7 @@ import {
   deactivateMember,
   inviteMember,
   revokeInvitation,
+  setMemberPermissions,
 } from '@/shared/api/live/mutations';
 import { isLiveMode } from '@/shared/config/env';
 import { recordAudit } from '@/features/audit/services/audit.service';
@@ -232,6 +234,33 @@ export async function removeMemberAction(id: string): Promise<ActionResult> {
     });
     await refreshData('team', 'tasks');
     return succeed(undefined, invited ? t('team.invite.revoked') : t('team.removed'));
+  });
+}
+
+/** Replaces direct ALLOW/DENY overrides layered on the member's roles. */
+export async function setMemberPermissionOverridesAction(
+  id: string,
+  raw: unknown,
+): Promise<ActionResult> {
+  return guarded(async () => {
+    const session = await authorize(Permissions.ROLES_MANAGE);
+    const parsed = parseInput(setMemberPermissionsSchema, raw);
+    if (!parsed.ok) return parsed.result;
+    const before = (await membersById()).get(id);
+    if (!before || before.status === 'INVITED') return fail(t('toast.failed'));
+    if (before.role === UserRoles.OWNER || before.id === session.userId) return fail(t('team.role.protected'));
+    if (isLiveMode) {
+      await setMemberPermissions(id, parsed.data.overrides);
+    }
+    await recordAudit({
+      action: 'member.permissions_overridden',
+      entityType: 'member',
+      entityId: id,
+      entityLabel: before.name,
+      summary: 'Updated permission overrides',
+    });
+    await refreshData('team', 'roles', 'access');
+    return succeed(undefined, t('team.detail.extras.saved'));
   });
 }
 

@@ -1,5 +1,7 @@
 import 'server-only';
+import type { MemberAccess } from '@agency-os/contracts';
 import { ApiError, apiFetch } from '@/shared/api/api-client';
+import { orgPath } from '@/shared/api/live/utils';
 import { invitationsLive, membersLive } from '@/shared/api/live/bindings';
 import { unwrapList } from '@/shared/api/live/utils';
 import { isLiveMode } from '@/shared/config/env';
@@ -69,6 +71,20 @@ export async function membersById(): Promise<Map<string, Member>> {
 
 export async function getMember(id: string): Promise<Member | undefined> {
   return (await membersById()).get(id);
+}
+
+export async function getMemberAccess(userId: string): Promise<MemberAccess | null> {
+  if (!isLiveMode) return { roles: [], overrides: [], effectivePermissions: [] };
+  const org = (await getSession())?.orgId ?? '';
+  if (!org) return null;
+  try {
+    return await apiFetch<MemberAccess>(`${orgPath(org, 'members')}/${userId}/access`, {
+      tags: [`org:${org}:team`],
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === FORBIDDEN) return null;
+    throw error;
+  }
 }
 
 export async function memberName(id: string | undefined): Promise<string | undefined> {

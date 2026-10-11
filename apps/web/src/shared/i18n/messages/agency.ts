@@ -435,8 +435,11 @@ export const agencyMessages = {
   'team.detail.joined': 'Joined',
   'team.detail.level': 'Access level',
   'team.detail.notFound': 'Member not found',
-  'team.detail.extras.hint': 'Permissions from assigned roles stay on. Tick extras to grant more, or untick extras to remove them.',
-  'team.detail.extras.save': 'Save extra permissions',
+  'team.detail.extras.hint': 'Turn permissions on or off for this person. Role grants can be denied; extra grants use ALLOW overrides.',
+  'team.detail.extras.fromRole': 'role',
+  'team.detail.extras.denied': 'denied',
+  'team.detail.extras.extra': 'extra',
+  'team.detail.extras.save': 'Save permission overrides',
   'team.detail.extras.saved': 'Extra permissions updated',
   'team.detail.extras.roleDesc': 'Individual extras for {name}',
   // Workspace setup

@@ -135,8 +135,12 @@ export function ContentComposer({
   const [clientId, platforms, caption, hashtags] = useWatch({ control: form.control, name: ['clientId', 'platforms', 'caption', 'hashtags'] });
   const client = clients.find((c) => c.id === clientId);
   const tightestLimit = platforms.length ? Math.min(...platforms.map((p) => PLATFORM_META[p].limit)) : undefined;
-  const clientAssets = assets.filter((a) => a.clientId === clientId);
-  const knownSlides = [...(post?.slides ?? []), ...clientAssets];
+  const libraryAssets = [...assets].sort((a, b) => {
+    if (a.clientId === clientId && b.clientId !== clientId) return -1;
+    if (b.clientId === clientId && a.clientId !== clientId) return 1;
+    return a.name.localeCompare(b.name);
+  });
+  const knownSlides = [...(post?.slides ?? []), ...libraryAssets];
 
   useEffect(() => {
     if (defaultOpen) setInternalOpen(true);
@@ -241,7 +245,7 @@ export function ContentComposer({
             name="mediaAssetIds"
             render={({ field }) => (
               <div className="space-y-3">
-                <SlidePicker value={field.value} onChange={field.onChange} known={knownSlides} library={clientAssets} />
+                <SlidePicker value={field.value} onChange={field.onChange} known={knownSlides} library={libraryAssets} />
                 <ComposerUpload
                   clientId={clientId}
                   enabled={uploadEnabled}

@@ -1,5 +1,5 @@
 import 'server-only';
-import type { ContentReviewOutcome } from '@agency-os/contracts';
+import type { ContentReviewOutcome, MemberPermissionOverride } from '@agency-os/contracts';
 import { apiFetch } from '@/shared/api/api-client';
 import { getSession } from '@/shared/auth/session';
 import { orgPath } from './utils';
@@ -135,4 +135,15 @@ export async function assignMemberRoles(
 export async function deactivateMember(userId: string): Promise<void> {
   const org = await orgId();
   await apiFetch(`${orgPath(org, 'members')}/${userId}`, { method: 'DELETE' });
+}
+
+export async function setMemberPermissions(
+  userId: string,
+  overrides: readonly MemberPermissionOverride[],
+): Promise<void> {
+  const org = await orgId();
+  await apiFetch(`${orgPath(org, 'members')}/${userId}/permissions`, {
+    method: 'PUT',
+    body: { overrides: [...overrides] },
+  });
 }

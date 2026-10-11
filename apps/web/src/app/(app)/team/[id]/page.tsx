@@ -18,7 +18,7 @@ import { AssignRolesDialog } from '@/features/team/components/assign-roles-dialo
 import { MemberExtrasPanel } from '@/features/team/components/member-extras-panel';
 import { removeMemberAction } from '@/features/team/actions/member.actions';
 import { PERSONAL_ACCESS_PREFIX } from '@/features/team/config';
-import { getMember } from '@/features/team/services/members.service';
+import { getMember, getMemberAccess } from '@/features/team/services/members.service';
 import { MemberProfileTabs } from '@/features/team/components/member-profile-tabs';
 import { listTasks, openHoursByAssignee } from '@/features/tasks/services/tasks.service';
 
@@ -31,21 +31,21 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
   if (!member) notFound();
 
   const manageRoles = await can(Permissions.ROLES_MANAGE);
-  const [canRemove, roles, catalog, tasks] = await Promise.all([
+  const [canRemove, roles, catalog, tasks, memberAccess] = await Promise.all([
     can(Permissions.MEMBERS_DEACTIVATE),
     loadIf(Permissions.ROLES_MANAGE, listRoles, []),
     loadIf(Permissions.ROLES_MANAGE, listPermissionCatalog, []),
     loadIf(Permissions.TASKS_VIEW, listTasks, []),
+    manageRoles && member.status === 'ACTIVE' ? getMemberAccess(member.id) : Promise.resolve(null),
   ]);
 
   const assignableRoles = manageRoles ? roles.map(toRoleSummary).filter((role) => !isOwnerRole(role)) : [];
   const roleDetails = roles.filter((role) => member.roles.some((r) => r.id === role.id));
   const personalRole = roleDetails.find((role) => !role.isSystem && role.name.startsWith(PERSONAL_ACCESS_PREFIX));
-  const lockedKeys = roleDetails
+  const roleGrantedKeys = roleDetails
     .filter((role) => role.id !== personalRole?.id)
     .flatMap((role) => role.permissionKeys);
-  const extraKeys = personalRole?.permissionKeys ?? [];
-  const grantedKeys = new Set([...lockedKeys, ...extraKeys]);
+  const grantedKeys = new Set(memberAccess?.effectivePermissions ?? roleGrantedKeys);
   const hours = openHoursByAssignee(tasks).get(member.id) ?? 0;
   const ratio = member.capacityHours > 0 ? hours / member.capacityHours : 0;
   const isSelf = member.id === session.userId;
@@ -154,15 +154,12 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
                 ))}
               </ul>
             )}
-            {canEditAccess ? (
+            {canEditAccess && memberAccess ? (
               <MemberExtrasPanel
                 memberId={member.id}
-                memberName={member.name}
-                assignedRoleIds={member.roles.map((r) => r.id)}
-                lockedKeys={lockedKeys}
-                extraKeys={extraKeys}
+                overrides={memberAccess.overrides}
+                roleGrantedKeys={roleGrantedKeys}
                 catalog={catalog}
-                assignable={assignableRoles}
               />
             ) : null}
           </div>

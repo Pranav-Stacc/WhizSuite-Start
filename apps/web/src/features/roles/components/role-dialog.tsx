@@ -243,24 +243,26 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
           const mode = moduleResourceMode[module]?.[scopeType] ?? 'all';
           if (mode === 'all') return [];
           const resourceIds = moduleResourceIds[module]?.[scopeType] ?? [];
-          return resourceIds.length > 0 ? [{ scopeType, resourceIds }] : [];
+          return resourceIds.length > 0 ? [{ scopeType, resourceIds: [...resourceIds] }] : [];
         });
       permissionScopes.push({
         key: key as Permission,
-        scopeTypes,
-        ...(scopeResources.length > 0 ? { scopeResources } : {}),
+        scopeTypes: [...scopeTypes],
+        ...(scopeResources.length > 0 ? { scopeResources: scopeResources.map((row) => ({ ...row, resourceIds: [...row.resourceIds] })) } : {}),
       });
     }
     const defaultScopeTypes = [...scopeUnion];
     startTransition(async () => {
-      const input = {
-        name,
-        description,
-        kind: RoleKinds.ACCESS,
-        permissionKeys: [...selected] as Permission[],
-        defaultScopeTypes: defaultScopeTypes.length > 0 ? defaultScopeTypes : [AssignableScopeTypes.ORGANIZATION],
-        permissionScopes,
-      };
+      const input = JSON.parse(
+        JSON.stringify({
+          name,
+          description,
+          kind: RoleKinds.ACCESS,
+          permissionKeys: [...selected] as Permission[],
+          defaultScopeTypes: defaultScopeTypes.length > 0 ? defaultScopeTypes : [AssignableScopeTypes.ORGANIZATION],
+          permissionScopes,
+        }),
+      );
       const result = editing ? await updateRoleAction(role.id, input) : await createRoleAction(input);
       if (result.ok) {
         toast.success(result.message);
@@ -314,7 +316,9 @@ export function RoleDialog({ permissions, role, trigger, scopeResources = EMPTY_
                 const allOn = perms.every((perm) => selected.has(perm.key));
                 const sampleKey = perms[0]?.key ?? module;
                 const allowed = allowedScopesForPermission(sampleKey);
-                const chosen = new Set<ScopeType>(moduleScopes[module] ?? []);
+                const chosen = new Set<ScopeType>(
+                  moduleScopes[module] ?? (active.length > 0 ? [defaultScopeFor(sampleKey)] : []),
+                );
                 return (
                   <section key={module}>
                     <div className="mb-1 flex items-center justify-between gap-2">
