@@ -4,6 +4,7 @@ import { IntegrationsRepository } from './infrastructure/repositories/integratio
 import { IntegrationsResourceController } from './interface/http/controllers/integrations-resource.controller';
 import { GoogleCalendarClient } from './providers/google-calendar.client';
 import { GoogleDriveClient } from './providers/google-drive.client';
+import { GoogleDriveTokenService } from './providers/google-drive-token.service';
 import { MetaClient } from './providers/meta.client';
 
 @Module({
@@ -13,6 +14,7 @@ import { MetaClient } from './providers/meta.client';
     IntegrationsRepository,
     MetaClient,
     GoogleDriveClient,
+    GoogleDriveTokenService,
     GoogleCalendarClient,
   ],
   exports: [
@@ -20,6 +22,7 @@ import { MetaClient } from './providers/meta.client';
     IntegrationsRepository,
     MetaClient,
     GoogleDriveClient,
+    GoogleDriveTokenService,
     GoogleCalendarClient,
   ],
 })

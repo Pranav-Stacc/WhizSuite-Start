@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
   GOOGLE_DRIVE_PROVIDER_KEY,
+  type GoogleDrivePickerSessionDto,
   type MediaDataSourceDto,
 } from '@agency-os/contracts';
 import { createHash, randomBytes } from 'node:crypto';
@@ -14,6 +15,7 @@ import {
 import { AuditService } from '../../../audit/application/services/audit.service';
 import { IntegrationsRepository } from '../../../integrations/infrastructure/repositories/integrations.repository';
 import { GoogleDriveClient } from '../../../integrations/providers/google-drive.client';
+import { GoogleDriveTokenService } from '../../../integrations/providers/google-drive-token.service';
 import type { OAuthReturnTo } from '../../../../shared/integrations/oauth-return-url';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class MediaDataSourcesService {
   constructor(
     private readonly integrations: IntegrationsRepository,
     private readonly drive: GoogleDriveClient,
+    private readonly driveTokens: GoogleDriveTokenService,
     private readonly audit: AuditService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {}
@@ -157,6 +160,40 @@ export class MediaDataSourcesService {
     return {
       organizationId: parsed.organizationId,
       connectionId: parsed.connectionId,
+    };
+  }
+
+  async getGoogleDrivePickerSession(
+    organizationId: string,
+    connectionId: string,
+  ): Promise<GoogleDrivePickerSessionDto> {
+    if (!this.drive.isPickerConfigured()) {
+      throw problem(
+        503,
+        'Service Unavailable',
+        ErrorCodes.INTEGRATION_NOT_CONNECTED,
+        'Google Drive Picker is not configured',
+      );
+    }
+    const connection = await this.integrations.findById(
+      organizationId,
+      connectionId,
+    );
+    if (!connection || connection.status !== 'CONNECTED') {
+      throw unprocessable('Google Drive is not connected');
+    }
+    const accessToken = await this.driveTokens.resolveAccessToken(
+      organizationId,
+      connectionId,
+    );
+    if (!accessToken) {
+      throw unprocessable('Missing Drive credentials');
+    }
+    return {
+      accessToken,
+      clientId: this.drive.getPickerClientId(),
+      apiKey: this.drive.getPickerApiKey(),
+      appId: this.drive.getPickerAppId(),
     };
   }
 

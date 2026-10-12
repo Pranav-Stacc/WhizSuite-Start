@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { ConfigService } from '@nestjs/config';
 import {
   ErrorCodes,
+  type CreateMediaDriveImportInput,
   type CreateMediaDriveTransferInput,
   type CreateMediaZipExportInput,
   type MediaExportJobDto,
@@ -130,6 +131,60 @@ export class MediaExportService {
     return toJobDto(
       job.id!,
       'DRIVE_TRANSFER',
+      'QUEUED',
+      0,
+      null,
+      null,
+      new Date(),
+    );
+  }
+
+  async enqueueDriveImport(
+    organizationId: string,
+    actorId: string,
+    input: CreateMediaDriveImportInput,
+  ): Promise<MediaExportJobDto> {
+    if (!TenantContext.canAccessClient(input.clientId)) {
+      throw notFound('Client not found');
+    }
+    const clientId = this.config.get('GOOGLE_DRIVE_CLIENT_ID', { infer: true });
+    if (!clientId) {
+      throw problem(
+        503,
+        'Service Unavailable',
+        ErrorCodes.INTEGRATION_NOT_CONNECTED,
+        'Google Drive is not configured on this deployment',
+      );
+    }
+    const job = await this.queue.add(
+      'drive-import',
+      {
+        kind: 'DRIVE_IMPORT',
+        organizationId,
+        actorId,
+        connectionId: input.connectionId,
+        driveFileIds: input.driveFileIds,
+        clientId: input.clientId,
+        folderId: input.folderId,
+      },
+      { removeOnComplete: 100, removeOnFail: 50 },
+    );
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'media/imports.drive',
+      entityType: 'media-import-drive',
+      entityId: job.id ?? 'unknown',
+      after: {
+        fileCount: input.driveFileIds.length,
+        connectionId: input.connectionId,
+        clientId: input.clientId,
+      },
+    });
+    return toJobDto(
+      job.id!,
+      'DRIVE_IMPORT',
       'QUEUED',
       0,
       null,

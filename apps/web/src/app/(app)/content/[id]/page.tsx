@@ -2,7 +2,7 @@ import { Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, CalendarClock, Pencil } from 'lucide-react';
+import { ArrowLeft, CalendarClock, MessageCircle, Pencil } from 'lucide-react';
 import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { FormDialog } from '@/shared/forms/form-dialog';
 import { InlineMessageForm } from '@/shared/forms/inline-message-form';
@@ -23,9 +23,16 @@ import { addCommentAction, deleteContentAction, rescheduleContentAction } from '
 import { ActivityTimeline } from '@/features/content/components/activity-timeline';
 import { toComposerAssets, toComposerClients, toComposerPost } from '@/features/content/components/composer-mappers';
 import { ContentComposer } from '@/features/content/components/content-composer';
-import { PostPreview } from '@/features/content/components/post-preview';
+import { ContentApprovalPanel } from '@/features/content/components/content-approval-panel';
+import { ContentMediaPreview } from '@/features/content/components/content-media-preview';
+import { ShareContentDialog } from '@/features/content/components/share-content-dialog';
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
+import {
+  canApproveContentStep,
+  getContentApprovalSummary,
+} from '@/features/content/services/content-approval.service';
 import { eventsFor, getPost } from '@/features/content/services/content.service';
+import { isLiveMode } from '@/shared/config/env';
 import { isEditable } from '@/features/content/workflow';
 import { DEFAULT_CLIENT_COLOR } from '@/features/clients/config';
 import { listAssets } from '@/features/media/services/media.service';
@@ -47,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ContentDetailPage({ params, searchParams }: PageProps) {
-  await requirePermission(Permissions.CONTENT_VIEW);
+  const session = await requirePermission(Permissions.CONTENT_VIEW);
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const post = await getPost(id);
   if (!post) notFound();
@@ -57,13 +64,15 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
     granted.has(Permissions.FEEDBACK_VIEW) || granted.has(Permissions.CONTENT_VIEW);
   const canComment =
     granted.has(Permissions.FEEDBACK_CREATE) || granted.has(Permissions.CONTENT_EDIT);
-  const [events, clients, members, assets] = await Promise.all([
+  const [events, clients, members, assets, approvalSummary, canApproveStep] = await Promise.all([
     canReadThread ? eventsFor(post.id).catch(() => []) : Promise.resolve([]),
     listClientsForContent([post]).catch(() => []),
     loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()).catch(
       () => new Map<string, Member>(),
     ),
     loadIf(Permissions.FILES_VIEW, listAssets, []).catch(() => []),
+    post.status === 'IN_REVIEW' ? getContentApprovalSummary(post.id) : Promise.resolve(null),
+    post.status === 'IN_REVIEW' ? canApproveContentStep(post.id, session.userId) : Promise.resolve(false),
   ]);
   const client =
     clients.find((c) => c.id === post.clientId) ?? stubClientFromPost(post.clientId);
@@ -71,7 +80,15 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
     clients.some((c) => c.id === post.clientId) ? clients : [...clients, client],
   );
   const author = members.get(post.authorId);
-  const approver = granted.has(Permissions.APPROVALS_APPROVE);
+  const approver = granted.has(Permissions.APPROVALS_APPROVE) && canApproveStep;
+  const memberNames = Object.fromEntries(
+    [...members.values()].map((m) => [m.userId ?? m.id, m.name]),
+  );
+  const dmMembers = [...members.values()]
+    .filter((m) => (m.userId ?? m.id) !== session.userId)
+    .map((m) => ({ userId: m.userId ?? m.id, name: m.name }));
+  const canShareDm = granted.has(Permissions.CHAT_CREATE_ROOM) && isLiveMode && dmMembers.length > 0;
+  const canRemind = granted.has(Permissions.APPROVALS_VIEW) && isLiveMode;
   const editable = isEditable(post.status) && granted.has(Permissions.CONTENT_EDIT);
   const canDelete = granted.has(Permissions.CONTENT_DELETE);
   const previewPlatform = post.platforms.find((p) => p === param(sp, 'platform')) ?? post.platforms[0];
@@ -136,6 +153,19 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                 }
               />
             ) : null}
+            {canShareDm ? (
+              <ShareContentDialog
+                contentId={post.id}
+                title={post.title}
+                members={dmMembers}
+                trigger={
+                  <Button variant="outline">
+                    <MessageCircle />
+                    {t('content.share.dm')}
+                  </Button>
+                }
+              />
+            ) : null}
             {canDelete ? <ConfirmButton action={deleteContentAction.bind(null, post.id)} label={t('content.delete')} redirectTo="/content" /> : null}
           </div>
         </header>
@@ -147,7 +177,7 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
             <FilterChips items={post.platforms.map((p) => ({ href: withQuery(base, sp, { platform: p }), label: PLATFORM_META[p].label, active: p === previewPlatform }))} />
           ) : null}
           {previewPlatform ? (
-            <PostPreview
+            <ContentMediaPreview
               clientName={client?.name ?? ''}
               clientColor={client?.color ?? DEFAULT_CLIENT_COLOR}
               platform={previewPlatform}
@@ -197,6 +227,14 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                   </div>
                 ) : null}
               </dl>
+
+              {approvalSummary ? (
+                <ContentApprovalPanel
+                  summary={approvalSummary}
+                  memberNames={memberNames}
+                  canRemind={canRemind}
+                />
+              ) : null}
 
               <div className="border-t border-border-soft pt-4">
                 <WorkflowActions post={post} approver={approver} />

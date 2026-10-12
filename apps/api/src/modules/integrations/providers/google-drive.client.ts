@@ -1,20 +1,40 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GOOGLE_DRIVE_FILE_SCOPE } from '@agency-os/contracts';
 import type { AppConfig } from '../../../shared/config/app.config';
 
+const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DRIVE_UPLOAD =
   'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
 const OAUTH_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const OAUTH_TOKEN = 'https://oauth2.googleapis.com/token';
-const DRIVE_SCOPES = [
-  'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/drive.readonly',
-].join(' ');
+const DRIVE_SCOPES = GOOGLE_DRIVE_FILE_SCOPE;
+
+const GOOGLE_APPS_PREFIX = 'application/vnd.google-apps.';
+const GOOGLE_EXPORT_MIME: Record<string, string> = {
+  'application/vnd.google-apps.document': 'application/pdf',
+  'application/vnd.google-apps.spreadsheet': 'application/pdf',
+  'application/vnd.google-apps.presentation': 'application/pdf',
+  'application/vnd.google-apps.drawing': 'image/png',
+};
 
 export type GoogleDriveTokens = {
   accessToken: string;
   refreshToken: string | null;
   expiresAt: string | null;
+};
+
+export type GoogleDriveFileMetadata = {
+  id: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number | null;
+};
+
+export type GoogleDriveDownloadedFile = {
+  name: string;
+  mimeType: string;
+  body: Buffer;
 };
 
 @Injectable()
@@ -29,6 +49,28 @@ export class GoogleDriveClient {
       this.config.get('GOOGLE_DRIVE_CLIENT_SECRET', { infer: true }) &&
       this.config.get('GOOGLE_DRIVE_REDIRECT_URI', { infer: true }),
     );
+  }
+
+  isPickerConfigured(): boolean {
+    return (
+      this.isConfigured() &&
+      Boolean(this.config.get('GOOGLE_DRIVE_API_KEY', { infer: true }))
+    );
+  }
+
+  getPickerClientId(): string {
+    return this.config.get('GOOGLE_DRIVE_CLIENT_ID', { infer: true });
+  }
+
+  getPickerApiKey(): string {
+    return this.config.get('GOOGLE_DRIVE_API_KEY', { infer: true });
+  }
+
+  getPickerAppId(): string | null {
+    const appId = this.config.get('GOOGLE_CLOUD_PROJECT_NUMBER', {
+      infer: true,
+    });
+    return appId || null;
   }
 
   buildAuthorizeUrl(state: string): string {
@@ -106,6 +148,74 @@ export class GoogleDriveClient {
     return { ...tokens, refreshToken: tokens.refreshToken ?? refreshToken };
   }
 
+  async getFileMetadata(
+    accessToken: string,
+    fileId: string,
+  ): Promise<GoogleDriveFileMetadata> {
+    const response = await fetch(
+      `${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=id,name,mimeType,size`,
+      { headers: { authorization: `Bearer ${accessToken}` } },
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Drive metadata failed: ${text.slice(0, 200)}`);
+    }
+    const json = (await response.json()) as {
+      id: string;
+      name: string;
+      mimeType: string;
+      size?: string;
+    };
+    return {
+      id: json.id,
+      name: json.name,
+      mimeType: json.mimeType,
+      sizeBytes: json.size ? Number(json.size) : null,
+    };
+  }
+
+  async downloadFile(
+    accessToken: string,
+    fileId: string,
+  ): Promise<GoogleDriveDownloadedFile> {
+    const metadata = await this.getFileMetadata(accessToken, fileId);
+    if (metadata.mimeType.startsWith(GOOGLE_APPS_PREFIX)) {
+      const exportMime = GOOGLE_EXPORT_MIME[metadata.mimeType];
+      if (!exportMime) {
+        throw new Error(`Unsupported Google file type: ${metadata.mimeType}`);
+      }
+      const response = await fetch(
+        `${DRIVE_API}/files/${encodeURIComponent(fileId)}/export?mimeType=${encodeURIComponent(exportMime)}`,
+        { headers: { authorization: `Bearer ${accessToken}` } },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Drive export failed: ${text.slice(0, 200)}`);
+      }
+      const body = Buffer.from(await response.arrayBuffer());
+      return {
+        name: exportFileName(metadata.name, exportMime),
+        mimeType: exportMime,
+        body,
+      };
+    }
+
+    const response = await fetch(
+      `${DRIVE_API}/files/${encodeURIComponent(fileId)}?alt=media`,
+      { headers: { authorization: `Bearer ${accessToken}` } },
+    );
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Drive download failed: ${text.slice(0, 200)}`);
+    }
+    const body = Buffer.from(await response.arrayBuffer());
+    return {
+      name: metadata.name,
+      mimeType: metadata.mimeType,
+      body,
+    };
+  }
+
   async uploadFile(input: {
     accessToken: string;
     name: string;
@@ -154,4 +264,10 @@ export class GoogleDriveClient {
         : null,
     };
   }
+}
+
+function exportFileName(name: string, mimeType: string): string {
+  const extension = mimeType === 'application/pdf' ? '.pdf' : '.png';
+  if (name.toLowerCase().endsWith(extension)) return name;
+  return `${name}${extension}`;
 }

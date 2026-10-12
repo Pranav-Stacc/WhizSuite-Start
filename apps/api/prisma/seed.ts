@@ -97,11 +97,8 @@ async function main() {
       name: 'Google Drive',
       category: 'storage',
       manifest: {
-        scopes: [
-          'https://www.googleapis.com/auth/drive.file',
-          'https://www.googleapis.com/auth/drive.readonly',
-        ],
-        actions: ['import', 'export', 'list'],
+        scopes: ['https://www.googleapis.com/auth/drive.file'],
+        actions: ['import', 'export'],
       },
     },
     {

@@ -9,7 +9,7 @@ export type DataSourceKind = (typeof DataSourceKinds)[number];
 export const DataSourceStatuses = ['AVAILABLE', 'CONNECTED', 'PENDING', 'ERROR', 'DISABLED'] as const;
 export type DataSourceStatus = (typeof DataSourceStatuses)[number];
 
-export const MediaExportJobKinds = ['ZIP', 'DRIVE_TRANSFER'] as const;
+export const MediaExportJobKinds = ['ZIP', 'DRIVE_TRANSFER', 'DRIVE_IMPORT'] as const;
 export type MediaExportJobKind = (typeof MediaExportJobKinds)[number];
 
 export const MediaExportJobStatuses = ['QUEUED', 'RUNNING', 'READY', 'FAILED'] as const;
@@ -51,6 +51,21 @@ export const createMediaDriveTransferSchema = z.object({
 });
 export type CreateMediaDriveTransferInput = z.infer<typeof createMediaDriveTransferSchema>;
 
+export const createMediaDriveImportSchema = z.object({
+  connectionId: z.string().uuid(),
+  driveFileIds: z.array(z.string().trim().min(1).max(256)).min(1).max(50),
+  clientId: z.string().uuid(),
+  folderId: z.string().uuid().optional(),
+});
+export type CreateMediaDriveImportInput = z.infer<typeof createMediaDriveImportSchema>;
+
+export type GoogleDrivePickerSessionDto = {
+  accessToken: string;
+  clientId: string;
+  apiKey: string;
+  appId: string | null;
+};
+
 export type MediaExportJobDto = {
   id: string;
   kind: MediaExportJobKind;
@@ -64,10 +79,10 @@ export type MediaExportJobDto = {
 
 export const GOOGLE_DRIVE_PROVIDER_KEY = 'google_drive' as const;
 
+export const GOOGLE_DRIVE_FILE_SCOPE =
+  'https://www.googleapis.com/auth/drive.file' as const;
+
 export const googleDriveManifestSchema = z.object({
-  scopes: z.array(z.string()).default([
-    'https://www.googleapis.com/auth/drive.file',
-    'https://www.googleapis.com/auth/drive.readonly',
-  ]),
-  actions: z.array(z.enum(['import', 'export', 'list'])).default(['import', 'export', 'list']),
+  scopes: z.array(z.string()).default([GOOGLE_DRIVE_FILE_SCOPE]),
+  actions: z.array(z.enum(['import', 'export'])).default(['import', 'export']),
 });

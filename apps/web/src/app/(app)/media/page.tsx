@@ -2,6 +2,7 @@ import { AssetKinds, Permissions } from '@agency-os/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Folder, ImageIcon, Plus, Trash2, UploadCloud } from 'lucide-react';
+import { GoogleDriveImportButton } from '@/features/media/components/google-drive-import-button';
 import { getPermissions, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
@@ -26,7 +27,7 @@ import { UploadDropzone } from '@/features/media/components/upload-dropzone';
 import { deleteFolderAction } from '@/features/media/actions/folder.actions';
 import { listFolders } from '@/features/media/services/folders.service';
 import { listAssets } from '@/features/media/services/media.service';
-import { getStorageUsage } from '@/features/media/services/storage.service';
+import { getStorageUsage, listDataSources } from '@/features/media/services/storage.service';
 
 export const metadata: Metadata = { title: t('media.title') };
 
@@ -48,12 +49,16 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
   const granted = await getPermissions();
   const canUpload = granted.has(Permissions.FILES_UPLOAD);
   const canDelete = granted.has(Permissions.FILES_DELETE);
-  const [assets, clients, folders, storageUsage] = await Promise.all([
+  const [assets, clients, folders, storageUsage, dataSources] = await Promise.all([
     listAssets(),
     loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>()),
     clientId ? listFolders(clientId) : Promise.resolve([]),
     getStorageUsage(),
+    isLiveMode ? listDataSources() : Promise.resolve([]),
   ]);
+  const driveConnection = dataSources.find(
+    (source) => source.kind === 'google_drive' && source.status === 'CONNECTED' && source.connectionId,
+  );
   const clientNames = Object.fromEntries([...clients.entries()].map(([id, c]) => [id, c.name]));
 
   const scoped = assets.filter(
@@ -98,7 +103,17 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
           <>
             <PageGuide items={GUIDE} />
             {!canUpload ? null : isLiveMode ? (
-              <AssetUploader clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
+              <>
+                {driveConnection?.connectionId && clientOptions.length > 0 ? (
+                  <GoogleDriveImportButton
+                    connectionId={driveConnection.connectionId}
+                    clients={clientOptions}
+                    defaultClientId={clientId}
+                    folderId={folderId}
+                  />
+                ) : null}
+                <AssetUploader clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
+              </>
             ) : (
               <AssetDialog clients={clientOptions} defaultOpen={openOnLoad} defaultClientId={clientId} trigger={addButton} />
             )}

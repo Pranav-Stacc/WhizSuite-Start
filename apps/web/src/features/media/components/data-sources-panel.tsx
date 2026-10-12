@@ -13,6 +13,7 @@ import {
   disconnectGoogleDriveAction,
   transferAllToDriveAction,
 } from '../actions/storage.actions';
+import { GoogleDriveImportButton } from './google-drive-import-button';
 
 function statusTone(status: MediaDataSourceDto['status']): 'success' | 'warning' | 'neutral' | 'danger' {
   if (status === 'CONNECTED' || status === 'AVAILABLE') return 'success';
@@ -25,10 +26,14 @@ export function DataSourcesPanel({
   sources,
   canManage,
   canTransfer,
+  canImport,
+  importClients = [],
 }: {
   sources: MediaDataSourceDto[];
   canManage: boolean;
   canTransfer: boolean;
+  canImport?: boolean;
+  importClients?: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -79,6 +84,12 @@ export function DataSourcesPanel({
                   ) : null}
                   {connected && source.connectionId ? (
                     <>
+                      {canImport && importClients.length > 0 ? (
+                        <GoogleDriveImportButton
+                          connectionId={source.connectionId}
+                          clients={importClients}
+                        />
+                      ) : null}
                       {canTransfer ? (
                         <Button
                           variant="secondary"

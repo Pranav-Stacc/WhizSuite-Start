@@ -59,6 +59,20 @@ export class ApprovalsResourceController {
     );
   }
 
+  @Post(':approvalId/remind')
+  @RequirePermissions(Permissions.APPROVALS_VIEW)
+  remind(
+    @Param('organizationId') organizationId: string,
+    @Param('approvalId', ParseUUIDPipe) approvalId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.approvals.sendReminder(
+      requireOrganizationId(organizationId),
+      user.userId,
+      approvalId,
+    );
+  }
+
   @Post(':approvalId/act')
   @RequirePermissions(Permissions.APPROVALS_APPROVE)
   act(

@@ -5,8 +5,12 @@ import type { Job } from 'bullmq';
 import { PassThrough } from 'node:stream';
 import type { AppConfig } from '../../../shared/config/app.config';
 import { StorageService } from '../../../shared/storage/storage.service';
+import { ErrorCodes } from '@agency-os/contracts';
 import { GoogleDriveClient } from '../../integrations/providers/google-drive.client';
+import { GoogleDriveTokenService } from '../../integrations/providers/google-drive-token.service';
 import { IntegrationsRepository } from '../../integrations/infrastructure/repositories/integrations.repository';
+import { MediaStorageService } from '../application/services/media-storage.service';
+import { isMimeTypeAllowed } from '../application/utils/mime-type';
 import { MediaRepository } from '../infrastructure/repositories/media.repository';
 import {
   MEDIA_EXPORT_QUEUE,
@@ -37,6 +41,8 @@ export class MediaExportProcessor extends WorkerHost {
     private readonly storage: StorageService,
     private readonly integrations: IntegrationsRepository,
     private readonly drive: GoogleDriveClient,
+    private readonly driveTokens: GoogleDriveTokenService,
+    private readonly mediaStorage: MediaStorageService,
     private readonly config: ConfigService<AppConfig, true>,
   ) {
     super();
@@ -48,6 +54,9 @@ export class MediaExportProcessor extends WorkerHost {
     try {
       if (job.data.kind === 'ZIP') {
         return await this.runZip(job);
+      }
+      if (job.data.kind === 'DRIVE_IMPORT') {
+        return await this.runDriveImport(job);
       }
       return await this.runDriveTransfer(job);
     } catch (error) {
@@ -127,7 +136,7 @@ export class MediaExportProcessor extends WorkerHost {
         transferred: 0,
       };
     }
-    const accessToken = await this.resolveDriveAccessToken(
+    const accessToken = await this.driveTokens.resolveAccessToken(
       data.organizationId,
       connection.id,
     );
@@ -172,36 +181,108 @@ export class MediaExportProcessor extends WorkerHost {
     return { downloadUrl: null, error: null, transferred };
   }
 
-  private async resolveDriveAccessToken(
-    organizationId: string,
-    connectionId: string,
-  ): Promise<string | null> {
-    const creds = await this.integrations.findCredential(connectionId);
-    if (!creds) return null;
+  private async runDriveImport(
+    job: Job<MediaExportJobPayload, MediaExportJobResult>,
+  ): Promise<MediaExportJobResult> {
+    const data = job.data;
+    if (data.kind !== 'DRIVE_IMPORT') throw new Error('Invalid import payload');
 
-    if (creds.refreshToken) {
-      try {
-        const refreshed = await this.drive.refreshAccessToken(
-          creds.refreshToken,
-        );
-        const encryptedData = JSON.stringify({
-          accessToken: refreshed.accessToken,
-          refreshToken: refreshed.refreshToken ?? creds.refreshToken,
-        });
-        await this.integrations.upsertCredential(
-          organizationId,
-          connectionId,
-          encryptedData,
-          refreshed.expiresAt ? new Date(refreshed.expiresAt) : null,
-        );
-        return refreshed.accessToken;
-      } catch (error) {
-        this.logger.warn(
-          `Drive token refresh failed, using stored access token: ${error instanceof Error ? error.message : 'unknown'}`,
-        );
-      }
+    const connection = await this.integrations.findById(
+      data.organizationId,
+      data.connectionId,
+    );
+    if (!connection || connection.status !== 'CONNECTED') {
+      return {
+        downloadUrl: null,
+        error: 'Google Drive is not connected',
+        transferred: 0,
+      };
     }
-    return creds.accessToken;
+
+    const accessToken = await this.driveTokens.resolveAccessToken(
+      data.organizationId,
+      connection.id,
+    );
+    if (!accessToken) {
+      return {
+        downloadUrl: null,
+        error: 'Missing Drive credentials',
+        transferred: 0,
+      };
+    }
+
+    const allowedMimeTypes = this.config.get('STORAGE_ALLOWED_MIME_TYPES', {
+      infer: true,
+    });
+    const maxBytes = this.config.get('STORAGE_UPLOAD_MAX_BYTES', { infer: true });
+    const errors: string[] = [];
+    let transferred = 0;
+
+    for (const [index, fileId] of data.driveFileIds.entries()) {
+      try {
+        const downloaded = await this.drive.downloadFile(accessToken, fileId);
+        const mimeType = downloaded.mimeType.toLowerCase();
+        if (!isMimeTypeAllowed(mimeType, allowedMimeTypes)) {
+          throw new Error(`File type ${mimeType} is not allowed`);
+        }
+        if (downloaded.body.byteLength > maxBytes) {
+          throw new Error(`File exceeds the ${maxBytes} byte limit`);
+        }
+        if (
+          !(await this.mediaStorage.canAccept(
+            data.organizationId,
+            downloaded.body.byteLength,
+          ))
+        ) {
+          throw new Error(ErrorCodes.MEDIA_STORAGE_LIMIT_EXCEEDED);
+        }
+
+        const stored = await this.storage.putObject({
+          organizationId: data.organizationId,
+          filename: downloaded.name,
+          mimeType,
+          body: downloaded.body,
+        });
+        const asset = await this.repository.createWithVersion(data.organizationId, {
+          name: downloaded.name,
+          mimeType,
+          sizeBytes: stored.sizeBytes,
+          storageKey: stored.storageKey,
+          createdById: data.actorId,
+          clientId: data.clientId,
+          folderId: data.folderId,
+        });
+        await this.repository.setStatus(data.organizationId, asset.id, 'READY');
+        transferred += 1;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Drive import failed';
+        errors.push(`${fileId}: ${message}`);
+      }
+      await job.updateProgress(
+        Math.round(((index + 1) / data.driveFileIds.length) * 100),
+      );
+    }
+
+    if (transferred === 0) {
+      return {
+        downloadUrl: null,
+        error: errors[0] ?? 'No files imported',
+        transferred: 0,
+      };
+    }
+
+    if (errors.length > 0) {
+      this.logger.warn(
+        `Drive import ${job.id} imported ${transferred}/${data.driveFileIds.length}: ${errors.join('; ')}`,
+      );
+    }
+
+    return {
+      downloadUrl: null,
+      error: null,
+      transferred,
+    };
   }
 }
 

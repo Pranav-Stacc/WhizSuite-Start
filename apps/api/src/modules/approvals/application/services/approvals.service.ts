@@ -238,7 +238,61 @@ export class ApprovalsService {
         quorumCount: spec.quorumCount,
       },
       totalSteps: steps.length,
+      steps: steps.map((row) => {
+        const spec = parseApproverSpec(row.approverSpec);
+        return {
+          order: row.order,
+          name: row.name,
+          status: row.status,
+          rule: row.rule,
+          approverUserIds: approverIdsOf(row),
+          quorumCount: spec.quorumCount,
+        };
+      }),
     };
+  }
+
+  async sendReminder(
+    organizationId: string,
+    actorId: string,
+    requestId: string,
+  ): Promise<void> {
+    const request = await this.get(organizationId, requestId);
+    if (request.status !== PENDING) {
+      throw notFound('No pending approval to remind');
+    }
+    const step = [...request.steps]
+      .sort((a, b) => a.order - b.order)
+      .find((s) => s.status === PENDING);
+    if (!step) throw notFound('No pending approval step');
+    const recipientIds = approverIdsOf(step).filter((id) => id !== actorId);
+    if (recipientIds.length === 0) {
+      throw notFound('No approvers to notify');
+    }
+    const title = `${step.name}: ${request.subjectType}`;
+    const reminderKey = `approval.reminder.manual:${request.id}:${Date.now()}`;
+    await this.outbox.write({
+      type: DomainEventTypes.APPROVAL_REMINDER,
+      version: 1,
+      organizationId,
+      payload: {
+        approvalRequestId: request.id,
+        stepId: step.id,
+        title,
+        recipientIds,
+        reminderKey,
+      },
+      actor: { id: actorId, type: 'user' },
+    });
+    await this.audit.record({
+      organizationId,
+      actorId,
+      actorType: 'user',
+      action: 'approvals.remind',
+      entityType: ENTITY_TYPE,
+      entityId: requestId,
+      metadata: { stepId: step.id, recipientCount: recipientIds.length },
+    });
   }
 
   private async notifyPendingStep(

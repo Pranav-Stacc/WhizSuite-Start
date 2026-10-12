@@ -1,7 +1,9 @@
 import 'server-only';
 import type {
+  CreateMediaDriveImportInput,
   CreateMediaDriveTransferInput,
   CreateMediaZipExportInput,
+  GoogleDrivePickerSessionDto,
   MediaDataSourceDto,
   MediaExportJobDto,
   MediaStorageUsageDto,
@@ -85,6 +87,37 @@ export async function createZipExport(input: CreateMediaZipExportInput): Promise
   }
   const session = await requireSession();
   return apiFetch<MediaExportJobDto>(orgPath(session.orgId, 'media/exports/zip'), {
+    method: 'POST',
+    body: input,
+  });
+}
+
+export async function getGoogleDrivePickerSession(
+  connectionId: string,
+): Promise<GoogleDrivePickerSessionDto> {
+  const session = await requireSession();
+  return apiFetch<GoogleDrivePickerSessionDto>(
+    orgPath(session.orgId, `media/data-sources/google-drive/${connectionId}/picker-session`),
+  );
+}
+
+export async function createDriveImport(
+  input: CreateMediaDriveImportInput,
+): Promise<MediaExportJobDto> {
+  if (!isLiveMode) {
+    return {
+      id: 'demo-drive-import',
+      kind: 'DRIVE_IMPORT',
+      status: 'FAILED',
+      progress: 0,
+      downloadUrl: null,
+      error: 'Drive import requires the live workspace',
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+  }
+  const session = await requireSession();
+  return apiFetch<MediaExportJobDto>(orgPath(session.orgId, 'media/imports/drive'), {
     method: 'POST',
     body: input,
   });

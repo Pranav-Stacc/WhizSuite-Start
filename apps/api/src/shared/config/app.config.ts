@@ -300,6 +300,10 @@ export const appConfigSchema = z
     GOOGLE_DRIVE_CLIENT_ID: z.string().default(''),
     GOOGLE_DRIVE_CLIENT_SECRET: z.string().default(''),
     GOOGLE_DRIVE_REDIRECT_URI: z.string().default(''),
+    /** API key for Google Picker (browser file selection). Empty = import picker disabled. */
+    GOOGLE_DRIVE_API_KEY: z.string().default(''),
+    /** Google Cloud project number — optional Picker `appId`. */
+    GOOGLE_CLOUD_PROJECT_NUMBER: z.string().default(''),
     /** Google Calendar OAuth. Empty = connect disabled. May reuse Drive client credentials. */
     GOOGLE_CALENDAR_CLIENT_ID: z.string().default(''),
     GOOGLE_CALENDAR_CLIENT_SECRET: z.string().default(''),

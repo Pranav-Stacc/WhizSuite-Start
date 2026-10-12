@@ -12,36 +12,6 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
 const GIS_MIN_WIDTH = 200;
 const GIS_MAX_WIDTH = 400;
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential: string }) => void;
-            auto_select?: boolean;
-            cancel_on_tap_outside?: boolean;
-          }) => void;
-          renderButton: (
-            parent: HTMLElement,
-            options: {
-              type?: string;
-              theme?: string;
-              size?: string;
-              text?: string;
-              shape?: string;
-              width?: number;
-              logo_alignment?: string;
-            },
-          ) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
-
 type GoogleSignInButtonProps = {
   organizationName?: string;
   organizationSlug?: string;

@@ -22,6 +22,7 @@ import { MediaExportService } from '../../../application/services/media-export.s
 import { MediaStorageService } from '../../../application/services/media-storage.service';
 import {
   BeginGoogleDriveConnectDto,
+  CreateMediaDriveImportDto,
   CreateMediaDriveTransferDto,
   CreateMediaZipExportDto,
 } from '../dto/media-storage.dto';
@@ -63,6 +64,18 @@ export class MediaStorageController {
     );
   }
 
+  @Get('data-sources/google-drive/:connectionId/picker-session')
+  @RequirePermissions(Permissions.FILES_UPLOAD)
+  drivePickerSession(
+    @Param('organizationId') organizationId: string,
+    @Param('connectionId', ParseUUIDPipe) connectionId: string,
+  ) {
+    return this.dataSources.getGoogleDrivePickerSession(
+      requireOrganizationId(organizationId),
+      connectionId,
+    );
+  }
+
   @Post('data-sources/google-drive/:connectionId/disconnect')
   @RequirePermissions(Permissions.INTEGRATIONS_MANAGE)
   disconnectDrive(
@@ -85,6 +98,20 @@ export class MediaStorageController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.exports.enqueueZip(
+      requireOrganizationId(organizationId),
+      user.userId,
+      body,
+    );
+  }
+
+  @Post('imports/drive')
+  @RequirePermissions(Permissions.FILES_UPLOAD)
+  driveImport(
+    @Param('organizationId') organizationId: string,
+    @Body() body: CreateMediaDriveImportDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.exports.enqueueDriveImport(
       requireOrganizationId(organizationId),
       user.userId,
       body,

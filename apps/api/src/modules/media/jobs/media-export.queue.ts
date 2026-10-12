@@ -18,8 +18,20 @@ export type MediaDriveTransferJobPayload = {
   driveFolderId?: string;
 };
 
+export type MediaDriveImportJobPayload = {
+  kind: 'DRIVE_IMPORT';
+  organizationId: string;
+  actorId: string;
+  connectionId: string;
+  driveFileIds: string[];
+  clientId: string;
+  folderId?: string;
+};
+
 export type MediaExportJobPayload =
-  MediaZipExportJobPayload | MediaDriveTransferJobPayload;
+  | MediaZipExportJobPayload
+  | MediaDriveTransferJobPayload
+  | MediaDriveImportJobPayload;
 
 export type MediaExportJobResult = {
   downloadUrl: string | null;

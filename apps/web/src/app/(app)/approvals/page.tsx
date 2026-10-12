@@ -16,10 +16,12 @@ import { toGridTiles } from '@/features/content/components/planner/grid-tiles';
 import { PhoneGrid } from '@/features/content/components/planner/phone-grid';
 import { OpenPostButton, PlannerDrawerProvider } from '@/features/content/components/planner/planner-drawer';
 import { WorkflowActions } from '@/features/content/components/workflow-actions';
-import { ContentApprovalStatus } from '@/features/content/components/content-approval-status';
+import { ContentApprovalPanel } from '@/features/content/components/content-approval-panel';
 import { canApproveContentStep, getContentApprovalSummary } from '@/features/content/services/content-approval.service';
 import { eventsFor, listContent } from '@/features/content/services/content.service';
 import { loadPlanner } from '@/features/content/services/planner.service';
+import { listMembers } from '@/features/team/services/members.service';
+import { isLiveMode } from '@/shared/config/env';
 import { isEditable } from '@/features/content/workflow';
 
 export const metadata: Metadata = { title: t('approvals.title') };
@@ -44,12 +46,14 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const posts = all.filter((p) => p.status !== 'PUBLISHED' && (!clientId || p.clientId === clientId));
   const selected = posts.find((p) => p.id === param(sp, 'post')) ?? defaultQueuePost(AGENCY_QUEUE_GROUPS, posts);
   const selectedClient = selected ? clients.get(selected.clientId) : undefined;
-  const [thread, planner, approvalSummary, canApproveStep] = await Promise.all([
+  const [thread, planner, approvalSummary, canApproveStep, members] = await Promise.all([
     selected ? eventsFor(selected.id) : [],
     selectedClient ? loadPlanner(selectedClient.id) : undefined,
     selected ? getContentApprovalSummary(selected.id) : null,
     selected ? canApproveContentStep(selected.id, session.userId) : false,
+    listMembers().catch(() => []),
   ]);
+  const memberNames = Object.fromEntries(members.map((m) => [m.userId ?? m.id, m.name]));
   const showApproverActions = approver && canApproveStep;
   const hrefs = Object.fromEntries(all.map((p) => [p.id, withQuery(BASE, sp, { post: p.id })]));
 
@@ -88,7 +92,13 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
           }
           actions={
             <>
-              {approvalSummary ? <ContentApprovalStatus summary={approvalSummary} /> : null}
+              {approvalSummary ? (
+                <ContentApprovalPanel
+                  summary={approvalSummary}
+                  memberNames={memberNames}
+                  canRemind={isLiveMode}
+                />
+              ) : null}
               <WorkflowActions post={selected} approver={showApproverActions} size="sm" />
             </>
           }

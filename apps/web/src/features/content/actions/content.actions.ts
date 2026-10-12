@@ -30,7 +30,9 @@ import { listMembers } from '@/features/team/services/members.service';
 import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
 import { toComposerAssets } from '../components/composer-mappers';
 import type { ComposerAsset } from '../components/slide-picker';
+import { openDm, sendMessage } from '@/features/chat/services/chat.service';
 import { listClientContent, recordContentEvent } from '../services/content.service';
+import { sendApprovalReminder } from '../services/content-approval.service';
 import { checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
 
 const DECISION_TARGET: Record<ApprovalAction, ContentStatus> = { APPROVED: 'APPROVED', CHANGES_REQUESTED: 'CHANGES_REQUESTED', REJECTED: 'DRAFT' };
@@ -294,6 +296,32 @@ export async function listComposerLibraryAction(): Promise<ActionResult<Composer
     await authorizeAny(Permissions.FILES_VIEW, Permissions.CONTENT_EDIT, Permissions.CONTENT_CREATE);
     const assets = await listAssets();
     return succeed(toComposerAssets(assets));
+  });
+}
+
+export async function sendApprovalReminderAction(requestId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    await authorize(Permissions.APPROVALS_VIEW);
+    if (!isLiveMode) return fail(t('content.approval.remindLiveOnly'));
+    await sendApprovalReminder(requestId);
+    return succeed(undefined, t('content.approval.remindSent'));
+  });
+}
+
+export async function shareContentInDmAction(input: {
+  contentId: string;
+  userId: string;
+  title: string;
+}): Promise<ActionResult<{ href: string }>> {
+  return guarded(async () => {
+    await authorize(Permissions.CHAT_CREATE_ROOM);
+    if (!isLiveMode) return fail(t('content.share.dm.liveOnly'));
+    const room = await openDm(input.userId);
+    const href = `/chat?room=${room.id}`;
+    const body = t('content.share.dm.message', { title: input.title, href: `/content/${input.contentId}` });
+    await sendMessage(room.id, body);
+    await refreshData('chat');
+    return succeed({ href });
   });
 }
 

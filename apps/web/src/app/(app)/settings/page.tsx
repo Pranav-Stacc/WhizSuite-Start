@@ -21,7 +21,10 @@ import { PreferenceRow } from '@/features/settings/components/preference-row';
 import { ProfileForm } from '@/features/settings/components/profile-form';
 import { DataSourcesPanel } from '@/features/media/components/data-sources-panel';
 import { StorageUsageCard } from '@/features/media/components/storage-usage-card';
+import type { Client } from '@/features/clients/data/clients.repository';
+import { clientsById } from '@/features/clients/services/clients.service';
 import { listDataSources, getStorageUsage } from '@/features/media/services/storage.service';
+import { loadIf } from '@/shared/auth/permissions';
 import { getGoogleCalendarConnection } from '@/features/calendar/services/google-calendar.service';
 import { GoogleCalendarSettings } from '@/features/settings/components/google-calendar-settings';
 import { isLiveMode } from '@/shared/config/env';
@@ -53,17 +56,24 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const access = await getAccessCapabilities();
   const accessLabel = sessionAccessLabel(session.role, access?.roles ?? []);
   const canViewWorkspaces = TENANCY_WORKSPACE_UI_ENABLED && granted.has(Permissions.WORKSPACES_VIEW);
-  const [profile, notificationPrefs, theme, storageUsage, dataSources, googleCalendar, tenancyWorkspaces, activeWorkspaceId] =
+  const [profile, notificationPrefs, theme, storageUsage, dataSources, importClients, googleCalendar, tenancyWorkspaces, activeWorkspaceId] =
     await Promise.all([
       getProfile(session),
       tab === 'notifications' ? getNotificationPreferences(session.userId) : Promise.resolve([]),
       getTheme(),
       tab === 'storage' ? getStorageUsage() : Promise.resolve(null),
       tab === 'storage' ? listDataSources() : Promise.resolve([]),
+      tab === 'storage'
+        ? loadIf(Permissions.CLIENTS_VIEW, clientsById, new Map<string, Client>())
+        : Promise.resolve(new Map<string, Client>()),
       tab === 'storage' ? getGoogleCalendarConnection() : Promise.resolve(null),
       tab === 'workspaces' && canViewWorkspaces ? listTenancyWorkspaces() : Promise.resolve([]),
       tab === 'workspaces' && canViewWorkspaces ? getActiveWorkspaceId() : Promise.resolve(''),
     ]);
+  const importClientOptions = [...importClients.values()].map((client) => ({
+    id: client.id,
+    name: client.name,
+  }));
   const displayName = profile.name;
   const driveFlash = param(sp, 'drive');
   const gcalFlash = param(sp, 'gcal');
@@ -165,6 +175,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               sources={dataSources}
               canManage={granted.has(Permissions.INTEGRATIONS_MANAGE)}
               canTransfer={granted.has(Permissions.FILES_UPLOAD)}
+              canImport={granted.has(Permissions.FILES_UPLOAD) && isLiveMode}
+              importClients={importClientOptions}
             />
           </div>
         </div>
