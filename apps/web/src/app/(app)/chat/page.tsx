@@ -38,19 +38,28 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     buildChatMentionCandidates(session.userId),
   ]);
 
+  let whizSessionId: string | undefined;
   let whizProps = null;
-  if (canUseWhiz && whizActive) {
+  let whizSessions: Awaited<ReturnType<typeof listAgentSessions>> = [];
+
+  if (canUseWhiz) {
     const orgId = session.orgId!;
-    let sessions = await listAgentSessions(orgId).catch(() => []);
-    if (sessions.length === 0) {
+    whizSessions = await listAgentSessions(orgId).catch(() => []);
+    if (whizSessions.length === 0) {
       try {
         const created = await createAgentSession(orgId);
-        sessions = [created];
+        whizSessions = [created];
         agentSessionId = created.id;
       } catch {
-        sessions = [];
+        whizSessions = [];
       }
     }
+    whizSessionId = whizSessions[0]?.id;
+  }
+
+  if (canUseWhiz && whizActive) {
+    const orgId = session.orgId!;
+    const sessions = whizSessions;
     if (!agentSessionId) agentSessionId = sessions[0]?.id;
 
     const canManageAgents = await can(Permissions.AI_AGENTS_MANAGE);
@@ -138,6 +147,8 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         showWhiz={canUseWhiz}
         whizActive={whizActive}
         whiz={whizProps}
+        whizSessionId={whizSessionId}
+        canUseWhiz={canUseWhiz}
       />
     </div>
   );

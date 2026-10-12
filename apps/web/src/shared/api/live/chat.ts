@@ -64,6 +64,7 @@ export async function sendChatMessage(
   }>,
   attachments?: Array<{ kind: string; assetId?: string; url?: string; fileName?: string }>,
   replyToId?: string,
+  whizClientStream?: boolean,
 ): Promise<ChatMessageDto> {
   const org = await orgId();
   return apiFetch<ChatMessageDto>(`${orgPath(org, 'chat/rooms')}/${roomId}/messages`, {
@@ -73,7 +74,20 @@ export async function sendChatMessage(
       ...(mentions?.length ? { mentions } : {}),
       ...(attachments?.length ? { attachments } : {}),
       ...(replyToId ? { replyToId } : {}),
+      ...(whizClientStream ? { whizClientStream: true } : {}),
     },
+  });
+}
+
+export async function postWhizRoomReply(
+  roomId: string,
+  triggerMessageId: string,
+  body: string,
+): Promise<ChatMessageDto> {
+  const org = await orgId();
+  return apiFetch<ChatMessageDto>(`${orgPath(org, 'chat/rooms')}/${roomId}/whiz-reply`, {
+    method: 'POST',
+    body: { triggerMessageId, body },
   });
 }
 

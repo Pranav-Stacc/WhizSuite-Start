@@ -58,6 +58,8 @@ export function ChatWorkspace({
   whizActive = false,
   showWhiz = false,
   whiz,
+  whizSessionId,
+  canUseWhiz = false,
 }: {
   rooms: ChatRoomDto[];
   selected: ChatRoomDto | null;
@@ -73,6 +75,9 @@ export function ChatWorkspace({
   /** Pin Whiz in the conversation list (requires AI_CHAT). */
   showWhiz?: boolean;
   whiz?: WhizAgentProps | null;
+  /** Agent session for @Whiz mentions inside room threads. */
+  whizSessionId?: string;
+  canUseWhiz?: boolean;
 }) {
   const titles = roomTitles ?? {};
   const showDetail = whizActive || selected != null;
@@ -222,6 +227,8 @@ export function ChatWorkspace({
               membersById={membersById}
               mentionCandidates={mentionCandidates}
               canPost={selected.viewerCanPost}
+              whizSessionId={whizSessionId}
+              canUseWhiz={canUseWhiz}
             />
           </div>
         ) : (

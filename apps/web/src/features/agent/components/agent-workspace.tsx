@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type {
   AgentDefinitionDto,
@@ -8,13 +8,10 @@ import type {
   AgentRunDto,
   AgentScheduleDto,
   AgentSessionDto,
-  AgentStreamEvent,
 } from '@agency-os/contracts';
 import {
   Bot,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   Clock,
   FileText,
   List,
@@ -32,18 +29,14 @@ import {
   rejectPendingAction,
 } from '../actions/agent.actions';
 import { AgentMarkdown } from './agent-markdown';
+import { AgentStreamingBubble } from './agent-streaming-bubble';
+import { useAgentStream } from '../hooks/use-agent-stream';
 import {
   AGENT_ATTACHMENT_ACCEPT,
   appendAttachmentsToMessage,
   type AgentAttachmentReady,
   uploadAgentAttachment,
 } from '../utils/agent-attachment-upload';
-import {
-  applyStreamEvent,
-  formatStepDetail,
-  formatToolId,
-  type StreamState,
-} from '../utils/agent-stream-state';
 import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { Badge } from '@/shared/ui/badge';
@@ -58,40 +51,7 @@ interface Message {
   createdAt: string;
 }
 
-function processSseBuffer(
-  buffer: string,
-  onEvent: (event: AgentStreamEvent) => void,
-): string {
-  let rest = buffer;
-  let boundary = rest.indexOf('\n\n');
-  while (boundary !== -1) {
-    const complete = rest.slice(0, boundary);
-    rest = rest.slice(boundary + 2);
-    for (const event of parseSseEvents(complete)) {
-      onEvent(event);
-    }
-    boundary = rest.indexOf('\n\n');
-  }
-  return rest;
-}
-
-function parseSseEvents(chunk: string): AgentStreamEvent[] {
-  const events: AgentStreamEvent[] = [];
-  for (const part of chunk.split('\n\n')) {
-    const line = part
-      .split('\n')
-      .map((l) => l.trim())
-      .find((l) => l.startsWith('data:'));
-    const payload = line?.slice(5).trim();
-    if (!payload) continue;
-    try {
-      events.push(JSON.parse(payload) as AgentStreamEvent);
-    } catch {
-      continue;
-    }
-  }
-  return events;
-}
+const NEAR_BOTTOM_PX = 140;
 
 export function AgentWorkspace({
   sessions,
@@ -121,16 +81,14 @@ export function AgentWorkspace({
   const [agentDefinitionId, setAgentDefinitionId] = useState('');
   const [messages, setMessages] = useState(initialMessages);
   const [localPending, setLocalPending] = useState(pendingActions);
-  const [stream, setStream] = useState<StreamState | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { stream, error, isStreaming, runStream, toggleStep, setError } = useAgentStream();
   const [isPendingAction, startTransition] = useTransition();
   const [sessionsOpen, setSessionsOpen] = useState(false);
   const [attachments, setAttachments] = useState<AgentAttachmentReady[]>([]);
   const [uploadingAttach, setUploadingAttach] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isStreaming = stream !== null;
+  const stickToBottomRef = useRef(true);
 
   useEffect(() => {
     setMessages(initialMessages);
@@ -140,10 +98,25 @@ export function AgentWorkspace({
     setLocalPending(pendingActions);
   }, [pendingActions]);
 
-  useEffect(() => {
+  const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
+  useLayoutEffect(() => {
+    stickToBottomRef.current = true;
+    scrollToBottom('auto');
+  }, [sessionId]);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const nearBottom = distanceFromBottom <= NEAR_BOTTOM_PX;
+    if (stickToBottomRef.current || nearBottom) {
+      scrollToBottom(stickToBottomRef.current ? 'auto' : 'smooth');
+    }
   }, [messages, stream?.text, stream?.status, stream?.steps.length]);
 
   const suggestions = [
@@ -190,73 +163,11 @@ export function AgentWorkspace({
     setDraft('');
     setAttachments([]);
     setError(null);
+    stickToBottomRef.current = true;
     appendMessage('user', messageBody);
-    setStream({ status: t('agent.thinking'), text: '', steps: [] });
 
-    let finalText = '';
-    const handleEvent = (event: AgentStreamEvent) => {
-      if (event.type === 'done') {
-        finalText = event.response || finalText;
-        return 'done' as const;
-      }
-      if (event.type === 'error') {
-        throw new Error(event.message);
-      }
-      setStream((prev) => {
-        const next = applyStreamEvent(prev, event);
-        if (event.type === 'summary.delta') {
-          finalText = next.text;
-        }
-        return next;
-      });
-      return 'continue' as const;
-    };
-
-    try {
-      const res = await fetch('/api/agent/stream', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          message: messageBody,
-          agentDefinitionId: agentDefinitionId || undefined,
-        }),
-      });
-      if (!res.ok || !res.body) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(detail || t('agent.error.stream'));
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let finished = false;
-
-      while (!finished) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        buffer = processSseBuffer(buffer, (event) => {
-          const outcome = handleEvent(event);
-          if (outcome === 'done') finished = true;
-        });
-      }
-
-      buffer += decoder.decode();
-      if (buffer.trim()) {
-        processSseBuffer(`${buffer}\n\n`, (event) => {
-          const outcome = handleEvent(event);
-          if (outcome === 'done') finished = true;
-        });
-      }
-
-      if (finalText) appendMessage('assistant', finalText);
-    } catch (err) {
-      if (finalText) appendMessage('assistant', finalText);
-      setError(err instanceof Error ? err.message : t('agent.error.stream'));
-    } finally {
-      setStream(null);
-    }
+    const finalText = await runStream(sessionId, messageBody, agentDefinitionId || undefined);
+    if (finalText) appendMessage('assistant', finalText);
   };
 
   return (
@@ -367,6 +278,12 @@ export function AgentWorkspace({
             className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5"
             aria-live="polite"
             aria-busy={isStreaming}
+            onScroll={() => {
+              const el = scrollRef.current;
+              if (!el) return;
+              const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+              stickToBottomRef.current = distanceFromBottom <= NEAR_BOTTOM_PX;
+            }}
           >
             {messages.length === 0 && !stream ? (
               <div className="flex h-full min-h-[16rem] flex-col items-center justify-center gap-6">
@@ -393,20 +310,7 @@ export function AgentWorkspace({
                 {messages.map((m) => (
                   <MessageBubble key={m.id} role={m.role} content={m.content} />
                 ))}
-                {stream ? (
-                  <StreamingBubble
-                    stream={stream}
-                    onToggleStep={(index) =>
-                      setStream((prev) => {
-                        if (!prev) return prev;
-                        const steps = prev.steps.map((step, i) =>
-                          i === index ? { ...step, expanded: !step.expanded } : step,
-                        );
-                        return { ...prev, steps };
-                      })
-                    }
-                  />
-                ) : null}
+                {stream ? <AgentStreamingBubble stream={stream} onToggleStep={toggleStep} /> : null}
                 {error ? (
                   <div
                     role="alert"
@@ -417,7 +321,6 @@ export function AgentWorkspace({
                 ) : null}
               </>
             )}
-            <div ref={bottomRef} />
           </div>
 
           {localPending.length > 0 ? (
@@ -609,108 +512,13 @@ function MessageBubble({ role, content }: { role: string; content: string }) {
         className={cn(
           'rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm',
           isUser
-            ? 'whitespace-pre-wrap rounded-tr-md bg-primary text-primary-contrast'
-            : 'rounded-tl-md border border-border-soft/70 bg-surface-2/70 text-foreground',
+            ? 'whitespace-pre-wrap rounded-tr-md border border-sky-500/25 bg-sky-500/12 text-foreground'
+            : 'rounded-tl-md border border-sky-500/35 bg-gradient-to-br from-sky-500/12 to-surface-2/80 text-foreground',
         )}
       >
-        <AgentMarkdown content={content} className={isUser ? 'agent-md-on-primary' : undefined} />
+        <AgentMarkdown content={content} />
       </div>
     </div>
-  );
-}
-
-function StreamingBubble({
-  stream,
-  onToggleStep,
-}: {
-  stream: StreamState;
-  onToggleStep: (index: number) => void;
-}) {
-  const showCursor = stream.text.length > 0 && stream.status === t('agent.phase.summarizing');
-
-  return (
-    <div className="mr-auto max-w-[90%]">
-      <div className="rounded-2xl rounded-tl-md border border-border-soft/70 bg-surface-2/70 px-4 py-3 text-sm shadow-sm">
-        <div className="mb-3 flex items-center gap-3 text-muted">
-          {stream.text ? null : <TypingDots />}
-          <span className="text-xs font-medium">{stream.statusDetail ?? stream.status}</span>
-        </div>
-
-        {stream.steps.length > 0 ? (
-          <div className="mb-3 space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
-              {t('agent.stream.steps')}
-            </p>
-            {stream.steps.map((step, index) => {
-              const detail = formatStepDetail(step);
-              return (
-                <div key={`${step.callId ?? step.toolId}-${index}`} className="rounded-lg border border-border-soft/60 bg-surface/40">
-                  <button
-                    type="button"
-                    className="flex w-full items-start gap-2 px-2.5 py-2 text-left"
-                    onClick={() => detail && onToggleStep(index)}
-                    disabled={!detail}
-                  >
-                    {step.running ? (
-                      <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-sky-400" />
-                    ) : step.ok ? (
-                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-400" />
-                    ) : (
-                      <XCircle className="mt-0.5 size-4 shrink-0 text-red-400" />
-                    )}
-                    <span className="min-w-0 flex-1 text-xs font-medium">{formatToolId(step.toolId)}</span>
-                    {detail ? (
-                      step.expanded ? (
-                        <ChevronDown className="size-4 shrink-0 text-muted" />
-                      ) : (
-                        <ChevronRight className="size-4 shrink-0 text-muted" />
-                      )
-                    ) : null}
-                  </button>
-                  {step.expanded && detail ? (
-                    <pre className="overflow-x-auto border-t border-border-soft/50 px-2.5 py-2 text-[11px] leading-relaxed text-muted">
-                      {detail}
-                    </pre>
-                  ) : null}
-                  {!step.expanded && step.error ? (
-                    <p className="px-2.5 pb-2 text-[11px] text-red-300">{step.error}</p>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
-
-        {stream.text ? (
-          <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted">
-              {t('agent.stream.answer')}
-            </p>
-            <AgentMarkdown content={stream.text} />
-            {showCursor ? (
-              <span
-                aria-hidden
-                className="ml-0.5 inline-block h-4 w-1.5 animate-pulse bg-sky-400/80 align-middle"
-              />
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function TypingDots() {
-  return (
-    <span aria-hidden className="flex items-center gap-1">
-      {[0, 150, 300].map((delay) => (
-        <span
-          key={delay}
-          className="size-1.5 animate-bounce rounded-full bg-sky-400/80"
-          style={{ animationDelay: `${delay}ms` }}
-        />
-      ))}
-    </span>
   );
 }
 

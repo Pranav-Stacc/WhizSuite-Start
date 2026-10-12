@@ -303,6 +303,24 @@ export class SendMessageDto {
   @ValidateNested({ each: true })
   @Type(() => ChatMentionDto)
   mentions?: ChatMentionDto[];
+
+  /** When true, the browser streams @Whiz and posts the reply — skip server-side invoke. */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  whizClientStream?: boolean;
+}
+
+export class WhizRoomReplyDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  triggerMessageId!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(CHAT_MESSAGE_MAX_LENGTH)
+  body!: string;
 }
 
 export class EditMessageDto {

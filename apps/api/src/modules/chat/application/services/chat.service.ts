@@ -807,7 +807,7 @@ export class ChatService {
       after: { roomId, type: message.type },
     });
 
-    if (this.mentionsWhiz(input)) {
+    if (this.mentionsWhiz(input) && !input.whizClientStream) {
       void this.invokeWhizInRoom(organizationId, user, roomId, dto).catch(
         (error: unknown) => {
           this.logger.error(
@@ -940,6 +940,86 @@ export class ChatService {
       entityId: message.id,
       after: { roomId, type: message.type, triggerMessageId: trigger.id },
     });
+  }
+
+  /** Persists a @Whiz reply after the browser finishes client-side streaming. */
+  async postWhizRoomReply(
+    organizationId: string,
+    user: AuthenticatedUser,
+    roomId: string,
+    triggerMessageId: string,
+    replyBody: string,
+  ): Promise<ChatMessageDto> {
+    await this.requireMembership(organizationId, roomId, user.userId);
+    const trimmed = replyBody.trim();
+    if (!trimmed) {
+      throw problem(
+        HttpStatus.BAD_REQUEST,
+        'Reply body required',
+        ErrorCodes.VALIDATION_FAILED,
+      );
+    }
+
+    const trigger = await this.repository.findMessage(
+      organizationId,
+      roomId,
+      triggerMessageId,
+    );
+    if (!trigger) {
+      throw notFound('Message', triggerMessageId);
+    }
+
+    const message = await this.repository.createMessage(
+      organizationId,
+      roomId,
+      {
+        senderId: null,
+        type: 'SYSTEM',
+        body: trimmed,
+        replyToId: triggerMessageId,
+      },
+      previewOf(trimmed, false),
+    );
+
+    const dto = toMessageDto(message, user.userId);
+    this.realtime.publishToRoom(
+      chatRoomChannel(organizationId, roomId),
+      RealtimeEvents.CHAT_MESSAGE_CREATED,
+      dto,
+    );
+
+    const members = await this.repository.listActiveMemberUserIds(
+      organizationId,
+      roomId,
+    );
+    const recipientIds = members.map((m) => m.userId);
+
+    await this.outbox.write({
+      type: DomainEventTypes.CHAT_MESSAGE_CREATED,
+      version: 1,
+      organizationId,
+      payload: {
+        roomId,
+        messageId: message.id,
+        senderId: WHIZ_AGENT_TARGET_ID,
+        preview: previewOf(trimmed, false),
+        recipientIds,
+        mentionedUserIds: [] as string[],
+      },
+      actor: { id: user.userId, type: 'user' },
+    });
+
+    await this.audit.record({
+      organizationId,
+      actorId: user.userId,
+      actorType: 'user',
+      action: 'chat/messages.whiz_reply',
+      entityType: ENTITY_MESSAGE,
+      entityId: message.id,
+      after: { roomId, type: message.type, triggerMessageId, clientStream: true },
+    });
+
+    return dto;
   }
 
   async editMessage(

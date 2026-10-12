@@ -1,7 +1,11 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ChatMessageDto } from '@agency-os/contracts';
+import { AgentStreamingBubble } from '@/features/agent/components/agent-streaming-bubble';
+import { useAgentStream } from '@/features/agent/hooks/use-agent-stream';
+import { postWhizRoomReplyAction } from '../actions/chat.actions';
+import { buildRoomWhizPrompt, mentionsWhiz } from '../utils/whiz-mention';
 import { ChatMessageList } from './chat-message-list';
 import { SendMessageForm, type MentionCandidate } from './send-message-form';
 
@@ -14,6 +18,8 @@ export function ChatRoomThread({
   membersById,
   mentionCandidates = [],
   canPost,
+  whizSessionId,
+  canUseWhiz = false,
 }: {
   roomId: string;
   messages: ChatMessageDto[];
@@ -21,11 +27,15 @@ export function ChatRoomThread({
   membersById: Map<string, string> | Record<string, string>;
   mentionCandidates?: MentionCandidate[];
   canPost: boolean;
+  /** Agent session used when @Whiz is mentioned in this room. */
+  whizSessionId?: string;
+  canUseWhiz?: boolean;
 }) {
   const [replyTo, setReplyTo] = useState<ChatMessageDto | null>(null);
   const [localMessages, setLocalMessages] = useState(messages);
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
+  const { stream, error: streamError, isStreaming, runStream, toggleStep } = useAgentStream();
   const names =
     membersById instanceof Map
       ? membersById
@@ -54,7 +64,24 @@ export function ChatRoomThread({
     if (stickToBottomRef.current || nearBottom) {
       scrollToBottom(stickToBottomRef.current ? 'auto' : 'smooth');
     }
-  }, [localMessages]);
+  }, [localMessages, stream?.text, stream?.status, stream?.steps.length]);
+
+  const runWhizStream = useCallback(
+    async (trigger: ChatMessageDto) => {
+      if (!whizSessionId || !canUseWhiz) return;
+      stickToBottomRef.current = true;
+      const prompt = buildRoomWhizPrompt(roomId, trigger.id, trigger.body);
+      const finalText = await runStream(whizSessionId, prompt);
+      const reply =
+        finalText.trim() ||
+        'Whiz could not complete that right now. Try again or open the Agent screen.';
+      const result = await postWhizRoomReplyAction(roomId, trigger.id, reply);
+      if (result.ok) {
+        setLocalMessages((current) => [...current, result.message]);
+      }
+    },
+    [canUseWhiz, roomId, runStream, whizSessionId],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -76,6 +103,19 @@ export function ChatRoomThread({
           onReply={setReplyTo}
           activeReplyId={replyTo?.id}
         />
+        {stream ? (
+          <div className="mt-3">
+            <AgentStreamingBubble stream={stream} onToggleStep={toggleStep} />
+          </div>
+        ) : null}
+        {streamError ? (
+          <div
+            role="alert"
+            className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+          >
+            {streamError}
+          </div>
+        ) : null}
       </div>
       {canPost ? (
         <div className="shrink-0 border-t border-border-soft/80 bg-surface/40 p-3 sm:p-4">
@@ -85,9 +125,14 @@ export function ChatRoomThread({
             replyTo={replyTo}
             onClearReply={() => setReplyTo(null)}
             membersById={names}
-            onSent={(message) => {
+            canUseWhiz={canUseWhiz}
+            whizSessionReady={Boolean(whizSessionId)}
+            onSent={(message, meta) => {
               stickToBottomRef.current = true;
               setLocalMessages((current) => [...current, message]);
+              if (meta?.whizClientStream && !isStreaming) {
+                void runWhizStream(message);
+              }
             }}
           />
         </div>

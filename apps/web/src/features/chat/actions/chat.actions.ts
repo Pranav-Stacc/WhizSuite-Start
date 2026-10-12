@@ -11,7 +11,7 @@ import { fail, succeed, type ActionResult } from '@/shared/data/action-result';
 import { parseInput } from '@/shared/data/action-utils';
 import { refreshData, refreshPage } from '@/shared/data/refresh';
 import { t } from '@/shared/i18n/t';
-import { openClientRoom, openDm, openGroup, sendMessage } from '../services/chat.service';
+import { openClientRoom, openDm, openGroup, postWhizReply, sendMessage } from '../services/chat.service';
 
 export interface ChatMentionPayload {
   type: ChatMentionType;
@@ -35,11 +35,33 @@ export async function sendChatMessageAction(
   mentions: ChatMentionPayload[] = [],
   replyToId?: string,
   attachments: ChatAttachmentInput[] = [],
+  whizClientStream?: boolean,
 ) {
   await authorize(Permissions.CHAT_SEND);
   const trimmed = body.trim();
   if (!trimmed && attachments.length === 0) return { ok: false as const, error: 'empty' };
-  const message = await sendMessage(roomId, trimmed, mentions, replyToId, attachments);
+  const message = await sendMessage(
+    roomId,
+    trimmed,
+    mentions,
+    replyToId,
+    attachments,
+    whizClientStream,
+  );
+  void refreshData('chat');
+  return { ok: true as const, message };
+}
+
+export async function postWhizRoomReplyAction(
+  roomId: string,
+  triggerMessageId: string,
+  body: string,
+) {
+  await authorize(Permissions.AI_CHAT);
+  await authorize(Permissions.CHAT_SEND);
+  const trimmed = body.trim();
+  if (!trimmed) return { ok: false as const, error: 'empty' };
+  const message = await postWhizReply(roomId, triggerMessageId, trimmed);
   void refreshData('chat');
   return { ok: true as const, message };
 }

@@ -36,6 +36,7 @@ import {
   groupMentionCandidates,
   mentionQueryAtCaret,
 } from '../utils/mention-utils';
+import { mentionsWhiz } from '../utils/whiz-mention';
 
 export interface MentionCandidate {
   id: string;
@@ -101,13 +102,20 @@ export function SendMessageForm({
   onClearReply,
   membersById,
   onSent,
+  canUseWhiz = false,
+  whizSessionReady = false,
 }: {
   roomId: string;
   mentionCandidates?: MentionCandidate[];
   replyTo?: ChatMessageDto | null;
   onClearReply?: () => void;
   membersById?: Map<string, string>;
-  onSent?: (message: ChatMessageDto) => void;
+  onSent?: (
+    message: ChatMessageDto,
+    meta?: { whizClientStream?: boolean },
+  ) => void;
+  canUseWhiz?: boolean;
+  whizSessionReady?: boolean;
 }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -209,14 +217,23 @@ export function SendMessageForm({
         const mentions = extractMentions(body, candidates);
         const replyId = replyTo?.id;
         const payload = attachments.map(toChatAttachmentPayload);
+        const whizClientStream =
+          canUseWhiz && whizSessionReady && mentionsWhiz(value, mentions);
         startTransition(async () => {
-          const result = await sendChatMessageAction(roomId, value, mentions, replyId, payload);
+          const result = await sendChatMessageAction(
+            roomId,
+            value,
+            mentions,
+            replyId,
+            payload,
+            whizClientStream,
+          );
           if (result.ok) {
             setBody('');
             setAttachments([]);
             setMentionQuery(null);
             onClearReply?.();
-            onSent?.(result.message);
+            onSent?.(result.message, whizClientStream ? { whizClientStream: true } : undefined);
             queueMicrotask(() => inputRef.current?.focus({ preventScroll: true }));
           }
         });

@@ -10,6 +10,7 @@ import {
   listChatMessages,
   listChatRooms,
   markChatRead,
+  postWhizRoomReply,
   sendChatMessage,
 } from '@/shared/api/live/chat';
 import {
@@ -68,8 +69,11 @@ export async function sendMessage(
     mimeType?: string;
     sizeBytes?: number;
   }> = [],
+  whizClientStream?: boolean,
 ): Promise<ChatMessageDto> {
-  if (isLiveMode) return sendChatMessage(roomId, body, mentions, attachments, replyToId);
+  if (isLiveMode) {
+    return sendChatMessage(roomId, body, mentions, attachments, replyToId, whizClientStream);
+  }
   const message = await chatMessagesRepository.create({
     roomId,
     senderId: 'm-aarav',
@@ -157,6 +161,27 @@ export async function openClientRoom(clientId: string, name: string): Promise<Ch
     memberUserIds: ['m-aarav'],
   });
   return toRoomDto(created);
+}
+
+export async function postWhizReply(
+  roomId: string,
+  triggerMessageId: string,
+  body: string,
+): Promise<ChatMessageDto> {
+  if (isLiveMode) return postWhizRoomReply(roomId, triggerMessageId, body);
+  const message = await chatMessagesRepository.create({
+    roomId,
+    senderId: null,
+    body,
+    replyToId: triggerMessageId,
+    createdAt: new Date().toISOString(),
+    deletedAt: null,
+  });
+  await chatRoomsRepository.update(roomId, {
+    lastMessageAt: message.createdAt,
+    lastMessagePreview: body.slice(0, 280),
+  });
+  return { ...toMessageDto(message), type: 'SYSTEM', senderId: null };
 }
 
 export async function markRead(roomId: string, messageId: string): Promise<void> {

@@ -34,6 +34,7 @@ import {
   TypingDto,
   UpdateMembershipDto,
   UpdateRoomDto,
+  WhizRoomReplyDto,
 } from '../dto/chat.dto';
 
 @ApiTags('chat')
@@ -222,6 +223,23 @@ export class ChatController {
       user,
       roomId,
       body,
+    );
+  }
+
+  @Post('rooms/:roomId/whiz-reply')
+  @RequirePermissions(Permissions.AI_CHAT, Permissions.CHAT_SEND)
+  postWhizReply(
+    @Param('organizationId') organizationId: string,
+    @Param('roomId', ParseUUIDPipe) roomId: string,
+    @Body() body: WhizRoomReplyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.postWhizRoomReply(
+      requireOrganizationId(organizationId),
+      user,
+      roomId,
+      body.triggerMessageId,
+      body.body,
     );
   }
 
