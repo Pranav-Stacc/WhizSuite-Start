@@ -233,7 +233,7 @@ export function AgentWorkspace({
                   {selectedSession?.title ?? t('agent.title')}
                 </p>
                 <p className="text-[11px] text-muted">
-                  {isStreaming ? stream.status : t('agent.coverage')}
+                  {isStreaming ? stream?.status : t('agent.coverage')}
                 </p>
               </div>
             </div>

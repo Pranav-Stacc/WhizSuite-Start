@@ -966,7 +966,7 @@ export class ChatService {
       triggerMessageId,
     );
     if (!trigger) {
-      throw notFound('Message', triggerMessageId);
+      throw notFound(`Message ${triggerMessageId} not found`);
     }
 
     const message = await this.repository.createMessage(

@@ -24,16 +24,22 @@ export function isAgentAttachmentFile(file: File): boolean {
   return type === 'application/pdf';
 }
 
+/** Stable attachment URI the agent runtime resolves via media.download_url. */
+export function agentAttachmentUri(assetId: string): string {
+  return `attachment://${assetId}`;
+}
+
 export function appendAttachmentsToMessage(
   text: string,
   attachments: AgentAttachmentReady[],
 ): string {
   let out = text.trim();
   for (const att of attachments) {
+    const uri = agentAttachmentUri(att.assetId);
     if (att.mimeType.startsWith('image/')) {
-      out += `${out ? '\n\n' : ''}![${att.name}](${att.url})`;
+      out += `${out ? '\n\n' : ''}![${att.name}](${uri})`;
     } else {
-      out += `${out ? '\n\n' : ''}[${att.name}](${att.url})`;
+      out += `${out ? '\n\n' : ''}[${att.name}](${uri})`;
     }
   }
   return out;

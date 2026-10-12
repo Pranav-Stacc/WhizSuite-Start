@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Circle, Sparkles, X } from 'lucide-react';
 import type { SetupProgress, SetupStepId } from '../types';
+import { dismissSetupFloating, isSetupFloatingDismissed } from '../utils/setup-storage';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui/button';
 import { Progress } from '@/shared/ui/feedback';
-
-const DISMISS_KEY = 'agency-workspace-setup-dismissed';
 
 const STEP_LABEL: Record<SetupStepId, MessageKey> = {
   roles: 'setup.step.roles',
@@ -19,31 +18,30 @@ const STEP_LABEL: Record<SetupStepId, MessageKey> = {
 };
 
 interface WorkspaceSetupFloatingProps {
+  orgId: string;
   progress: SetupProgress;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onStartTour: () => void;
 }
 
-export function WorkspaceSetupFloating({ progress, open, onOpenChange, onStartTour }: WorkspaceSetupFloatingProps) {
+export function WorkspaceSetupFloating({
+  orgId,
+  progress,
+  open,
+  onOpenChange,
+  onStartTour,
+}: WorkspaceSetupFloatingProps) {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(DISMISS_KEY) === '1');
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
+    setDismissed(isSetupFloatingDismissed(orgId));
+  }, [orgId]);
 
   if (dismissed) return null;
 
   const dismiss = () => {
-    try {
-      localStorage.setItem(DISMISS_KEY, '1');
-    } catch {
-      /* ignore */
-    }
+    dismissSetupFloating(orgId);
     setDismissed(true);
     onOpenChange(false);
   };

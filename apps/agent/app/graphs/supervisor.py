@@ -11,6 +11,7 @@ from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
 from app.config import settings
+from app.message_attachments import build_human_message
 from app.tools.nest_client import NestCapabilityClient
 from app.tools.tool_executor import execute_tools_stream
 
@@ -330,13 +331,14 @@ async def run_supervisor_graph_stream(
 
     yield {"type": "status", "phase": "planning", "detail": "Planning the next steps"}
 
+    human = await build_human_message(message, client)
     plan_messages: list[BaseMessage] = [
         SystemMessage(content=planner_prompt),
         *_history_messages(history),
+        human,
         HumanMessage(
             content=(
-                f"User request: {message}\n\n"
-                f"Available tools (ranked for this request):\n"
+                "Available tools (ranked for this request):\n"
                 f"{json.dumps(compact_tools(ranked), indent=2)[:18000]}"
             )
         ),

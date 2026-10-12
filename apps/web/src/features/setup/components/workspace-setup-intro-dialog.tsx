@@ -10,7 +10,7 @@ import { Progress } from '@/shared/ui/feedback';
 interface WorkspaceSetupIntroDialogProps {
   open: boolean;
   progress: SetupProgress;
-  onOpenChange: (open: boolean) => void;
+  onDismiss: () => void;
   onStartTour: () => void;
   onShowChecklist: () => void;
 }
@@ -18,20 +18,23 @@ interface WorkspaceSetupIntroDialogProps {
 export function WorkspaceSetupIntroDialog({
   open,
   progress,
-  onOpenChange,
+  onDismiss,
   onStartTour,
   onShowChecklist,
 }: WorkspaceSetupIntroDialogProps) {
   return (
     <Modal
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(next) => {
+        if (!next) onDismiss();
+      }}
+      onClose={onDismiss}
       title={t('setup.title')}
       description={t('setup.intro.desc')}
       size="md"
       footer={
         <>
-          <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="ghost" size="sm" onClick={onDismiss}>
             {t('setup.intro.later')}
           </Button>
           <Button type="button" variant="secondary" size="sm" onClick={onShowChecklist}>

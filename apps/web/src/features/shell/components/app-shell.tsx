@@ -57,7 +57,7 @@ export async function AppShell({ session, children }: { session: Session; childr
     <div className="min-h-dvh">
       <WebPushPermissionPrompt enabled={isLiveMode} />
       <WebPushRegistrar enabled={isLiveMode} />
-      <WorkspaceSetupJourney progress={setupProgress} />
+      <WorkspaceSetupJourney progress={setupProgress} orgId={session.orgId!} />
       <a href="#main" className="sr-only z-[100] rounded-lg bg-primary px-4 py-2 font-medium text-primary-contrast focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         {t('shell.skip')}
       </a>

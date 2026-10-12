@@ -14,6 +14,8 @@ const MODAL_SIZES = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-
 interface ModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Called when the user closes via the header X (in addition to onOpenChange). */
+  onClose?: () => void;
   title: string;
   description?: string;
   children: ReactNode;
@@ -21,7 +23,16 @@ interface ModalProps {
   footer?: ReactNode;
 }
 
-export function Modal({ open, onOpenChange, title, description, children, size = 'md', footer }: ModalProps) {
+export function Modal({
+  open,
+  onOpenChange,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  footer,
+}: ModalProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -37,7 +48,14 @@ export function Modal({ open, onOpenChange, title, description, children, size =
               <Dialog.Title className="eyebrow !text-foreground">{title}</Dialog.Title>
               {description ? <Dialog.Description className="mt-1.5 text-[13px] text-muted">{description}</Dialog.Description> : <Dialog.Description className="sr-only">{title}</Dialog.Description>}
             </div>
-            <Dialog.Close className="p-1 text-muted transition hover:text-foreground" aria-label={t('common.close')}>
+            <Dialog.Close
+              className="p-1 text-muted transition hover:text-foreground"
+              aria-label={t('common.close')}
+              onClick={() => {
+                onClose?.();
+                onOpenChange(false);
+              }}
+            >
               <X className="size-4" />
             </Dialog.Close>
           </div>

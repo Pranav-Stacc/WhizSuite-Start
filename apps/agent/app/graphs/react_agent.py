@@ -13,6 +13,7 @@ from typing import Any
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 
 from app.config import settings
+from app.message_attachments import build_human_message
 from app.graphs.supervisor import (
     CHAT_ROOM_SUMMARY_PROMPT,
     SUMMARY_SYSTEM_PROMPT,
@@ -37,6 +38,8 @@ Rules:
 - One-time reminders → calendar.create. Use startsAt/endsAt as ISO-8601 UTC after converting from the user's local time (see Runtime context in the system message). Recurring → agents.schedules.create (cron + timezone).
 - Use exact field names from each tool schema (e.g. clients.create needs displayName).
 - Prefer action over clarifying questions when intent is clear.
+- PDF and image attachments are sent inline — read them directly; never ask the user to re-type PDF contents.
+- For invoice PDFs: extract client, line items, amounts, tax, and dates, then use finance tools to create the invoice.
 - For demo / test-all requests: run representative reads then safe writes with demo data.
 """.strip()
 
@@ -99,10 +102,11 @@ async def run_react_agent_stream(
     model = build_chat_model(streaming=True).bind_tools(openai_tools)
     stream_model = build_chat_model(streaming=True)
 
+    human = await build_human_message(message, client)
     messages: list[BaseMessage] = [
         SystemMessage(content=sys),
         *_history_messages(history),
-        HumanMessage(content=message),
+        human,
     ]
 
     steps: list[dict[str, Any]] = []
