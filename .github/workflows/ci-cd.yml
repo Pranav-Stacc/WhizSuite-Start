@@ -148,6 +148,8 @@ jobs:
           file: apps/api/Dockerfile
           push: true
           tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Build and push agent image
         uses: docker/build-push-action@v6
         with:
@@ -155,6 +157,8 @@ jobs:
           file: apps/agent/Dockerfile
           push: true
           tags: ${{ steps.ecr.outputs.registry }}/whizsuite-agent:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Deploy to EC2 via SSM
         env:
           INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}

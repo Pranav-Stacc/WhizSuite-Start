@@ -1,6 +1,6 @@
 # Build context: repository root.
-# public.ecr.aws avoids Docker Hub rate limits in CI
-FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS base
+# Use Docker Hub; public.ecr.aws/docker/library hit 429 data limits in GitHub Actions.
+FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable \
