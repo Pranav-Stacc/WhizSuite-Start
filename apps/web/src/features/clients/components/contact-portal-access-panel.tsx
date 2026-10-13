@@ -12,6 +12,7 @@ import { MemberExtrasPanel } from '@/features/team/components/member-extras-pane
 import { MemberRoleScopeSummary } from '@/features/team/components/member-role-scope-summary';
 import type { ScopeResourceOptions } from '@/features/team/components/scope-resource-fields';
 import type { Member } from '@/features/team/data/members.repository';
+import { memberEffectivePermissionKeys } from '@/shared/auth/resolve-member-access';
 
 interface ContactPortalAccessPanelProps {
   member: Member;
@@ -34,7 +35,7 @@ export function ContactPortalAccessPanel({
   scopeResources,
   canEditAccess,
 }: ContactPortalAccessPanelProps) {
-  const grantedKeys = new Set(memberAccess.effectivePermissions.length ? memberAccess.effectivePermissions : roleGrantedKeys);
+  const grantedKeys = new Set(memberEffectivePermissionKeys(memberAccess, roleGrantedKeys));
 
   return (
     <div className="card-surface space-y-4 p-5">

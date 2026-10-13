@@ -5,7 +5,13 @@ import { apiFetch } from '@/shared/api/api-client';
 import { isLiveMode } from '@/shared/config/env';
 import { requireSession } from './session';
 
-/** Live org access snapshot (permissions + assigned roles). Null in demo or when the API is unreachable. */
+/**
+ * Live org access snapshot (permissions + assigned roles).
+ * Null in demo or when the API is unreachable.
+ *
+ * Do not use this for authorization — use `getPermissions()` / `can()` / `requirePermission()`,
+ * which fail closed in live mode (empty set) instead of falling back to membership templates.
+ */
 export const getAccessCapabilities = cache(async (): Promise<AccessCapabilities | null> => {
   const session = await requireSession();
   if (!isLiveMode || session.demo) return null;

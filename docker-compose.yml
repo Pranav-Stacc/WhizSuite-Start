@@ -21,8 +21,9 @@ services:
     image: redis:7-alpine
     container_name: agency-os-redis
     restart: unless-stopped
+    # Host 6380 avoids Windows' legacy Redis 3.x service on 6379 (BullMQ needs Redis 5+).
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
       - redis_data:/data
     healthcheck:

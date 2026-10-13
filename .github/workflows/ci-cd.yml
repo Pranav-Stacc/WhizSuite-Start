@@ -103,6 +103,8 @@ jobs:
         run: pnpm turbo run typecheck
       - name: API route permission guard
         run: pnpm check:api-security
+      - name: Web permission fallback guard
+        run: pnpm check:web-permissions
       - name: Unit tests
         run: pnpm --filter @agency-os/api exec jest --passWithNoTests
       - name: Build

@@ -10,6 +10,7 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "check:api-security": "node scripts/check-api-route-permissions.mjs",
+    "check:web-permissions": "node scripts/check-web-permission-fallbacks.mjs",
     "test": "turbo run test",
     "test:e2e": "pnpm --filter @agency-os/api test:e2e && pnpm --filter @agency-os/web test:e2e",
     "test:e2e:api": "pnpm --filter @agency-os/api test:e2e",

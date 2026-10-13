@@ -89,6 +89,37 @@ void main() {
       expect(drawer[NavGroup.clients]?.map((d) => d.path) ?? const <String>[], isNot(contains('/team')));
     });
 
+    test('Client custom role baseline (no clients.view) hides Clients and staff-only modules', () {
+      const policy = AccessPolicy({
+        Permissions.orgView,
+        Permissions.contentView,
+        Permissions.approvalsView,
+        Permissions.approvalsApprove,
+        Permissions.feedbackView,
+        Permissions.feedbackCreate,
+        Permissions.filesView,
+        Permissions.invoicesView,
+        Permissions.reportsView,
+        Permissions.chatView,
+        Permissions.chatSend,
+      });
+      final model = NavigationModel(_session(MembershipTypes.member), policy);
+      final paths = model.visible.map((d) => d.path).toSet();
+
+      expect(paths, contains(AppRoutes.home));
+      expect(paths, contains('/content'));
+      expect(paths, contains('/messages'));
+      expect(paths, contains('/media'));
+      expect(paths, contains('/approvals'));
+      expect(paths, isNot(contains('/clients')));
+      expect(paths, isNot(contains('/team')));
+      expect(paths, isNot(contains('/roles')));
+      expect(paths, isNot(contains('/calendar')));
+      expect(paths, isNot(contains('/tasks')));
+      expect(destinationFor('/clients')?.path, '/clients');
+      expect(model.visible.contains(destinationFor('/clients')!), isFalse);
+    });
+
     test('Agency menus keep Team and settings; departments/roles and templates stay out of grids', () {
       const policy = AccessPolicy({
         Permissions.orgView,

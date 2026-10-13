@@ -1,6 +1,8 @@
 import { sendAgentMessageSchema } from '@agency-os/contracts';
 import { NextResponse, type NextRequest } from 'next/server';
+import { Permissions } from '@agency-os/contracts';
 import { env } from '@/shared/config/env';
+import { can } from '@/shared/auth/permissions';
 import { getSession } from '@/shared/auth/session';
 import { orgPath } from '@/shared/api/live/utils';
 
@@ -12,6 +14,9 @@ export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session?.accessToken || !session.orgId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!(await can(Permissions.AI_CHAT))) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = (await request.json().catch(() => null)) as {
