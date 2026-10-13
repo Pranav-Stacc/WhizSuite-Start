@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/contracts/contracts.g.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/avatar.dart';
 import '../../../core/widgets/feedback.dart';
 import '../../../core/widgets/error_message.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../access/application/access_controller.dart';
 import '../../directory/application/directory_providers.dart';
 import '../../directory/domain/directory_entry.dart';
 import '../application/messages_providers.dart';
@@ -97,6 +99,10 @@ class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
 
   Future<void> _createGroup() async {
     final l10n = AppLocalizations.of(context);
+    if (!ref.read(accessPolicyProvider).can(Permissions.chatCreateRoom)) {
+      showToast(context, l10n.errorForbidden);
+      return;
+    }
     final name = _groupName.text.trim();
     if (name.isEmpty || _groupMembers.isEmpty) {
       showToast(context, name.isEmpty ? l10n.validationRequired : l10n.messagesGroupPickMembers);
@@ -123,6 +129,15 @@ class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
     final text = Theme.of(context).textTheme;
     final portal = _portalClientId;
     final isPortal = portal != null;
+    final policy = ref.watch(accessPolicyProvider);
+    final canCreateRoom = policy.can(Permissions.chatCreateRoom);
+    final canPickClients = policy.can(Permissions.clientsView) && policy.can(Permissions.chatView);
+    final tabs = <_Tab>[
+      if (canCreateRoom) _Tab.team,
+      if (canPickClients) _Tab.clients,
+      if (canCreateRoom) _Tab.group,
+    ];
+    final tab = tabs.contains(_tab) ? _tab : (tabs.isNotEmpty ? tabs.first : _Tab.team);
 
     if (!_loaded) {
       return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
@@ -211,57 +226,66 @@ class _NewConversationSheetState extends ConsumerState<_NewConversationSheet> {
                   ),
                 ),
                 SizedBox(height: tokens.md),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: tokens.lg),
-                  child: SegmentedButton<_Tab>(
-                    showSelectedIcon: false,
-                    style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                    segments: [
-                      ButtonSegment(value: _Tab.team, label: Text(l10n.messagesTabTeam)),
-                      ButtonSegment(value: _Tab.clients, label: Text(l10n.messagesTabClients)),
-                      ButtonSegment(value: _Tab.group, label: Text(l10n.messagesTabGroup)),
-                    ],
-                    selected: {_tab},
-                    onSelectionChanged: _busy
-                        ? null
-                        : (next) {
-                            if (next.isEmpty) return;
-                            setState(() {
-                              _tab = next.first;
-                              _groupMembers.clear();
-                            });
-                          },
+                if (tabs.length > 1)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: tokens.lg),
+                    child: SegmentedButton<_Tab>(
+                      showSelectedIcon: false,
+                      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                      segments: [
+                        if (canCreateRoom) ButtonSegment(value: _Tab.team, label: Text(l10n.messagesTabTeam)),
+                        if (canPickClients) ButtonSegment(value: _Tab.clients, label: Text(l10n.messagesTabClients)),
+                        if (canCreateRoom) ButtonSegment(value: _Tab.group, label: Text(l10n.messagesTabGroup)),
+                      ],
+                      selected: {tab},
+                      onSelectionChanged: _busy
+                          ? null
+                          : (next) {
+                              if (next.isEmpty) return;
+                              setState(() {
+                                _tab = next.first;
+                                _groupMembers.clear();
+                              });
+                            },
+                    ),
                   ),
-                ),
-                SizedBox(height: tokens.sm),
+                if (tabs.length > 1) SizedBox(height: tokens.sm),
                 Expanded(
-                  child: switch (_tab) {
-                    _Tab.team => _ContactList(
-                        entries: staffEntries,
-                        emptyLabel: l10n.messagesNoContacts,
-                        onTap: (entry) => _open(() => ref.read(messagesActionsProvider).openDm(entry.id)),
-                      ),
-                    _Tab.clients => _ContactList(
-                        entries: clientEntries,
-                        emptyLabel: l10n.messagesNoContacts,
-                        mark: true,
-                        onTap: (entry) => _open(() => ref.read(messagesActionsProvider).openClientRoom(entry.id)),
-                      ),
-                    _Tab.group => _GroupComposer(
-                        entries: staffEntries,
-                        selected: _groupMembers,
-                        nameController: _groupName,
-                        emptyLabel: l10n.messagesNoContacts,
-                        onToggle: (id) => setState(() {
-                          if (_groupMembers.contains(id)) {
-                            _groupMembers.remove(id);
-                          } else {
-                            _groupMembers.add(id);
-                          }
-                        }),
-                        onCreate: _busy ? null : _createGroup,
-                      ),
-                  },
+                  child: tabs.isEmpty
+                      ? Center(
+                          child: Text(
+                            l10n.errorForbidden,
+                            textAlign: TextAlign.center,
+                            style: text.bodyMedium?.copyWith(color: tokens.muted),
+                          ),
+                        )
+                      : switch (tab) {
+                          _Tab.team => _ContactList(
+                              entries: staffEntries,
+                              emptyLabel: l10n.messagesNoContacts,
+                              onTap: (entry) => _open(() => ref.read(messagesActionsProvider).openDm(entry.id)),
+                            ),
+                          _Tab.clients => _ContactList(
+                              entries: clientEntries,
+                              emptyLabel: l10n.messagesNoContacts,
+                              mark: true,
+                              onTap: (entry) => _open(() => ref.read(messagesActionsProvider).openClientRoom(entry.id)),
+                            ),
+                          _Tab.group => _GroupComposer(
+                              entries: staffEntries,
+                              selected: _groupMembers,
+                              nameController: _groupName,
+                              emptyLabel: l10n.messagesNoContacts,
+                              onToggle: (id) => setState(() {
+                                if (_groupMembers.contains(id)) {
+                                  _groupMembers.remove(id);
+                                } else {
+                                  _groupMembers.add(id);
+                                }
+                              }),
+                              onCreate: _busy ? null : _createGroup,
+                            ),
+                        },
                 ),
               ],
       ],

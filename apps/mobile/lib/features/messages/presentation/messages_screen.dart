@@ -157,14 +157,23 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
         return PageScaffold(
           title: l10n.navMessages,
-          floatingActionButton: PermissionGate(
-            anyOf: const [Permissions.chatCreateRoom, Permissions.chatSend],
-            child: CreateFab(
-              label: isPortal ? l10n.messagesNewPortal : l10n.messagesNew,
-              icon: Icons.edit_outlined,
-              onPressed: () => _create(wide: wide),
-            ),
-          ),
+          floatingActionButton: isPortal
+              ? PermissionGate(
+                  anyOf: const [Permissions.chatView],
+                  child: CreateFab(
+                    label: l10n.messagesNewPortal,
+                    icon: Icons.edit_outlined,
+                    onPressed: () => _create(wide: wide),
+                  ),
+                )
+              : PermissionGate(
+                  anyOf: const [Permissions.chatCreateRoom],
+                  child: CreateFab(
+                    label: l10n.messagesNew,
+                    icon: Icons.edit_outlined,
+                    onPressed: () => _create(wide: wide),
+                  ),
+                ),
           body: !wide
               ? list
               : Row(
