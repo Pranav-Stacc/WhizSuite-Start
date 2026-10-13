@@ -7,6 +7,10 @@ import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { PersonaCards } from '@/features/auth/components/persona-cards';
 import { LoginForm } from '@/features/auth/components/login-form';
+import {
+  fetchAuthOAuthPublicConfig,
+  resolveGoogleSignInUi,
+} from '@/features/auth/utils/google-sign-in-config';
 import { param, type SearchParams } from '@/shared/ui/nav-controls';
 
 export const metadata: Metadata = { title: t('auth.login.meta') };
@@ -16,6 +20,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (session) redirect(homeFor(session.role));
   const query = await searchParams;
   const expired = param(query, 'expired') === '1';
+  const oauth = isLiveMode
+    ? await fetchAuthOAuthPublicConfig().catch(() => null)
+    : null;
+  const google = resolveGoogleSignInUi(oauth);
 
   return (
     <div className="space-y-7">
@@ -45,7 +53,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </section>
       )}
 
-      <LoginForm defaultEmail={isLiveMode ? undefined : 'owner@pixelforge.agency'} />
+      <LoginForm
+        defaultEmail={isLiveMode ? undefined : 'owner@pixelforge.agency'}
+        googleClientId={google.show ? google.clientId : ''}
+      />
       {isLiveMode ? null : <p className="text-center text-xs text-muted">{t('auth.demo.hint', { password: DEMO_PASSWORD })}</p>}
 
       <p className="text-center text-sm text-muted">

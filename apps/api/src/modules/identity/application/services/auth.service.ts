@@ -57,6 +57,23 @@ export class AuthService {
     private readonly authEmail: AuthEmailService,
   ) {}
 
+  /** Browser/mobile login UIs use this to show Google sign-in and load GIS. */
+  getOAuthPublicConfig() {
+    const enabled = this.googleTokens.isEnabled();
+    const configuredWebId = this.config
+      .get('GOOGLE_OAUTH_WEB_CLIENT_ID', { infer: true })
+      .trim();
+    const fallbackId =
+      this.config.get('GOOGLE_OAUTH_CLIENT_IDS', { infer: true })[0] ?? '';
+    const webClientId = configuredWebId || fallbackId;
+    return {
+      google: {
+        enabled,
+        webClientId: enabled && webClientId ? webClientId : null,
+      },
+    };
+  }
+
   async register(input: RegisterInput) {
     const existing = await this.repo.findUserByEmail(input.email);
     if (existing) {

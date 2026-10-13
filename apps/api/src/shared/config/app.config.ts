@@ -296,6 +296,8 @@ export const appConfigSchema = z
           .map((id) => id.trim())
           .filter(Boolean),
       ),
+    /** GIS / Firebase web client ID exposed to browsers when login is enabled. */
+    GOOGLE_OAUTH_WEB_CLIENT_ID: z.string().default(''),
     /** Drive data-source OAuth (separate from login audiences). Empty = connect disabled. */
     GOOGLE_DRIVE_CLIENT_ID: z.string().default(''),
     GOOGLE_DRIVE_CLIENT_SECRET: z.string().default(''),

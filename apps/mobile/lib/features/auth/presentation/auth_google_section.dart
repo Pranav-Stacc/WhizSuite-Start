@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/contracts/contracts.g.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/error_message.dart';
@@ -54,6 +55,7 @@ class AuthGoogleSection extends StatelessWidget {
 
 String googleAuthErrorMessage(AppLocalizations l10n, ApiException error) {
   if (error.detail == 'cancelled') return l10n.authGoogleCancelled;
+  if (error.code == ErrorCodes.googleAuthDisabled) return l10n.authGoogleDisabled;
   if (error.detail == 'no_session' || error.kind == ApiFailureKind.notFound) {
     return l10n.authGoogleNoAccount;
   }

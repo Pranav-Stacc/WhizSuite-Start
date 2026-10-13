@@ -13,7 +13,13 @@ import { Field, Input } from '@/shared/ui/field';
 import { loginAction } from '../actions/auth.actions';
 import { GoogleSignInButton } from './google-sign-in-button';
 
-export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
+export function LoginForm({
+  defaultEmail,
+  googleClientId = '',
+}: {
+  defaultEmail?: string;
+  googleClientId?: string;
+}) {
   const [formError, setFormError] = useState<string>();
   const [hydrated, setHydrated] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -74,7 +80,7 @@ export function LoginForm({ defaultEmail }: { defaultEmail?: string }) {
           {t('auth.login.submit')}
         </Button>
       </form>
-      <GoogleSignInButton mode="login" />
+      {googleClientId ? <GoogleSignInButton clientId={googleClientId} mode="login" /> : null}
     </div>
   );
 }

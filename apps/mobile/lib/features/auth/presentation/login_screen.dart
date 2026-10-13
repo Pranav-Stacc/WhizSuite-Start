@@ -12,6 +12,7 @@ import '../../../core/widgets/password_field.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/config/app_config.dart';
 import '../application/session_controller.dart';
+import '../data/auth_oauth_config.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
 import 'auth_google_section.dart';
@@ -82,7 +83,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final validators = Validators(l10n);
     final tokens = context.tokens;
     final config = ref.watch(appConfigProvider);
-    final googleEnabled = config.googleSignInEnabled;
+    final oauth = ref.watch(authOAuthConfigProvider);
+    final googleEnabled =
+        config.googleSignInEnabled && (oauth.value?.googleEnabled ?? false);
     final busy = _submitting || _googleSubmitting;
     final fieldGap = SizedBox(height: tokens.lg);
 

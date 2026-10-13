@@ -789,6 +789,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authGoogleInvalid => 'Google sign-in was rejected. Try again.';
 
   @override
+  String get authGoogleDisabled =>
+      'Google sign-in is not enabled on this server yet.';
+
+  @override
   String get authGoogleNoAccount =>
       'No account for that Google email. Create a workspace first.';
 

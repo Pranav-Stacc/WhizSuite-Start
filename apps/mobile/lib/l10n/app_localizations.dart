@@ -1204,6 +1204,12 @@ abstract class AppLocalizations {
   /// **'Google sign-in was rejected. Try again.'**
   String get authGoogleInvalid;
 
+  /// No description provided for @authGoogleDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in is not enabled on this server yet.'**
+  String get authGoogleDisabled;
+
   /// No description provided for @authGoogleNoAccount.
   ///
   /// In en, this message translates to:

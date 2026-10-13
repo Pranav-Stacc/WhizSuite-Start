@@ -52,6 +52,9 @@ upsert() {{
 }}
 upsert GOOGLE_DRIVE_CLIENT_ID '{esc(client_id)}'
 {secret_line}
+upsert GOOGLE_AUTH_ENABLED 'true'
+upsert GOOGLE_OAUTH_CLIENT_IDS '{esc(client_id)}'
+upsert GOOGLE_OAUTH_WEB_CLIENT_ID '{esc(client_id)}'
 upsert GOOGLE_DRIVE_REDIRECT_URI '{esc(DRIVE_REDIRECT)}'
 upsert GOOGLE_CALENDAR_REDIRECT_URI '{esc(CALENDAR_REDIRECT)}'
 upsert WEB_APP_URL 'https://whizsuite.com'

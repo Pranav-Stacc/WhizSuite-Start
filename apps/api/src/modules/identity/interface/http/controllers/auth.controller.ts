@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../../../application/services/auth.service';
 import {
@@ -22,6 +22,11 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly authEmail: AuthEmailService,
   ) {}
+
+  @Get('oauth-config')
+  oauthConfig() {
+    return this.auth.getOAuthPublicConfig();
+  }
 
   @Post('register')
   register(@Body() dto: RegisterDto) {

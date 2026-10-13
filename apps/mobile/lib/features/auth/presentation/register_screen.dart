@@ -14,6 +14,7 @@ import '../../../core/widgets/password_field.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/session_controller.dart';
 import '../data/auth_repository.dart';
+import '../data/auth_oauth_config.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
 import 'auth_google_section.dart';
@@ -127,7 +128,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final validators = Validators(l10n);
     final tokens = context.tokens;
     final gap = SizedBox(height: tokens.lg);
-    final googleEnabled = ref.watch(appConfigProvider).googleSignInEnabled;
+    final config = ref.watch(appConfigProvider);
+    final oauth = ref.watch(authOAuthConfigProvider);
+    final googleEnabled =
+        config.googleSignInEnabled && (oauth.value?.googleEnabled ?? false);
     final busy = _submitting || _googleSubmitting;
     return AuthLayout(
       title: l10n.authRegisterTitle,

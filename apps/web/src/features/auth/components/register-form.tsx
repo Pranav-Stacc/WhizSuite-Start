@@ -18,7 +18,7 @@ const toSlug = (value: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-export function RegisterForm() {
+export function RegisterForm({ googleClientId = '' }: { googleClientId?: string }) {
   const [formError, setFormError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const form = useForm<RegisterInput>({
@@ -88,11 +88,14 @@ export function RegisterForm() {
           {t('auth.register.submit')}
         </Button>
       </form>
-      <GoogleSignInButton
-        mode="register"
-        organizationName={organizationName?.trim() || undefined}
-        organizationSlug={organizationSlug?.trim() || undefined}
-      />
+      {googleClientId ? (
+        <GoogleSignInButton
+          clientId={googleClientId}
+          mode="register"
+          organizationName={organizationName?.trim() || undefined}
+          organizationSlug={organizationSlug?.trim() || undefined}
+        />
+      ) : null}
     </div>
   );
 }

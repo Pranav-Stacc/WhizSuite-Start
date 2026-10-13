@@ -66,6 +66,15 @@ export const googleAuthSchema = z.object({
 });
 export type GoogleAuthInput = z.infer<typeof googleAuthSchema>;
 
+/** Public OAuth settings for login/register UIs (no secrets). */
+export const authOAuthPublicConfigSchema = z.object({
+  google: z.object({
+    enabled: z.boolean(),
+    webClientId: z.string().min(1).nullable(),
+  }),
+});
+export type AuthOAuthPublicConfig = z.infer<typeof authOAuthPublicConfigSchema>;
+
 export const registerSchema = z.object({
   firstName: z.string().trim().min(1, 'validation.required'),
   lastName: optionalText,

@@ -8,11 +8,11 @@ import { googleAuthAction } from '../actions/auth.actions';
 import { AuthFormDivider } from './auth-form-divider';
 
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client';
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
 const GIS_MIN_WIDTH = 200;
 const GIS_MAX_WIDTH = 400;
 
 type GoogleSignInButtonProps = {
+  clientId: string;
   organizationName?: string;
   organizationSlug?: string;
   mode?: 'login' | 'register';
@@ -46,6 +46,7 @@ function measureButtonWidth(host: HTMLElement): number {
 
 /** Renders Google Identity Services sign-in when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is set. */
 export function GoogleSignInButton({
+  clientId,
   organizationName,
   organizationSlug,
   mode = 'login',
@@ -82,7 +83,7 @@ export function GoogleSignInButton({
 
   const paintButton = useCallback(() => {
     const host = hostRef.current;
-    if (!host || !window.google?.accounts?.id || !CLIENT_ID) return;
+    if (!host || !window.google?.accounts?.id || !clientId) return;
     const width = measureButtonWidth(host);
     if (width === lastWidthRef.current && host.childElementCount > 0) return;
     lastWidthRef.current = width;
@@ -97,10 +98,10 @@ export function GoogleSignInButton({
       logo_alignment: 'left',
     });
     setReady(true);
-  }, [mode]);
+  }, [clientId, mode]);
 
   useEffect(() => {
-    if (!CLIENT_ID) return;
+    if (!clientId) return;
     let cancelled = false;
     let observer: ResizeObserver | undefined;
 
@@ -109,7 +110,7 @@ export function GoogleSignInButton({
         await loadGis();
         if (cancelled || !hostRef.current || !window.google?.accounts?.id) return;
         window.google.accounts.id.initialize({
-          client_id: CLIENT_ID,
+          client_id: clientId,
           callback: (response) => onCredential(response.credential),
           auto_select: false,
           cancel_on_tap_outside: true,
@@ -128,9 +129,9 @@ export function GoogleSignInButton({
       cancelled = true;
       observer?.disconnect();
     };
-  }, [mode, onCredential, paintButton]);
+  }, [clientId, mode, onCredential, paintButton]);
 
-  if (!CLIENT_ID) return null;
+  if (!clientId) return null;
 
   return (
     <div className="space-y-3">
