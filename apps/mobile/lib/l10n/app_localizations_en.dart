@@ -793,6 +793,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google sign-in is not enabled on this server yet.';
 
   @override
+  String get authGoogleFinishSignup => 'Create workspace with Google';
+
+  @override
+  String get authGooglePendingSignup =>
+      'Google account verified. Name your agency below, then create your workspace.';
+
+  @override
   String get authGoogleNoAccount =>
       'No account for that Google email. Create a workspace first.';
 

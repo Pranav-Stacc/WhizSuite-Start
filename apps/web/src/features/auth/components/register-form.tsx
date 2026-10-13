@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
@@ -9,7 +9,11 @@ import { translateError } from '@/shared/forms/form-dialog';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { Field, Input } from '@/shared/ui/field';
-import { registerAction } from '../actions/auth.actions';
+import { googleAuthAction, registerAction } from '../actions/auth.actions';
+import {
+  clearPendingGoogleIdToken,
+  readPendingGoogleIdToken,
+} from '../utils/google-pending-signup';
 import { GoogleSignInButton } from './google-sign-in-button';
 
 const toSlug = (value: string): string =>
@@ -21,6 +25,12 @@ const toSlug = (value: string): string =>
 export function RegisterForm({ googleClientId = '' }: { googleClientId?: string }) {
   const [formError, setFormError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const [pendingGoogle, setPendingGoogle] = useState(false);
+  const [googlePending, startGoogle] = useTransition();
+
+  useEffect(() => {
+    setPendingGoogle(Boolean(readPendingGoogleIdToken()));
+  }, []);
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: '', lastName: '', email: '', password: '', organizationName: '', organizationSlug: '' },
@@ -30,6 +40,30 @@ export function RegisterForm({ googleClientId = '' }: { googleClientId?: string 
   const organizationSlug = form.watch('organizationSlug');
 
   const orgField = form.register('organizationName');
+
+  const finishGoogleSignup = () => {
+    const token = readPendingGoogleIdToken();
+    const name = organizationName?.trim() ?? '';
+    const slug = organizationSlug?.trim() ?? '';
+    if (!token) return;
+    if (name.length < 2 || !/^[a-z0-9-]+$/.test(slug)) {
+      setFormError(t('auth.google.workspaceRequired'));
+      return;
+    }
+    setFormError(undefined);
+    startGoogle(async () => {
+      const result = await googleAuthAction({
+        idToken: token,
+        organizationName: name,
+        organizationSlug: slug,
+      });
+      if (!result || result.ok) {
+        clearPendingGoogleIdToken();
+        return;
+      }
+      setFormError(result.message);
+    });
+  };
 
   const submit = form.handleSubmit((values) => {
     setFormError(undefined);
@@ -44,6 +78,11 @@ export function RegisterForm({ googleClientId = '' }: { googleClientId?: string 
 
   return (
     <div className="space-y-4">
+      {pendingGoogle ? (
+        <p role="status" className="rounded-lg bg-primary/10 px-3 py-2 text-sm text-foreground">
+          {t('auth.google.pendingSignup')}
+        </p>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t('auth.register.org')} htmlFor="reg-org-google" error={translateError(errors.organizationName?.message)}>
           <Input
@@ -88,7 +127,20 @@ export function RegisterForm({ googleClientId = '' }: { googleClientId?: string 
           {t('auth.register.submit')}
         </Button>
       </form>
-      {googleClientId ? (
+      {pendingGoogle ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          className="auth-cta w-full"
+          disabled={googlePending || pending}
+          onClick={finishGoogleSignup}
+        >
+          {googlePending ? <Loader2 className="animate-spin" /> : null}
+          {t('auth.google.finishSignup')}
+        </Button>
+      ) : null}
+      {googleClientId && !pendingGoogle ? (
         <GoogleSignInButton
           clientId={googleClientId}
           mode="register"

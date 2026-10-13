@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import {
+  ErrorCodes,
   UserRoles,
   acceptInvitationSchema,
   claimPortalAccessSchema,
@@ -180,7 +181,16 @@ export async function googleAuthAction(raw: unknown): Promise<ActionResult> {
       });
       session = await sessionFromApi(response);
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) return fail(t('auth.google.noAccount'));
+      if (error instanceof ApiError && error.status === 404) {
+        const registering = Boolean(parsed.data.organizationName?.trim() && parsed.data.organizationSlug?.trim());
+        if (!registering) {
+          return fail(t('auth.google.continueRegister'), undefined, {
+            code: ErrorCodes.ACCOUNT_NOT_FOUND,
+            nextPath: '/register',
+          });
+        }
+        return fail(t('auth.google.noAccount'));
+      }
       if (error instanceof ApiError && error.status === 409) return fail(t('auth.register.exists'));
       if (error instanceof ApiError && error.status === 401) return fail(t('auth.google.invalid'));
       if (error instanceof ApiError && error.status === 503) return fail(t('auth.google.disabled'));

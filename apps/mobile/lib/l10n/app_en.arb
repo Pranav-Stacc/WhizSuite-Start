@@ -372,6 +372,8 @@
   "authGoogleCancelled": "Google sign-in was cancelled.",
   "authGoogleInvalid": "Google sign-in was rejected. Try again.",
   "authGoogleDisabled": "Google sign-in is not enabled on this server yet.",
+  "authGoogleFinishSignup": "Create workspace with Google",
+  "authGooglePendingSignup": "Google account verified. Name your agency below, then create your workspace.",
   "authGoogleNoAccount": "No account for that Google email. Create a workspace first.",
   "authGoogleWorkspaceRequired": "Enter an agency name and workspace URL before continuing with Google.",
   "authHaveAccount": "Already have a workspace?",

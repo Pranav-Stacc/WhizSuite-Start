@@ -1210,6 +1210,18 @@ abstract class AppLocalizations {
   /// **'Google sign-in is not enabled on this server yet.'**
   String get authGoogleDisabled;
 
+  /// No description provided for @authGoogleFinishSignup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create workspace with Google'**
+  String get authGoogleFinishSignup;
+
+  /// No description provided for @authGooglePendingSignup.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account verified. Name your agency below, then create your workspace.'**
+  String get authGooglePendingSignup;
+
   /// No description provided for @authGoogleNoAccount.
   ///
   /// In en, this message translates to:

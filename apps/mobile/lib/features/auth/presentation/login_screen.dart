@@ -11,8 +11,10 @@ import '../../../core/widgets/error_message.dart';
 import '../../../core/widgets/password_field.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/contracts/contracts.g.dart';
 import '../application/session_controller.dart';
 import '../data/auth_oauth_config.dart';
+import '../data/google_pending_signup.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
 import 'auth_google_section.dart';
@@ -63,11 +65,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _googleSubmitting = true;
       _error = null;
     });
+    String? idToken;
     try {
-      final idToken = await ref.read(googleSignInServiceProvider).obtainIdToken();
+      idToken = await ref.read(googleSignInServiceProvider).obtainIdToken();
       await ref.read(sessionProvider.notifier).signInWithGoogle(idToken: idToken);
     } on ApiException catch (error) {
       if (!mounted) return;
+      if (error.code == ErrorCodes.accountNotFound && idToken != null) {
+        GooglePendingSignup.save(idToken);
+        context.push(AppRoutes.register);
+        return;
+      }
       setState(() => _error = googleAuthErrorMessage(l10n, error));
     } catch (_) {
       if (!mounted) return;

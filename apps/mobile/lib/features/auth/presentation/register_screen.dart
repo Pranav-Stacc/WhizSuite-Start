@@ -15,6 +15,7 @@ import '../../../l10n/app_localizations.dart';
 import '../application/session_controller.dart';
 import '../data/auth_repository.dart';
 import '../data/auth_oauth_config.dart';
+import '../data/google_pending_signup.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
 import 'auth_google_section.dart';
@@ -88,6 +89,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
+  Future<void> _finishPendingGoogle() async {
+    final l10n = AppLocalizations.of(context);
+    final org = _organization.text.trim();
+    final slug = _slug.text.trim().toLowerCase();
+    if (org.length < organizationNameMinLength || !_slugPattern.hasMatch(slug)) {
+      setState(() => _error = l10n.authGoogleWorkspaceRequired);
+      return;
+    }
+    final idToken = GooglePendingSignup.take();
+    if (idToken == null) {
+      setState(() => _error = l10n.authGoogleInvalid);
+      return;
+    }
+    setState(() {
+      _googleSubmitting = true;
+      _error = null;
+    });
+    try {
+      await ref.read(sessionProvider.notifier).signInWithGoogle(
+            idToken: idToken,
+            organizationName: org,
+            organizationSlug: slug,
+          );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _error = googleAuthErrorMessage(l10n, error));
+    } finally {
+      if (mounted) setState(() => _googleSubmitting = false);
+    }
+  }
+
   Future<void> _submitGoogle() async {
     final l10n = AppLocalizations.of(context);
     final org = _organization.text.trim();
@@ -133,6 +165,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final googleEnabled =
         config.googleSignInEnabled && (oauth.value?.googleEnabled ?? false);
     final busy = _submitting || _googleSubmitting;
+    final pendingGoogle = GooglePendingSignup.hasToken;
     return AuthLayout(
       title: l10n.authRegisterTitle,
       subtitle: l10n.authRegisterSubtitle,
@@ -142,6 +175,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormErrorBanner(message: _error),
+            if (pendingGoogle)
+              Padding(
+                padding: EdgeInsets.only(bottom: tokens.md),
+                child: Text(
+                  l10n.authGooglePendingSignup,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens.muted),
+                ),
+              ),
             TextFormField(
               controller: _organization,
               autofillHints: const [AutofillHints.organizationName],
@@ -210,11 +251,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: busy ? null : _submit,
               icon: Icons.arrow_forward,
             ),
-            AuthGoogleSection(
-              enabled: googleEnabled,
-              loading: _googleSubmitting,
-              onPressed: busy ? null : _submitGoogle,
-            ),
+            if (pendingGoogle)
+              PrimaryButton(
+                label: l10n.authGoogleFinishSignup,
+                loading: _googleSubmitting,
+                onPressed: busy ? null : _finishPendingGoogle,
+                icon: Icons.g_mobiledata_rounded,
+              )
+            else
+              AuthGoogleSection(
+                enabled: googleEnabled,
+                loading: _googleSubmitting,
+                onPressed: busy ? null : _submitGoogle,
+              ),
           ], 
         ),
       ),

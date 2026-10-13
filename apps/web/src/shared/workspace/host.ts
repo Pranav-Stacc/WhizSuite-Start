@@ -96,6 +96,18 @@ export function parseWorkspaceHost(hostHeader: string | null, rootDomain: string
 }
 
 /** Builds `https://crm-workplace.whizsuite.com/leads` (or http for localhost). */
+/** True when the host is apex/www/localhost — safe for Google Identity Services (not `{slug}.root`). */
+export function isApexAuthHost(hostname: string, rootDomain: string | undefined): boolean {
+  const parsed = parseWorkspaceHost(hostname, rootDomain);
+  return !parsed.subdomainMode;
+}
+
+/** Marketing / shared auth entrypoint (`https://whizsuite.com`). */
+export function apexAuthOrigin(rootDomain: string): string {
+  const protocol = rootDomain.includes('localhost') ? 'http' : 'https';
+  return `${protocol}://${rootDomain}`;
+}
+
 export function workspaceOrigin(input: {
   module: WorkspaceModule;
   orgSlug: string;

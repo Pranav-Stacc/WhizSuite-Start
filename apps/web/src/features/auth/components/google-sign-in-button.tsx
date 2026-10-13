@@ -1,10 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { ErrorCodes } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
 import { Button } from '@/shared/ui/button';
 import { googleAuthAction } from '../actions/auth.actions';
+import {
+  canonicalGoogleAuthPageUrl,
+  googleSignInUsesCanonicalHost,
+} from '../utils/google-auth-origin';
+import { clearPendingGoogleIdToken, savePendingGoogleIdToken } from '../utils/google-pending-signup';
 import { AuthFormDivider } from './auth-form-divider';
 
 const GIS_SCRIPT = 'https://accounts.google.com/gsi/client';
@@ -51,12 +58,22 @@ export function GoogleSignInButton({
   organizationSlug,
   mode = 'login',
 }: GoogleSignInButtonProps) {
+  const router = useRouter();
   const [formError, setFormError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const [ready, setReady] = useState(false);
+  const [canonicalHref, setCanonicalHref] = useState<string | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const lastWidthRef = useRef(0);
   const hostId = useId();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!googleSignInUsesCanonicalHost(window.location.hostname)) return;
+    setCanonicalHref(
+      canonicalGoogleAuthPageUrl(mode, window.location.href),
+    );
+  }, [mode]);
 
   const onCredential = useCallback(
     (credential: string) => {
@@ -75,10 +92,19 @@ export function GoogleSignInButton({
           organizationName,
           organizationSlug,
         });
-        if (result && !result.ok) setFormError(result.message);
+        if (!result || result.ok) {
+          clearPendingGoogleIdToken();
+          return;
+        }
+        if (result.code === ErrorCodes.ACCOUNT_NOT_FOUND && result.nextPath) {
+          savePendingGoogleIdToken(credential);
+          router.push(result.nextPath);
+          return;
+        }
+        setFormError(result.message);
       });
     },
-    [mode, organizationName, organizationSlug],
+    [mode, organizationName, organizationSlug, router],
   );
 
   const paintButton = useCallback(() => {
@@ -101,7 +127,7 @@ export function GoogleSignInButton({
   }, [clientId, mode]);
 
   useEffect(() => {
-    if (!clientId) return;
+    if (!clientId || canonicalHref) return;
     let cancelled = false;
     let observer: ResizeObserver | undefined;
 
@@ -129,9 +155,21 @@ export function GoogleSignInButton({
       cancelled = true;
       observer?.disconnect();
     };
-  }, [clientId, mode, onCredential, paintButton]);
+  }, [canonicalHref, clientId, mode, onCredential, paintButton]);
 
   if (!clientId) return null;
+
+  if (canonicalHref) {
+    return (
+      <div className="space-y-3">
+        <AuthFormDivider />
+        <Button type="button" variant="outline" size="lg" className="auth-cta w-full" asChild>
+          <a href={canonicalHref}>{t('auth.google.button')}</a>
+        </Button>
+        <p className="text-center text-xs text-muted">{t('auth.google.subdomainHint')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

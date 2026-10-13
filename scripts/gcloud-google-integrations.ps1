@@ -26,8 +26,17 @@ $redirects = @(
 )
 
 Write-Host ""
-Write-Host "=== Manual step (gcloud cannot edit Firebase Web OAuth redirect URIs) ==="
-Write-Host "Open the Web OAuth client in Google Cloud Console and add these Authorized redirect URIs:"
+Write-Host "=== Manual step (gcloud cannot edit Firebase Web OAuth client) ==="
+Write-Host "Open the Web OAuth client and add Authorized JavaScript origins (GIS login; no wildcards for subdomains):"
+$origins = @(
+  "http://localhost:3000"
+  "https://whizsuite.com"
+  "https://www.whizsuite.com"
+)
+foreach ($o in $origins) { Write-Host "  - $o" }
+Write-Host "Agency hosts like https://{slug}.whizsuite.com are NOT supported for embedded GIS — sign-in uses the apex host."
+Write-Host ""
+Write-Host "Authorized redirect URIs (Drive / Calendar integrations):"
 foreach ($r in $redirects) { Write-Host "  - $r" }
 $consoleUrl = "https://console.cloud.google.com/auth/clients/${WebClientId}?project=${ProjectId}"
 Write-Host ""

@@ -37,6 +37,11 @@ export const auth = {
   'auth.google.unavailable': 'Google sign-in could not load. Try email instead.',
   'auth.google.demoOnly': 'Google sign-in needs a live API connection.',
   'auth.google.noAccount': 'No account for that Google email. Create a workspace first.',
+  'auth.google.continueRegister': 'No workspace yet — finish signup with Google.',
+  'auth.google.subdomainHint':
+    'Google sign-in runs on the main site. You will return to your workspace after.',
+  'auth.google.finishSignup': 'Create workspace with Google',
+  'auth.google.pendingSignup': 'Google account verified. Name your agency below, then create your workspace.',
   'auth.google.invalid': 'Google sign-in was rejected. Try again.',
   'auth.google.disabled': 'Google sign-in is not enabled on this server yet.',
   'auth.google.button': 'Continue with Google',
