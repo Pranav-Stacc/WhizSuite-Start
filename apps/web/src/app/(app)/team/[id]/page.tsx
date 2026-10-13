@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Mail, Shield, UserMinus } from 'lucide-react';
 import { can, loadIf, requirePermission } from '@/shared/auth/permissions';
 import { memberEffectivePermissionKeys } from '@/shared/auth/resolve-member-access';
+import { isLiveMode } from '@/shared/config/env';
 import { t } from '@/shared/i18n/t';
 import { formatDate, humanizeKey } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -52,7 +53,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
     .filter((role) => role.id !== personalRole?.id)
     .flatMap((role) => role.permissionKeys);
   const grantedKeys = new Set(
-    memberEffectivePermissionKeys(memberAccess, roleGrantedKeys),
+    memberEffectivePermissionKeys(memberAccess, roleGrantedKeys, isLiveMode),
   );
 
   function scopeHintForPermission(key: string): string | undefined {
