@@ -43,6 +43,33 @@ export class AuthorizationService {
     return permissions;
   }
 
+  /** Explicit role grants for clients (nav/UI); excludes companion permissions. */
+  async getExplicitPermissions(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<Permission[]> {
+    const cacheKey = this.redis.orgKey(
+      organizationId,
+      'authz',
+      'user',
+      membershipId,
+      'explicit-v1',
+    );
+    const cached = await this.redis.getJson<Permission[]>(cacheKey);
+    if (cached) return cached;
+
+    const permissions = await this.repo.getExplicitPermissions(
+      organizationId,
+      membershipId,
+    );
+    await this.redis.setJson(
+      cacheKey,
+      permissions,
+      this.config.get('AUTHZ_CACHE_TTL_SECONDS'),
+    );
+    return permissions;
+  }
+
   async can(
     organizationId: string,
     membershipId: string,

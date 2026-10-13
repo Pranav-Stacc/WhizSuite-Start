@@ -22,8 +22,8 @@ async function loadPermissions(session: Session): Promise<Permission[]> {
 }
 
 /**
- * What the signed-in member may do, resolved once per request from the same role assignments the API enforces.
- * Never cached across requests, so a role change applies on the next navigation.
+ * Explicit permissions for nav and page guards (from `/v1/access/capabilities`).
+ * Companion/supporting keys are not included; the API may still grant those for data routes.
  */
 export const getPermissions = cache(async (): Promise<ReadonlySet<Permission>> => {
   const session = await requireSession();

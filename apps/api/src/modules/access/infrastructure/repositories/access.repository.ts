@@ -24,6 +24,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../shared/database/prisma.service';
 import {
+  applyExplicitPermissionOverrides,
   applyPermissionOverrides,
   type PermissionInputs,
 } from '../../application/utils/effective-permissions';
@@ -209,6 +210,15 @@ export class AccessRepository {
     membershipId: string,
   ): Promise<Permission[]> {
     return applyPermissionOverrides(
+      await this.loadPermissionInputs(organizationId, membershipId),
+    );
+  }
+
+  async getExplicitPermissions(
+    organizationId: string,
+    membershipId: string,
+  ): Promise<Permission[]> {
+    return applyExplicitPermissionOverrides(
       await this.loadPermissionInputs(organizationId, membershipId),
     );
   }

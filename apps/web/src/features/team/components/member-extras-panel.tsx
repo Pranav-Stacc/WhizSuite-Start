@@ -19,7 +19,7 @@ import { setMemberPermissionOverridesAction } from '../actions/member.actions';
 interface MemberPermissionsPanelProps {
   memberId: string;
   overrides: MemberAccess['overrides'];
-  /** Effective keys from the API (includes companions minus denials). */
+  /** Explicit effective keys from the API (no companion permissions). */
   effectivePermissions: string[];
   /** Explicit ALLOW keys on assigned roles (for “from role” labels). */
   roleGrantedKeys: string[];

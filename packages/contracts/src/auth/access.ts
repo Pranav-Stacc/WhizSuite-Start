@@ -153,7 +153,11 @@ export interface AccessRoleSummary {
   defaultScopeTypes: ScopeType[];
 }
 
-/** Response of `GET /v1/access/capabilities`: what the caller may do in the current organisation. */
+/**
+ * Response of `GET /v1/access/capabilities`.
+ * `permissions` are explicit role grants (no companion/supporting keys) — used for nav and UI.
+ * API route guards may still accept companion permissions server-side.
+ */
 export interface AccessCapabilities {
   membershipType?: MembershipType;
   permissions: Permission[];

@@ -35,7 +35,7 @@ class MemberAccess {
   final Set<String> effectivePermissions;
 }
 
-/// (role permissions ∪ ALLOW overrides) − DENY overrides.
+/// Explicit (role permissions ∪ ALLOW overrides) − DENY overrides; no companion keys.
 Set<String> computeEffectivePermissions({
   required Set<String> rolePermissionKeys,
   required Map<String, String> overrides,

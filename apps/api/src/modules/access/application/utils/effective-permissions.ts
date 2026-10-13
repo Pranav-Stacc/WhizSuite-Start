@@ -16,24 +16,41 @@ export interface PermissionInputs {
 
 const byKey = (a: string, b: string) => a.localeCompare(b);
 
-/** (role permissions ∪ ALLOW overrides) − DENY overrides, sorted; owners get everything. */
-export function applyPermissionOverrides({
-  rolePermissions,
-  overrides,
-  isOwner,
-}: PermissionInputs): Permission[] {
+function resolvePermissions(
+  { rolePermissions, overrides, isOwner }: PermissionInputs,
+  expandCompanions: boolean,
+): Permission[] {
   if (isOwner) return [...ALL_PERMISSIONS].sort(byKey);
   const granted = new Set<Permission>(rolePermissions);
   for (const override of overrides) {
     if (override.effect === PermissionEffects.ALLOW) granted.add(override.key);
   }
-  for (const companion of expandCompanionPermissions(granted)) {
-    granted.add(companion);
+  if (expandCompanions) {
+    for (const companion of expandCompanionPermissions(granted)) {
+      granted.add(companion);
+    }
   }
   for (const override of overrides) {
     if (override.effect === PermissionEffects.DENY) granted.delete(override.key);
   }
   return [...granted].sort(byKey);
+}
+
+/**
+ * Explicit grants only — used for nav, member UI, and `GET /v1/access/capabilities`.
+ * Does not add companion/supporting permissions.
+ */
+export function applyExplicitPermissionOverrides(
+  inputs: PermissionInputs,
+): Permission[] {
+  return resolvePermissions(inputs, false);
+}
+
+/**
+ * Role grants plus companion reads for API authorization (JWT / route guards).
+ */
+export function applyPermissionOverrides(inputs: PermissionInputs): Permission[] {
+  return resolvePermissions(inputs, true);
 }
 
 export function sortOverrides(

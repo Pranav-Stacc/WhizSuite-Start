@@ -3,7 +3,10 @@ import {
   PermissionEffects,
   Permissions,
 } from '@agency-os/contracts';
-import { applyPermissionOverrides } from './effective-permissions';
+import {
+  applyExplicitPermissionOverrides,
+  applyPermissionOverrides,
+} from './effective-permissions';
 
 describe('applyPermissionOverrides', () => {
   it('returns every permission for owners and ignores overrides', () => {
@@ -88,7 +91,7 @@ describe('applyPermissionOverrides', () => {
     expect(result).not.toContain(Permissions.FILES_VIEW);
   });
 
-  it('lets DENY on clients.view hide the Clients nav when content.view is granted', () => {
+  it('lets DENY on clients.view block the companion when content.view is granted', () => {
     const result = applyPermissionOverrides({
       rolePermissions: [Permissions.CONTENT_VIEW],
       overrides: [{ key: Permissions.CLIENTS_VIEW, effect: PermissionEffects.DENY }],
@@ -108,5 +111,29 @@ describe('applyPermissionOverrides', () => {
       isOwner: false,
     });
     expect(result).toEqual([]);
+  });
+});
+
+describe('applyExplicitPermissionOverrides', () => {
+  it('does not add companion reads for content.view', () => {
+    const result = applyExplicitPermissionOverrides({
+      rolePermissions: [Permissions.CONTENT_VIEW],
+      overrides: [],
+      isOwner: false,
+    });
+    expect(result).toEqual([Permissions.CONTENT_VIEW]);
+    expect(result).not.toContain(Permissions.CLIENTS_VIEW);
+  });
+
+  it('still applies ALLOW and DENY overrides', () => {
+    const result = applyExplicitPermissionOverrides({
+      rolePermissions: [Permissions.ORG_VIEW],
+      overrides: [
+        { key: Permissions.MEMBERS_VIEW, effect: PermissionEffects.ALLOW },
+        { key: Permissions.ORG_VIEW, effect: PermissionEffects.DENY },
+      ],
+      isOwner: false,
+    });
+    expect(result).toEqual([Permissions.MEMBERS_VIEW]);
   });
 });

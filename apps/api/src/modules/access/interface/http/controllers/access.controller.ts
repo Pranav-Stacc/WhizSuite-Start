@@ -42,7 +42,7 @@ export class AccessController {
       return { permissions: [], roles: [], capabilities: {} };
     }
     const [permissions, rolesByMembership] = await Promise.all([
-      this.authorization.getEffectivePermissions(orgId, user.membershipId),
+      this.authorization.getExplicitPermissions(orgId, user.membershipId),
       this.access.rolesByMembership(orgId, [user.membershipId]),
     ]);
     return {

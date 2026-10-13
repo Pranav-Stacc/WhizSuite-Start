@@ -15,7 +15,7 @@ import { AuthorizationService } from '../../../access/application/services/autho
 import { DefaultRolesService } from '../../../access/application/services/default-roles.service';
 import { RoleAssignmentService } from '../../../access/application/services/role-assignment.service';
 import {
-  applyPermissionOverrides,
+  applyExplicitPermissionOverrides,
   sortOverrides,
 } from '../../../access/application/utils/effective-permissions';
 import {
@@ -428,7 +428,7 @@ export class MembersService {
     return {
       roles: rolesByMembership.get(membershipId) ?? [],
       overrides: sortOverrides(memberOverrides),
-      effectivePermissions: applyPermissionOverrides(inputs),
+      effectivePermissions: applyExplicitPermissionOverrides(inputs),
     };
   }
 

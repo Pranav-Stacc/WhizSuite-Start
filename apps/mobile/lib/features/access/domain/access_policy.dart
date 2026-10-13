@@ -1,5 +1,4 @@
-/// The signed-in member's effective permissions, resolved by the API from every role
-/// assigned to the membership (custom or system), including scopes and DENY grants.
+/// Explicit permissions from `/v1/access/capabilities` (role grants ± overrides; no companions).
 /// The UI never infers access from role names or membership types.
 class AccessPolicy {
   const AccessPolicy(this.granted);
