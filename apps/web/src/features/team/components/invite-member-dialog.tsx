@@ -12,7 +12,7 @@ import { t } from '@/shared/i18n/t';
 import { cn } from '@/shared/lib/cn';
 import { humanizeKey } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/button';
-import { Field, Input, Textarea } from '@/shared/ui/field';
+import { Field, Input } from '@/shared/ui/field';
 import { Modal } from '@/shared/ui/overlays';
 import { inviteMemberAction } from '../actions/member.actions';
 
@@ -27,9 +27,7 @@ export function InviteMemberDialog({ assignableRoles, trigger, defaultOpen = fal
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(defaultOpen);
-  const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
-  const [note, setNote] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -39,9 +37,7 @@ export function InviteMemberDialog({ assignableRoles, trigger, defaultOpen = fal
   }, [defaultOpen]);
 
   const reset = () => {
-    setStep(1);
     setEmail('');
-    setNote('');
     setSelected(new Set());
     setFieldErrors({});
   };
@@ -71,7 +67,6 @@ export function InviteMemberDialog({ assignableRoles, trigger, defaultOpen = fal
   const submit = () => {
     const parsed = inviteMemberSchema.safeParse({
       email,
-      note,
       membershipType: 'MEMBER',
       roleIds: [...selected],
     });
@@ -82,7 +77,6 @@ export function InviteMemberDialog({ assignableRoles, trigger, defaultOpen = fal
         if (typeof key === 'string') errors[key] = issue.message;
       }
       setFieldErrors(errors);
-      if (errors.email) setStep(1);
       return;
     }
     setFieldErrors({});
@@ -122,106 +116,70 @@ export function InviteMemberDialog({ assignableRoles, trigger, defaultOpen = fal
       <Modal
         open={open}
         onOpenChange={close}
-        title={step === 1 ? t('team.invite.heading') : t('team.invite.step.roles')}
-        description={step === 1 ? t('team.invite.desc') : t('team.invite.step.roles.desc')}
-        size="md"
+        title={t('team.invite.heading')}
+        description={t('team.invite.desc')}
+        size="sm"
         footer={
           <>
-            {step === 2 ? (
-              <Button type="button" variant="ghost" onClick={() => setStep(1)} disabled={pending}>
-                {t('common.back')}
-              </Button>
-            ) : (
-              <Button type="button" variant="ghost" onClick={() => close(false)} disabled={pending}>
-                {t('common.cancel')}
-              </Button>
-            )}
-            {step === 1 ? (
-              <Button
-                type="button"
-                variant="primary"
-                disabled={!email.trim()}
-                onClick={() => {
-                  if (!email.trim()) return;
-                  setStep(2);
-                }}
-              >
-                {t('common.next')}
-              </Button>
-            ) : (
-              <Button type="button" variant="primary" disabled={pending || selected.size === 0} onClick={submit}>
-                {pending ? <Loader2 className="animate-spin" /> : <UserPlus />}
-                {t('team.invite.send')}
-              </Button>
-            )}
+            <Button type="button" variant="ghost" onClick={() => close(false)} disabled={pending}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="button" variant="primary" disabled={pending || !email.trim() || selected.size === 0} onClick={submit}>
+              {pending ? <Loader2 className="animate-spin" /> : <UserPlus />}
+              {t('team.invite.send')}
+            </Button>
           </>
         }
       >
-        {step === 1 ? (
-          <div className="space-y-4">
-            <Field label={t('team.invite.email')} htmlFor="invite-email" required error={translateError(fieldErrors.email)}>
-              <Input
-                id="invite-email"
-                type="email"
-                autoFocus
-                placeholder={t('team.invite.email.placeholder')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                aria-invalid={Boolean(fieldErrors.email)}
-              />
-            </Field>
-            <Field label={t('team.invite.title')} htmlFor="invite-note" hint={t('team.invite.title.placeholder')}>
-              <Textarea id="invite-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
-            </Field>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-              {t('team.invite.step.roles.for', { email })}
-            </p>
-            <div>
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium">{t('team.roles.field')}</p>
-                <Link href="/roles?new=1" className="text-xs font-medium text-primary hover:underline">
-                  <Plus className="mr-1 inline size-3.5" />
-                  {t('team.invite.createRole')}
-                </Link>
-              </div>
-              <ul className="max-h-[40vh] space-y-1 overflow-y-auto rounded-xl border border-border-soft p-2">
-                {assignableRoles.map((role) => (
-                  <li key={role.id}>
-                    <label
-                      className={cn(
-                        'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2',
-                        selected.has(role.id) && 'bg-primary/10',
-                      )}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected.has(role.id)}
-                        onChange={() => toggleRole(role.id)}
-                        className="size-3.5 accent-primary"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate">
-                          {role.name}
-                          {role.isSystem ? ` · ${t('roles.system')}` : ''}
-                        </span>
-                        <span className="block truncate text-[11px] text-muted">
-                          {role.defaultScopeTypes.map((scope) => humanizeKey(scope)).join(', ')}
-                        </span>
-                      </span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-1 text-xs text-muted">{t('team.roles.hint')}</p>
-              {fieldErrors.roleIds ? (
-                <p className="mt-1 text-xs text-danger" role="alert">{translateError(fieldErrors.roleIds)}</p>
-              ) : null}
+        <div className="max-h-[min(70vh,28rem)] space-y-4 overflow-y-auto pr-1">
+          <Field label={t('team.invite.email')} htmlFor="invite-email" required error={translateError(fieldErrors.email)}>
+            <Input
+              id="invite-email"
+              type="email"
+              autoFocus
+              placeholder={t('team.invite.email.placeholder')}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={Boolean(fieldErrors.email)}
+            />
+          </Field>
+          <div>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">{t('team.roles.field')}</p>
+              <Link href="/roles?new=1" className="text-xs font-medium text-primary hover:underline">
+                <Plus className="mr-1 inline size-3.5" />
+                {t('team.invite.createRole')}
+              </Link>
             </div>
+            <ul className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-border-soft p-2">
+              {assignableRoles.map((role) => (
+                <li key={role.id}>
+                  <label
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-surface-2',
+                      selected.has(role.id) && 'bg-primary/10',
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(role.id)}
+                      onChange={() => toggleRole(role.id)}
+                      className="size-3.5 accent-primary"
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {role.name}
+                      {role.isSystem ? ` · ${t('roles.system')}` : ''}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1 text-xs text-muted">{t('team.roles.hint')}</p>
+            {fieldErrors.roleIds ? (
+              <p className="mt-1 text-xs text-danger" role="alert">{translateError(fieldErrors.roleIds)}</p>
+            ) : null}
           </div>
-        )}
+        </div>
       </Modal>
     </>
   );

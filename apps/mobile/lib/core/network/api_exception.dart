@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 import '../contracts/contracts.g.dart';
@@ -27,7 +29,11 @@ class ApiException implements Exception {
         return ApiException._fromResponse(error.response);
       case DioExceptionType.cancel:
       case DioExceptionType.badCertificate:
+        return const ApiException(kind: ApiFailureKind.unknown);
       case DioExceptionType.unknown:
+        if (error.error is SocketException) {
+          return const ApiException(kind: ApiFailureKind.offline);
+        }
         return const ApiException(kind: ApiFailureKind.unknown);
     }
   }

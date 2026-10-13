@@ -19,6 +19,9 @@ import { setMemberPermissionOverridesAction } from '../actions/member.actions';
 interface MemberPermissionsPanelProps {
   memberId: string;
   overrides: MemberAccess['overrides'];
+  /** Effective keys from the API (includes companions minus denials). */
+  effectivePermissions: string[];
+  /** Explicit ALLOW keys on assigned roles (for “from role” labels). */
   roleGrantedKeys: string[];
   catalog: PermissionRow[];
 }
@@ -27,8 +30,11 @@ function overridesMap(overrides: readonly MemberPermissionOverride[]): Map<strin
   return new Map(overrides.map((row) => [row.key, row.effect]));
 }
 
-function effectiveKeys(roleKeys: Set<string>, overrides: Map<string, MemberPermissionOverride['effect']>): Set<string> {
-  const out = new Set(roleKeys);
+function applyOverrides(
+  base: Set<string>,
+  overrides: Map<string, MemberPermissionOverride['effect']>,
+): Set<string> {
+  const out = new Set(base);
   for (const [key, effect] of overrides) {
     if (effect === PermissionEffects.DENY) out.delete(key);
     else out.add(key);
@@ -37,8 +43,9 @@ function effectiveKeys(roleKeys: Set<string>, overrides: Map<string, MemberPermi
 }
 
 /** Toggle ALLOW/DENY overrides on top of assigned roles (same model as mobile). */
-export function MemberExtrasPanel({ memberId, overrides, roleGrantedKeys, catalog }: MemberPermissionsPanelProps) {
+export function MemberExtrasPanel({ memberId, overrides, effectivePermissions, roleGrantedKeys, catalog }: MemberPermissionsPanelProps) {
   const roleKeys = useMemo(() => new Set(roleGrantedKeys), [roleGrantedKeys]);
+  const serverEffective = useMemo(() => new Set(effectivePermissions), [effectivePermissions]);
   const baseline = useMemo(() => overridesMap(overrides), [overrides]);
   const [pending, setPending] = useState<Map<string, MemberPermissionOverride['effect'] | null>>(new Map());
   const [saving, startTransition] = useTransition();
@@ -52,7 +59,7 @@ export function MemberExtrasPanel({ memberId, overrides, roleGrantedKeys, catalo
     return map;
   }, [baseline, pending]);
 
-  const effective = useMemo(() => effectiveKeys(roleKeys, merged), [roleKeys, merged]);
+  const effective = useMemo(() => applyOverrides(serverEffective, merged), [serverEffective, merged]);
   const dirty = pending.size > 0;
 
   const grouped = useMemo(() => {

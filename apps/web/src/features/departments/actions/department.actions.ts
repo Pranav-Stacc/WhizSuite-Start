@@ -94,3 +94,16 @@ export async function deleteDepartmentAction(id: string): Promise<ActionResult> 
     return succeed(undefined, t('departments.deleted'));
   });
 }
+
+export async function deleteDesignationAction(designationId: string): Promise<ActionResult> {
+  return guarded(async () => {
+    await authorize(Permissions.ORG_SETTINGS_MANAGE);
+    if (isLiveMode) {
+      const org = (await getSession())?.orgId;
+      if (!org) return fail(t('toast.failed'));
+      await apiFetch(orgPath(org, `designations/${designationId}`), { method: 'DELETE' });
+    }
+    await refreshData('departments');
+    return succeed(undefined, t('departments.designation.deleted'));
+  });
+}

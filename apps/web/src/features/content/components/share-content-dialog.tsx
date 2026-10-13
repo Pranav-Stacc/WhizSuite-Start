@@ -1,30 +1,51 @@
 'use client';
 
-import { useState, useTransition } from 'react';
-import { Loader2, MessageCircle } from 'lucide-react';
+import { useMemo, useState, useTransition } from 'react';
+import { Building2, Loader2, MessageCircle, MessageSquare, Search, Users } from 'lucide-react';
+import type { ChatRoomType } from '@agency-os/contracts';
 import { t } from '@/shared/i18n/t';
+import { cn } from '@/shared/lib/cn';
 import { Button } from '@/shared/ui/button';
-import { Field, Select } from '@/shared/ui/field';
+import { Field, Input } from '@/shared/ui/field';
 import { Modal } from '@/shared/ui/overlays';
-import { shareContentInDmAction } from '../actions/content.actions';
+import { shareContentInChatAction } from '../actions/content.actions';
+
+export interface ShareChatRoomOption {
+  id: string;
+  label: string;
+  type: ChatRoomType;
+}
 
 interface ShareContentDialogProps {
   contentId: string;
   title: string;
-  members: Array<{ userId: string; name: string }>;
+  rooms: ShareChatRoomOption[];
   trigger: React.ReactNode;
 }
 
-export function ShareContentDialog({ contentId, title, members, trigger }: ShareContentDialogProps) {
+function RoomTypeIcon({ type }: { type: ChatRoomType }) {
+  if (type === 'CLIENT') return <Building2 className="size-4 shrink-0 text-muted" />;
+  if (type === 'GROUP') return <Users className="size-4 shrink-0 text-muted" />;
+  return <MessageSquare className="size-4 shrink-0 text-muted" />;
+}
+
+export function ShareContentDialog({ contentId, title, rooms, trigger }: ShareContentDialogProps) {
   const [open, setOpen] = useState(false);
-  const [userId, setUserId] = useState('');
+  const [roomId, setRoomId] = useState('');
+  const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return rooms;
+    return rooms.filter((room) => room.label.toLowerCase().includes(needle));
+  }, [query, rooms]);
 
   const share = () => {
     setError(null);
     start(async () => {
-      const result = await shareContentInDmAction({ contentId, userId, title });
+      const result = await shareContentInChatAction({ contentId, roomId, title });
       if (!result.ok) {
         setError(result.message);
         return;
@@ -44,28 +65,67 @@ export function ShareContentDialog({ contentId, title, members, trigger }: Share
       <Modal
         open={open}
         onOpenChange={(next) => !pending && setOpen(next)}
-        title={t('content.share.dm.title')}
-        description={t('content.share.dm.desc')}
+        title={t('content.share.chat.title')}
+        description={t('content.share.chat.desc')}
         footer={
           <>
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
               {t('common.cancel')}
             </Button>
-            <Button variant="primary" onClick={share} disabled={pending || !userId}>
+            <Button variant="primary" onClick={share} disabled={pending || !roomId}>
               {pending ? <Loader2 className="animate-spin" /> : <MessageCircle />}
-              {t('content.share.dm.send')}
+              {t('content.share.chat.send')}
             </Button>
           </>
         }
       >
-        <Field label={t('content.share.dm.recipient')} required>
-          <Select value={userId} onChange={(e) => setUserId(e.target.value)} disabled={pending} required>
-            <option value="" disabled>{t('content.share.dm.pick')}</option>
-            {members.map((member) => (
-              <option key={member.userId} value={member.userId}>{member.name}</option>
-            ))}
-          </Select>
+        <Field label={t('content.share.chat.search')} htmlFor="share-chat-search">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+            <Input
+              id="share-chat-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('content.share.chat.searchPlaceholder')}
+              className="h-9 pl-9"
+              disabled={pending}
+            />
+          </div>
         </Field>
+        <div className="mt-3 max-h-64 overflow-y-auto rounded-xl border border-border-soft">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted">{t('content.share.chat.empty')}</p>
+          ) : (
+            <ul className="divide-y divide-border-soft">
+              {filtered.map((room) => {
+                const selected = room.id === roomId;
+                return (
+                  <li key={room.id}>
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => setRoomId(room.id)}
+                      className={cn(
+                        'flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition',
+                        selected ? 'bg-sky-500/10 text-foreground' : 'hover:bg-surface-2',
+                      )}
+                    >
+                      <RoomTypeIcon type={room.type} />
+                      <span className="min-w-0 flex-1 truncate font-medium">{room.label}</span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-muted">
+                        {room.type === 'DM'
+                          ? t('chat.type.dm')
+                          : room.type === 'GROUP'
+                            ? t('chat.type.group')
+                            : t('chat.type.client')}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
         {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
       </Modal>
     </>

@@ -89,8 +89,8 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
     title: l10n.teamInvite,
     subtitle: l10n.teamInviteBody,
     submitLabel: l10n.teamInviteSend,
-    size: AppDialogSize.large,
-    presentation: AppDialogPresentation.bottomSheet,
+    size: AppDialogSize.standard,
+    presentation: AppDialogPresentation.dialog,
     fields: (context, setState) => [
       TextFormField(
         controller: email,
@@ -104,6 +104,7 @@ Future<({String email, InvitationLink link})?> showInviteForm(BuildContext conte
       if (canPickRoles)
         RolePickerField(
           selected: roleIds,
+          compact: true,
           onChanged: (value) => setState(() => roleIds = value),
         )
       else

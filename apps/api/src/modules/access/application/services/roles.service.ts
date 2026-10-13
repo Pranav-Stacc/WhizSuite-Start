@@ -3,6 +3,7 @@ import {
   AssignableScopeTypes,
   ErrorCodes,
   MEMBERSHIP_DEFAULT_ROLE_NAME,
+  PermissionEffects,
   roleInputSchema,
   type RoleInput,
   type RoleKind,
@@ -92,7 +93,10 @@ export class RolesService {
       description: raw.description !== undefined ? raw.description : undefined,
       kind: raw.kind ?? before.kind,
       permissionKeys:
-        raw.permissionKeys ?? before.permissions.map((p) => p.permission.key),
+        raw.permissionKeys ??
+        before.permissions
+          .filter((p) => p.effect === PermissionEffects.ALLOW)
+          .map((p) => p.permission.key),
       defaultScopeTypes:
         raw.defaultScopeTypes ?? asScopeTypes(before.defaultScopeTypes),
       ...(raw.permissionScopes
@@ -131,7 +135,9 @@ export class RolesService {
       before: {
         name: before.name,
         kind: before.kind,
-        permissionKeys: before.permissions.map((p) => p.permission.key),
+        permissionKeys: before.permissions
+          .filter((p) => p.effect === PermissionEffects.ALLOW)
+          .map((p) => p.permission.key),
         defaultScopeTypes: before.defaultScopeTypes,
       },
       after: { name: role.name, ...patch },
@@ -161,7 +167,9 @@ export class RolesService {
       before: {
         name: role.name,
         kind: role.kind,
-        permissionKeys: role.permissions.map((p) => p.permission.key),
+        permissionKeys: role.permissions
+          .filter((p) => p.effect === PermissionEffects.ALLOW)
+          .map((p) => p.permission.key),
         defaultScopeTypes: role.defaultScopeTypes,
       },
     });

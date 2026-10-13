@@ -132,6 +132,21 @@ export function expandCompanionPermissions(
   return [...out];
 }
 
+/** Companion keys implied by `granted` but not explicitly selected (persist as role DENY). */
+export function withheldCompanionPermissions(
+  granted: Iterable<Permission>,
+): Permission[] {
+  const allowed = new Set<Permission>();
+  for (const key of granted) {
+    if (PERMISSION_SET.has(key)) allowed.add(key);
+  }
+  const withheld = new Set<Permission>();
+  for (const companion of expandCompanionPermissions(allowed)) {
+    if (!allowed.has(companion)) withheld.add(companion);
+  }
+  return [...withheld].sort((a, b) => a.localeCompare(b));
+}
+
 export function companionsForPermission(key: Permission): readonly Permission[] {
   return PERMISSION_COMPANIONS[key] ?? [];
 }

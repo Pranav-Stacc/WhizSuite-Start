@@ -11,13 +11,22 @@ import '../../roles/domain/role.dart';
 
 /// Multi-select of the organisation's assignable roles, capped at [memberRolesMax].
 class RolePickerField extends ConsumerWidget {
-  const RolePickerField({required this.selected, required this.onChanged, this.required = true, super.key});
+  const RolePickerField({
+    required this.selected,
+    required this.onChanged,
+    this.required = true,
+    this.compact = false,
+    super.key,
+  });
 
   final Set<String> selected;
   final ValueChanged<Set<String>> onChanged;
 
   /// Assignment replaces every role, so a member always keeps at least one.
   final bool required;
+
+  /// Shorter chip list for invite dialogs.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,24 +63,29 @@ class RolePickerField extends ConsumerWidget {
             ],
           ),
           SizedBox(height: tokens.sm),
-          Wrap(
-            spacing: tokens.sm,
-            runSpacing: tokens.sm,
-            children: [
-              for (final role in items)
-                FilterChip(
-                  avatar: Icon(role.isSystem ? Icons.lock_outline : Icons.shield_outlined, size: 16),
-                  label: Text(role.name),
-                  tooltip: role.description.isEmpty ? null : role.description,
-                  selected: selected.contains(role.id),
-                  onSelected: !selected.contains(role.id) && full
-                      ? null
-                      : (on) {
-                          onChanged(on ? {...selected, role.id} : ({...selected}..remove(role.id)));
-                          state.didChange(selected);
-                        },
-                ),
-            ],
+          SizedBox(
+            height: compact ? 132 : null,
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: tokens.sm,
+                runSpacing: tokens.sm,
+                children: [
+                  for (final role in items)
+                    FilterChip(
+                      avatar: Icon(role.isSystem ? Icons.lock_outline : Icons.shield_outlined, size: 16),
+                      label: Text(role.name),
+                      tooltip: role.description.isEmpty ? null : role.description,
+                      selected: selected.contains(role.id),
+                      onSelected: !selected.contains(role.id) && full
+                          ? null
+                          : (on) {
+                              onChanged(on ? {...selected, role.id} : ({...selected}..remove(role.id)));
+                              state.didChange(selected);
+                            },
+                    ),
+                ],
+              ),
+            ),
           ),
           if (state.hasError) ...[
             SizedBox(height: tokens.sm),

@@ -20,6 +20,8 @@ import '../../domain/department.dart';
 import '../../departments_routes.dart';
 import '../department_forms.dart';
 
+enum _DeptMenu { delete }
+
 class DepartmentDetailScreen extends ConsumerWidget {
   const DepartmentDetailScreen({required this.departmentId, super.key});
 
@@ -66,6 +68,41 @@ class _DepartmentDetailBody extends ConsumerWidget {
 
   final DepartmentNode node;
 
+  Future<void> _deleteDepartment(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await confirmAction(
+      context,
+      title: l10n.deleteConfirmTitle(node.department.name),
+      body: l10n.deleteConfirmBody,
+      confirmLabel: l10n.delete,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    final ok = await runAction(
+      context,
+      () => ref.read(departmentsActionsProvider).delete(node.department.id),
+      success: l10n.deletedToast,
+    );
+    if (ok && context.mounted) context.go(DepartmentsRoutes.root);
+  }
+
+  Future<void> _deletePosition(BuildContext context, WidgetRef ref, String positionId) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await confirmAction(
+      context,
+      title: l10n.deleteConfirmTitle(l10n.departmentPositionsLabel),
+      body: l10n.deleteConfirmBody,
+      confirmLabel: l10n.delete,
+      destructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    await runAction(
+      context,
+      () => ref.read(departmentsActionsProvider).deletePosition(positionId),
+      success: l10n.deletedToast,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -86,7 +123,28 @@ class _DepartmentDetailBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(department.name, style: text.headlineSmall),
+                Row(
+                  children: [
+                    Expanded(child: Text(department.name, style: text.headlineSmall)),
+                    PermissionGate(
+                      anyOf: const [Permissions.orgSettingsManage],
+                      child: PopupMenuButton<_DeptMenu>(
+                        tooltip: l10n.moreActions,
+                        onSelected: (_) => _deleteDepartment(context, ref),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: _DeptMenu.delete,
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error),
+                              title: Text(l10n.delete),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 if (department.path.contains('/'))
                   Text(department.path.replaceAll('/', ' › '), style: text.bodySmall?.copyWith(color: tokens.muted)),
                 SizedBox(height: tokens.lg),
@@ -108,7 +166,19 @@ class _DepartmentDetailBody extends ConsumerWidget {
                                 contentPadding: EdgeInsets.zero,
                                 title: Text(position.name),
                                 subtitle: Text(l10n.roleMembers(position.memberCount)),
-                                trailing: position.isHead ? TagChip(label: l10n.departmentHead) : null,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (position.isHead) TagChip(label: l10n.departmentHead),
+                                    PermissionGate(
+                                      anyOf: const [Permissions.orgSettingsManage],
+                                      child: IconButton(
+                                        icon: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.error, size: 20),
+                                        onPressed: () => _deletePosition(context, ref, position.id),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                           ],
                         ),

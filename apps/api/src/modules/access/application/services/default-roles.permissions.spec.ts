@@ -11,6 +11,7 @@ describe('DEFAULT_MEMBERSHIP_ROLES permission matrix', () => {
     expect(client.has(Permissions.APPROVALS_VIEW)).toBe(true);
     expect(client.has(Permissions.APPROVALS_APPROVE)).toBe(true);
     expect(client.has(Permissions.CHAT_VIEW)).toBe(true);
+    expect(client.has(Permissions.CLIENTS_VIEW)).toBe(false);
     expect(client.has(Permissions.CALENDAR_VIEW)).toBe(false);
     expect(client.has(Permissions.CALENDAR_CREATE)).toBe(false);
     expect(client.has(Permissions.CALENDAR_SYNC)).toBe(false);

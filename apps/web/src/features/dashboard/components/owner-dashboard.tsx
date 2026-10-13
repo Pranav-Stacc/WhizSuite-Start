@@ -10,7 +10,7 @@ import { Button } from '@/shared/ui/button';
 import { AreaChart, HBarList } from '@/shared/ui/charts';
 import { LogoTile } from '@/shared/ui/avatar';
 import { Progress } from '@/shared/ui/feedback';
-import { StatCard } from '@/shared/ui/stat-card';
+import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { statusLabel, statusTone, TONE_COLOR } from '@/shared/ui/status';
 import type { GuideItem } from '@/shared/ui/page-guide';
 import { listAudit } from '@/features/audit/services/audit.service';
@@ -95,11 +95,13 @@ export async function OwnerDashboard({ session }: { session: Session }) {
         }
       />
 
-      <section aria-label={t('dashboard.kpi.aria')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} href="/clients" />
-        <StatCard label={t('dashboard.kpi.outstanding')} value={formatMoney(receivables.outstanding, undefined, true)} icon={<HandCoins />} hint={t('dashboard.kpi.outstanding.hint', { overdue: formatMoney(receivables.overdue, undefined, true) })} href="/invoices" />
-        <StatCard label={t('dashboard.kpi.pipeline')} value={formatMoney(pipeline.weighted, undefined, true)} icon={<Gauge />} hint={t('dashboard.kpi.pipeline.hint', { open: formatMoney(pipeline.open, undefined, true) })} href="/leads" />
-        <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
+      <section aria-label={t('dashboard.kpi.aria')}>
+        <StatGrid>
+          <StatCard label={t('dashboard.kpi.mrr')} value={formatMoney(mrr, undefined, true)} icon={<TrendingUp />} hint={t('dashboard.kpi.mrr.hint', { count: activeClients.length })} href="/clients" />
+          <StatCard label={t('dashboard.kpi.outstanding')} value={formatMoney(receivables.outstanding, undefined, true)} icon={<HandCoins />} hint={t('dashboard.kpi.outstanding.hint', { overdue: formatMoney(receivables.overdue, undefined, true) })} href="/invoices" />
+          <StatCard label={t('dashboard.kpi.pipeline')} value={formatMoney(pipeline.weighted, undefined, true)} icon={<Gauge />} hint={t('dashboard.kpi.pipeline.hint', { open: formatMoney(pipeline.open, undefined, true) })} href="/leads" />
+          <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
+        </StatGrid>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">

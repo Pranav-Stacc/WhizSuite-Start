@@ -113,7 +113,7 @@ export const auditLive: LiveBinding<AuditEntry> = {
 };
 
 export const rolesLive = binding<AgencyRole>('roles', 'roles', roleFromApi, roleToApi);
-export const departmentsLive = binding<Department>('departments', 'departments', departmentFromApi, departmentToApi, { deletable: false });
+export const departmentsLive = binding<Department>('departments', 'departments', departmentFromApi, departmentToApi, { deletable: true });
 
 export const membersLive: LiveBinding<Member> = {
   path: (org) => orgPath(org, 'members'),

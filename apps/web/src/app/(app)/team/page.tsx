@@ -10,7 +10,7 @@ import { FilterChips, param, withQuery, type SearchParams } from '@/shared/ui/na
 import { PageGuide, type GuideItem } from '@/shared/ui/page-guide';
 import { PageHeader } from '@/shared/ui/page-header';
 import { SearchInput } from '@/shared/ui/search-input';
-import { StatCard } from '@/shared/ui/stat-card';
+import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { InviteMemberDialog } from '@/features/team/components/invite-member-dialog';
 import { MemberCard } from '@/features/team/components/member-card';
 import type { Member } from '@/features/team/data/members.repository';
@@ -102,12 +102,12 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatGrid>
         <StatCard label={t('team.stat.members')} value={String(active.length)} icon={<Users />} hint={t('team.stat.members.hint')} />
         <StatCard label={t('team.stat.pending')} value={String(pending)} icon={<MailPlus />} hint={t('team.stat.pending.hint')} />
         <StatCard label={t('team.stat.capacity')} value={t('team.hours', { hours: totalCapacity })} icon={<Gauge />} hint={t('team.stat.capacity.hint')} />
         <StatCard label={t('team.stat.utilisation')} value={`${utilisation}%`} icon={<Gauge />} hint={t('team.stat.utilisation.hint', { open: totalOpen })} />
-      </div>
+      </StatGrid>
 
       <div role="search" aria-label={t('team.filters.label')} className="mb-5 flex flex-wrap items-center gap-3">
         <SearchInput placeholder={t('team.search')} className="max-w-64" />

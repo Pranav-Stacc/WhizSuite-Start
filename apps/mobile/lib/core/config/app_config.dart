@@ -15,20 +15,28 @@ class AppConfig {
     required this.accessRefreshInterval,
     required this.defaultCurrency,
     required this.googleServerClientId,
+    required this.googleIosClientId,
     required this.googleSignInEnabled,
     required this.deepLinkScheme,
     required this.liveMode,
   });
 
   factory AppConfig.fromEnvironment() {
-    const apiBaseUrl = String.fromEnvironment(
+    const apiBaseUrlUnset = '__API_BASE_URL_UNSET__';
+    const apiBaseUrlRaw = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'https://api.whizsuite.praanav.in/api',
+      defaultValue: apiBaseUrlUnset,
     );
-    const realtimeUrl = String.fromEnvironment(
+    const deployedApiBase = 'https://api.whizsuite.praanav.in/api';
+    const deployedRealtime = 'https://api.whizsuite.praanav.in';
+    const apiBaseUrl = apiBaseUrlRaw == apiBaseUrlUnset ? deployedApiBase : apiBaseUrlRaw;
+
+    const realtimeUrlUnset = '__REALTIME_URL_UNSET__';
+    const realtimeUrlRaw = String.fromEnvironment(
       'REALTIME_URL',
-      defaultValue: 'https://api.whizsuite.praanav.in',
+      defaultValue: realtimeUrlUnset,
     );
+    const realtimeUrl = realtimeUrlRaw == realtimeUrlUnset ? deployedRealtime : realtimeUrlRaw;
     const connectTimeoutMs = int.fromEnvironment(
       'HTTP_CONNECT_TIMEOUT_MS',
       defaultValue: 10000,
@@ -61,15 +69,22 @@ class AppConfig {
       'DEFAULT_CURRENCY',
       defaultValue: 'INR',
     );
-    /// Web OAuth client ID from Firebase / Google Cloud (used as Android serverClientId).
+    /// Web OAuth client ID from Firebase / Google Cloud (Android [serverClientId] for ID tokens).
     const googleServerClientId = String.fromEnvironment(
       'GOOGLE_SERVER_CLIENT_ID',
       defaultValue: '9465040813-c2o7a0t2b86tqnareuods7evo5ge355v.apps.googleusercontent.com',
     );
-    const googleSignInEnabledFlag = bool.fromEnvironment(
-      'GOOGLE_SIGN_IN_ENABLED',
-      defaultValue: false,
+    const googleIosClientId = String.fromEnvironment(
+      'GOOGLE_IOS_CLIENT_ID',
+      defaultValue: '',
     );
+    /// Parsed as string so `dart-define-from-file` JSON booleans always work.
+    const googleSignInEnabledRaw = String.fromEnvironment(
+      'GOOGLE_SIGN_IN_ENABLED',
+      defaultValue: 'true',
+    );
+    const googleSignInEnabledFlag =
+        googleSignInEnabledRaw != 'false' && googleSignInEnabledRaw != '0';
     const deepLinkScheme = String.fromEnvironment(
       'DEEP_LINK_SCHEME',
       defaultValue: 'whizsuite',
@@ -109,6 +124,7 @@ class AppConfig {
       accessRefreshInterval: const Duration(seconds: accessRefreshSeconds),
       defaultCurrency: defaultCurrency,
       googleServerClientId: googleServerClientId,
+      googleIosClientId: googleIosClientId,
       googleSignInEnabled: googleSignInEnabledFlag && googleServerClientId.isNotEmpty,
       deepLinkScheme: deepLinkScheme,
       liveMode: liveMode,
@@ -135,7 +151,10 @@ class AppConfig {
   /// Google OAuth web client ID; required for ID tokens on Android.
   final String googleServerClientId;
 
-  /// When false, login/register hide Google Sign-In (default until re-enabled).
+  /// iOS OAuth client ID (`GOOGLE_IOS_CLIENT_ID`); optional until Firebase iOS app is added.
+  final String googleIosClientId;
+
+  /// When false, login/register hide Google Sign-In.
   final bool googleSignInEnabled;
 
   /// Custom URL scheme for OAuth callbacks (`whizsuite://oauth?...`).

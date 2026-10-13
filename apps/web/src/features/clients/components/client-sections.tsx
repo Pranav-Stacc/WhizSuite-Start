@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ContentStatus, InvoiceStatus, Platform, ProjectStatus } from '@agency-os/contracts';
-import { Globe, Mail, Palette, Pencil, Plus, UserRound } from 'lucide-react';
+import { ChevronRight, Globe, Mail, Palette, Pencil, Plus, UserRound } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { formatDate, formatMoney, formatNumber, relativeTime } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/avatar';
@@ -12,7 +12,7 @@ import { StatusBadge } from '@/shared/ui/status';
 import type { Client } from '../data/clients.repository';
 import { clientSectionHref } from '../workspace';
 import { BrandKitDialog } from './client-dialogs';
-import { ClientContactsPanel, type ClientContactView } from './client-contacts-panel';
+import type { ClientContactView } from './client-contacts-panel';
 
 // Structural row shapes keep this feature independent of other domains' internals;
 // the page composes them from each owning module's public service.
@@ -92,11 +92,43 @@ export function OverviewTab({
         </CardBody>
       </Card>
 
-      {canEditContacts ? (
+      {canEditContacts || contacts.length > 0 ? (
         <Card className="lg:col-span-3">
-          <CardHeader title={t('clients.contacts.title')} icon={<UserRound />} />
+          <CardHeader
+            title={t('clients.contacts.title')}
+            icon={<UserRound />}
+            action={
+              canEditContacts ? (
+                <Button variant="secondary" size="sm" asChild>
+                  <Link href={`/clients/${client.id}/contacts`}>
+                    {t('clients.contacts.manage')}
+                    <ChevronRight className="size-4" />
+                  </Link>
+                </Button>
+              ) : undefined
+            }
+          />
           <CardBody>
-            <ClientContactsPanel clientId={client.id} contacts={contacts} />
+            {contacts.length === 0 ? (
+              <p className="text-sm text-muted">{t('clients.contacts.empty')}</p>
+            ) : (
+              <ul className="space-y-2">
+                {contacts.slice(0, 4).map((row) => (
+                  <li key={row.id}>
+                    <Link
+                      href={`/clients/${client.id}/contacts/${row.id}`}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border-soft px-3 py-2 text-sm transition hover:border-primary/30 hover:bg-surface-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{[row.firstName, row.lastName].filter(Boolean).join(' ')}</p>
+                        {row.role ? <p className="text-muted">{row.role}</p> : null}
+                      </div>
+                      <ChevronRight className="size-4 shrink-0 text-muted" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
       ) : null}

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import Link from 'next/link';
 import type { ChatLinkPreviewDto, ChatMessageDto, ChatMentionType } from '@agency-os/contracts';
-import { ExternalLink, FileIcon, FileText, MessageSquare, Reply, Sparkles } from 'lucide-react';
+import { ExternalLink, FileIcon, FileText, LayoutGrid, MessageSquare, Reply, Sparkles } from 'lucide-react';
 import { t } from '@/shared/i18n/t';
 import { formatDateTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
@@ -31,6 +31,34 @@ function shouldShowLinkPreview(preview: ChatLinkPreviewDto | null, isWhiz: boole
   if (!title && !description && !imageUrl) return false;
   if (isWhiz && imageUrl && !title && !description) return false;
   return true;
+}
+
+function ContentShareCards({ mentions }: { mentions: ChatMessageDto['mentions'] }) {
+  const contentMentions = mentions.filter((mention) => mention.type === 'CONTENT');
+  if (!contentMentions.length) return null;
+  return (
+    <ul className="mt-2 space-y-2">
+      {contentMentions.map((mention) => (
+        <li key={mention.id}>
+          <Link
+            href={`/content/${mention.targetId}`}
+            className="flex max-w-md items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/8 p-2.5 text-foreground shadow-sm transition hover:border-amber-500/40 hover:bg-amber-500/12"
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10">
+              <LayoutGrid className="size-4 text-amber-200" aria-hidden />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90">
+                {t('content.share.chat.card')}
+              </p>
+              <p className="truncate text-sm font-semibold">{mention.displayText}</p>
+              <p className="mt-0.5 text-[11px] text-muted">{t('content.share.chat.view')}</p>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function ChatLinkPreview({ preview }: { preview: ChatLinkPreviewDto }) {
@@ -250,6 +278,8 @@ function MessageBubble({
               {renderBody(message.body, message.mentions, mentionCandidates)}
             </p>
           )}
+
+          {!message.deletedAt ? <ContentShareCards mentions={message.mentions} /> : null}
 
           {!message.deletedAt && shouldShowLinkPreview(message.linkPreview, Boolean(isWhiz)) ? (
             <ChatLinkPreview preview={message.linkPreview!} />

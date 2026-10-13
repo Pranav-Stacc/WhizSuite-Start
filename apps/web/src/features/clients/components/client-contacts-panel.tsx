@@ -90,13 +90,16 @@ export function ClientContactsPanel({
               key={row.id}
               className="flex items-start justify-between gap-2 rounded-lg border border-border-soft px-3 py-2 text-sm"
             >
-              <div className="min-w-0">
+              <a
+                href={`/clients/${clientId}/contacts/${row.id}`}
+                className="min-w-0 flex-1 hover:text-primary"
+              >
                 <p className="font-medium">
                   {[row.firstName, row.lastName].filter(Boolean).join(' ')}
                 </p>
                 {row.role ? <p className="text-muted">{row.role}</p> : null}
                 {row.email ? <p className="truncate text-muted">{row.email}</p> : null}
-              </div>
+              </a>
               <Button
                 type="button"
                 variant="ghost"

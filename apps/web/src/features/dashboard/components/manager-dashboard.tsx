@@ -10,7 +10,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { ProgressRing } from '@/shared/ui/feedback';
 import { PlatformStack } from '@/shared/ui/platform';
-import { StatCard } from '@/shared/ui/stat-card';
+import { StatCard, StatGrid } from '@/shared/ui/stat-card';
 import { StatusBadge } from '@/shared/ui/status';
 import type { GuideItem } from '@/shared/ui/page-guide';
 import type { Client } from '@/features/clients/data/clients.repository';
@@ -70,11 +70,13 @@ export async function ManagerDashboard({ session }: { session: Session }) {
         }
       />
 
-      <section aria-label={t('dashboard.kpi.aria')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t('dashboard.kpi.clients')} value={active.length} icon={<Users />} hint={t('dashboard.kpi.clients.hint', { count: onboarding })} href="/clients" />
-        <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
-        <StatCard label={t('dashboard.kpi.overdue')} value={overdue.length} icon={<CheckSquare />} hint={t('dashboard.kpi.overdue.hint')} href="/tasks" invertDelta />
-        <StatCard label={t('dashboard.kpi.chat')} value={chatUnread} icon={<MessageSquare />} hint={t('dashboard.kpi.chat.hint')} href="/chat" />
+      <section aria-label={t('dashboard.kpi.aria')}>
+        <StatGrid>
+          <StatCard label={t('dashboard.kpi.clients')} value={active.length} icon={<Users />} hint={t('dashboard.kpi.clients.hint', { count: onboarding })} href="/clients" />
+          <StatCard label={t('dashboard.kpi.approvals')} value={approvals.length} icon={<Hourglass />} hint={t('dashboard.kpi.approvals.hint')} href="/approvals" />
+          <StatCard label={t('dashboard.kpi.overdue')} value={overdue.length} icon={<CheckSquare />} hint={t('dashboard.kpi.overdue.hint')} href="/tasks" invertDelta />
+          <StatCard label={t('dashboard.kpi.chat')} value={chatUnread} icon={<MessageSquare />} hint={t('dashboard.kpi.chat.hint')} href="/chat" />
+        </StatGrid>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">

@@ -88,6 +88,16 @@ describe('applyPermissionOverrides', () => {
     expect(result).not.toContain(Permissions.FILES_VIEW);
   });
 
+  it('lets DENY on clients.view hide the Clients nav when content.view is granted', () => {
+    const result = applyPermissionOverrides({
+      rolePermissions: [Permissions.CONTENT_VIEW],
+      overrides: [{ key: Permissions.CLIENTS_VIEW, effect: PermissionEffects.DENY }],
+      isOwner: false,
+    });
+    expect(result).toContain(Permissions.CONTENT_VIEW);
+    expect(result).not.toContain(Permissions.CLIENTS_VIEW);
+  });
+
   it('lets DENY beat a matching ALLOW override', () => {
     const result = applyPermissionOverrides({
       rolePermissions: [],

@@ -128,7 +128,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         }
       />
 
-      <div className="mb-5 flex flex-wrap items-center gap-3">
+      <div className="mb-5 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="flex items-center gap-1" role="group" aria-label={t('calendar.title')}>
           <Button variant="secondary" size="icon-sm" asChild>
             <Link href={link({ m: monthKey(prev.year, prev.month), day: undefined })} aria-label={t('calendar.prev')}>
@@ -144,8 +145,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             <Link href={link({ m: monthKey(now.getFullYear(), now.getMonth()), day: undefined })}>{t('calendar.today')}</Link>
           </Button>
         </div>
-        <h2 className="text-lg font-semibold tracking-tight">{monthTitle({ year, month })}</h2>
-        <ul className="flex flex-wrap items-center gap-2 text-[11px] text-muted sm:gap-3 sm:text-xs">
+        <h2 className="min-w-0 flex-1 text-base font-semibold tracking-tight sm:text-lg">{monthTitle({ year, month })}</h2>
+        </div>
+        <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted sm:text-xs">
           <li className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-primary" />
             {t('calendar.legend.content')}
@@ -163,15 +165,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             {t('calendar.legend.approvals')}
           </li>
         </ul>
-        <div className="ml-auto flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
           <FilterSelect
             name="client"
             value={clientId}
             label={t('calendar.filter.client')}
             allLabel={t('calendar.filter.client')}
             options={clients.map((c) => ({ value: c.id, label: c.name }))}
+            className="w-full sm:w-auto"
           />
           <FilterChips
+            className="w-full sm:w-auto"
             items={[
               { href: link({ platform: undefined }), label: t('calendar.filter.platformAll'), active: !platform },
               ...Platforms.map((p) => ({
@@ -187,24 +191,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       {view === 'month' ? (
         <>
           {items.length === 0 ? <p className="mb-3 text-[13px] text-muted">{t('calendar.month.empty')}</p> : null}
-          <div className="hidden md:block">
-            <MonthGrid
-              days={days}
-              month={month}
-              itemsByDay={itemsByDay}
-              weekdayLabels={weekdayLabels()}
-              selectedDay={selectedDay}
-              dayHref={(key) => link({ day: key })}
-            />
-          </div>
-          <div className="md:hidden">
-            {items.length === 0 ? (
-              <div className="card-surface">
-                <EmptyState icon={<CalendarDays />} title={t('calendar.empty')} />
-              </div>
-            ) : (
-              <Agenda itemsByDay={itemsByDay} />
-            )}
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+            <div className="min-w-[36rem] sm:min-w-0">
+              <MonthGrid
+                days={days}
+                month={month}
+                itemsByDay={itemsByDay}
+                weekdayLabels={weekdayLabels()}
+                selectedDay={selectedDay}
+                dayHref={(key) => link({ day: key })}
+              />
+            </div>
           </div>
         </>
       ) : items.length === 0 ? (

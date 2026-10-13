@@ -97,13 +97,13 @@ export async function CreatorDashboard({ session }: { session: Session }) {
             workspaceModule="main"
             orgSlug={session.orgSlug}
           />
-          <div className="card-surface flex items-center justify-between gap-4 p-5">
+          <div className="card-surface flex items-center justify-between gap-3 p-3">
             <div>
-              <p className="text-[13px] font-medium text-muted">{t('dashboard.myTasks.title')}</p>
-              <p className="mt-2 text-[28px] font-semibold leading-none tabular-nums">{mine.length}</p>
-              <p className="mt-2 text-xs text-muted">{t('dashboard.myTasks.completed', { count: completed })}</p>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted">{t('dashboard.myTasks.title')}</p>
+              <p className="mt-1.5 text-lg font-semibold leading-none tabular-nums">{mine.length}</p>
+              <p className="mt-1 text-[11px] text-muted">{t('dashboard.myTasks.completed', { count: completed })}</p>
             </div>
-            <ProgressRing value={(weekHours / capacity) * 100} size={76} stroke={6} />
+            <ProgressRing value={(weekHours / capacity) * 100} size={56} stroke={5} />
           </div>
         </div>
       </section>

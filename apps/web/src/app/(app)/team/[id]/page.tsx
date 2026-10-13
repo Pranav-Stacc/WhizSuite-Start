@@ -185,6 +185,7 @@ export default async function TeamMemberPage({ params }: { params: Promise<{ id:
               <MemberExtrasPanel
                 memberId={member.id}
                 overrides={memberAccess.overrides}
+                effectivePermissions={memberAccess.effectivePermissions}
                 roleGrantedKeys={roleGrantedKeys}
                 catalog={catalog}
               />

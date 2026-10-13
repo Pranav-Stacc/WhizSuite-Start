@@ -1,12 +1,11 @@
 {
-  "_comment": "10.0.2.2 = Android emulator → host localhost. On a physical device use http://<your-pc-lan-ip>:3001/api",
-  "API_BASE_URL": "http://10.0.2.2:3001/api",
-  "REALTIME_URL": "http://10.0.2.2:3001",
-  "HTTP_CONNECT_TIMEOUT_MS": 10000,
-  "HTTP_RECEIVE_TIMEOUT_MS": 20000,
-  "PUSH_ENABLED": true,
-  "PUSH_ANDROID_CHANNEL_ID": "whizsuite_default",
-  "PAGE_SIZE": 25,
-  "ACCESS_REFRESH_INTERVAL_SECONDS": 300,
+  "_comment": "Default is deployed API. Local: http://10.0.2.2:3001/api (emulator) or http://<lan-ip>:3001/api (device).",
+  "API_BASE_URL": "https://api.whizsuite.praanav.in/api",
+  "REALTIME_URL": "https://api.whizsuite.praanav.in",
+  "HTTP_CONNECT_TIMEOUT_MS": "15000",
+  "HTTP_RECEIVE_TIMEOUT_MS": "30000",
+  "PUSH_ENABLED": "false",
+  "GOOGLE_SIGN_IN_ENABLED": "true",
+  "GOOGLE_SERVER_CLIENT_ID": "9465040813-c2o7a0t2b86tqnareuods7evo5ge355v.apps.googleusercontent.com",
   "DEFAULT_CURRENCY": "INR"
 }

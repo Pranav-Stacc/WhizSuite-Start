@@ -37,7 +37,9 @@ import { isEditable } from '@/features/content/workflow';
 import { DEFAULT_CLIENT_COLOR } from '@/features/clients/config';
 import { listAssets } from '@/features/media/services/media.service';
 import type { Member } from '@/features/team/data/members.repository';
-import { membersById } from '@/features/team/services/members.service';
+import { listRooms } from '@/features/chat/services/chat.service';
+import { formatChatRoomLabel } from '@/features/chat/utils/room-label';
+import { memberDirectory, membersById } from '@/features/team/services/members.service';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -64,16 +66,19 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
     granted.has(Permissions.FEEDBACK_VIEW) || granted.has(Permissions.CONTENT_VIEW);
   const canComment =
     granted.has(Permissions.FEEDBACK_CREATE) || granted.has(Permissions.CONTENT_EDIT);
-  const [events, clients, members, assets, approvalSummary, canApproveStep] = await Promise.all([
-    canReadThread ? eventsFor(post.id).catch(() => []) : Promise.resolve([]),
-    listClientsForContent([post]).catch(() => []),
-    loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()).catch(
-      () => new Map<string, Member>(),
-    ),
-    loadIf(Permissions.FILES_VIEW, listAssets, []).catch(() => []),
-    post.status === 'IN_REVIEW' ? getContentApprovalSummary(post.id) : Promise.resolve(null),
-    post.status === 'IN_REVIEW' ? canApproveContentStep(post.id, session.userId) : Promise.resolve(false),
-  ]);
+  const [events, clients, members, assets, approvalSummary, canApproveStep, chatRooms, chatDirectory] =
+    await Promise.all([
+      canReadThread ? eventsFor(post.id).catch(() => []) : Promise.resolve([]),
+      listClientsForContent([post]).catch(() => []),
+      loadIf(Permissions.MEMBERS_VIEW, membersById, new Map<string, Member>()).catch(
+        () => new Map<string, Member>(),
+      ),
+      loadIf(Permissions.FILES_VIEW, listAssets, []).catch(() => []),
+      post.status === 'IN_REVIEW' ? getContentApprovalSummary(post.id) : Promise.resolve(null),
+      post.status === 'IN_REVIEW' ? canApproveContentStep(post.id, session.userId) : Promise.resolve(false),
+      granted.has(Permissions.CHAT_VIEW) && isLiveMode ? listRooms().catch(() => []) : Promise.resolve([]),
+      granted.has(Permissions.CHAT_VIEW) ? memberDirectory().catch(() => new Map()) : Promise.resolve(new Map()),
+    ]);
   const client =
     clients.find((c) => c.id === post.clientId) ?? stubClientFromPost(post.clientId);
   const composerClients = toComposerClients(
@@ -84,10 +89,16 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
   const memberNames = Object.fromEntries(
     [...members.values()].map((m) => [m.userId ?? m.id, m.name]),
   );
-  const dmMembers = [...members.values()]
-    .filter((m) => (m.userId ?? m.id) !== session.userId)
-    .map((m) => ({ userId: m.userId ?? m.id, name: m.name }));
-  const canShareDm = granted.has(Permissions.CHAT_CREATE_ROOM) && isLiveMode && dmMembers.length > 0;
+  const chatNames = new Map<string, string>();
+  for (const [id, entry] of chatDirectory) chatNames.set(id, entry.name);
+  const shareRooms = chatRooms
+    .filter((room) => room.viewerCanPost)
+    .map((room) => ({
+      id: room.id,
+      type: room.type,
+      label: formatChatRoomLabel(room, session.userId, chatNames),
+    }));
+  const canShareChat = granted.has(Permissions.CHAT_VIEW) && isLiveMode && shareRooms.length > 0;
   const canRemind = granted.has(Permissions.APPROVALS_VIEW) && isLiveMode;
   const editable = isEditable(post.status) && granted.has(Permissions.CONTENT_EDIT);
   const canDelete = granted.has(Permissions.CONTENT_DELETE);
@@ -153,15 +164,14 @@ export default async function ContentDetailPage({ params, searchParams }: PagePr
                 }
               />
             ) : null}
-            {canShareDm ? (
+            {canShareChat ? (
               <ShareContentDialog
                 contentId={post.id}
                 title={post.title}
-                members={dmMembers}
+                rooms={shareRooms}
                 trigger={
-                  <Button variant="outline">
-                    <MessageCircle />
-                    {t('content.share.dm')}
+                  <Button variant="outline" size="sm" aria-label={t('content.share.dm')}>
+                    <MessageCircle className="size-4" />
                   </Button>
                 }
               />

@@ -6,15 +6,16 @@ import { ArrowLeft } from 'lucide-react';
 import { t, type MessageKey } from '@/shared/i18n/t';
 import { CLIENT_WORKSPACE_SECTIONS, clientSectionHref, type ClientSection } from '../workspace';
 
-function activeSection(pathname: string, clientId: string): ClientSection {
-  const rest = pathname.slice(`/clients/${clientId}`.length).split('/')[1] ?? '';
-  return CLIENT_WORKSPACE_SECTIONS.find((section) => section === rest) ?? 'overview';
+function sectionLabel(pathname: string, clientId: string): ClientSection | 'contacts' {
+  const rest = pathname.slice(`/clients/${clientId}`.length).split('/').filter(Boolean);
+  if (rest[0] === 'contacts') return 'contacts';
+  return CLIENT_WORKSPACE_SECTIONS.find((section) => section === rest[0]) ?? 'overview';
 }
 
 /** Breadcrumb on the left, the client's sections on the right — the client is the workspace. */
 export function ClientWorkspaceNav({ clientId, clientName, sections }: { clientId: string; clientName: string; sections: ClientSection[] }) {
   const pathname = usePathname();
-  const active = activeSection(pathname, clientId);
+  const active = sectionLabel(pathname, clientId);
 
   return (
     <div className="mb-6 flex flex-col gap-3 border-b border-border-soft pb-3 sm:gap-y-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-x-8">

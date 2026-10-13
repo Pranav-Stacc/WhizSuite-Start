@@ -488,6 +488,8 @@ export const agencyMessages = {
   'departments.create.submit': 'Create department',
   'departments.created': 'Department created',
   'departments.deleted': 'Department removed',
+  'departments.delete': 'Delete department',
+  'departments.designation.deleted': 'Designation removed',
   'departments.name': 'Department name',
   'departments.parent': 'Parent department',
   'departments.parent.none': 'Top level',

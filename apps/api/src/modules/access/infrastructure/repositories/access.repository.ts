@@ -10,6 +10,7 @@ import {
   isAssignableScopeType,
   isPermission,
   readPermissionScopeTypes,
+  withheldCompanionPermissions,
   type AccessRoleSummary,
   type AssignableScopeType,
   type MemberPermissionOverride,
@@ -158,8 +159,10 @@ export class AccessRepository {
             role: {
               select: {
                 permissions: {
-                  where: { effect: PermissionEffects.ALLOW },
-                  select: { permission: { select: { key: true } } },
+                  select: {
+                    effect: true,
+                    permission: { select: { key: true } },
+                  },
                 },
               },
             },
@@ -175,15 +178,28 @@ export class AccessRepository {
       return { rolePermissions: [], overrides: [], isOwner: false };
     }
     const rolePermissions = new Set<Permission>();
+    const roleDenyKeys = new Set<Permission>();
     for (const assignment of membership.roleAssignments) {
+      const allows: Permission[] = [];
       for (const rp of assignment.role.permissions) {
-        if (isPermission(rp.permission.key))
+        if (!isPermission(rp.permission.key)) continue;
+        if (rp.effect === PermissionEffects.DENY) {
+          roleDenyKeys.add(rp.permission.key);
+        } else {
+          allows.push(rp.permission.key);
           rolePermissions.add(rp.permission.key);
+        }
+      }
+      for (const key of withheldCompanionPermissions(allows)) {
+        roleDenyKeys.add(key);
       }
     }
+    const roleDenies: MemberPermissionOverride[] = [...roleDenyKeys].map(
+      (key) => ({ key, effect: PermissionEffects.DENY }),
+    );
     return {
       rolePermissions,
-      overrides: toOverrides(membership.permissionOverrides),
+      overrides: [...roleDenies, ...toOverrides(membership.permissionOverrides)],
       isOwner: membership.type === OWNER_MEMBERSHIP_TYPE,
     };
   }
@@ -595,28 +611,58 @@ export class AccessRepository {
     });
   }
 
-  async createRole(organizationId: string, input: RoleInput) {
+  private async replaceRolePermissions(
+    roleId: string,
+    input: Pick<RoleInput, 'permissionKeys' | 'permissionScopes' | 'defaultScopeTypes'>,
+  ) {
+    const allowKeys = input.permissionKeys.filter((key): key is Permission =>
+      isPermission(key),
+    );
+    const withheld = new Set(withheldCompanionPermissions(allowKeys));
+    const lookupKeys = [...new Set([...allowKeys, ...withheld])];
     const permissions =
-      input.permissionKeys.length > 0
+      lookupKeys.length > 0
         ? await this.prisma.permission.findMany({
-            where: { key: { in: input.permissionKeys } },
+            where: { key: { in: lookupKeys } },
           })
         : [];
-    return this.prisma.role.create({
+    await this.prisma.rolePermission.deleteMany({ where: { roleId } });
+    if (permissions.length === 0) return;
+    const scopeInput: Pick<
+      RoleInput,
+      'permissionScopes' | 'defaultScopeTypes'
+    > = {
+      permissionScopes: input.permissionScopes,
+      defaultScopeTypes:
+        input.defaultScopeTypes ?? [AssignableScopeTypes.ORGANIZATION],
+    };
+    await this.prisma.rolePermission.createMany({
+      data: permissions.map((p) => {
+        const key = p.key as Permission;
+        const deny = withheld.has(key);
+        return {
+          roleId,
+          permissionId: p.id,
+          effect: deny ? PermissionEffects.DENY : PermissionEffects.ALLOW,
+          conditions: deny ? {} : permissionConditions(key, scopeInput),
+        };
+      }),
+    });
+  }
+
+  async createRole(organizationId: string, input: RoleInput) {
+    const role = await this.prisma.role.create({
       data: {
         organizationId,
         name: input.name,
         description: input.description,
         kind: input.kind,
         defaultScopeTypes: input.defaultScopeTypes,
-        permissions: {
-          create: permissions.map((p) => ({
-            permissionId: p.id,
-            effect: 'ALLOW',
-            conditions: permissionConditions(p.key, input),
-          })),
-        },
       },
+    });
+    await this.replaceRolePermissions(role.id, input);
+    return this.prisma.role.findFirst({
+      where: { id: role.id, organizationId },
       include: { permissions: { include: { permission: true } } },
     });
   }
@@ -631,28 +677,17 @@ export class AccessRepository {
     });
     if (!role) return null;
     if (input.permissionKeys) {
-      const permissions =
-        input.permissionKeys.length > 0
-          ? await this.prisma.permission.findMany({
-              where: { key: { in: input.permissionKeys } },
-            })
-          : [];
-      await this.prisma.rolePermission.deleteMany({ where: { roleId } });
-      if (permissions.length > 0) {
-        await this.prisma.rolePermission.createMany({
-          data: permissions.map((p) => ({
-            roleId,
-            permissionId: p.id,
-            effect: 'ALLOW',
-            conditions: permissionConditions(p.key, {
-              permissionScopes: input.permissionScopes,
-              defaultScopeTypes: input.defaultScopeTypes ?? [
-                AssignableScopeTypes.ORGANIZATION,
-              ],
-            }),
-          })),
-        });
-      }
+      const roleScopes = role.defaultScopeTypes.filter(isAssignableScopeType);
+      const defaultScopeTypes =
+        input.defaultScopeTypes ??
+        (roleScopes.length > 0
+          ? roleScopes
+          : [AssignableScopeTypes.ORGANIZATION]);
+      await this.replaceRolePermissions(roleId, {
+        permissionKeys: input.permissionKeys,
+        permissionScopes: input.permissionScopes,
+        defaultScopeTypes,
+      });
     }
     return this.prisma.role.update({
       where: { id: roleId },

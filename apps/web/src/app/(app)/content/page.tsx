@@ -110,15 +110,16 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
         }
       />
 
-      <div role="search" aria-label={t('content.filters.label')} className="mb-5 flex flex-wrap items-center gap-3">
-        <SearchInput placeholder={t('content.search')} className="max-w-64" />
+      <div role="search" aria-label={t('content.filters.label')} className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <SearchInput placeholder={t('content.search')} className="w-full sm:max-w-64" />
         <FilterChips
+          className="w-full sm:w-auto"
           items={[
             { href: link({ f: undefined }), label: t('tasks.filter.all'), active: !mine, count: scoped.length },
             { href: link({ f: 'mine' }), label: t('content.filter.mine'), active: mine, count: mineCount },
           ]}
         />
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           <FilterSelect
             name="client"
             value={clientId}

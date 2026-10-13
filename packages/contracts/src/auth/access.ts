@@ -76,7 +76,6 @@ const STAFF_PERMISSIONS: readonly Permission[] = [
 /** Portal clients — view/approve content in their brand; no staff calendar/sync. */
 const CLIENT_PERMISSIONS: readonly Permission[] = [
   Permissions.ORG_VIEW,
-  Permissions.CLIENTS_VIEW,
   Permissions.CONTENT_VIEW,
   Permissions.APPROVALS_VIEW,
   Permissions.APPROVALS_APPROVE,

@@ -4,6 +4,7 @@ export const chatMessages = {
   'chat.rooms': 'Conversations',
   'chat.members': 'members',
   'chat.dm': 'Direct message',
+  'chat.clientRoom': 'Client chat',
   'chat.untitled': 'Untitled room',
   'chat.type.dm': 'DM',
   'chat.type.group': 'Group',

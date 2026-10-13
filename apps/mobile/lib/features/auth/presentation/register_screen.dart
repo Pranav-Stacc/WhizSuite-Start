@@ -16,6 +16,7 @@ import '../application/session_controller.dart';
 import '../data/auth_repository.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
+import 'auth_google_section.dart';
 import 'auth_layout.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -107,15 +108,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           );
     } on ApiException catch (error) {
       if (!mounted) return;
-      if (error.detail == 'cancelled') {
-        setState(() => _error = l10n.authGoogleCancelled);
-      } else if (error.kind == ApiFailureKind.conflict) {
+      if (error.kind == ApiFailureKind.conflict) {
         setState(() => _error = l10n.authRegisterExists);
-      } else if (error.kind == ApiFailureKind.unauthorized) {
-        setState(() => _error = l10n.authGoogleInvalid);
       } else {
-        setState(() => _error = describeError(l10n, error));
+        setState(() => _error = googleAuthErrorMessage(l10n, error));
       }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = l10n.errorUnknown);
     } finally {
       if (mounted) setState(() => _googleSubmitting = false);
     }
@@ -154,25 +154,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               validator: validators.matches(_slugPattern, l10n.validationSlug),
               decoration: InputDecoration(labelText: l10n.authSlug, helperText: l10n.authSlugHint),
             ),
-            if (googleEnabled) ...[
-              gap,
-              OutlinedButton.icon(
-                onPressed: busy ? null : _submitGoogle,
-                icon: _googleSubmitting
-                    ? SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.primary),
-                      )
-                    : const Icon(Icons.g_mobiledata_rounded),
-                label: Text(l10n.authGoogleButton),
-              ),
-              gap,
-              Text(
-                l10n.authOrEmail,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
             gap,
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,7 +206,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onPressed: busy ? null : _submit,
               icon: Icons.arrow_forward,
             ),
-          ],
+            AuthGoogleSection(
+              enabled: googleEnabled,
+              loading: _googleSubmitting,
+              onPressed: busy ? null : _submitGoogle,
+            ),
+          ], 
         ),
       ),
       footer: AuthSwitchLink(

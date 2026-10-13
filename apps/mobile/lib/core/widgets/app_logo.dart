@@ -13,6 +13,7 @@ class AppLogo extends StatelessWidget {
     this.size = AppBrand.symbolLogoSize,
     this.name,
     this.semanticLabel,
+    this.framed = true,
   });
 
   const AppLogo.primary({super.key, double size = AppBrand.symbolLogoSize, String? semanticLabel})
@@ -20,27 +21,44 @@ class AppLogo extends StatelessWidget {
         height = AppBrand.primaryLogoHeight,
         size = size,
         name = null,
-        semanticLabel = semanticLabel;
+        semanticLabel = semanticLabel,
+        framed = true;
 
-  const AppLogo.symbol({super.key, double size = AppBrand.symbolLogoSize, String? semanticLabel})
+  const AppLogo.symbol({
+    super.key,
+    double size = AppBrand.symbolLogoSize,
+    String? semanticLabel,
+    bool framed = true,
+  })  : variant = AppLogoVariant.symbol,
+        height = AppBrand.primaryLogoHeight,
+        size = size,
+        name = null,
+        semanticLabel = semanticLabel,
+        framed = framed;
+
+  /// Symbol without the navy tile (splash / full-bleed backgrounds).
+  const AppLogo.symbolBare({super.key, double size = AppBrand.symbolLogoSize, String? semanticLabel})
       : variant = AppLogoVariant.symbol,
         height = AppBrand.primaryLogoHeight,
         size = size,
         name = null,
-        semanticLabel = semanticLabel;
+        semanticLabel = semanticLabel,
+        framed = false;
 
   const AppLogo.withName({super.key, required String name, double size = AppBrand.symbolLogoSize, String? semanticLabel})
       : variant = AppLogoVariant.withName,
         height = AppBrand.primaryLogoHeight,
         size = size,
         this.name = name,
-        semanticLabel = semanticLabel;
+        semanticLabel = semanticLabel,
+        framed = true;
 
   final AppLogoVariant variant;
   final double height;
   final double size;
   final String? name;
   final String? semanticLabel;
+  final bool framed;
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +66,9 @@ class AppLogo extends StatelessWidget {
       label: semanticLabel,
       image: true,
       child: switch (variant) {
-        AppLogoVariant.primary => _SymbolLogo(size: size),
-        AppLogoVariant.symbol => _SymbolLogo(size: size),
-        AppLogoVariant.withName => _LogoWithName(name: name ?? '', size: size),
+        AppLogoVariant.primary => _SymbolLogo(size: size, framed: framed),
+        AppLogoVariant.symbol => _SymbolLogo(size: size, framed: framed),
+        AppLogoVariant.withName => _LogoWithName(name: name ?? '', size: size, framed: framed),
       },
     );
   }
@@ -74,29 +92,30 @@ class _BrandFrame extends StatelessWidget {
 }
 
 class _SymbolLogo extends StatelessWidget {
-  const _SymbolLogo({required this.size});
+  const _SymbolLogo({required this.size, required this.framed});
 
   final double size;
+  final bool framed;
 
   @override
   Widget build(BuildContext context) {
-    return _BrandFrame(
-      child: Image.asset(
-        AppBrand.symbolLogo,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-      ),
+    final image = Image.asset(
+      AppBrand.symbolLogo,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
     );
+    return framed ? _BrandFrame(child: image) : image;
   }
 }
 
 class _LogoWithName extends StatelessWidget {
-  const _LogoWithName({required this.name, required this.size});
+  const _LogoWithName({required this.name, required this.size, required this.framed});
 
   final String name;
   final double size;
+  final bool framed;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +123,7 @@ class _LogoWithName extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _SymbolLogo(size: size),
+        _SymbolLogo(size: size, framed: framed),
         const SizedBox(width: 10),
         Flexible(
           child: Text(

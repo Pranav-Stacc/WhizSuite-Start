@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { t } from '@/shared/i18n/t';
-import { Logo } from '@/shared/ui/logo';
 import { AcceptInvitationForm } from '@/features/auth/components/accept-invitation-form';
 import { fetchInvitationPreview } from '@/features/auth/data/invitations.api';
 
@@ -17,9 +16,6 @@ export default async function InvitePage({ searchParams }: InvitePageProps) {
 
   return (
     <div className="space-y-8">
-      <div className="lg:hidden">
-        <Logo />
-      </div>
       {preview ? (
         <>
           <header>

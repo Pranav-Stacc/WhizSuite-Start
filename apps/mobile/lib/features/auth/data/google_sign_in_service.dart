@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -6,22 +7,14 @@ import '../../../core/network/api_exception.dart';
 
 /// Obtains a Google ID token for the API `POST /v1/auth/google` exchange.
 class GoogleSignInService {
-  GoogleSignInService(this._serverClientId);
+  GoogleSignInService(this._config);
 
-  final String _serverClientId;
-  bool _initialized = false;
-
-  Future<void> _ensureInitialized() async {
-    if (_initialized || _serverClientId.isEmpty) return;
-    await GoogleSignIn.instance.initialize(serverClientId: _serverClientId);
-    _initialized = true;
-  }
+  final AppConfig _config;
 
   Future<String> obtainIdToken() async {
-    if (_serverClientId.isEmpty) {
+    if (!_config.googleSignInEnabled || _config.googleServerClientId.isEmpty) {
       throw const ApiException(kind: ApiFailureKind.unknown);
     }
-    await _ensureInitialized();
     try {
       final account = await GoogleSignIn.instance.authenticate(
         scopeHint: const ['email', 'profile'],
@@ -36,16 +29,17 @@ class GoogleSignInService {
         throw const ApiException(kind: ApiFailureKind.unknown, detail: 'cancelled');
       }
       throw const ApiException(kind: ApiFailureKind.unauthorized);
+    } on PlatformException catch (error) {
+      if (error.code == 'sign_in_canceled') {
+        throw const ApiException(kind: ApiFailureKind.unknown, detail: 'cancelled');
+      }
+      throw ApiException(kind: ApiFailureKind.unknown, detail: error.message);
     }
   }
 
-  Future<void> signOut() async {
-    if (!_initialized) return;
-    await GoogleSignIn.instance.signOut();
-  }
+  Future<void> signOut() async => GoogleSignIn.instance.signOut();
 }
 
 final googleSignInServiceProvider = Provider<GoogleSignInService>((ref) {
-  final config = ref.watch(appConfigProvider);
-  return GoogleSignInService(config.googleServerClientId);
+  return GoogleSignInService(ref.watch(appConfigProvider));
 });

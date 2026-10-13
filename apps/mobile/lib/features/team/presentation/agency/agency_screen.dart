@@ -38,7 +38,7 @@ import '../member/member_filters_sheet.dart';
 import '../team_labels.dart';
 import 'agency_hr_documents_tab.dart';
 
-enum _AgencyTab { overview, members, departments, roles, knowledge, documents, invitations }
+enum _AgencyTab { overview, members, departments, roles, knowledge, documents }
 
 class AgencyScreen extends ConsumerStatefulWidget {
   const AgencyScreen({super.key});
@@ -86,7 +86,6 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
     if (policy.can(Permissions.rolesManage)) tabs.add(_AgencyTab.roles);
     if (policy.can(Permissions.orgView)) tabs.add(_AgencyTab.knowledge);
     if (policy.can(Permissions.orgSettingsManage)) tabs.add(_AgencyTab.documents);
-    if (canInvite) tabs.add(_AgencyTab.invitations);
     return tabs;
   }
 
@@ -130,7 +129,7 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
     final index = controller.index;
     if (index < tabs.length) {
       fab = switch (tabs[index]) {
-        _AgencyTab.members || _AgencyTab.invitations => PermissionGate(
+        _AgencyTab.members => PermissionGate(
             anyOf: const [Permissions.membersInvite],
             child: CreateFab(label: l10n.teamInvite, icon: Icons.person_add_alt_1_outlined, onPressed: _invite),
           ),
@@ -189,7 +188,6 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
                 _AgencyTab.roles => l10n.navRoles,
                 _AgencyTab.knowledge => l10n.knowledgeTitle,
                 _AgencyTab.documents => l10n.agencyTabHrDocuments,
-                _AgencyTab.invitations => l10n.teamTabInvitations,
               },
             ),
         ],
@@ -211,7 +209,6 @@ class _AgencyScreenState extends ConsumerState<AgencyScreen> with TickerProvider
                 _AgencyTab.roles => const _RolesTab(),
                 _AgencyTab.knowledge => const _KnowledgeTab(),
                 _AgencyTab.documents => const AgencyHrDocumentsTab(),
-                _AgencyTab.invitations => _InvitationsTab(onInvite: _invite),
               },
             ),
         ],
@@ -309,7 +306,7 @@ class _OverviewTab extends ConsumerWidget {
           if (pendingInvites > 0 && policy.can(Permissions.membersInvite)) ...[
             SectionCard(
               title: l10n.teamTabInvitations,
-              trailing: TextButton(onPressed: () => onSelectTab(_AgencyTab.invitations), child: Text(l10n.viewAll)),
+              trailing: TextButton(onPressed: () => onSelectTab(_AgencyTab.members), child: Text(l10n.viewAll)),
               child: Text(l10n.agencyPendingInvites(pendingInvites)),
             ),
             SizedBox(height: tokens.lg),
@@ -596,6 +593,13 @@ class _MembersTabState extends ConsumerState<_MembersTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final policy = ref.watch(accessPolicyProvider);
+    final canInvite = policy.can(Permissions.membersInvite);
+    final invitations = canInvite ? ref.watch(invitationsProvider) : null;
+    final pendingInvites = invitations?.value
+            ?.where((i) => i.effectiveStatus(DateTime.now()) == InvitationStatuses.pending)
+            .toList() ??
+        const <Invitation>[];
     final members = ref.watch(membersProvider);
     final currentUserId = ref.watch(currentUserIdProvider);
     final items = members.value ?? const <Member>[];
@@ -610,9 +614,34 @@ class _MembersTabState extends ConsumerState<_MembersTab> {
     }
     final departmentIds = departmentNames.keys.toList()..sort((a, b) => departmentNames[a]!.compareTo(departmentNames[b]!));
 
+    Widget? invitationsHeader;
+    if (canInvite && pendingInvites.isNotEmpty) {
+      invitationsHeader = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.teamTabInvitations, style: Theme.of(context).textTheme.titleSmall),
+          SizedBox(height: context.tokens.sm),
+          for (final invitation in pendingInvites.take(6))
+            InvitationTile(invitation: invitation),
+          if (pendingInvites.length > 6)
+            Padding(
+              padding: EdgeInsets.only(top: context.tokens.sm),
+              child: Text(
+                l10n.agencyPendingInvites(pendingInvites.length),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.tokens.muted),
+              ),
+            ),
+          SizedBox(height: context.tokens.lg),
+        ],
+      );
+    }
+
     return ResourceList<Member>(
       value: members,
-      onRefresh: () => ref.refresh(membersProvider.future),
+      onRefresh: () => Future.wait([
+        ref.refresh(membersProvider.future),
+        if (canInvite) ref.refresh(invitationsProvider.future),
+      ]),
       minTileWidth: 520,
       tileHeight: 148,
       searchHint: l10n.teamSearch,
@@ -626,25 +655,32 @@ class _MembersTabState extends ConsumerState<_MembersTab> {
           (_filters.membershipType == null || m.membershipType == _filters.membershipType) &&
           (_filters.roleId == null || m.roleIds.contains(_filters.roleId)) &&
           (_filters.departmentId == null || m.departmentIds.contains(_filters.departmentId)),
-      header: items.isEmpty
-          ? null
-          : _MembersFilters(
-              items: items,
-              filters: _filters,
-              roleNames: roleNames,
-              departmentNames: departmentNames,
-              onFilterPressed: () async {
-                final next = await showMemberFiltersSheet(
-                  context,
-                  initial: _filters,
-                  membershipTypes: types,
-                  roleIds: roleIds,
-                  roleNames: roleNames,
-                  departmentIds: departmentIds,
-                  departmentNames: departmentNames,
-                );
-                if (next != null) setState(() => _filters = next);
-              },
+      header: items.isEmpty && invitationsHeader == null
+          ? invitationsHeader
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (invitationsHeader != null) invitationsHeader,
+                if (items.isNotEmpty)
+                  _MembersFilters(
+                    items: items,
+                    filters: _filters,
+                    roleNames: roleNames,
+                    departmentNames: departmentNames,
+                    onFilterPressed: () async {
+                      final next = await showMemberFiltersSheet(
+                        context,
+                        initial: _filters,
+                        membershipTypes: types,
+                        roleIds: roleIds,
+                        roleNames: roleNames,
+                        departmentIds: departmentIds,
+                        departmentNames: departmentNames,
+                      );
+                      if (next != null) setState(() => _filters = next);
+                    },
+                  ),
+              ],
             ),
       empty: EmptyState(
         icon: Icons.groups_outlined,
@@ -727,50 +763,3 @@ class _KnowledgeTab extends ConsumerWidget {
   }
 }
 
-class _InvitationsTab extends ConsumerStatefulWidget {
-  const _InvitationsTab({required this.onInvite});
-
-  final VoidCallback onInvite;
-
-  @override
-  ConsumerState<_InvitationsTab> createState() => _InvitationsTabState();
-}
-
-class _InvitationsTabState extends ConsumerState<_InvitationsTab> {
-  String? _status = InvitationStatuses.pending;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final invitations = ref.watch(invitationsProvider);
-    final items = invitations.value ?? const <Invitation>[];
-    final now = DateTime.now();
-
-    return ResourceList<Invitation>(
-      value: invitations,
-      onRefresh: () => ref.refresh(invitationsProvider.future),
-      minTileWidth: 420,
-      tileHeight: 96,
-      searchHint: l10n.teamInvitationsSearch,
-      matches: (i, query) => i.email.toLowerCase().contains(query),
-      filter: (i) => _status == null || i.effectiveStatus(now) == _status,
-      header: FilterBar<String>(
-        options: InvitationStatuses.values,
-        selected: _status,
-        labelOf: (s) => invitationStatusLabel(l10n, s),
-        countOf: (s) => s == null ? items.length : items.where((i) => i.effectiveStatus(now) == s).length,
-        onSelected: (s) => setState(() => _status = s),
-      ),
-      empty: EmptyState(
-        icon: Icons.mail_outline,
-        title: l10n.teamInvitationsEmpty,
-        body: l10n.teamInvitationsEmptyBody,
-        action: PermissionGate(
-          anyOf: const [Permissions.membersInvite],
-          child: FilledButton.icon(onPressed: widget.onInvite, icon: const Icon(Icons.person_add_alt_1_outlined), label: Text(l10n.teamInvite)),
-        ),
-      ),
-      itemBuilder: (context, invitation) => InvitationTile(invitation: invitation),
-    );
-  }
-}

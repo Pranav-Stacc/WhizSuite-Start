@@ -88,7 +88,7 @@ class SessionController extends AsyncNotifier<Session?> {
     final session = Session.fromClaims(tokens.claims);
     if (session == null) {
       await ref.read(tokenStoreProvider).clear();
-      throw const ApiException(kind: ApiFailureKind.unauthorized);
+      throw const ApiException(kind: ApiFailureKind.unauthorized, detail: 'no_session');
     }
     state = AsyncData(session);
     await _hydrateOrgTheme();

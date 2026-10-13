@@ -23,8 +23,18 @@ interface StatCardProps {
 }
 
 export function StatGrid({ children, className, cols = 4 }: { children: ReactNode; className?: string; cols?: 2 | 3 | 4 }) {
-  const colClass = cols === 2 ? 'sm:grid-cols-2' : cols === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4';
-  return <section className={cn('mb-6 grid gap-px overflow-hidden rounded-lg border border-border-soft bg-border-soft [&>*>*]:rounded-none [&>*]:rounded-none [&>*]:border-0 [&_.card-surface]:border-0', colClass, className)}>{children}</section>;
+  const colClass = cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2 lg:grid-cols-4';
+  return (
+    <section
+      className={cn(
+        'mb-4 grid max-w-4xl gap-px overflow-hidden rounded-lg border border-border-soft bg-border-soft [&>*>*]:rounded-none [&>*]:rounded-none [&>*]:border-0 [&_.card-surface]:border-0',
+        colClass,
+        className,
+      )}
+    >
+      {children}
+    </section>
+  );
 }
 
 export function StatCard({
@@ -43,12 +53,12 @@ export function StatCard({
 }: StatCardProps) {
   const positive = delta === undefined ? undefined : invertDelta ? delta <= 0 : delta >= 0;
   const body = (
-    <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-4' : 'relative h-full overflow-hidden p-6', className)}>
+    <Card hover={Boolean(href)} className={cn(compact ? 'relative h-full overflow-hidden p-3' : 'relative h-full overflow-hidden p-6', className)}>
       <div className="flex items-center justify-between gap-2">
-        <p className="eyebrow truncate">{label}</p>
-        {icon ? <span className="shrink-0 text-muted [&_svg]:size-3.5">{icon}</span> : null}
+        <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted">{label}</p>
+        {icon ? <span className="shrink-0 text-muted [&_svg]:size-3">{icon}</span> : null}
       </div>
-      <p className={cn('display mt-3 tabular-nums', compact ? 'text-[26px]' : 'text-[36px]')}>{value}</p>
+      <p className={cn('mt-1.5 font-semibold tabular-nums tracking-tight', compact ? 'text-lg' : 'text-[36px]')}>{value}</p>
       {delta !== undefined || hint ? (
         <div className="mt-1 flex items-center gap-1.5 text-[11px]">
           {delta !== undefined ? (

@@ -46,7 +46,7 @@ class _BrandLoaderState extends State<BrandLoader> with SingleTickerProviderStat
             child: FadeSlideIn(
               child: AnimatedBuilder(
                 animation: _controller,
-                child: const AppLogo.symbol(size: AppBrand.splashSymbolSize),
+                child: const AppLogo.symbolBare(size: AppBrand.splashSymbolSize),
                 builder: (context, child) {
                   final pulse = 0.92 + 0.08 * math.sin(_controller.value * 2 * math.pi);
                   return Transform.scale(scale: pulse, child: child);

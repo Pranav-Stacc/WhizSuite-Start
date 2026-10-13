@@ -31,8 +31,7 @@ export function applyPermissionOverrides({
     granted.add(companion);
   }
   for (const override of overrides) {
-    if (override.effect === PermissionEffects.DENY)
-      granted.delete(override.key);
+    if (override.effect === PermissionEffects.DENY) granted.delete(override.key);
   }
   return [...granted].sort(byKey);
 }

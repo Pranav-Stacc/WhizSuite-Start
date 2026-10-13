@@ -421,9 +421,13 @@ export class MembersService {
       this.roleAssignment.rolesByMembership(organizationId, [membershipId]),
       this.access.loadPermissionInputs(organizationId, membershipId),
     ]);
+    const memberOverrides = await this.loadOverrides(
+      organizationId,
+      membershipId,
+    );
     return {
       roles: rolesByMembership.get(membershipId) ?? [],
-      overrides: sortOverrides(inputs.overrides),
+      overrides: sortOverrides(memberOverrides),
       effectivePermissions: applyPermissionOverrides(inputs),
     };
   }

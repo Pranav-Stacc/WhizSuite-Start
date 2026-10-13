@@ -14,6 +14,7 @@ import '../../../core/config/app_config.dart';
 import '../application/session_controller.dart';
 import '../data/google_sign_in_service.dart';
 import '../../../core/widgets/forms.dart';
+import 'auth_google_section.dart';
 import 'auth_layout.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -66,15 +67,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(sessionProvider.notifier).signInWithGoogle(idToken: idToken);
     } on ApiException catch (error) {
       if (!mounted) return;
-      if (error.detail == 'cancelled') {
-        setState(() => _error = l10n.authGoogleCancelled);
-      } else if (error.kind == ApiFailureKind.notFound) {
-        setState(() => _error = l10n.authGoogleNoAccount);
-      } else if (error.kind == ApiFailureKind.unauthorized) {
-        setState(() => _error = l10n.authGoogleInvalid);
-      } else {
-        setState(() => _error = describeError(l10n, error));
-      }
+      setState(() => _error = googleAuthErrorMessage(l10n, error));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = l10n.errorUnknown);
     } finally {
       if (mounted) setState(() => _googleSubmitting = false);
     }
@@ -85,8 +81,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final l10n = AppLocalizations.of(context);
     final validators = Validators(l10n);
     final tokens = context.tokens;
-    final text = Theme.of(context).textTheme;
-    final googleEnabled = ref.watch(appConfigProvider).googleSignInEnabled;
+    final config = ref.watch(appConfigProvider);
+    final googleEnabled = config.googleSignInEnabled;
     final busy = _submitting || _googleSubmitting;
     final fieldGap = SizedBox(height: tokens.lg);
 
@@ -99,35 +95,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             FormErrorBanner(message: _error),
-            if (googleEnabled) ...[
-              OutlinedButton.icon(
-                onPressed: busy ? null : _submitGoogle,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: tokens.fg,
-                  side: BorderSide(color: tokens.border),
-                  backgroundColor: tokens.surface.withValues(alpha: 0.55),
-                  minimumSize: const Size(64, 52),
-                  textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                icon: _googleSubmitting
-                    ? SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: tokens.primary),
-                      )
-                    : Icon(Icons.g_mobiledata_rounded, size: 22, color: tokens.secondary),
-                label: Text(l10n.authGoogleButton),
-              ),
-              SizedBox(height: tokens.xl),
-              _AuthOrDivider(label: l10n.authOrEmail),
-              SizedBox(height: tokens.xl),
-            ],
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email, AutofillHints.username],
               textInputAction: TextInputAction.next,
               validator: validators.email,
-              style: text.bodyLarge?.copyWith(color: tokens.fg),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: tokens.fg),
               decoration: InputDecoration(
                 labelText: l10n.authEmail,
                 hintText: l10n.authEmailPlaceholder,
@@ -148,6 +122,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: busy ? null : _submit,
               icon: Icons.arrow_forward_rounded,
             ),
+            AuthGoogleSection(
+              enabled: googleEnabled,
+              loading: _googleSubmitting,
+              onPressed: busy ? null : _submitGoogle,
+            ),
           ],
         ),
       ),
@@ -156,33 +135,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         action: l10n.authCreateWorkspace,
         onPressed: () => context.push(AppRoutes.register),
       ),
-    );
-  }
-}
-
-/// Hairline rule with centered label — quieter than a card divider.
-class _AuthOrDivider extends StatelessWidget {
-  const _AuthOrDivider({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: tokens.muted,
-          letterSpacing: 1.4,
-          fontWeight: FontWeight.w500,
-        );
-    return Row(
-      children: [
-        Expanded(child: Divider(color: tokens.border, height: 1)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.md),
-          child: Text(label.toUpperCase(), style: style),
-        ),
-        Expanded(child: Divider(color: tokens.border, height: 1)),
-      ],
     );
   }
 }

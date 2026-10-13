@@ -33,23 +33,37 @@ def remote_script(smtp_user: str, smtp_pass: str, run_migrate: bool) -> str:
 COMPOSE=(docker compose --env-file .env --env-file .image-tag -f docker-compose.prod.yml)
 "${COMPOSE[@]}" run --rm migrate
 """
+    smtp_pass_b64 = base64.b64encode(smtp_pass.encode("utf-8")).decode("ascii")
     return f"""#!/bin/bash
 set -euo pipefail
 cd /opt/whizsuite/deploy
 upsert() {{
-  local key="$1" value="$2"
-  if grep -q "^${{key}}=" .env; then
-    sed -i "s|^${{key}}=.*|${{key}}=${{value}}|" .env
-  else
-    printf '%s=%s\\n' "$key" "$value" >> .env
-  fi
+  python3 - "$1" "$2" <<'PY'
+import pathlib
+import sys
+key, value = sys.argv[1], sys.argv[2]
+path = pathlib.Path(".env")
+lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+out: list[str] = []
+found = False
+for line in lines:
+    if line.startswith(key + "="):
+        out.append(f"{{key}}={{value}}")
+        found = True
+    else:
+        out.append(line)
+if not found:
+    out.append(f"{{key}}={{value}}")
+path.write_text("\\n".join(out) + "\\n", encoding="utf-8")
+PY
 }}
+SMTP_PASS="$(printf '%s' '{smtp_pass_b64}' | base64 -d)"
 upsert EMAIL_PROVIDER 'ses-smtp'
 upsert SMTP_HOST 'email-smtp.ap-south-1.amazonaws.com'
 upsert SMTP_PORT '587'
 upsert SMTP_SECURE 'false'
 upsert SMTP_USER '{esc(smtp_user)}'
-upsert SMTP_PASS '{esc(smtp_pass)}'
+upsert SMTP_PASS "$SMTP_PASS"
 upsert EMAIL_FROM 'WhizSuite <noreply@whizsuite.com>'
 upsert EMAIL_LOGO_URL 'https://whizsuite.com/brand/logo-primary.png'
 upsert NOTIFICATION_EMAIL_ENABLED 'true'

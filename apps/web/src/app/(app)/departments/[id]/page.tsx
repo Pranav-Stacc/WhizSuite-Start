@@ -3,13 +3,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Building2, Plus, Users } from 'lucide-react';
-import { requirePermission } from '@/shared/auth/permissions';
+import { can, requirePermission } from '@/shared/auth/permissions';
 import { t } from '@/shared/i18n/t';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { PageHeader } from '@/shared/ui/page-header';
+import { deleteDepartmentAction } from '@/features/departments/actions/department.actions';
 import { CreateDesignationDialog } from '@/features/departments/components/create-designation-dialog';
+import { DesignationDeleteButton } from '@/features/departments/components/designation-delete-button';
 import { getDepartment, listDepartments } from '@/features/departments/services/departments.service';
+import { ConfirmButton } from '@/shared/ui/confirm-button';
 import { listMembers } from '@/features/team/services/members.service';
 
 interface PageProps {
@@ -34,6 +37,7 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
   );
 
   const parent = department.parentId ? allDepartments.find((d) => d.id === department.parentId) : undefined;
+  const canManage = await can(Permissions.ORG_SETTINGS_MANAGE);
 
   return (
     <div className="space-y-8">
@@ -47,15 +51,24 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
           </Link>
         }
         actions={
-          <CreateDesignationDialog
-            departmentId={department.id}
-            trigger={
-              <Button variant="primary">
-                <Plus />
-                {t('departments.designation.create')}
-              </Button>
-            }
-          />
+          <>
+            <CreateDesignationDialog
+              departmentId={department.id}
+              trigger={
+                <Button variant="primary">
+                  <Plus />
+                  {t('departments.designation.create')}
+                </Button>
+              }
+            />
+            {canManage ? (
+              <ConfirmButton
+                action={() => deleteDepartmentAction(department.id)}
+                label={t('departments.delete')}
+                redirectTo="/departments"
+              />
+            ) : null}
+          </>
         }
       />
 
@@ -74,7 +87,10 @@ export default async function DepartmentDetailPage({ params }: PageProps) {
                   <p className="font-medium">{designation.name}</p>
                   <p className="text-xs text-muted">{t('departments.headcount', { count: designation.memberCount })}</p>
                 </div>
-                {designation.isHead ? <Badge tone="info">{t('departments.designation.head')}</Badge> : null}
+                <div className="flex items-center gap-2">
+                  {designation.isHead ? <Badge tone="info">{t('departments.designation.head')}</Badge> : null}
+                  {canManage ? <DesignationDeleteButton designationId={designation.id} /> : null}
+                </div>
               </li>
             ))}
           </ul>

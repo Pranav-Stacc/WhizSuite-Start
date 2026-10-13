@@ -604,7 +604,8 @@ function roleSummaryFromApi(raw: Raw) {
 
 export function roleFromApi(raw: Raw): AgencyRole {
   const permissions = Array.isArray(raw.permissions) ? (raw.permissions as Raw[]) : [];
-  const keys = permissions
+  const allowRows = permissions.filter((row) => row.effect !== 'DENY');
+  const keys = allowRows
     .map((row) => {
       const perm = (row.permission ?? row) as Raw;
       return str(perm, 'key');
@@ -612,7 +613,7 @@ export function roleFromApi(raw: Raw): AgencyRole {
     .filter(Boolean);
   const assignments = Array.isArray(raw.assignments) ? raw.assignments : [];
   const summary = roleSummaryFromApi(raw);
-  const permissionScopes = permissions.flatMap((row) => {
+  const permissionScopes = allowRows.flatMap((row) => {
     const perm = (row.permission ?? row) as Raw;
     const key = str(perm, 'key');
     if (!isPermission(key)) return [];

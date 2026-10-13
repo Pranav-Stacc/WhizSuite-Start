@@ -30,7 +30,7 @@ import { listMembers } from '@/features/team/services/members.service';
 import { contentRepository, type ContentEvent, type Post, type PostMedia } from '../data/content.repository';
 import { toComposerAssets } from '../components/composer-mappers';
 import type { ComposerAsset } from '../components/slide-picker';
-import { openDm, sendMessage } from '@/features/chat/services/chat.service';
+import { sendMessage } from '@/features/chat/services/chat.service';
 import { listClientContent, recordContentEvent } from '../services/content.service';
 import { sendApprovalReminder } from '../services/content-approval.service';
 import { checkTransition, isEditable, resetsApprovalOnEdit } from '../workflow';
@@ -308,18 +308,37 @@ export async function sendApprovalReminderAction(requestId: string): Promise<Act
   });
 }
 
-export async function shareContentInDmAction(input: {
+export async function shareContentInChatAction(input: {
   contentId: string;
-  userId: string;
+  roomId: string;
   title: string;
 }): Promise<ActionResult<{ href: string }>> {
   return guarded(async () => {
-    await authorize(Permissions.CHAT_CREATE_ROOM);
-    if (!isLiveMode) return fail(t('content.share.dm.liveOnly'));
-    const room = await openDm(input.userId);
-    const href = `/chat?room=${room.id}`;
-    const body = t('content.share.dm.message', { title: input.title, href: `/content/${input.contentId}` });
-    await sendMessage(room.id, body);
+    await authorize(Permissions.CHAT_VIEW);
+    if (!isLiveMode) return fail(t('content.share.chat.liveOnly'));
+    const displayText = input.title.trim() || t('content.share.chat.untitled');
+    const body = t('content.share.chat.body', { title: displayText });
+    const startOffset = body.indexOf(displayText);
+    const mentions =
+      startOffset >= 0
+        ? [
+            {
+              type: 'CONTENT',
+              targetId: input.contentId,
+              displayText,
+              startOffset,
+              endOffset: startOffset + displayText.length,
+            },
+          ]
+        : [
+            {
+              type: 'CONTENT',
+              targetId: input.contentId,
+              displayText,
+            },
+          ];
+    await sendMessage(input.roomId, body, mentions);
+    const href = `/chat?room=${input.roomId}`;
     await refreshData('chat');
     return succeed({ href });
   });

@@ -69,6 +69,20 @@ export async function getMember(id: string): Promise<Member | undefined> {
   return (await membersById()).get(id);
 }
 
+/** Portal users are excluded from `listMembers` but share the same membership API. */
+export async function findPortalMemberByEmail(email: string): Promise<Member | null> {
+  if (!isLiveMode || !email.trim()) return null;
+  const org = (await getSession())?.orgId ?? '';
+  if (!org || !(await can(Permissions.MEMBERS_VIEW))) return null;
+  const normalized = email.trim().toLowerCase();
+  for (const raw of await liveMemberships(org)) {
+    if (raw.membershipType !== CLIENT_MEMBERSHIP) continue;
+    const memberEmail = typeof raw.email === 'string' ? raw.email.toLowerCase() : '';
+    if (memberEmail === normalized) return membersLive.fromApi(raw);
+  }
+  return null;
+}
+
 export async function getMemberAccess(userId: string): Promise<MemberAccess | null> {
   if (!isLiveMode) return { roles: [], overrides: [], effectivePermissions: [] };
   const org = (await getSession())?.orgId ?? '';
