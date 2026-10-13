@@ -499,7 +499,12 @@ export class AccessRepository {
         isSystem: true,
         kind: true,
         defaultScopeTypes: true,
-        permissions: { select: { permission: { select: { key: true } } } },
+        permissions: {
+          select: {
+            effect: true,
+            permission: { select: { key: true } },
+          },
+        },
         _count: { select: { assignments: true } },
       },
     });
@@ -661,10 +666,14 @@ export class AccessRepository {
       },
     });
     await this.replaceRolePermissions(role.id, input);
-    return this.prisma.role.findFirst({
+    const created = await this.prisma.role.findFirst({
       where: { id: role.id, organizationId },
       include: { permissions: { include: { permission: true } } },
     });
+    if (!created) {
+      throw new Error(`role ${role.id} missing after create`);
+    }
+    return created;
   }
 
   async updateRole(
@@ -677,7 +686,12 @@ export class AccessRepository {
     });
     if (!role) return null;
     if (input.permissionKeys) {
-      const roleScopes = role.defaultScopeTypes.filter(isAssignableScopeType);
+      const roleScopes = Array.isArray(role.defaultScopeTypes)
+        ? role.defaultScopeTypes.filter(
+            (value): value is AssignableScopeType =>
+              typeof value === 'string' && isAssignableScopeType(value),
+          )
+        : [];
       const defaultScopeTypes =
         input.defaultScopeTypes ??
         (roleScopes.length > 0

@@ -62,6 +62,7 @@ export class RolesService {
   async create(organizationId: string, actorId: string, raw: unknown) {
     const input = parseRoleInput(raw);
     const role = await this.repository.createRole(organizationId, input);
+    if (!role) throw notFound();
     await this.audit.record({
       organizationId,
       actorId,
